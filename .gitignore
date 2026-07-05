@@ -1,0 +1,15 @@
+# Nguồn Excel gốc — chứa số liệu chi phí/giá thành nhạy cảm, KHÔNG commit.
+# Số liệu vàng đã được trích xuất sang tests/fixtures/*.json + docs/BUSINESS_MODEL.md
+*.xlsx
+*.xls
+
+# Env / secrets
+.env
+.env.*
+serviceAccount*.json
+
+# Node
+node_modules/
+dist/
+build/
+.DS_Store

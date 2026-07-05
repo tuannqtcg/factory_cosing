@@ -1,0 +1,77 @@
+{
+  "usdVndRate": 26500,
+  "vatOutputRate": 0.08,
+  "mandatoryInsuranceRate": 0.235,
+  "compoundImportTaxRate": 0.06,
+  "customsLogisticsFeeRate": 0.01,
+  "solvent550PricePerBox": 550000,
+  "markupVfPipe": 0.25,
+  "markupVfFitting": 0.4,
+  "markupTcg": 0.3,
+  "listPriceMargin": 0.3,
+  "sharedFixedCosts": {
+    "labAnnualized": 1192500000,
+    "vnUlSetupAnnualized": 0,
+    "ulSetupAnnualized": 1200000000,
+    "depreciationYears": 5,
+    "annualComplianceFee": 250000000,
+    "annualLandRent": 525000000,
+    "totalPerYear": 1253500000
+  },
+  "nonProductionCosts": {
+    "operatingCostPerYear": 640000000,
+    "financialCostPerYear": 2712000000
+  },
+  "inventory": {
+    "pipeLots": [
+      {
+        "tons": 10,
+        "priceUsdPerKg": 3.03
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      }
+    ],
+    "fittingLots": [
+      {
+        "tons": 10,
+        "priceUsdPerKg": 3.85
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      },
+      {
+        "tons": 0,
+        "priceUsdPerKg": 0
+      }
+    ],
+    "pipeReplacementPriceUsd": 3.03,
+    "fittingReplacementPriceUsd": 3.85,
+    "pipeWeightedAvgUsd": 3.03,
+    "fittingWeightedAvgUsd": 3.85,
+    "pipeInventoryKg": 10000,
+    "fittingInventoryKg": 10000
+  }
+}

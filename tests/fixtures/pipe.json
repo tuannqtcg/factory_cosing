@@ -1,0 +1,170 @@
+{
+  "params": {
+    "compoundReplacementPriceUsdPerKg": 3.03,
+    "extruderMaxCapacityKgPerHour": 200,
+    "extruderActualCapacityKgPerHour": 140,
+    "continuousRunDaysPerBatch": 5,
+    "maintenanceDaysPerBatch": 2,
+    "operatingDaysPerYear": 287,
+    "hoursPerShift": 8,
+    "normalShifts": 3,
+    "yieldRate": 0.9,
+    "packagingCostPerKg": 1500,
+    "extruderPriceEach": 3612904000,
+    "extruderCount": 1,
+    "moldPullerCutterCost": 200000000,
+    "depreciationYears": 5,
+    "annualMaintenance": 200000000,
+    "peoplePerShift": 2,
+    "avgSalaryMonthly": 13250000,
+    "monthsSalaryPerYear": 14,
+    "electricityKw": 120,
+    "electricityPricePerKwh": 2120,
+    "waterM3PerHour": 10,
+    "waterPricePerM3": 21200
+  },
+  "capacity": {
+    "batchesPerYear": 41,
+    "designHours3Shift": 4920,
+    "designCapacity3ShiftKgYear": 619920,
+    "normalOperatingHours": 4920,
+    "normalCapacityKgYear": 619920
+  },
+  "costAtNormalCapacity": {
+    "compoundLandedPerKg": 85915.65,
+    "materialPerKgFinished": 95461.8333333333,
+    "extruderDepreciationPerYear": 762580800,
+    "maintenancePerYear": 200000000,
+    "laborPerYear": 1374555000,
+    "electricityPerYear": 1251648000,
+    "waterPerYear": 1043040000,
+    "sharedCostAllocationRatio": 0.875973303670745,
+    "sharedCostAllocated": 1098032536.15128,
+    "totalProcessingCostPerYear": 5729856336.15128,
+    "unitProcessingCostPerKg": 9242.89639977945,
+    "fullCostPerKg": 106204.729733113,
+    "vfPricePerKg": 132755.912166391,
+    "bookCompoundLandedPerKg": 85915.65,
+    "bookFullCostPerKg": 106204.729733113
+  },
+  "priceLadderByDN": [
+    {
+      "dn": "DN20",
+      "odMm": 26.7,
+      "minWallThicknessMm": 1.98,
+      "unitWeightKgPerM": 0.29,
+      "breakEvenPerM": 30799.3716226027,
+      "vfPricePerM": 38499.2145282534,
+      "tcgPricePerM": 50048.9788867294,
+      "listPriceBeforeVat": 71500,
+      "listPriceWithVat": 77220
+    },
+    {
+      "dn": "DN25",
+      "odMm": 33.4,
+      "minWallThicknessMm": 2.46,
+      "unitWeightKgPerM": 0.41,
+      "breakEvenPerM": 43543.9391905762,
+      "vfPricePerM": 54429.9239882203,
+      "tcgPricePerM": 70758.9011846864,
+      "listPriceBeforeVat": 101100,
+      "listPriceWithVat": 109188
+    },
+    {
+      "dn": "DN32",
+      "odMm": 42.2,
+      "minWallThicknessMm": 3.12,
+      "unitWeightKgPerM": 0.62,
+      "breakEvenPerM": 65846.9324345299,
+      "vfPricePerM": 82308.6655431624,
+      "tcgPricePerM": 107001.265206111,
+      "listPriceBeforeVat": 152900,
+      "listPriceWithVat": 165132
+    },
+    {
+      "dn": "DN40",
+      "odMm": 48.2,
+      "minWallThicknessMm": 3.58,
+      "unitWeightKgPerM": 0.82,
+      "breakEvenPerM": 87087.8783811525,
+      "vfPricePerM": 108859.847976441,
+      "tcgPricePerM": 141517.802369373,
+      "listPriceBeforeVat": 202200,
+      "listPriceWithVat": 218376
+    },
+    {
+      "dn": "DN50",
+      "odMm": 60.3,
+      "minWallThicknessMm": 4.47,
+      "unitWeightKgPerM": 1.26,
+      "breakEvenPerM": 133817.959463722,
+      "vfPricePerM": 167272.449329653,
+      "tcgPricePerM": 217454.184128548,
+      "listPriceBeforeVat": 310700,
+      "listPriceWithVat": 335556
+    },
+    {
+      "dn": "DN65",
+      "odMm": 73,
+      "minWallThicknessMm": 5.41,
+      "unitWeightKgPerM": 1.84,
+      "breakEvenPerM": 195416.702708928,
+      "vfPricePerM": 244270.878386159,
+      "tcgPricePerM": 317552.141902007,
+      "listPriceBeforeVat": 453700,
+      "listPriceWithVat": 489996
+    },
+    {
+      "dn": "DN80",
+      "odMm": 88.9,
+      "minWallThicknessMm": 6.58,
+      "unitWeightKgPerM": 2.71,
+      "breakEvenPerM": 287814.817576736,
+      "vfPricePerM": 359768.52197092,
+      "tcgPricePerM": 467699.078562196,
+      "listPriceBeforeVat": 668200,
+      "listPriceWithVat": 721656
+    },
+    {
+      "dn": "DN100",
+      "odMm": 114.3,
+      "minWallThicknessMm": 8.46,
+      "unitWeightKgPerM": 4.304,
+      "breakEvenPerM": 457105.156771317,
+      "vfPricePerM": 571381.445964147,
+      "tcgPricePerM": 742795.879753391,
+      "listPriceBeforeVat": 1061200,
+      "listPriceWithVat": 1146096
+    }
+  ],
+  "capacityTiers": [
+    {
+      "shifts": "1 ca",
+      "hoursPerYear": 1640,
+      "productionKg": 206640,
+      "costPerKg": 112852.727333291,
+      "marginAtVfPrice": 0.14992315225972
+    },
+    {
+      "shifts": "2 ca",
+      "hoursPerYear": 3280,
+      "productionKg": 413280,
+      "costPerKg": 107866.729133157,
+      "marginAtVfPrice": 0.18748078806493
+    },
+    {
+      "shifts": "3 ca",
+      "hoursPerYear": 4920,
+      "productionKg": 619920,
+      "costPerKg": 106204.729733113,
+      "marginAtVfPrice": 0.2
+    }
+  ],
+  "cvp": {
+    "variableCostPerKg": 100663.420634921,
+    "contributionMarginPerKg": 32092.4915314703,
+    "fixedCostPerYear": 3435168336.15128,
+    "breakEvenKgYear": 107039.627408882,
+    "pctOfNormalCapacity": 0.172666839929155
+  }
+}

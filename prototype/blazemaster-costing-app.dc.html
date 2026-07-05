@@ -1,0 +1,1957 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <link rel="stylesheet" href="_ds/blazemaster-design-system-4126484e-8c9f-4ca2-af94-702cb9dd6df1/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/blazemaster-design-system-4126484e-8c9f-4ca2-af94-702cb9dd6df1/styles.css">
+  <script src="_ds/blazemaster-design-system-4126484e-8c9f-4ca2-af94-702cb9dd6df1/_ds_bundle.js"></script>
+  <style>
+    body { margin: 0; background: #ebe6d4; }
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-thumb { background: #b3b3b3; border-radius: 3px; }
+    input[type=number]::-webkit-inner-spin-button { opacity: 1; }
+  </style>
+</helmet>
+
+<div style="display:flex;min-height:100vh;font-family:Roboto,Helvetica Neue,sans-serif;color:#1a1a1a">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside style="width:216px;background:#1a1a1a;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0">
+    <div style="padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="color:#a8003b;font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:4px">BlazeMaster CPVC</div>
+      <div style="color:#fff;font-size:14px;font-weight:700;letter-spacing:-.2px">Costing Engine</div>
+      <div style="color:#555;font-size:10px;margin-top:2px">Model v3.3 · VN · 2026</div>
+    </div>
+
+    <!-- XEM NHƯ VAI — ADR-006: mỗi vai chỉ thấy đúng tầng của mình -->
+    <div style="padding:12px 16px 10px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#555;font-weight:700;margin-bottom:7px">Xem Như Vai</div>
+      <sc-for list="{{ roleSwitcher }}" as="r" hint-placeholder-count="4">
+        <div onClick="{{ r.onClick }}" style="padding:6px 10px;margin-bottom:3px;border-radius:2px;cursor:pointer;background:{{ r.bg }};border:1px solid {{ r.border }}">
+          <div style="font-size:11px;font-weight:{{ r.fw }};color:{{ r.color }}">{{ r.label }}</div>
+          <div style="font-size:8px;color:#8a8a8a;margin-top:1px">{{ r.desc }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <nav style="flex:1;overflow-y:auto;padding-bottom:8px">
+      <!-- USER section -->
+      <div style="padding:10px 16px 4px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#555;font-weight:700;margin-top:4px">USER</div>
+      <sc-for list="{{ userNavItems }}" as="nav" hint-placeholder-count="3">
+        <div onClick="{{ nav.onClick }}" style="padding:9px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;background:{{ nav.bg }};border-left:3px solid {{ nav.accent }}">
+          <div style="width:4px;height:4px;border-radius:50%;background:{{ nav.dot }};flex-shrink:0"></div>
+          <span style="color:{{ nav.color }};font-size:12px;font-weight:{{ nav.fw }}">{{ nav.label }}</span>
+        </div>
+      </sc-for>
+      <!-- ADMIN section — ẩn hoàn toàn nếu vai hiện tại không có màn hình nào ở đây -->
+      <sc-if value="{{ showAdminGroup }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:10px 16px 4px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#555;font-weight:700;margin-top:8px;border-top:1px solid rgba(255,255,255,.06)">ADMIN</div>
+      <sc-for list="{{ adminNavItems }}" as="nav" hint-placeholder-count="4">
+        <div onClick="{{ nav.onClick }}" style="padding:9px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;background:{{ nav.bg }};border-left:3px solid {{ nav.accent }}">
+          <div style="width:4px;height:4px;border-radius:50%;background:{{ nav.dot }};flex-shrink:0"></div>
+          <span style="color:{{ nav.color }};font-size:12px;font-weight:{{ nav.fw }}">{{ nav.label }}</span>
+        </div>
+      </sc-for>
+      </sc-if>
+    </nav>
+
+    <div style="padding:10px 16px;border-top:1px solid rgba(255,255,255,.08)">
+      <div style="display:inline-block;background:#a8003b;color:#fff;font-size:8px;font-weight:700;padding:2px 6px;border-radius:2px;letter-spacing:.06em;margin-bottom:5px">VAI: {{ roleLabel }}</div>
+      <div style="color:#444;font-size:9px">BlazeMaster_Model_v3_4.xlsx</div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main style="flex:1;overflow:auto;background:#ebe6d4;min-width:0">
+
+    <!-- ══ DASHBOARD ══ -->
+    <sc-if value="{{ showDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:20px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Tổng Quan Quản Trị</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Dashboard — BlazeMaster CPVC</h1>
+          <div style="font-size:11px;color:#737373;margin-top:4px">Mô hình giá thành v3.4 · Tỷ giá: {{ dispUsdRate }} · Replacement ống: {{ dispCpOng }} USD/kg · PK: {{ dispCpPK }} USD/kg</div>
+        </div>
+
+        <!-- Price lock status bar — chỉ tầng chiến lược (pricing/admin) mới thấy chi phí NVL, ADR-006 -->
+        <sc-if value="{{ canSeeCostDetail }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:2px;border:1px solid {{ lockColorOng }};background:{{ lockBgOng }};flex:1;min-width:220px">
+            <div style="width:8px;height:8px;border-radius:50%;background:{{ lockColorOng }};flex-shrink:0"></div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:{{ lockColorOng }};letter-spacing:.04em">BẢNG GIÁ ỐNG — {{ lockStatusOng }}</div>
+              <div style="font-size:9px;color:#737373;margin-top:1px">Baseline {{ assumpInputs.baselineOng }} · Replacement {{ dispCpOng }} · Lệch {{ assumpInputs.devOngPct }}</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:2px;border:1px solid {{ lockColorPK }};background:{{ lockBgPK }};flex:1;min-width:220px">
+            <div style="width:8px;height:8px;border-radius:50%;background:{{ lockColorPK }};flex-shrink:0"></div>
+            <div>
+              <div style="font-size:10px;font-weight:700;color:{{ lockColorPK }};letter-spacing:.04em">BẢNG GIÁ PHỤ KIỆN — {{ lockStatusPK }}</div>
+              <div style="font-size:9px;color:#737373;margin-top:1px">Baseline {{ assumpInputs.baselinePK }} · Replacement {{ dispCpPK }} · Lệch {{ assumpInputs.devPKPct }}</div>
+            </div>
+          </div>
+          <sc-if value="{{ anyUnlocked }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ assumpInputs.chot }}" style="display:flex;align-items:center;padding:8px 16px;background:#a8003b;color:#fff;border-radius:2px;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap">Chốt Baseline Mới</div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <!-- THANG GIÁ -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+            <div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div>
+            <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">I. THANG GIÁ 5 BẬC — VNĐ/KG</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+            <div style="display:grid;grid-template-columns:32px 1fr 160px 160px;padding:9px 18px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:12px">
+              <div></div>
+              <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase;letter-spacing:.08em">Bậc giá / Thẩm quyền</div>
+              <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Ống CPVC</div>
+              <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Phụ Kiện</div>
+            </div>
+            <sc-for list="{{ thangGiaFmt }}" as="tg" hint-placeholder-count="5">
+              <div style="display:grid;grid-template-columns:32px 1fr 160px 160px;padding:12px 18px;border-bottom:1px solid #f2f2f2;align-items:start;gap:12px">
+                <div style="width:22px;height:22px;border-radius:50%;background:{{ tg.color }};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">
+                  <span style="color:#fff;font-size:10px;font-weight:700">{{ tg.bac }}</span>
+                </div>
+                <div>
+                  <div style="font-size:12px;font-weight:600;margin-bottom:2px">{{ tg.label }}</div>
+                  <div style="font-size:10px;color:#737373;margin-bottom:7px">{{ tg.role }}</div>
+                  <div style="display:flex;gap:16px">
+                    <div style="flex:1"><div style="font-size:8px;color:#b3b3b3;margin-bottom:3px">ỐNG</div><div style="height:3px;background:#f0f0f0;border-radius:2px"><div style="height:3px;border-radius:2px;background:{{ tg.color }};width:{{ tg.barOng }}"></div></div></div>
+                    <div style="flex:1"><div style="font-size:8px;color:#b3b3b3;margin-bottom:3px">PHỤ KIỆN</div><div style="height:3px;background:#f0f0f0;border-radius:2px"><div style="height:3px;border-radius:2px;background:{{ tg.color }};width:{{ tg.barPk }}"></div></div></div>
+                  </div>
+                </div>
+                <div style="text-align:right;padding-top:1px">
+                  <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">{{ tg.ongFmt }}</div>
+                  <div style="font-size:9px;color:#b3b3b3;margin-top:1px">đ/kg</div>
+                </div>
+                <div style="text-align:right;padding-top:1px">
+                  <div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums">{{ tg.pkFmt }}</div>
+                  <div style="font-size:9px;color:#b3b3b3;margin-top:1px">đ/kg</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- II/III/IV — công suất, top-down, đầu tư: tầng chiến lược pricing/admin (ADR-006), sales KHÔNG thấy -->
+        <sc-if value="{{ canSeeCostDetail }}" hint-placeholder-val="{{ true }}">
+
+        <!-- SẢN XUẤT -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+            <div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div>
+            <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">II. SẢN XUẤT — 3 MỨC CÔNG SUẤT ỐNG</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <sc-for list="{{ productionFmt }}" as="prod" hint-placeholder-count="3">
+              <div onClick="{{ prod.onClick }}" style="background:#fff;border:2px solid {{ prod.borderC }};border-radius:2px;padding:15px;cursor:pointer">
+                <div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#737373;font-weight:600;margin-bottom:7px">{{ prod.ca }}</div>
+                <div style="font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.3px">{{ prod.kgFmt }}</div>
+                <div style="font-size:10px;color:#737373;margin-top:1px;margin-bottom:10px">kg/năm · {{ prod.util }}% CS thiết kế</div>
+                <div style="height:1px;background:#f0f0f0;margin-bottom:10px"></div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <div><div style="font-size:9px;color:#737373;margin-bottom:2px">Giá thành/kg</div><div style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums">{{ prod.costFmt }} đ</div></div>
+                  <div style="text-align:right"><div style="font-size:9px;color:#737373;margin-bottom:2px">Margin VF</div><div style="font-size:13px;font-weight:700;color:#16A34A">{{ prod.marginFmt }}%</div></div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- TOP-DOWN PANEL -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+            <div style="width:3px;height:14px;background:#333;border-radius:1px;flex-shrink:0"></div>
+            <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#333">III. PHÂN TÍCH NGƯỢC (TOP-DOWN) — ỐNG CPVC</div>
+            <div style="font-size:9px;color:#737373;margin-left:4px">Nhập giá bán mục tiêu → hệ thống tính ngược compound, margin, sản lượng</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+            <div style="display:grid;grid-template-columns:260px 1fr;gap:0">
+              <!-- Input -->
+              <div style="padding:20px;border-right:1px solid #f0f0f0;background:#f5f5f3">
+                <div style="font-size:10px;font-weight:700;color:#1a1a1a;margin-bottom:4px">Giá bán mục tiêu — Ống (đ/kg)</div>
+                <div style="font-size:9px;color:#737373;margin-bottom:12px">Giá tham chiếu: sàn biến phí {{ dispFloorOng }} · VF {{ dispTargetOng }}</div>
+                <input type="number" value="{{ topDownPrice }}" onChange="{{ setTopDownPrice }}" placeholder="Nhập giá đ/kg..."
+                  style="width:100%;padding:10px 14px;border:2px solid #333;border-radius:2px;font-size:16px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#fff" />
+                <div style="font-size:9px;color:#737373;margin-top:6px;text-align:right">VNĐ / kg ống</div>
+                <div style="margin-top:14px;padding:8px 12px;border-radius:2px;border:1px solid {{ tdColor }};background:{{ tdBannerBg }}">
+                  <div style="font-size:10px;font-weight:700;color:{{ tdColor }}">{{ tdStatus }}</div>
+                </div>
+              </div>
+              <!-- Results -->
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0">
+                <div style="padding:16px;border-right:1px solid #f5f5f5">
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Margin tại giá này</div>
+                  <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ tdColor }}">{{ tdMarginPct }}%</div>
+                  <div style="font-size:9px;color:#737373;margin-top:4px">vs giá thành đầy đủ {{ dispFullCostOng }} đ</div>
+                </div>
+                <div style="padding:16px;border-right:1px solid #f5f5f5">
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Compound tối đa</div>
+                  <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#1a1a1a">{{ tdMaxCompound }}</div>
+                  <div style="font-size:9px;color:#737373;margin-top:4px">USD/kg · Hiện tại: {{ dispCpOng }} USD/kg</div>
+                </div>
+                <div style="padding:16px;border-right:1px solid #f5f5f5">
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">SL hòa vốn tại giá này</div>
+                  <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#1a1a1a">{{ tdBepQtyFmt }}</div>
+                  <div style="font-size:9px;color:#737373;margin-top:4px">kg/năm · {{ tdBepPct }}% CS bình thường</div>
+                </div>
+                <div style="padding:16px">
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">So thang giá (ống)</div>
+                  <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+                    <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:#DC2626">Sàn BP</span><span style="font-variant-numeric:tabular-nums;color:#737373">{{ dispFloorOng }}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:#d97706">GT đầy đủ</span><span style="font-variant-numeric:tabular-nums;color:#737373">{{ dispFullCostOng }}</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:10px"><span style="color:#16A34A">Giá VF</span><span style="font-variant-numeric:tabular-nums;color:#737373">{{ dispTargetOng }}</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+            <div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div>
+            <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">IV. HÒA VỐN &amp; ĐẦU TƯ</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#737373;margin-bottom:7px">Hòa vốn CVP — Ống</div><div style="font-size:21px;font-weight:700;font-variant-numeric:tabular-nums">107.040 kg</div><div style="font-size:10px;color:#737373;margin-top:2px;margin-bottom:7px">17,3% công suất bình thường</div><div style="height:4px;background:#f0f0f0;border-radius:2px"><div style="width:17%;height:4px;background:#16A34A;border-radius:2px"></div></div></div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#737373;margin-bottom:7px">Chi phí CSNR — Ống</div><div style="font-size:21px;font-weight:700;color:#DC2626;font-variant-numeric:tabular-nums">3,44 tỷ đ</div><div style="font-size:10px;color:#737373;margin-top:2px;margin-bottom:7px">Định phí chưa được hấp thụ kỳ KH</div><div style="display:inline-flex;align-items:center;gap:4px;background:#fef2f2;padding:3px 8px;border-radius:2px"><span style="color:#DC2626;font-size:10px;font-weight:600">⚠ Cảnh báo tải thấp</span></div></div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#737373;margin-bottom:7px">Doanh thu hòa vốn toàn DN</div><div style="font-size:21px;font-weight:700;font-variant-numeric:tabular-nums">33,66 tỷ đ</div><div style="font-size:10px;color:#737373;margin-top:2px">Gồm SX + vận hành + lãi vay</div></div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#737373;margin-bottom:7px">Tổng vốn cố định</div><div style="font-size:21px;font-weight:700;font-variant-numeric:tabular-nums">15,97 tỷ đ</div><div style="font-size:10px;color:#737373;margin-top:2px">Thiết bị + 66 bộ khuôn</div></div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#737373;margin-bottom:7px">EBIT tại CS bình thường + VF</div><div style="font-size:21px;font-weight:700;color:#16A34A;font-variant-numeric:tabular-nums">18,49 tỷ đ</div><div style="font-size:10px;color:#737373;margin-top:2px">3 ca + giá mục tiêu VF</div></div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px"><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:#737373;margin-bottom:7px">Thời gian thu hồi vốn</div><div style="font-size:21px;font-weight:700;color:#16A34A;font-variant-numeric:tabular-nums">0,74 năm</div><div style="font-size:10px;color:#737373;margin-top:2px">EBIT + khấu hao · ~9 tháng</div></div>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ hideCostDetailNote }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 16px;background:#f5f5f3;border:1px dashed #d8d8d8;border-radius:2px;font-size:10px;color:#737373">
+            Vai Bán Hàng chỉ xem thang giá + bảng giá (ADR-006, security-review) — công suất, phân tích ngược, cấu trúc chi phí và đầu tư không hiển thị ở đây.
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ══ BẢNG GIÁ ══ -->
+    <sc-if value="{{ showPriceList }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:18px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Bảng Giá Sản Phẩm · Vai Bán Hàng</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">BlazeMaster CPVC — 100 SKU</h1>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;gap:12px;flex-wrap:wrap">
+          <input value="{{ searchQuery }}" onChange="{{ setSearch }}" placeholder="Tìm theo tên, kích cỡ..." style="padding:7px 12px;border:1px solid #b3b3b3;border-radius:2px;font-size:12px;background:#fff;outline:none;min-width:200px;max-width:260px;width:100%" />
+          <div style="display:flex;border:1px solid #b3b3b3;border-radius:2px;overflow:hidden;flex-shrink:0">
+            <sc-for list="{{ ptBtns }}" as="ptb" hint-placeholder-count="2">
+              <div onClick="{{ ptb.onClick }}" style="padding:6px 14px;cursor:pointer;background:{{ ptb.bg }};color:{{ ptb.color }};font-size:11px;font-weight:600;white-space:nowrap;border-right:1px solid #d8d8d8">{{ ptb.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px">
+          <sc-for list="{{ catButtons }}" as="cat" hint-placeholder-count="9">
+            <div onClick="{{ cat.onClick }}" style="padding:4px 10px;cursor:pointer;border:1px solid {{ cat.border }};background:{{ cat.bg }};color:{{ cat.color }};border-radius:2px;font-size:11px;font-weight:500;white-space:nowrap">{{ cat.label }}</div>
+          </sc-for>
+        </div>
+        <div style="font-size:10px;color:#737373;margin-bottom:9px">Hiển thị {{ skuCount }} sản phẩm</div>
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+          <div style="display:grid;grid-template-columns:36px 1fr 100px 72px 52px 130px;padding:9px 16px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px">
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">STT</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Sản phẩm</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Kích cỡ</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Quy cách</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">ĐVT</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">{{ colHeader }}</div>
+          </div>
+          <sc-for list="{{ skuFmt }}" as="sku" hint-placeholder-count="12">
+            <div style="display:grid;grid-template-columns:36px 1fr 100px 72px 52px 130px;padding:8px 16px;border-bottom:1px solid #f5f5f5;gap:8px;align-items:center">
+              <div style="font-size:10px;color:#b3b3b3;font-variant-numeric:tabular-nums">{{ sku.stt }}</div>
+              <div style="font-size:12px;font-weight:500">{{ sku.name }}</div>
+              <div style="font-size:11px;color:#737373;font-variant-numeric:tabular-nums">{{ sku.size }}</div>
+              <div style="font-size:10px;color:#b3b3b3">{{ sku.spec }}</div>
+              <div style="font-size:11px;color:#737373">{{ sku.unit }}</div>
+              <div style="font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums">{{ sku.displayPrice }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ KẾ HOẠCH SX ══ -->
+    <sc-if value="{{ showPlan }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:22px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Kế Hoạch Sản Xuất · Vai Sản Xuất</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Lập Kế Hoạch SX</h1>
+          <div style="font-size:11px;color:#737373;margin-top:4px">Nhập số mét ống / số cái phụ kiện theo DN · Mô hình tự tính giờ máy, NVL, nhân công</div>
+        </div>
+
+        <!-- ỐNG PLAN -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+          <div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div>
+          <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">KẾ HOẠCH ỐNG — NHẬP MÉT THEO DN</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px">
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Tổng sản lượng</div><div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ planSummary.totalKg }} kg</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Tổng giờ máy đùn</div><div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ planSummary.totalGio }} giờ</div></div>
+          <div style="background:#fff;border:2px solid {{ planSummary.caColor }};padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Ca máy cần</div><div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ planSummary.caColor }}">{{ planSummary.caNeeded }}</div><div style="font-size:10px;margin-top:2px;color:{{ planSummary.caColor }}">{{ planSummary.nhanCong }}</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">NVL compound ống</div><div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ planSummary.nvlOng }} đ</div><div style="font-size:10px;color:#737373;margin-top:2px">Gồm 5% dự phòng</div></div>
+        </div>
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:28px">
+          <div style="display:grid;grid-template-columns:72px 56px 140px 110px 100px 90px;padding:9px 16px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px">
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">DN</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">kg/m</div>
+            <div style="font-size:9px;font-weight:700;color:#2563eb;text-align:center;text-transform:uppercase">MÉT KẾ HOẠCH</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">kg TP</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Giờ máy</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Ngày SX</div>
+          </div>
+          <sc-for list="{{ planRows }}" as="pr" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:72px 56px 140px 110px 100px 90px;padding:9px 16px;border-bottom:1px solid #f5f5f5;gap:8px;align-items:center;background:{{ pr.rowBg }}">
+              <div style="font-size:12px;font-weight:700">{{ pr.dn }}</div>
+              <div style="font-size:11px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ pr.w }}</div>
+              <div style="text-align:center"><input type="number" value="{{ pr.meters }}" onChange="{{ pr.onChangeMeter }}" min="0" placeholder="0" style="width:110px;padding:5px 10px;border:1px solid #2563eb;border-radius:2px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#eff6ff" /></div>
+              <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums;color:{{ pr.hasData ? '#1a1a1a' : '#b3b3b3' }}">{{ pr.kgFmt }}</div>
+              <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums;color:{{ pr.hasData ? '#1a1a1a' : '#b3b3b3' }}">{{ pr.gioFmt }}</div>
+              <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums;color:{{ pr.hasData ? '#1a1a1a' : '#b3b3b3' }}">{{ pr.ngayFmt }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <!-- PHỤ KIỆN PLAN — full SKU catalog -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+          <div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div>
+          <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">KẾ HOẠCH PHỤ KIỆN — NHẬP SỐ CÁI THEO LOẠI SẢN PHẨM (90 SKU)</div>
+        </div>
+        <!-- Summary KPIs -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:16px">
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Giờ máy cần / khả dụng</div>
+            <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ pkSummary.utilColor }}">{{ pkSummary.totalGio }}</div>
+            <div style="margin-top:6px;height:4px;background:#f0f0f0;border-radius:2px"><div style="height:4px;border-radius:2px;background:{{ pkSummary.utilColor }};width:{{ pkSummary.utilBar }}"></div></div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Hệ số huy động</div>
+            <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ pkSummary.utilColor }}">{{ pkSummary.util }}</div>
+            <div style="font-size:10px;color:#737373;margin-top:3px">CS bình thường: {{ dispGiờMayPK }} giờ/năm</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Tổng sản lượng PK</div>
+            <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">{{ pkSummary.totalKg }} kg</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">NVL compound PK</div>
+            <div style="font-size:17px;font-weight:700;font-variant-numeric:tabular-nums">{{ pkSummary.nvlPK }} đ</div>
+            <div style="font-size:10px;color:#737373;margin-top:2px">Giá replacement +5% dự phòng</div>
+          </div>
+        </div>
+        <!-- Grouped catalog table -->
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+          <!-- Column headers -->
+          <div style="display:grid;grid-template-columns:140px 56px 48px 48px 120px 80px 80px;padding:9px 16px;background:#1a1a1a;gap:6px">
+            <div style="font-size:9px;font-weight:700;color:#b3b3b3;text-transform:uppercase">Sản phẩm / Kích cỡ</div>
+            <div style="font-size:9px;font-weight:700;color:#b3b3b3;text-align:right;text-transform:uppercase">kg/cái</div>
+            <div style="font-size:9px;font-weight:700;color:#b3b3b3;text-align:right;text-transform:uppercase">Cycle</div>
+            <div style="font-size:9px;font-weight:700;color:#b3b3b3;text-align:right;text-transform:uppercase">Cavity</div>
+            <div style="font-size:9px;font-weight:700;color:#93c5fd;text-align:center;text-transform:uppercase">SỐ LƯỢNG (cái)</div>
+            <div style="font-size:9px;font-weight:700;color:#b3b3b3;text-align:right;text-transform:uppercase">Giờ máy</div>
+            <div style="font-size:9px;font-weight:700;color:#b3b3b3;text-align:right;text-transform:uppercase">kg TP</div>
+          </div>
+          <!-- Groups -->
+          <sc-for list="{{ pkPlanGroups }}" as="grp" hint-placeholder-count="13">
+            <!-- Group header -->
+            <div style="display:grid;grid-template-columns:140px 1fr 80px 80px;padding:7px 16px;background:#f5f5f3;border-top:1px solid #e0e0e0;gap:6px;align-items:center">
+              <div style="font-size:10px;font-weight:700;color:#1a1a1a">{{ grp.type }}</div>
+              <div style="font-size:9px;color:#737373">{{ grp.rows.length }} kích cỡ</div>
+              <div style="font-size:10px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;color:{{ grp.hasData ? '#1a1a1a' : '#b3b3b3' }}">{{ grp.typeGioFmt }} giờ</div>
+              <div style="font-size:10px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums;color:{{ grp.hasData ? '#1a1a1a' : '#b3b3b3' }}">{{ grp.typeKgFmt }} kg</div>
+            </div>
+            <!-- SKU rows -->
+            <sc-for list="{{ grp.rows }}" as="pkr" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:140px 56px 48px 48px 120px 80px 80px;padding:7px 16px;border-bottom:1px solid #f8f8f8;gap:6px;align-items:center;background:{{ pkr.rowBg }}">
+                <div style="font-size:11px;color:#555;padding-left:10px">{{ pkr.s }}</div>
+                <div style="font-size:10px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ pkr.w }}</div>
+                <div style="font-size:10px;color:#737373;text-align:right">{{ pkr.cy }}s</div>
+                <div style="font-size:10px;color:#737373;text-align:right">{{ pkr.ca }}</div>
+                <div style="text-align:center">
+                  <input type="number" value="{{ pkr.qty }}" onChange="{{ pkr.onChangeQty }}" min="0" placeholder="0"
+                    style="width:100px;padding:4px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#eff6ff" />
+                </div>
+                <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums;color:{{ pkr.hasData ? '#1a1a1a' : '#e0e0e0' }}">{{ pkr.gioFmt }}</div>
+                <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums;color:{{ pkr.hasData ? '#1a1a1a' : '#e0e0e0' }}">{{ pkr.kgFmt }}</div>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+        <div style="margin-top:10px;padding:10px 14px;background:#f5f5f3;border:1px solid #d8d8d8;border-radius:2px;font-size:10px;color:#737373">
+          MHR/cái = chu kỳ ÷ (3600 × cavity × 0,9) · Giờ máy khả dụng CS bình thường: {{ dispGiờMayPK }} giờ/năm · NVL dùng giá replacement (thị trường), không dùng giá khóa
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ TỒN KHO COMPOUND ══ -->
+    <sc-if value="{{ showInventory }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:22px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Tồn Kho Compound · ADR-002 · Vai Admin / Pricing</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Tồn Kho &amp; Giá Compound</h1>
+          <div style="font-size:11px;color:#737373;margin-top:4px">Nhập tồn đầu kỳ + các đợt nhập · Hệ thống tính bình quân gia quyền (sổ sách) và so sánh với giá tái tạo (định giá)</div>
+        </div>
+
+        <!-- ADR-002 note -->
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:2px;padding:11px 16px;margin-bottom:20px;font-size:10px;color:#92400e">
+          <strong>ADR-002:</strong> Sổ sách dùng bình quân gia quyền (VAS/TT200, đo lãi kỳ, tính tồn kho). Định giá dùng giá tái tạo (nuôi thang giá, bảng giá, CVP). Ngưỡng reprice khuyến nghị: lệch ±3–5%. Cảnh báo dự phòng VAS 02 khi tái tạo &lt; bình quân.
+        </div>
+
+        <!-- TWO SEPARATE DYNAMIC TABLES -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
+          <!-- ỐNG table -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:10px;font-weight:700;color:#a8003b;text-transform:uppercase;letter-spacing:.08em">Compound Ống</div>
+              <div onClick="{{ addInvOng }}" style="padding:4px 12px;background:#a8003b;color:#fff;font-size:10px;font-weight:700;border-radius:2px;cursor:pointer;letter-spacing:.04em">+ Thêm đợt</div>
+            </div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 28px;padding:8px 12px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:6px">
+                <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Đợt nhập</div>
+                <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Tấn</div>
+                <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">USD/kg</div>
+                <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">≈ tỷ đ</div>
+                <div></div>
+              </div>
+              <sc-for list="{{ invOngRows }}" as="row" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 28px;padding:8px 12px;border-bottom:1px solid #f5f5f5;gap:6px;align-items:center;background:{{ row.rowBg }}">
+                  <div style="font-size:11px;font-weight:600;color:{{ row.isOpening ? '#d97706' : '#1a1a1a' }}">{{ row.label }}</div>
+                  <input type="number" step="0.1" value="{{ row.tan }}" onChange="{{ row.onChangeTan }}" min="0" placeholder="0" style="width:100%;padding:4px 7px;border:1px solid #fca5a5;border-radius:2px;font-size:11px;text-align:right;outline:none;background:#fff7f7;font-variant-numeric:tabular-nums" />
+                  <input type="number" step="0.01" value="{{ row.price }}" onChange="{{ row.onChangePrice }}" min="0" placeholder="0.00" style="width:100%;padding:4px 7px;border:1px solid #fca5a5;border-radius:2px;font-size:11px;text-align:right;outline:none;background:#fff7f7;font-variant-numeric:tabular-nums" />
+                  <div style="font-size:10px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ row.subtotal }}</div>
+                  <sc-if value="{{ row.canRemove }}" hint-placeholder-val="{{ false }}">
+                    <div onClick="{{ row.onRemove }}" style="width:20px;height:20px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#DC2626;font-weight:700;flex-shrink:0">×</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:8px;padding:8px 12px;background:#f5f5f3;border-radius:2px;font-size:10px;color:#737373">
+              Tổng tồn kho: <strong>{{ invSummary.totalTanOng }} tấn</strong> · Bình quân: <strong>{{ invSummary.wavgOngUSDFmt }} USD/kg</strong> · ≈ {{ invSummary.wavgOngVNDFmt }} đ/kg
+            </div>
+          </div>
+
+          <!-- PK table -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+              <div style="font-size:10px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.08em">Compound Phụ Kiện</div>
+              <div onClick="{{ addInvPK }}" style="padding:4px 12px;background:#2563eb;color:#fff;font-size:10px;font-weight:700;border-radius:2px;cursor:pointer;letter-spacing:.04em">+ Thêm đợt</div>
+            </div>
+            <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 28px;padding:8px 12px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:6px">
+                <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Đợt nhập</div>
+                <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Tấn</div>
+                <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">USD/kg</div>
+                <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">≈ tỷ đ</div>
+                <div></div>
+              </div>
+              <sc-for list="{{ invPKRows }}" as="row" hint-placeholder-count="3">
+                <div style="display:grid;grid-template-columns:1fr 80px 80px 80px 28px;padding:8px 12px;border-bottom:1px solid #f5f5f5;gap:6px;align-items:center;background:{{ row.rowBg }}">
+                  <div style="font-size:11px;font-weight:600;color:{{ row.isOpening ? '#d97706' : '#1a1a1a' }}">{{ row.label }}</div>
+                  <input type="number" step="0.1" value="{{ row.tan }}" onChange="{{ row.onChangeTan }}" min="0" placeholder="0" style="width:100%;padding:4px 7px;border:1px solid #93c5fd;border-radius:2px;font-size:11px;text-align:right;outline:none;background:#eff6ff;font-variant-numeric:tabular-nums" />
+                  <input type="number" step="0.01" value="{{ row.price }}" onChange="{{ row.onChangePrice }}" min="0" placeholder="0.00" style="width:100%;padding:4px 7px;border:1px solid #93c5fd;border-radius:2px;font-size:11px;text-align:right;outline:none;background:#eff6ff;font-variant-numeric:tabular-nums" />
+                  <div style="font-size:10px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ row.subtotal }}</div>
+                  <sc-if value="{{ row.canRemove }}" hint-placeholder-val="{{ false }}">
+                    <div onClick="{{ row.onRemove }}" style="width:20px;height:20px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#2563eb;font-weight:700;flex-shrink:0">×</div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:8px;padding:8px 12px;background:#f5f5f3;border-radius:2px;font-size:10px;color:#737373">
+              Tổng tồn kho: <strong>{{ invSummary.totalTanPK }} tấn</strong> · Bình quân: <strong>{{ invSummary.wavgPKUSDFmt }} USD/kg</strong> · ≈ {{ invSummary.wavgPKVNDFmt }} đ/kg
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RESULTS: Bình quân + Giá tái tạo -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px">
+          <div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div>
+          <div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">KẾT QUẢ — BÌNH QUÂN GIA QUYỀN &amp; GIÁ TÁI TẠO</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+
+          <!-- ỐNG block -->
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden">
+            <div style="background:#a8003b;padding:10px 16px">
+              <div style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em">ỐNG CPVC</div>
+              <div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:1px">Tổng tồn kho: {{ invSummary.totalTanOng }} tấn</div>
+            </div>
+            <div style="padding:14px 16px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div>
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Bình quân gia quyền</div>
+                  <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ invSummary.wavgOngUSDFmt }} <span style="font-size:11px;font-weight:400;color:#737373">USD/kg</span></div>
+                  <div style="font-size:11px;color:#737373;font-variant-numeric:tabular-nums;margin-top:2px">≈ {{ invSummary.wavgOngVNDFmt }} đ/kg</div>
+                  <div style="font-size:9px;color:#737373;margin-top:6px">Sổ sách (VAS/TT200) — đo lãi thật</div>
+                </div>
+                <div>
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Giá tái tạo (lô kế tiếp)</div>
+                  <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ invSummary.rplcOngFmt }} <span style="font-size:11px;font-weight:400;color:#737373">USD/kg</span></div>
+                  <div style="font-size:9px;color:#737373;margin-top:6px">Định giá — nuôi thang giá / CVP</div>
+                </div>
+              </div>
+              <div style="border-top:1px solid #f0f0f0;padding-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:10px;color:#737373">Lãi/(lỗ) giữ kho</span>
+                  <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ invSummary.holdingGainOngColor }}">{{ invSummary.holdingGainOngFmt }} đ</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:10px;color:#737373">Mức lệch tái tạo vs bình quân</span>
+                  <span style="font-size:12px;font-weight:600;color:{{ invSummary.holdingGainOngColor }}">{{ invSummary.deviationOngFmt }}</span>
+                </div>
+                <sc-if value="{{ invSummary.needsVAS02Ong }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:2px;padding:7px 10px;font-size:10px;color:#DC2626;font-weight:600">⚠ Cảnh báo VAS 02 — Tái tạo thấp hơn bình quân. Cần xem xét trích lập dự phòng.</div>
+                </sc-if>
+                <sc-if value="{{ invSummary.repriceRecOng }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:2px;padding:7px 10px;font-size:10px;color:#16A34A;font-weight:600">↑ Khuyến nghị reprice — Lệch ≥ 3%. Cập nhật giá tái tạo trong Tham Số.</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+
+          <!-- PK block -->
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden">
+            <div style="background:#2563eb;padding:10px 16px">
+              <div style="color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em">PHỤ KIỆN</div>
+              <div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:1px">Tổng tồn kho: {{ invSummary.totalTanPK }} tấn</div>
+            </div>
+            <div style="padding:14px 16px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                <div>
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Bình quân gia quyền</div>
+                  <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ invSummary.wavgPKUSDFmt }} <span style="font-size:11px;font-weight:400;color:#737373">USD/kg</span></div>
+                  <div style="font-size:11px;color:#737373;font-variant-numeric:tabular-nums;margin-top:2px">≈ {{ invSummary.wavgPKVNDFmt }} đ/kg</div>
+                  <div style="font-size:9px;color:#737373;margin-top:6px">Sổ sách (VAS/TT200) — đo lãi thật</div>
+                </div>
+                <div>
+                  <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Giá tái tạo (lô kế tiếp)</div>
+                  <div style="font-size:18px;font-weight:700;font-variant-numeric:tabular-nums">{{ invSummary.rplcPKFmt }} <span style="font-size:11px;font-weight:400;color:#737373">USD/kg</span></div>
+                  <div style="font-size:9px;color:#737373;margin-top:6px">Định giá — nuôi thang giá / CVP</div>
+                </div>
+              </div>
+              <div style="border-top:1px solid #f0f0f0;padding-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                  <span style="font-size:10px;color:#737373">Lãi/(lỗ) giữ kho</span>
+                  <span style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ invSummary.holdingGainPKColor }}">{{ invSummary.holdingGainPKFmt }} đ</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:10px;color:#737373">Mức lệch tái tạo vs bình quân</span>
+                  <span style="font-size:12px;font-weight:600;color:{{ invSummary.holdingGainPKColor }}">{{ invSummary.deviationPKFmt }}</span>
+                </div>
+                <sc-if value="{{ invSummary.needsVAS02PK }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:2px;padding:7px 10px;font-size:10px;color:#DC2626;font-weight:600">⚠ Cảnh báo VAS 02 — Tái tạo thấp hơn bình quân. Cần xem xét trích lập dự phòng.</div>
+                </sc-if>
+                <sc-if value="{{ invSummary.repriceRecPK }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:2px;padding:7px 10px;font-size:10px;color:#16A34A;font-weight:600">↑ Khuyến nghị reprice — Lệch ≥ 3%. Cập nhật giá tái tạo trong Tham Số.</div>
+                </sc-if>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Staleness warning -->
+        <sc-if value="{{ anyStale }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:2px;padding:10px 16px;margin-bottom:12px;font-size:10px;color:#DC2626;font-weight:600">
+            ⚠ Cảnh báo giá tái tạo cũ (stalenessWarning) — Giá tái tạo trong Tham Số lệch &gt; ngưỡng so với đợt nhập gần nhất trong kho. Kiểm tra và cập nhật giá tái tạo trước khi chốt bảng giá.
+          </div>
+        </sc-if>
+
+        <!-- Total holding -->
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;font-weight:600">Tổng lãi/(lỗ) giữ kho — Ống + Phụ Kiện</div>
+            <div style="font-size:10px;color:#737373;margin-top:2px">= (Giá tái tạo − Bình quân gia quyền) × Tỷ giá × Tồn kho kg · Ghi nhận vào P&amp;L kỳ</div>
+          </div>
+          <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ invSummary.totalHoldingColor }}">{{ invSummary.totalHoldingFmt }} đ</div>
+        </div>
+
+      </div>
+    </sc-if>
+
+    <!-- ══ CẤU HÌNH NHÀ MÁY ══ -->
+    <sc-if value="{{ showConfig }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:20px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Cấu Hình Nguồn Lực Nhà Máy · Vai Admin</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Cấu Hình Nhà Máy</h1>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
+            <div style="font-size:11px;color:#737373">Chỉnh sửa tham số nguồn lực → toàn bộ giá thành, hòa vốn, MHR tự cập nhật theo</div>
+            <div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;background:#f0f0f0;border-radius:2px;font-size:10px;color:#555;flex-shrink:0">Cuộn chuột trên ô số để tăng/giảm · Shift+cuộn = bước ×10</div>
+          </div>
+        </div>
+
+        <!-- LIVE METRICS BAR -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:24px">
+          <div style="background:#a8003b;padding:12px 14px;border-radius:2px"><div style="font-size:9px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Sản lượng ống CS BT</div><div style="font-size:16px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums">{{ cfg.outputOngFmt }}</div><div style="font-size:9px;color:rgba(255,255,255,.5)">kg/năm ({{ cfg.batchesPerYear }} đợt × {{ cfg.shiftsNormal }} ca)</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:12px 14px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Giờ vận hành ống</div><div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ cfg.hoursVHFmt }}</div><div style="font-size:9px;color:#737373">giờ/năm · CS bình thường</div></div>
+          <div style="background:#2563eb;padding:12px 14px;border-radius:2px"><div style="font-size:9px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">MHR phụ kiện</div><div style="font-size:16px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums">{{ cfg.mhrFmt }}</div><div style="font-size:9px;color:rgba(255,255,255,.5)">đ/giờ máy · {{ cfg.giờMayPKFmt }} giờ huy động</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:12px 14px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Giá thành đầy đủ ống</div><div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ cfg.fullCostOngFmt }}</div><div style="font-size:9px;color:#737373">đ/kg · Sàn biến phí: {{ cfg.floorOngFmt }}</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:12px 14px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Hòa vốn CVP ống</div><div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ cfg.bepOngFmt }}</div><div style="font-size:9px;color:#737373">kg/năm · {{ cfg.bepPctOng }}% CS bình thường</div></div>
+        </div>
+
+        <!-- SECTION A: Lịch vận hành -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">A. LỊCH VẬN HÀNH &amp; NHÂN SỰ CHUNG</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;overflow:hidden">
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Ngày chạy / đợt</div><input type="number" value="{{ cfg.daysRun }}" onChange="{{ cfg.setDaysRun }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">ngày</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Ngày bảo trì / đợt</div><input type="number" value="{{ cfg.daysMaint }}" onChange="{{ cfg.setDaysMaint }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">ngày · Đợt/năm: {{ cfg.batchesPerYear }}</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Ngày vận hành / năm</div><input type="number" value="{{ cfg.daysPerYear }}" onChange="{{ cfg.setDaysPerYear }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">ngày</div></div>
+            <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số giờ / ca</div><input type="number" value="{{ cfg.hoursPerShift }}" onChange="{{ cfg.setHoursPerShift }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">giờ</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Lương bình quân</div><input type="number" value="{{ cfg.avgSalary }}" onChange="{{ cfg.setAvgSalary }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/tháng</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số tháng lương</div><input type="number" value="{{ cfg.salaryMonths }}" onChange="{{ cfg.setSalaryMonths }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">tháng/năm</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">BH bắt buộc + KPCĐ</div><input type="number" step="0.001" value="{{ cfg.bhRate }}" onChange="{{ cfg.setBhRate }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">tỷ lệ (0.235 = 23,5%)</div></div>
+            <div style="padding:14px 16px"><div style="font-size:9px;color:#737373;margin-bottom:5px">Đơn giá điện</div><input type="number" value="{{ cfg.electricityPrice }}" onChange="{{ cfg.setElecPrice }}" style="width:100%;padding:5px 8px;border:1px solid #2563eb;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/kWh</div></div>
+          </div>
+        </div>
+
+        <!-- SECTION B: Ống -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">B. ỐNG CPVC — MÁY ĐÙN</div></div>
+            <div style="font-size:10px;color:#737373">Chi phí gia công/năm: <strong style="color:#1a1a1a">{{ cfg.tongGiaCongOngFmt }} đ</strong></div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Công suất thực tế máy đùn</div><input type="number" value="{{ cfg.capActual }}" onChange="{{ cfg.setCapActual }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">kg/giờ</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số ca bình thường</div><input type="number" value="{{ cfg.shiftsNormal }}" onChange="{{ cfg.setShiftsOng }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">ca (CS TT200)</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số máy đùn</div><input type="number" value="{{ cfg.machineCount }}" onChange="{{ cfg.setMachineCount }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">máy</div></div>
+              <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Yield sản phẩm đạt</div><input type="number" step="0.01" value="{{ cfg.yieldRateOng }}" onChange="{{ cfg.setYieldOng }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">tỷ lệ (0.9 = 90%)</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Đơn giá máy đùn + tooling</div><input type="number" value="{{ cfg.machinePrice }}" onChange="{{ cfg.setMachinePrice }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/máy · KH: {{ cfg.khauHaoOngFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Khuôn ống + puller</div><input type="number" value="{{ cfg.toolingMold }}" onChange="{{ cfg.setToolingMold }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số năm khấu hao</div><input type="number" value="{{ cfg.yearsDeprOng }}" onChange="{{ cfg.setYearsDeprOng }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">năm</div></div>
+              <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Bảo trì phần ống</div><input type="number" value="{{ cfg.maintenanceOng }}" onChange="{{ cfg.setMaintenOng }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số người / ca</div><input type="number" value="{{ cfg.workersOng }}" onChange="{{ cfg.setWorkersOng }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">người · NC: {{ cfg.nhanCongOngFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Điện vận hành</div><input type="number" value="{{ cfg.electricityKw }}" onChange="{{ cfg.setElecKw }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">kW · {{ cfg.dienOngFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Nước</div><input type="number" value="{{ cfg.waterM3 }}" onChange="{{ cfg.setWaterM3 }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">m³/giờ · {{ cfg.nuocOngFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px"><div style="font-size:9px;color:#737373;margin-bottom:5px">Bao bì + vật tư tiêu hao</div><input type="number" value="{{ cfg.packagingOng }}" onChange="{{ cfg.setPackagingOng }}" style="width:100%;padding:5px 8px;border:1px solid #a8003b;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/kg TP</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION C: Phụ Kiện -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:3px;height:14px;background:#2563eb;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#2563eb">C. PHỤ KIỆN — MÁY ÉP PHUN</div></div>
+            <div style="font-size:10px;color:#737373">Chi phí gia công/năm: <strong style="color:#1a1a1a">{{ cfg.tongGiaCongPKFmt }} đ</strong> · MHR: <strong style="color:#2563eb">{{ cfg.mhrFmt }} đ/giờ máy</strong></div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden">
+            <div style="display:grid;grid-template-columns:repeat(4,1fr)">
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Đơn giá máy ép loại A</div><input type="number" value="{{ cfg.machineAPrice }}" onChange="{{ cfg.setMachineAPrice }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/máy</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số máy loại A</div><input type="number" value="{{ cfg.machineACount }}" onChange="{{ cfg.setMachineACount }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">máy</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Đơn giá máy ép loại B</div><input type="number" value="{{ cfg.machineBPrice }}" onChange="{{ cfg.setMachineBPrice }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/máy</div></div>
+              <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số máy loại B</div><input type="number" value="{{ cfg.machineBCount }}" onChange="{{ cfg.setMachineBCount }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">máy · KH: {{ cfg.khauHaoPKFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Tổng giá trị 66 bộ khuôn</div><input type="number" value="{{ cfg.moldTotal }}" onChange="{{ cfg.setMoldTotal }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số năm khấu hao</div><input type="number" value="{{ cfg.yearsDeprPK }}" onChange="{{ cfg.setYearsDeprPK }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số ca bình thường</div><input type="number" value="{{ cfg.shiftsPK }}" onChange="{{ cfg.setShiftsPK }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">ca</div></div>
+              <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Hệ số huy động</div><input type="number" step="0.05" value="{{ cfg.utilizationPK }}" onChange="{{ cfg.setUtilization }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">tỷ lệ · {{ cfg.giờMayPKFmt }} giờ máy/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Bảo trì khuôn</div><input type="number" value="{{ cfg.maintenancePK }}" onChange="{{ cfg.setMaintenPK }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số người / ca</div><input type="number" value="{{ cfg.workersPK }}" onChange="{{ cfg.setWorkersPK }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">người · NC: {{ cfg.nhanCongPKFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Điện / giờ máy</div><input type="number" value="{{ cfg.electricityPerMh }}" onChange="{{ cfg.setElecPerMh }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">kW · {{ cfg.dienPKFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Nước / giờ máy</div><input type="number" value="{{ cfg.waterPerMh }}" onChange="{{ cfg.setWaterPerMh }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">m³/giờ · {{ cfg.nuocPKFmt }} đ/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Năng suất bình quân theo mix</div><input type="number" step="0.1" value="{{ cfg.avgYieldPerMh }}" onChange="{{ cfg.setAvgYieldPh }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">kg TP/giờ máy · SL: {{ cfg.outputPKFmt }} kg/năm</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Yield sản phẩm đạt</div><input type="number" step="0.01" value="{{ cfg.yieldRatePK }}" onChange="{{ cfg.setYieldPK }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">tỷ lệ</div></div>
+              <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Bao bì + vật tư</div><input type="number" value="{{ cfg.packagingPK }}" onChange="{{ cfg.setPackagingPK }}" style="width:100%;padding:5px 8px;border:1px solid #93c5fd;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/kg TP</div></div>
+              <div style="padding:14px 16px"><div style="font-size:9px;color:#737373;margin-bottom:5px">Chí phí chung phân bổ</div><div style="font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;padding-top:8px">{{ cfg.chiPhiChungPKFmt }} đ/năm</div><div style="font-size:9px;color:#b3b3b3;margin-top:3px">Tỷ lệ PK: {{ cfg.ratioOngPct }}% ống / còn lại PK</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION D: Chi phí chung -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:11px">
+            <div style="display:flex;align-items:center;gap:8px"><div style="width:3px;height:14px;background:#737373;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#737373">D. CHI PHÍ CHUNG &amp; NGOÀI SẢN XUẤT</div></div>
+            <div style="font-size:10px;color:#737373">Tổng chung/năm: <strong style="color:#1a1a1a">{{ cfg.commonPerYearFmt }} đ</strong> · Phân bổ ống: {{ cfg.ratioOngPct }}% · PK: còn lại</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;display:grid;grid-template-columns:repeat(4,1fr);overflow:hidden">
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Phòng thử nghiệm (Lab)</div><input type="number" value="{{ cfg.labCost }}" onChange="{{ cfg.setLabCost }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ (vốn, khấu hao)</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Khởi tạo thử nghiệm UL</div><input type="number" value="{{ cfg.testUL }}" onChange="{{ cfg.setTestUL }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ (vốn, khấu hao)</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Số năm khấu hao chung</div><input type="number" value="{{ cfg.yearsDeprCommon }}" onChange="{{ cfg.setYearsDeprCommon }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">năm</div></div>
+            <div style="padding:14px 16px;border-bottom:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Phí tuân thủ / năm</div><input type="number" value="{{ cfg.compliance }}" onChange="{{ cfg.setCompliance }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/năm</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Thuê đất / năm</div><input type="number" value="{{ cfg.rent }}" onChange="{{ cfg.setRent }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/năm</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Chi phí vận hành ngoài SX</div><input type="number" value="{{ cfg.opEx }}" onChange="{{ cfg.setOpEx }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/năm · bậc 4 hòa vốn toàn DN</div></div>
+            <div style="padding:14px 16px;border-right:1px solid #f2f2f2"><div style="font-size:9px;color:#737373;margin-bottom:5px">Chi phí tài chính (lãi vay)</div><input type="number" value="{{ cfg.finCost }}" onChange="{{ cfg.setFinCost }}" style="width:100%;padding:5px 8px;border:1px solid #d8d8d8;border-radius:2px;font-size:13px;font-weight:700;text-align:right;outline:none;background:#f5f5f3" /><div style="font-size:9px;color:#b3b3b3;margin-top:3px;text-align:right">đ/năm · bậc 4 hòa vốn toàn DN</div></div>
+            <div style="padding:14px 16px;background:#f5f5f3"><div style="font-size:9px;color:#737373;margin-bottom:5px">Chi phí chung ống phân bổ</div><div style="font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;padding-top:6px">{{ cfg.chiPhiChungOngFmt }} đ/năm</div></div>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ THAM SỐ ══ -->
+    <sc-if value="{{ showAssumptions }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:22px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Giả Định Dùng Chung · Vai Admin</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Tham Số Mô Hình</h1>
+          <div style="font-size:11px;color:#737373;margin-top:4px">Thay đổi tham số → Dashboard và tất cả tab tự cập nhật · Giá tái tạo compound quản lý tại tab Tồn Kho Compound</div>
+        </div>
+
+        <!-- NVL inputs -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">I. TỶ GIÁ &amp; GIÁ TÁI TẠO COMPOUND</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+            <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;padding:15px 20px;border-bottom:1px solid #f2f2f2;gap:16px">
+              <div><div style="font-size:12px;font-weight:600">Tỷ giá USD/VND</div><div style="font-size:10px;color:#737373;margin-top:2px">Cập nhật theo VCB tại ngày báo giá</div></div>
+              <div><input type="number" value="{{ assumpInputs.usdRate }}" onChange="{{ assumpInputs.setUsdRate }}" style="width:100%;padding:8px 12px;border:2px solid #2563eb;border-radius:2px;font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">VNĐ / USD</div></div>
+              <div style="text-align:right"><div style="font-size:10px;color:#737373;margin-bottom:2px">Base model</div><div style="font-size:13px;font-weight:600;color:#737373">26.500</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;padding:15px 20px;border-bottom:1px solid #f2f2f2;gap:16px">
+              <div><div style="font-size:12px;font-weight:600">Giá tái tạo Ống (lô kế tiếp)</div><div style="font-size:10px;color:#737373;margin-top:2px">Landed: {{ assumpInputs.compLandedOngFmt }} đ/kg · Thuế NK 6% + logistics 1%</div></div>
+              <div><input type="number" step="0.01" value="{{ assumpInputs.compoundOng }}" onChange="{{ assumpInputs.setCompoundOng }}" style="width:100%;padding:8px 12px;border:2px solid #2563eb;border-radius:2px;font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">USD / kg</div></div>
+              <div style="text-align:right"><div style="font-size:10px;color:#737373;margin-bottom:2px">Tác động giá thành ống</div><div style="font-size:16px;font-weight:700;color:{{ assumpInputs.deltaOngColor }};font-variant-numeric:tabular-nums">{{ assumpInputs.deltaOngFmt }} đ/kg</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;padding:15px 20px;gap:16px">
+              <div><div style="font-size:12px;font-weight:600">Giá tái tạo Phụ Kiện (lô kế tiếp)</div><div style="font-size:10px;color:#737373;margin-top:2px">Landed: {{ assumpInputs.compLandedPKFmt }} đ/kg · Thuế NK 6% + logistics 1%</div></div>
+              <div><input type="number" step="0.01" value="{{ assumpInputs.compoundPK }}" onChange="{{ assumpInputs.setCompoundPK }}" style="width:100%;padding:8px 12px;border:2px solid #2563eb;border-radius:2px;font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#eff6ff" /><div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">USD / kg</div></div>
+              <div style="text-align:right"><div style="font-size:10px;color:#737373;margin-bottom:2px">Tác động giá thành PK</div><div style="font-size:16px;font-weight:700;color:{{ assumpInputs.deltaPKColor }};font-variant-numeric:tabular-nums">{{ assumpInputs.deltaPKFmt }} đ/kg</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRICE LOCK -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">II. KHÓA BẢNG GIÁ — ADR-004</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+
+            <!-- Algorithm note -->
+            <div style="padding:12px 20px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;font-size:10px;color:#737373">
+              <strong style="color:#1a1a1a">Công thức:</strong> pricingPrice = |replacement/baseline − 1| &gt; ngưỡng% ? replacement : baseline &nbsp;·&nbsp; Trong ngưỡng: bảng giá đứng yên tuyệt đối. Vượt ngưỡng: chuyển theo tái tạo + nhắc chốt. &nbsp;·&nbsp; NVL kế hoạch luôn dùng replacement.
+            </div>
+
+            <!-- Baseline + threshold inputs -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid #f2f2f2">
+              <div style="padding:14px 20px;border-right:1px solid #f2f2f2">
+                <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Baseline Ống (đã chốt)</div>
+                <input type="number" step="0.01" value="{{ assumpInputs.baselineOng }}" onChange="{{ assumpInputs.setBaselineOng }}" style="width:100%;padding:7px 10px;border:2px solid #d97706;border-radius:2px;font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#fffbeb" />
+                <div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">USD/kg</div>
+              </div>
+              <div style="padding:14px 20px;border-right:1px solid #f2f2f2">
+                <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Baseline Phụ Kiện (đã chốt)</div>
+                <input type="number" step="0.01" value="{{ assumpInputs.baselinePK }}" onChange="{{ assumpInputs.setBaselinePK }}" style="width:100%;padding:7px 10px;border:2px solid #d97706;border-radius:2px;font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;outline:none;background:#fffbeb" />
+                <div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">USD/kg</div>
+              </div>
+              <div style="padding:14px 20px">
+                <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Ngưỡng khóa (priceLockThreshold)</div>
+                <input type="number" step="0.5" value="{{ assumpInputs.lockThresholdPct }}" onChange="{{ assumpInputs.setLockThreshold }}" style="width:100%;padding:7px 10px;border:2px solid #d97706;border-radius:2px;font-size:14px;font-weight:700;text-align:right;outline:none;background:#fffbeb" />
+                <div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">% (mặc định 3%)</div>
+              </div>
+            </div>
+
+            <!-- Status rows -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+              <!-- Ống lock status -->
+              <div style="padding:14px 20px;border-right:1px solid #f2f2f2;border-bottom:1px solid #f2f2f2">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:11px;font-weight:600">Ống CPVC</span>
+                  <span style="padding:3px 10px;border-radius:2px;font-size:10px;font-weight:700;background:{{ assumpInputs.lockBgOng }};color:{{ assumpInputs.lockColorOng }};border:1px solid {{ assumpInputs.lockColorOng }}">{{ assumpInputs.lockStatusOng }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#737373">Baseline</span><span style="font-variant-numeric:tabular-nums;font-weight:600">{{ assumpInputs.baselineOng }} USD/kg</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#737373">Replacement (thị trường)</span><span style="font-variant-numeric:tabular-nums;font-weight:600">{{ dispCpOng }} USD/kg</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px"><span style="color:#737373">Độ lệch</span><span style="font-variant-numeric:tabular-nums;font-weight:700;color:{{ assumpInputs.lockColorOng }}">{{ assumpInputs.devOngPct }}</span></div>
+                <div style="height:1px;background:#f0f0f0;margin-bottom:8px"></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#737373">Giá dùng định giá</span><span style="font-size:13px;font-weight:700;color:#1a1a1a;font-variant-numeric:tabular-nums">{{ assumpInputs.pricingOngFmt }} USD/kg</span></div>
+                <sc-if value="{{ assumpInputs.staleOng }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:8px;padding:5px 8px;background:#fef2f2;border-radius:2px;font-size:9px;color:#DC2626;font-weight:600">⚠ Cảnh báo staleness — Giá tái tạo lệch &gt; ngưỡng so với đợt nhập gần nhất</div>
+                </sc-if>
+              </div>
+              <!-- PK lock status -->
+              <div style="padding:14px 20px;border-bottom:1px solid #f2f2f2">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                  <span style="font-size:11px;font-weight:600">Phụ Kiện</span>
+                  <span style="padding:3px 10px;border-radius:2px;font-size:10px;font-weight:700;background:{{ assumpInputs.lockBgPK }};color:{{ assumpInputs.lockColorPK }};border:1px solid {{ assumpInputs.lockColorPK }}">{{ assumpInputs.lockStatusPK }}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#737373">Baseline</span><span style="font-variant-numeric:tabular-nums;font-weight:600">{{ assumpInputs.baselinePK }} USD/kg</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#737373">Replacement (thị trường)</span><span style="font-variant-numeric:tabular-nums;font-weight:600">{{ dispCpPK }} USD/kg</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px"><span style="color:#737373">Độ lệch</span><span style="font-variant-numeric:tabular-nums;font-weight:700;color:{{ assumpInputs.lockColorPK }}">{{ assumpInputs.devPKPct }}</span></div>
+                <div style="height:1px;background:#f0f0f0;margin-bottom:8px"></div>
+                <div style="display:flex;justify-content:space-between;font-size:11px"><span style="color:#737373">Giá dùng định giá</span><span style="font-size:13px;font-weight:700;color:#1a1a1a;font-variant-numeric:tabular-nums">{{ assumpInputs.pricingPKFmt }} USD/kg</span></div>
+                <sc-if value="{{ assumpInputs.stalePK }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:8px;padding:5px 8px;background:#fef2f2;border-radius:2px;font-size:9px;color:#DC2626;font-weight:600">⚠ Cảnh báo staleness — Giá tái tạo lệch &gt; ngưỡng so với đợt nhập gần nhất</div>
+                </sc-if>
+              </div>
+            </div>
+
+            <!-- Chốt button -->
+            <div style="padding:12px 20px;display:flex;align-items:center;gap:12px">
+              <div onClick="{{ assumpInputs.chot }}" style="padding:8px 18px;background:#a8003b;color:#fff;font-size:10px;font-weight:700;border-radius:2px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase">Chốt Baseline = Replacement Hiện Tại</div>
+              <div style="font-size:10px;color:#737373">Sau khi duyệt bảng giá mới — đặt lại baseline = giá tái tạo · có audit log trong production</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Markup -->
+        <div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">III. CHUỖI MARKUP VF → TCG → NIÊM YẾT</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+            <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;padding:14px 20px;border-bottom:1px solid #f2f2f2;gap:16px">
+              <div><div style="font-size:12px;font-weight:600">Markup VF — Ống</div><div style="font-size:10px;color:#737373;margin-top:2px">Giá mục tiêu = Giá thành đầy đủ × (1 + markup)</div></div>
+              <div><input type="number" step="1" value="{{ assumpInputs.markupVFOng }}" onChange="{{ assumpInputs.setMarkupVFOng }}" style="width:100%;padding:8px 12px;border:2px solid #a8003b;border-radius:2px;font-size:14px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">%</div></div>
+              <div style="text-align:right"><div style="font-size:10px;color:#737373;margin-bottom:2px">Giá VF ống</div><div style="font-size:16px;font-weight:700;color:#16A34A;font-variant-numeric:tabular-nums">{{ assumpInputs.targetOngFmt }} đ/kg</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;padding:14px 20px;border-bottom:1px solid #f2f2f2;gap:16px">
+              <div><div style="font-size:12px;font-weight:600">Markup VF — Phụ Kiện</div><div style="font-size:10px;color:#737373;margin-top:2px">Giá mục tiêu PK = Giá thành đầy đủ PK × (1 + markup)</div></div>
+              <div><input type="number" step="1" value="{{ assumpInputs.markupVFPK }}" onChange="{{ assumpInputs.setMarkupVFPK }}" style="width:100%;padding:8px 12px;border:2px solid #a8003b;border-radius:2px;font-size:14px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">%</div></div>
+              <div style="text-align:right"><div style="font-size:10px;color:#737373;margin-bottom:2px">Giá VF PK</div><div style="font-size:16px;font-weight:700;color:#16A34A;font-variant-numeric:tabular-nums">{{ assumpInputs.targetPKFmt }} đ/kg</div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 200px 1fr;align-items:center;padding:14px 20px;gap:16px">
+              <div><div style="font-size:12px;font-weight:600">Markup TCG</div><div style="font-size:10px;color:#737373;margin-top:2px">Giá TCG = Giá VF × (1 + markup TCG)</div></div>
+              <div><input type="number" step="1" value="{{ assumpInputs.markupTCG }}" onChange="{{ assumpInputs.setMarkupTCG }}" style="width:100%;padding:8px 12px;border:2px solid #a8003b;border-radius:2px;font-size:14px;font-weight:700;text-align:right;outline:none;background:#fff7f7" /><div style="font-size:9px;color:#737373;margin-top:3px;text-align:right">%</div></div>
+              <div style="text-align:right"><div style="font-size:10px;color:#737373;margin-bottom:2px">Mặc định</div><div style="font-size:13px;font-weight:600;color:#737373">30%</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Impact table -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">IV. TÁC ĐỘNG — GIÁ THÀNH &amp; GIÁ MỤC TIÊU</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:9px 20px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px">
+              <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase"></div>
+              <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Giá thành đầy đủ</div>
+              <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Giá VF (mục tiêu)</div>
+              <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Tác động vs base</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:13px 20px;border-bottom:1px solid #f2f2f2;gap:8px;align-items:center">
+              <div style="font-size:12px;font-weight:600">Ống CPVC</div>
+              <div style="font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums">{{ assumpInputs.fullCostOngFmt }} đ/kg</div>
+              <div style="font-size:14px;font-weight:700;color:#16A34A;text-align:right;font-variant-numeric:tabular-nums">{{ assumpInputs.targetOngFmt }} đ/kg</div>
+              <div style="font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:{{ assumpInputs.deltaOngColor }}">{{ assumpInputs.deltaOngFmt }} đ/kg</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;padding:13px 20px;gap:8px;align-items:center">
+              <div style="font-size:12px;font-weight:600">Phụ Kiện</div>
+              <div style="font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums">{{ assumpInputs.fullCostPKFmt }} đ/kg</div>
+              <div style="font-size:14px;font-weight:700;color:#16A34A;text-align:right;font-variant-numeric:tabular-nums">{{ assumpInputs.targetPKFmt }} đ/kg</div>
+              <div style="font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums;color:{{ assumpInputs.deltaPKColor }}">{{ assumpInputs.deltaPKFmt }} đ/kg</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:24px">
+          <div onClick="{{ assumpInputs.resetBase }}" style="padding:9px 20px;background:#a8003b;color:#fff;font-size:11px;font-weight:700;border-radius:2px;cursor:pointer;letter-spacing:.06em;text-transform:uppercase">Khôi Phục Base Model</div>
+          <div style="font-size:11px;color:#737373">3,03 USD/kg ống · 3,85 USD/kg PK · 26.500 VNĐ/USD · Markup 25%/40%/30%</div>
+        </div>
+
+        <!-- Read-only params -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:13px"><div style="width:3px;height:14px;background:#b3b3b3;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#737373">V. THAM SỐ CỐ ĐỊNH (tham chiếu)</div></div>
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:14px 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="padding:10px;background:#f5f5f3;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">VAT đầu ra</div><div style="font-size:13px;font-weight:700">8%</div></div>
+          <div style="padding:10px;background:#f5f5f3;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">BH bắt buộc + KPCĐ</div><div style="font-size:13px;font-weight:700">23,5% quỹ lương</div></div>
+          <div style="padding:10px;background:#f5f5f3;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Lương bình quân</div><div style="font-size:13px;font-weight:700">13.250.000 đ × 14 tháng</div></div>
+          <div style="padding:10px;background:#f5f5f3;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Yield (UL — không regrind)</div><div style="font-size:13px;font-weight:700">90%</div></div>
+          <div style="padding:10px;background:#f5f5f3;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Số năm khấu hao</div><div style="font-size:13px;font-weight:700">5 năm (đường thẳng)</div></div>
+          <div style="padding:10px;background:#f5f5f3;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Điện / Nước</div><div style="font-size:13px;font-weight:700">2.120 đ/kWh · 21.200 đ/m³</div></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ ỐNG ══ -->
+    <sc-if value="{{ showOng }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:22px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Ống CPVC · SDR 13.5 · Đùn liên tục · Vai Admin</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Giá Thành &amp; Bảng Giá Ống</h1>
+          <div style="font-size:11px;color:#737373;margin-top:4px">CS bình thường: 3 ca · 619.920 kg/năm · 287 ngày · Yield 90%</div>
+        </div>
+        <!-- 5 cost cards — same structure as PK -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:16px">
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Compound landed</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispCompLandedOng }} đ</div><div style="font-size:10px;color:#737373;margin-top:2px">VNĐ/kg compound · Định giá</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Vật liệu quy TP</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispMatOng }} đ</div><div style="font-size:10px;color:#737373;margin-top:2px">Compound/yield · Hao hụt phế</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Gia công đơn vị</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispGiaCongOng }} đ</div><div style="font-size:10px;color:#737373;margin-top:2px">KH + bảo trì + NC + tiện ích + chung</div></div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px"><div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Bao bì carton</div><div style="font-size:15px;font-weight:700;font-variant-numeric:tabular-nums">1.500 đ</div><div style="font-size:10px;color:#737373;margin-top:2px">VNĐ/kg TP</div></div>
+          <div style="background:#a8003b;padding:13px;border-radius:2px"><div style="font-size:9px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Giá thành đầy đủ</div><div style="font-size:15px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums">{{ dispFullCostOng }} đ</div><div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px">VNĐ/kg · CS bình thường</div></div>
+        </div>
+        <!-- Stacked bar -->
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:15px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:600;margin-bottom:9px">Cơ cấu giá thành/kg — tại CS bình thường</div>
+          <div style="display:flex;height:26px;border-radius:2px;overflow:hidden;margin-bottom:7px">
+            <div style="width:89.9%;background:#a8003b;display:flex;align-items:center;padding-left:10px"><span style="color:#fff;font-size:10px;font-weight:600;white-space:nowrap">Vật liệu 89,9%</span></div>
+            <div style="width:8.7%;background:#333;display:flex;align-items:center;justify-content:center"><span style="color:#fff;font-size:9px">GC 8,7%</span></div>
+            <div style="flex:1;background:#737373"></div>
+          </div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><span style="font-size:10px;color:#737373">Vật liệu/kg TP: {{ dispMatOng }} đ</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;background:#333;border-radius:1px;flex-shrink:0"></div><span style="font-size:10px;color:#737373">Gia công: {{ dispGiaCongOng }} đ</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;background:#737373;border-radius:1px;flex-shrink:0"></div><span style="font-size:10px;color:#737373">Bao bì: 1.500 đ</span></div>
+          </div>
+        </div>
+        <!-- Thang giá + CVP — same structure as PK -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:14px">
+            <div style="font-size:10px;font-weight:600;margin-bottom:10px">Thang giá tham chiếu (đ/kg)</div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Sàn biến phí</span><span style="font-size:11px;font-weight:700;color:#DC2626;font-variant-numeric:tabular-nums">{{ dispFloorOng }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Hòa vốn tiền mặt</span><span style="font-size:11px;font-weight:700;color:#ea580c;font-variant-numeric:tabular-nums">{{ dispCashBEOng }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Giá thành đầy đủ</span><span style="font-size:11px;font-weight:700;color:#d97706;font-variant-numeric:tabular-nums">{{ dispFullCostOng }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Hòa vốn toàn DN</span><span style="font-size:11px;font-weight:700;color:#2563eb;font-variant-numeric:tabular-nums">{{ dispHvToanDNOng }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:11px;color:#737373">Giá mục tiêu VF</span><span style="font-size:11px;font-weight:700;color:#16A34A;font-variant-numeric:tabular-nums">{{ dispTargetOng }} đ/kg</span></div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:14px">
+            <div style="font-size:10px;font-weight:600;margin-bottom:10px">CVP — Hòa vốn ống</div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Lãi biên/kg tại giá VF</span><span style="font-size:11px;font-weight:600;color:#16A34A;font-variant-numeric:tabular-nums">+{{ dispMarginOng }} đ</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Định phí/năm</span><span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums">{{ dispDinhPhiOng }} đ</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">SL hòa vốn CVP</span><span style="font-size:11px;font-weight:700;color:#1a1a1a;font-variant-numeric:tabular-nums">{{ cfg.bepOngFmt }} kg/năm</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="font-size:11px;color:#737373">% công suất bình thường</span><span style="font-size:11px;font-weight:700;font-variant-numeric:tabular-nums">{{ cfg.bepPctOng }}%</span></div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">BẢNG GIÁ THEO DN — SDR 13.5 (VNĐ/mét)</div></div>
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+          <div style="display:grid;grid-template-columns:64px 56px 90px 90px 110px 110px 110px;padding:9px 16px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px">
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">DN</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">kg/m</div>
+            <div style="font-size:9px;font-weight:700;color:#DC2626;text-align:right;text-transform:uppercase">Hòa vốn</div>
+            <div style="font-size:9px;font-weight:700;color:#2563eb;text-align:right;text-transform:uppercase">Giá VF</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Giá TCG</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Niêm yết</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Có VAT</div>
+          </div>
+          <sc-for list="{{ pipeFmt }}" as="pipe" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:64px 56px 90px 90px 110px 110px 110px;padding:10px 16px;border-bottom:1px solid #f2f2f2;align-items:center;gap:8px">
+              <div style="font-size:12px;font-weight:700">{{ pipe.dn }}</div>
+              <div style="font-size:11px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ pipe.wFmt }}</div>
+              <div style="font-size:11px;color:#DC2626;text-align:right;font-variant-numeric:tabular-nums">{{ pipe.hvFmt }}</div>
+              <div style="font-size:11px;color:#2563eb;text-align:right;font-variant-numeric:tabular-nums">{{ pipe.vfFmt }}</div>
+              <div style="font-size:11px;color:#1a1a1a;text-align:right;font-variant-numeric:tabular-nums">{{ pipe.tcgFmt }}</div>
+              <div style="font-size:12px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums">{{ pipe.nyFmt }}</div>
+              <div style="font-size:11px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ pipe.vatFmt }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ══ PHỤ KIỆN ══ -->
+    <sc-if value="{{ showPK }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:32px 36px">
+        <div style="margin-bottom:22px">
+          <div style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#737373;margin-bottom:5px">Phụ Kiện · Ép phun · ADR-001: cost driver = giờ máy · Vai Admin</div>
+          <h1 style="margin:0;font-size:21px;font-weight:700;letter-spacing:-.3px">Giá Thành Phụ Kiện — MHR</h1>
+          <div style="font-size:11px;color:#737373;margin-top:4px">CS bình thường: {{ dispGiờMayPK }} giờ máy huy động/năm · MHR: {{ dispMHR }} đ/giờ máy · Sản lượng: {{ dispOutputPK }} kg/năm</div>
+        </div>
+
+        <!-- Cost component cards — mirror ống -->
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:11px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Compound landed</div>
+            <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispCompLandedPK }} đ</div>
+            <div style="font-size:10px;color:#737373;margin-top:2px">VNĐ/kg compound · Định giá (tái tạo)</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Vật liệu quy TP</div>
+            <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispMatPK }} đ</div>
+            <div style="font-size:10px;color:#737373;margin-top:2px">Compound/yield · Hao hụt phế</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Gia công (MHR)</div>
+            <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispGiaCongPK }} đ</div>
+            <div style="font-size:10px;color:#737373;margin-top:2px">Tổng GC {{ dispTongGiaCongPK }} ÷ SL</div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:#737373;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Bao bì carton</div>
+            <div style="font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ dispPackagingPK }} đ</div>
+            <div style="font-size:10px;color:#737373;margin-top:2px">VNĐ/kg TP</div>
+          </div>
+          <div style="background:#a8003b;padding:13px;border-radius:2px">
+            <div style="font-size:9px;color:rgba(255,255,255,.65);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Giá thành đầy đủ</div>
+            <div style="font-size:16px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums">{{ dispFullCostPK }} đ</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:2px">VNĐ/kg · CS bình thường</div>
+          </div>
+        </div>
+
+        <!-- Cost breakdown stacked bar -->
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:16px;margin-bottom:18px">
+          <div style="font-size:11px;font-weight:600;margin-bottom:10px">Cơ cấu giá thành/kg — tại CS bình thường (quy kg)</div>
+          <div style="display:flex;height:26px;border-radius:2px;overflow:hidden;margin-bottom:8px">
+            <div style="width:{{ pkMatPct }};background:#a8003b;display:flex;align-items:center;padding-left:8px">
+              <span style="color:#fff;font-size:10px;font-weight:600;white-space:nowrap">Vật liệu {{ pkMatPct }}</span>
+            </div>
+            <div style="width:{{ pkGcPct }};background:#2563eb;display:flex;align-items:center;justify-content:center">
+              <span style="color:#fff;font-size:9px;white-space:nowrap">GC {{ pkGcPct }}</span>
+            </div>
+            <div style="flex:1;background:#737373"></div>
+          </div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><span style="font-size:10px;color:#737373">Vật liệu/kg TP: {{ dispMatPK }} đ (compound/yield)</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;background:#2563eb;border-radius:1px;flex-shrink:0"></div><span style="font-size:10px;color:#737373">Gia công MHR: {{ dispGiaCongPK }} đ (KH + NC + tiện ích + chung)</span></div>
+            <div style="display:flex;align-items:center;gap:5px"><div style="width:9px;height:9px;background:#737373;border-radius:1px;flex-shrink:0"></div><span style="font-size:10px;color:#737373">Bao bì carton: {{ dispPackagingPK }} đ</span></div>
+          </div>
+        </div>
+
+        <!-- MHR context + thang gia -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:14px">
+            <div style="font-size:10px;font-weight:600;margin-bottom:10px">Đơn giá giờ máy (MHR) — ADR-001</div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Giờ máy huy động/năm</span><span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums">{{ dispGiờMayPK }} giờ</span></div>
+            <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Tổng chi phí gia công/năm</span><span style="font-size:11px;font-weight:600;font-variant-numeric:tabular-nums">{{ dispTongGiaCongPK }} đ</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0 0;border-top:2px solid #1a1a1a;margin-top:4px"><span style="font-size:12px;font-weight:700">MHR</span><span style="font-size:14px;font-weight:700;color:#a8003b;font-variant-numeric:tabular-nums">{{ dispMHR }} đ/giờ</span></div>
+          </div>
+          <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;padding:14px">
+            <div style="font-size:10px;font-weight:600;margin-bottom:10px">Thang giá tham chiếu (quy kg)</div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Sàn biến phí</span><span style="font-size:11px;font-weight:700;color:#DC2626;font-variant-numeric:tabular-nums">{{ dispFloorPK }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Hòa vốn tiền mặt</span><span style="font-size:11px;font-weight:700;color:#ea580c;font-variant-numeric:tabular-nums">{{ dispCashBEPK }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Giá thành đầy đủ</span><span style="font-size:11px;font-weight:700;color:#d97706;font-variant-numeric:tabular-nums">{{ dispFullCostPK }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f5f5f5"><span style="font-size:11px;color:#737373">Hòa vốn toàn DN</span><span style="font-size:11px;font-weight:700;color:#2563eb;font-variant-numeric:tabular-nums">{{ dispHvToanDNPK }} đ/kg</span></div>
+            <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:11px;color:#737373">Giá mục tiêu VF</span><span style="font-size:11px;font-weight:700;color:#16A34A;font-variant-numeric:tabular-nums">{{ dispTargetPK }} đ/kg</span></div>
+          </div>
+        </div>
+
+        <!-- ADR-002 note -->
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:2px;padding:10px 16px;margin-bottom:18px;font-size:10px;color:#92400e">
+          <strong>ADR-002:</strong> Giá thành <strong>{{ dispFullCostPK }} đ/kg</strong> tính theo giá ĐỊNH GIÁ (tái tạo). Sổ sách dùng bình quân gia quyền kho → đo lãi thật từng kỳ — KHÔNG dùng chào giá. Ngưỡng reprice khuyến nghị: lệch ±3–5%.
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">BẢNG KHUÔN THEO SIZE — 66 BỘ KHUÔN</div></div>
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
+          <div style="display:grid;grid-template-columns:80px 90px 90px 100px 120px;padding:9px 16px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px">
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Size (DN)</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Chu kỳ (s)</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Cavity</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Shots/giờ</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Sản phẩm/giờ</div>
+          </div>
+          <sc-for list="{{ moldFmt }}" as="mold" hint-placeholder-count="8">
+            <div style="display:grid;grid-template-columns:80px 90px 90px 100px 120px;padding:10px 16px;border-bottom:1px solid #f2f2f2;gap:8px;align-items:center">
+              <div style="font-size:12px;font-weight:700">{{ mold.dn }}</div>
+              <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums">{{ mold.cycleFmt }}</div>
+              <div style="font-size:11px;text-align:right;font-variant-numeric:tabular-nums">{{ mold.cavity }}</div>
+              <div style="font-size:11px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ mold.shotsH }}</div>
+              <div style="font-size:12px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums">{{ mold.pcsHFmt }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  componentDidMount()  { this._attachWheel(); }
+  componentDidUpdate() { this._attachWheel(); }
+
+  _attachWheel() {
+    document.querySelectorAll('input[type="number"]').forEach(inp => {
+      if (inp._sw) return;
+      inp._sw = true;
+      inp.addEventListener('wheel', e => {
+        e.preventDefault();
+        const cur = parseFloat(inp.value) || 0;
+        const absVal = Math.abs(cur) || 1;
+        // Step = 10^(floor(log10(absVal)) - 1) — tự thích nghi theo độ lớn
+        const mag   = Math.pow(10, Math.floor(Math.log10(absVal)) - 1);
+        const step  = e.shiftKey ? mag * 10 : Math.max(mag, 0.001);
+        const next  = Math.max(0, +(cur + (e.deltaY < 0 ? step : -step)).toFixed(10));
+        // Trigger React onChange
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+        setter.call(inp, String(next));
+        inp.dispatchEvent(new Event('input', { bubbles: true }));
+      }, { passive: false });
+    });
+  }
+
+  state = {
+    activeTab: 'dashboard',
+    currentRole: 'pricing', // ADR-006: mặc định mở bằng khung nhìn Nhà Quản Lý — Định Giá
+    selectedShift: 2,
+    priceType: 'before',
+    searchQuery: '',
+    productFilter: 'all',
+    planOng: { DN20:0,DN25:0,DN32:0,DN40:0,DN50:0,DN65:0,DN80:0,DN100:0 },
+    planPK: {}, // keyed 'type_size' e.g. 'Tê đều_20'
+    compoundOng: 3.03,   // giá tái tạo (replacement) — thị trường
+    compoundPK: 3.85,
+    usdRate: 26500,
+    markupVFOng: 25,
+    markupVFPK: 40,
+    markupTCG: 30,
+    // ADR-004: Price lock
+    baselineOng: 3.03,
+    baselinePK: 3.85,
+    lockThresholdPct: 3,
+    topDownPrice: 0,       // phân tích ngược — giá bán mục tiêu đ/kg (ống)
+    // Cấu hình nhà máy — Ống CPVC
+    cfgOng: {
+      capActual: 140,           // kg/giờ (công suất thực tế máy đùn)
+      daysRun: 5,               // ngày chạy / đợt
+      daysMaint: 2,             // ngày bảo trì / đợt
+      daysPerYear: 287,         // ngày vận hành / năm
+      hoursPerShift: 8,         // giờ / ca
+      shiftsNormal: 3,          // số ca bình thường
+      yieldRate: 0.9,           // tỷ lệ sản phẩm đạt chuẩn
+      packaging: 1500,          // VNĐ/kg TP
+      machinePrice: 3612904000, // VNĐ/máy
+      machineCount: 1,
+      toolingMold: 200000000,   // khuôn ống + puller
+      yearsDepr: 5,
+      maintenance: 200000000,   // VNĐ/năm
+      workersPerShift: 2,
+      avgSalary: 13250000,      // VNĐ/tháng
+      salaryMonths: 14,
+      bhRate: 0.235,            // BH bắt buộc + KPCĐ
+      electricityKw: 120,       // kW vận hành
+      electricityPrice: 2120,   // VNĐ/kWh
+      waterM3: 10,              // m³/giờ
+      waterPrice: 21200,        // VNĐ/m³
+    },
+    // Cấu hình nhà máy — Phụ Kiện
+    cfgPK: {
+      machineAPrice: 1297900000,
+      machineACount: 1,
+      machineBPrice: 1920100000,
+      machineBCount: 1,
+      moldTotal: 6542850000,    // 66 bộ khuôn
+      yearsDepr: 5,
+      maintenanceMold: 100000000,
+      shiftsNormal: 1,
+      utilizationRate: 0.6,
+      yieldRate: 0.9,
+      avgYieldPerMh: 44.6,      // kg TP/giờ máy (từ mix khuôn)
+      workersPerShift: 1,
+      electricityPerMh: 30,     // kW/giờ máy
+      waterPerMh: 2,            // m³/giờ máy
+      packaging: 2000,          // VNĐ/kg TP
+    },
+    // Chi phí chung
+    cfgCommon: {
+      labCost: 1192500000,      // phòng thử nghiệm
+      testUL: 1200000000,       // khởi tạo UL
+      yearsDepr: 5,
+      compliance: 250000000,    // phí tuân thủ/năm
+      rent: 525000000,          // thuê đất/năm
+      opEx: 640000000,          // vận hành ngoài SX (cho hòa vốn toàn DN)
+      finCost: 2712000000,      // lãi vay nhập NVL
+    },
+    // Tồn kho compound: tồn đầu kỳ + 5 đợt nhập
+    invOng: [
+      { label:'Tồn đầu kỳ', kg:80000, price:2.60 },
+      { label:'Đợt 1',       kg:10000, price:3.03 },
+      { label:'Đợt 2',       kg:0,     price:0    },
+      { label:'Đợt 3',       kg:0,     price:0    },
+      { label:'Đợt 4',       kg:0,     price:0    },
+      { label:'Đợt 5',       kg:0,     price:0    },
+    ],
+    invPK: [
+      { label:'Tồn đầu kỳ', kg:0,     price:0    },
+      { label:'Đợt 1',       kg:10000, price:3.85 },
+      { label:'Đợt 2',       kg:0,     price:0    },
+      { label:'Đợt 3',       kg:0,     price:0    },
+      { label:'Đợt 4',       kg:0,     price:0    },
+      { label:'Đợt 5',       kg:0,     price:0    },
+    ],
+  };
+
+  renderVals() {
+    const { activeTab: rawActiveTab, selectedShift, priceType, searchQuery, productFilter, planOng, planPK, invOng, invPK } = this.state;
+    const { compoundOng, compoundPK, usdRate, markupVFOng, markupVFPK, markupTCG } = this.state;
+    const { baselineOng, baselinePK, lockThresholdPct } = this.state;
+    const fmt = (n) => n === 0 ? '0' : new Intl.NumberFormat('vi-VN').format(Math.round(n));
+
+    // ADR-006: phân tầng theo vai — mỗi vai chỉ thấy đúng tab được phép,
+    // Dashboard tự ẩn phần cấu trúc chi phí (II/III/IV) cho vai Bán Hàng.
+    const currentRole = this.state.currentRole || 'pricing';
+    const ROLE_TAB_ACCESS = {
+      pricing:    ['dashboard', 'pricelist', 'inventory', 'assumptions', 'ong', 'pk'],
+      sales:      ['dashboard', 'pricelist'],
+      production: ['plan'],
+      admin:      ['dashboard', 'pricelist', 'plan', 'inventory', 'config', 'assumptions', 'ong', 'pk'],
+    };
+    const allowedTabs = ROLE_TAB_ACCESS[currentRole] || ROLE_TAB_ACCESS.pricing;
+    const activeTab = allowedTabs.includes(rawActiveTab) ? rawActiveTab : allowedTabs[0];
+    const canSeeCostDetail = currentRole === 'admin' || currentRole === 'pricing';
+    const hideCostDetailNote = !canSeeCostDetail;
+
+    // TOP-DOWN analysis
+    const tdPrice = this.state.topDownPrice || 0;
+    const tdMarginPct = tdPrice > 0 && fullCostOng > 0 ? ((tdPrice - fullCostOng) / tdPrice * 100) : null;
+    const tdMaxCompoundUSD = tdPrice > 0 ? ((tdPrice - giaCongDonViOng - cfgOng.packaging) * cfgOng.yieldRate / usdRate / (1 + DUTY)) : null;
+    const tdBepQty = tdPrice > 0 && (tdPrice - floorOng) > 0 ? Math.round(dinhPhiOng / (tdPrice - floorOng)) : null;
+    const tdBepPct = tdBepQty && outputTP_Ong > 0 ? (tdBepQty / outputTP_Ong * 100).toFixed(1) : null;
+    const tdAboveFloor = tdPrice > 0 ? tdPrice > floorOng : null;
+    const tdAboveFullCost = tdPrice > 0 ? tdPrice > fullCostOng : null;
+    const tdColor = !tdPrice ? '#b3b3b3' : !tdAboveFloor ? '#DC2626' : !tdAboveFullCost ? '#ea580c' : tdMarginPct > 15 ? '#16A34A' : '#d97706';
+    const tdStatus = !tdPrice ? '—' : !tdAboveFloor ? 'DƯỚI SÀN BIẾN PHÍ — lỗ tiền mặt' : !tdAboveFullCost ? 'Dưới giá thành — lỗ gộp' : tdMarginPct > 15 ? 'Có lãi tốt' : 'Lãi thấp — cần xem lại';
+
+    // ADR-004: Price Lock — pricingPrice = |repl/baseline−1| > ngưỡng ? repl : baseline
+    const devOngLock = compoundOng / baselineOng - 1;
+    const devPKLock  = compoundPK  / baselinePK  - 1;
+    const isLockedOng = Math.abs(devOngLock) <= lockThresholdPct / 100;
+    const isLockedPK  = Math.abs(devPKLock)  <= lockThresholdPct / 100;
+    const pricingOng  = isLockedOng ? baselineOng : compoundOng; // dùng định giá bán
+    const pricingPK   = isLockedPK  ? baselinePK  : compoundPK;
+
+    // Staleness: so replacement vs đợt nhập gần nhất
+    const latestLotOng = [...this.state.invOng].reverse().find(r => r.kg > 0 && r.price > 0);
+    const latestLotPK  = [...this.state.invPK].reverse().find(r => r.kg > 0 && r.price > 0);
+    const staleOng = latestLotOng ? Math.abs(compoundOng / latestLotOng.price - 1) > lockThresholdPct / 100 : false;
+    const stalePK  = latestLotPK  ? Math.abs(compoundPK  / latestLotPK.price  - 1) > lockThresholdPct / 100 : false;
+
+    const lockStatusOng = isLockedOng ? 'KHÓA' : 'MỞ KHÓA';
+    const lockStatusPK  = isLockedPK  ? 'KHÓA' : 'MỞ KHÓA';
+    const lockColorOng  = isLockedOng ? '#16A34A' : '#DC2626';
+    const lockColorPK   = isLockedPK  ? '#16A34A' : '#DC2626';
+    const lockBgOng     = isLockedOng ? '#f0fdf4' : '#fef2f2';
+    const lockBgPK      = isLockedPK  ? '#f0fdf4' : '#fef2f2';
+    const anyUnlocked   = !isLockedOng || !isLockedPK;
+    const anyStale      = staleOng || stalePK;
+
+    // NAV — split USER / ADMIN, lọc theo vai đang xem (ADR-006)
+    const userTabsAll  = [ {id:'dashboard',label:'Tổng Quan'}, {id:'pricelist',label:'Bảng Giá'}, {id:'plan',label:'Kế Hoạch SX'} ];
+    const adminTabsAll = [ {id:'inventory',label:'Tồn Kho Compound'}, {id:'config',label:'Cấu Hình Nhà Máy'}, {id:'assumptions',label:'Tham Số'}, {id:'ong',label:'Ống CPVC'}, {id:'pk',label:'Phụ Kiện'} ];
+    const userTabs  = userTabsAll.filter(t => allowedTabs.includes(t.id));
+    const adminTabs = adminTabsAll.filter(t => allowedTabs.includes(t.id));
+    const mkNav = (tabs) => tabs.map(t => ({
+      ...t,
+      bg:     t.id === activeTab ? '#a8003b' : 'transparent',
+      accent: t.id === activeTab ? '#a8003b' : 'transparent',
+      dot:    t.id === activeTab ? '#fff' : '#555',
+      color:  t.id === activeTab ? '#fff' : '#b3b3b3',
+      fw:     t.id === activeTab ? '600' : '400',
+      onClick: () => this.setState({ activeTab: t.id }),
+    }));
+    const showAdminGroup = adminTabs.length > 0;
+
+    // Bộ chuyển vai — 4 vai đúng PROJECT_SPEC §1, mỗi vai nhảy về tab đầu tiên hợp lệ của mình
+    const ROLE_DEFS = [
+      { id:'pricing',    label:'Quản Lý — Định Giá', desc:'Thang giá · top-down · tồn kho · giả định', firstTab:'dashboard' },
+      { id:'sales',      label:'Bán Hàng',            desc:'Chỉ thang giá + bảng giá',                   firstTab:'dashboard' },
+      { id:'production', label:'Sản Xuất',            desc:'Chỉ kế hoạch SX',                            firstTab:'plan' },
+      { id:'admin',      label:'Toàn Quyền',          desc:'Tất cả màn hình + cấu hình nhà máy',         firstTab:'dashboard' },
+    ];
+    const roleSwitcher = ROLE_DEFS.map(r => ({
+      ...r,
+      bg:     r.id === currentRole ? '#a8003b' : 'transparent',
+      border: r.id === currentRole ? '#a8003b' : 'rgba(255,255,255,.14)',
+      color:  r.id === currentRole ? '#fff' : '#d4d4d4',
+      fw:     r.id === currentRole ? '700' : '500',
+      onClick: () => this.setState({ currentRole: r.id, activeTab: r.firstTab }),
+    }));
+    const roleLabel = (ROLE_DEFS.find(r => r.id === currentRole) || ROLE_DEFS[0]).label;
+
+    // ═══ FACTORY ENGINE — tính từ cấu hình nhà máy ═══
+    const { cfgOng, cfgPK, cfgCommon } = this.state;
+    const DUTY = 0.07;
+
+    // Compound landed — Replacement (NVL kế hoạch mua)
+    const compLandedOngRepl = compoundOng * usdRate * (1 + DUTY);
+    const compLandedPKRepl  = compoundPK  * usdRate * (1 + DUTY);
+    // Compound landed — Pricing (price-locked, dùng định giá bán)
+    const compLandedOng = pricingOng * usdRate * (1 + DUTY);
+    const compLandedPK  = pricingPK  * usdRate * (1 + DUTY);
+
+    // Lịch vận hành chung
+    const batchesPerYear = Math.floor(cfgOng.daysPerYear / (cfgOng.daysRun + cfgOng.daysMaint));
+    const socialRate     = 1 + cfgOng.bhRate;
+
+    // ỐNG engine
+    const hoursVH         = batchesPerYear * cfgOng.daysRun * cfgOng.hoursPerShift * cfgOng.shiftsNormal;
+    const outputTP_Ong    = cfgOng.capActual * hoursVH * cfgOng.yieldRate;
+    const khauHaoOng      = (cfgOng.machinePrice * cfgOng.machineCount + cfgOng.toolingMold) / cfgOng.yearsDepr;
+    const nhanCongOng     = cfgOng.workersPerShift * cfgOng.shiftsNormal * cfgOng.avgSalary * cfgOng.salaryMonths * socialRate;
+    const dienOng         = cfgOng.electricityKw * hoursVH * cfgOng.electricityPrice;
+    const nuocOng         = cfgOng.waterM3 * hoursVH * cfgOng.waterPrice;
+
+    // PHỤ KIỆN engine (cần trước để tính chi phí chung)
+    const totalMachinesPK = cfgPK.machineACount + cfgPK.machineBCount;
+    const hoursDesignPK   = batchesPerYear * cfgOng.daysRun * cfgOng.hoursPerShift * cfgPK.shiftsNormal * totalMachinesPK;
+    const giờMayPK        = hoursDesignPK * cfgPK.utilizationRate;
+    const outputTP_PK     = giờMayPK * cfgPK.avgYieldPerMh;
+    const khauHaoPK       = (cfgPK.machineAPrice * cfgPK.machineACount + cfgPK.machineBPrice * cfgPK.machineBCount + cfgPK.moldTotal) / cfgPK.yearsDepr;
+    const nhanCongPK      = cfgPK.workersPerShift * cfgPK.shiftsNormal * cfgOng.avgSalary * cfgOng.salaryMonths * socialRate;
+    const dienPK          = cfgPK.electricityPerMh * giờMayPK * cfgOng.electricityPrice;
+    const nuocPK          = cfgPK.waterPerMh * giờMayPK * cfgOng.waterPrice;
+
+    // Chi phí chung — phân bổ theo tỷ lệ kg
+    const commonPerYear   = (cfgCommon.labCost + cfgCommon.testUL) / cfgCommon.yearsDepr + cfgCommon.compliance + cfgCommon.rent;
+    const totalOutput     = outputTP_Ong + outputTP_PK;
+    const ratioOng        = totalOutput > 0 ? outputTP_Ong / totalOutput : 0.875;
+    const chiPhiChungOng  = commonPerYear * ratioOng;
+    const chiPhiChungPK   = commonPerYear * (1 - ratioOng);
+
+    // Tổng chi phí gia công
+    const tongGiaCongOng  = khauHaoOng + cfgOng.maintenance + nhanCongOng + dienOng + nuocOng + chiPhiChungOng;
+    const tongGiaCongPK   = khauHaoPK  + cfgPK.maintenanceMold + nhanCongPK + dienPK + nuocPK + chiPhiChungPK;
+
+    // MHR (phụ kiện)
+    const MHR             = giờMayPK > 0 ? tongGiaCongPK / giờMayPK : 0;
+
+    // Đơn giá gia công
+    const giaCongDonViOng = outputTP_Ong > 0 ? tongGiaCongOng / outputTP_Ong : 0;
+    const giaCongDonViPK  = outputTP_PK  > 0 ? tongGiaCongPK  / outputTP_PK  : 0;
+
+    // Định phí / năm (cho CVP)
+    const dinhPhiOng      = khauHaoOng + cfgOng.maintenance + nhanCongOng + chiPhiChungOng;
+    const dinhPhiPK       = khauHaoPK  + cfgPK.maintenanceMold + nhanCongPK + chiPhiChungPK;
+
+    // Biến phí gia công / kg
+    const bienPhiGCOng    = outputTP_Ong > 0 ? (dienOng + nuocOng) / outputTP_Ong : 0;
+    const bienPhiGCPK     = outputTP_PK  > 0 ? (dienPK  + nuocPK)  / outputTP_PK  : 0;
+
+    // Giá thành đầy đủ
+    const matOng          = outputTP_Ong > 0 ? compLandedOng / cfgOng.yieldRate : 0;
+    const matPK           = outputTP_PK  > 0 ? compLandedPK  / cfgPK.yieldRate  : 0;
+    const fullCostOng     = Math.round(matOng + giaCongDonViOng + cfgOng.packaging);
+    const fullCostPK      = Math.round(matPK  + giaCongDonViPK  + cfgPK.packaging);
+
+    // Thang giá bậc 1–4 (ống)
+    // Bậc 2 (hòa vốn tiền mặt) CHỈ cộng phần chi phí chung THỰC LÀ TIỀN MẶT (tuân thủ +
+    // thuê đất) — loại phần khấu hao Lab/UL (labCost+testUL đã khấu hao trong chiPhiChungOng),
+    // vì đó là phân bổ vốn đầu tư giống khấu hao, không phải chi tiền mặt định kỳ. Xem Dashboard!B7 gốc.
+    const floorOng        = Math.round(matOng + bienPhiGCOng + cfgOng.packaging);
+    const cashBEOng       = Math.round(floorOng + (cfgOng.maintenance + nhanCongOng + (cfgCommon.compliance + cfgCommon.rent) * ratioOng) / outputTP_Ong);
+    const targetOng       = Math.round(fullCostOng * (1 + markupVFOng / 100));
+
+    // Thang giá bậc 1–4 (PK)
+    const floorPK         = Math.round(matPK + bienPhiGCPK + cfgPK.packaging);
+    const cashBEPK        = Math.round(floorPK + (cfgPK.maintenanceMold + nhanCongPK + (cfgCommon.compliance + cfgCommon.rent) * (1 - ratioOng)) / outputTP_PK);
+    const targetPK        = Math.round(fullCostPK * (1 + markupVFPK / 100));
+
+    // Bậc 4 (hòa vốn toàn DN): opEx+finCost phân bổ theo TỶ TRỌNG DOANH THU tại giá VF —
+    // KHÔNG theo kg (PK giá trị/kg cao hơn ống nhiều lần, chia theo kg sẽ đè quá nặng lên PK).
+    const revenueOngVF    = outputTP_Ong * targetOng;
+    const revenuePKVF     = outputTP_PK  * targetPK;
+    const totalRevenueVF  = revenueOngVF + revenuePKVF;
+    const revShareOng     = totalRevenueVF > 0 ? revenueOngVF / totalRevenueVF : ratioOng;
+    const revSharePK      = totalRevenueVF > 0 ? revenuePKVF  / totalRevenueVF : (1 - ratioOng);
+    const hvToanDNOng     = Math.round(fullCostOng + (cfgCommon.opEx + cfgCommon.finCost) * revShareOng / outputTP_Ong);
+    const hvToanDNPK      = Math.round(fullCostPK  + (cfgCommon.opEx + cfgCommon.finCost) * revSharePK  / outputTP_PK);
+
+    // CVP
+    const marginOng       = targetOng - floorOng;
+    const bepOng          = marginOng > 0 ? Math.round(dinhPhiOng / marginOng) : 0;
+    const bepPctOng       = outputTP_Ong > 0 ? (bepOng / outputTP_Ong * 100).toFixed(1) : '—';
+    const idleCapCostOng  = dinhPhiOng - dinhPhiOng * (bepOng / outputTP_Ong || 0);
+
+    // THANG GIÁ — từ engine
+    const thangGiaRaw = [
+      { bac:1, label:'Sàn biến phí',      ong:floorOng,    pk:floorPK,    role:'Không ai được bán thủng — lỗ tiền tươi ngay lập tức', color:'#DC2626' },
+      { bac:2, label:'Hòa vốn tiền mặt',  ong:cashBEOng,   pk:cashBEPK,   role:'Quản trị — phòng thủ khi thị trường xấu, dòng tiền còn dương', color:'#ea580c' },
+      { bac:3, label:'Giá thành đầy đủ',  ong:fullCostOng, pk:fullCostPK, role:'Sản xuất + kế toán (TT200) — GĐ duyệt mới được bán tới đây', color:'#d97706' },
+      { bac:4, label:'Hòa vốn toàn DN',   ong:hvToanDNOng, pk:hvToanDNPK, role:'Quản trị + đầu tư — giá bán thường ngày PHẢI trên mức này', color:'#2563eb' },
+      { bac:5, label:'Giá mục tiêu (VF)', ong:targetOng,   pk:targetPK,   role:'Bán hàng — giá chào chuẩn; khoảng lùi 5→4→3 theo thẩm quyền', color:'#16A34A' },
+    ];
+    const ongMin=thangGiaRaw[0].ong, ongMax=thangGiaRaw[4].ong;
+    const pkMin=thangGiaRaw[0].pk,   pkMax=thangGiaRaw[4].pk;
+    const thangGiaFmt = thangGiaRaw.map(tg => ({
+      ...tg,
+      ongFmt: fmt(tg.ong), pkFmt: fmt(tg.pk),
+      barOng: Math.round((tg.ong-ongMin)/(ongMax-ongMin)*100)+'%',
+      barPk:  Math.round((tg.pk-pkMin)/(pkMax-pkMin)*100)+'%',
+    }));
+
+    // PRODUCTION — dynamic from engine
+    const prodScenarios = [1,2,3].map(ca => {
+      const h     = batchesPerYear * cfgOng.daysRun * cfgOng.hoursPerShift * ca;
+      const kg    = cfgOng.capActual * h * cfgOng.yieldRate;
+      // recompute costs at this capacity (fixed costs same, variable costs scale)
+      const varKg = matOng + bienPhiGCOng + cfgOng.packaging;
+      const fixKg = dinhPhiOng / kg;
+      const cost  = Math.round(varKg + fixKg);
+      const util  = Math.round(ca / cfgOng.shiftsNormal * 100);
+      const mVF   = targetOng > 0 ? ((targetOng - cost) / targetOng * 100) : 0;
+      return { ca:`${ca} ca`, kg:Math.round(kg), costPerKg:cost, marginVF:mVF, util };
+    });
+    const productionFmt = prodScenarios.map((s,i) => ({
+      ...s,
+      kgFmt: fmt(s.kg), costFmt: fmt(s.costPerKg), marginFmt: s.marginVF.toFixed(2),
+      borderC: i===selectedShift ? '#a8003b' : '#e0e0e0',
+      onClick: () => this.setState({ selectedShift: i }),
+    }));
+
+    // PIPE TABLE
+    const pipeFmt = [
+      {dn:'DN20',w:0.29, hv:30799,  vf:38499,  tcg:50049,  ny:71500,  vat:77220  },
+      {dn:'DN25',w:0.41, hv:43544,  vf:54430,  tcg:70759,  ny:101100, vat:109188 },
+      {dn:'DN32',w:0.62, hv:65847,  vf:82309,  tcg:107001, ny:152900, vat:165132 },
+      {dn:'DN40',w:0.82, hv:87088,  vf:108860, tcg:141518, ny:202200, vat:218376 },
+      {dn:'DN50',w:1.26, hv:133818, vf:167272, tcg:217454, ny:310700, vat:335556 },
+      {dn:'DN65',w:1.84, hv:195417, vf:244271, tcg:317552, ny:453700, vat:489996 },
+      {dn:'DN80',w:2.71, hv:287815, vf:359769, tcg:467699, ny:668200, vat:721656 },
+      {dn:'DN100',w:4.304,hv:457105,vf:571381, tcg:742796, ny:1061200,vat:1146096},
+    ].map(r => ({...r, wFmt:r.w.toFixed(3), hvFmt:fmt(r.hv), vfFmt:fmt(r.vf), tcgFmt:fmt(r.tcg), nyFmt:fmt(r.ny), vatFmt:fmt(r.vat)}));
+
+    // MOLD TABLE
+    const moldFmt = [
+      {dn:'DN20',  cycle:35,  cavity:4, pcsH:411.4},
+      {dn:'DN25',  cycle:40,  cavity:4, pcsH:360.0},
+      {dn:'DN32',  cycle:45,  cavity:2, pcsH:160.0},
+      {dn:'DN40',  cycle:50,  cavity:2, pcsH:144.0},
+      {dn:'DN50',  cycle:65,  cavity:2, pcsH:110.8},
+      {dn:'DN65',  cycle:90,  cavity:1, pcsH:40.0 },
+      {dn:'DN80',  cycle:120, cavity:1, pcsH:30.0 },
+      {dn:'DN100', cycle:160, cavity:1, pcsH:22.5 },
+    ].map(m => ({...m, cycleFmt:m.cycle+'s', shotsH:(3600/m.cycle).toFixed(1), pcsHFmt:m.pcsH.toFixed(1)}));
+
+    // PRICE LIST
+    const allSKU = [
+      {stt:1,name:'Ống CPVC',size:'DN20',spec:'SDR 13.5',unit:'mét',p:71500,vat:77220},
+      {stt:2,name:'Ống CPVC',size:'DN25',spec:'SDR 13.5',unit:'mét',p:101100,vat:109188},
+      {stt:3,name:'Ống CPVC',size:'DN32',spec:'SDR 13.5',unit:'mét',p:152900,vat:165132},
+      {stt:4,name:'Ống CPVC',size:'DN40',spec:'SDR 13.5',unit:'mét',p:202200,vat:218376},
+      {stt:5,name:'Ống CPVC',size:'DN50',spec:'SDR 13.5',unit:'mét',p:310700,vat:335556},
+      {stt:6,name:'Ống CPVC',size:'DN65',spec:'SDR 13.5',unit:'mét',p:453700,vat:489996},
+      {stt:7,name:'Ống CPVC',size:'DN80',spec:'SDR 13.5',unit:'mét',p:668200,vat:721656},
+      {stt:8,name:'Ống CPVC',size:'DN100',spec:'SDR 13.5',unit:'mét',p:1061200,vat:1146096},
+      {stt:9,name:'Tê đều',size:'20',spec:'SCH40',unit:'Cái',p:27100,vat:29268},
+      {stt:10,name:'Tê đều',size:'25',spec:'SCH40',unit:'Cái',p:39700,vat:42876},
+      {stt:11,name:'Tê đều',size:'32',spec:'SCH40',unit:'Cái',p:69200,vat:74736},
+      {stt:12,name:'Tê đều',size:'40',spec:'SCH80',unit:'Cái',p:105600,vat:114048},
+      {stt:13,name:'Tê đều',size:'50',spec:'SCH80',unit:'Cái',p:163300,vat:176364},
+      {stt:14,name:'Tê đều',size:'65',spec:'SCH80',unit:'Cái',p:337600,vat:364608},
+      {stt:15,name:'Tê đều',size:'80',spec:'SCH80',unit:'Cái',p:488500,vat:527580},
+      {stt:16,name:'Tê đều',size:'100',spec:'SCH80',unit:'Cái',p:974100,vat:1052028},
+      {stt:17,name:'Tê giảm',size:'25x20',spec:'SCH40',unit:'Cái',p:36500,vat:39420},
+      {stt:18,name:'Tê giảm',size:'32x20',spec:'SCH40',unit:'Cái',p:61200,vat:66096},
+      {stt:19,name:'Tê giảm',size:'32x25',spec:'SCH40',unit:'Cái',p:62800,vat:67824},
+      {stt:20,name:'Tê giảm',size:'40x20',spec:'SCH40',unit:'Cái',p:94300,vat:101844},
+      {stt:21,name:'Tê giảm',size:'40x25',spec:'SCH80',unit:'Cái',p:97500,vat:105300},
+      {stt:22,name:'Tê giảm',size:'40x32',spec:'SCH80',unit:'Cái',p:108800,vat:117504},
+      {stt:23,name:'Tê giảm',size:'50x20',spec:'SCH80',unit:'Cái',p:128100,vat:138348},
+      {stt:24,name:'Tê giảm',size:'50x25',spec:'SCH80',unit:'Cái',p:134500,vat:145260},
+      {stt:25,name:'Tê giảm',size:'50x32',spec:'SCH80',unit:'Cái',p:144100,vat:155628},
+      {stt:26,name:'Tê giảm',size:'50x40',spec:'SCH80',unit:'Cái',p:152100,vat:164268},
+      {stt:27,name:'Tê giảm',size:'65x25',spec:'SCH80',unit:'Cái',p:246200,vat:265896},
+      {stt:28,name:'Tê giảm',size:'65x32',spec:'SCH80',unit:'Cái',p:270200,vat:291816},
+      {stt:29,name:'Tê giảm',size:'65x40',spec:'SCH80',unit:'Cái',p:279900,vat:302292},
+      {stt:30,name:'Tê giảm',size:'65x50',spec:'SCH80',unit:'Cái',p:300400,vat:324432},
+      {stt:31,name:'Tê giảm',size:'80x50',spec:'SCH80',unit:'Cái',p:398800,vat:430704},
+      {stt:32,name:'Tê giảm',size:'80x65',spec:'SCH80',unit:'Cái',p:450100,vat:486108},
+      {stt:33,name:'Tê giảm',size:'100x80',spec:'SCH80',unit:'Cái',p:595800,vat:643464},
+      {stt:34,name:'Tê giảm',size:'100x65',spec:'SCH80',unit:'Cái',p:570100,vat:615708},
+      {stt:35,name:'Tê giảm',size:'100x50',spec:'SCH80',unit:'Cái',p:550900,vat:594972},
+      {stt:36,name:'Cút 90°',size:'20',spec:'SCH40',unit:'Cái',p:23900,vat:25812},
+      {stt:37,name:'Cút 90°',size:'25',spec:'SCH40',unit:'Cái',p:31700,vat:34236},
+      {stt:38,name:'Cút 90°',size:'32',spec:'SCH40',unit:'Cái',p:61200,vat:66096},
+      {stt:39,name:'Cút 90°',size:'40',spec:'SCH80',unit:'Cái',p:92700,vat:100116},
+      {stt:40,name:'Cút 90°',size:'50',spec:'SCH80',unit:'Cái',p:132900,vat:143532},
+      {stt:41,name:'Cút 90°',size:'65',spec:'SCH80',unit:'Cái',p:284700,vat:307476},
+      {stt:42,name:'Cút 90°',size:'80',spec:'SCH80',unit:'Cái',p:421200,vat:454896},
+      {stt:43,name:'Cút 90°',size:'100',spec:'SCH80',unit:'Cái',p:717600,vat:775008},
+      {stt:44,name:'Cút 45°',size:'65',spec:'SCH40',unit:'Cái',p:225400,vat:243432},
+      {stt:45,name:'Cút 45°',size:'80',spec:'SCH80',unit:'Cái',p:315400,vat:340632},
+      {stt:46,name:'Cút 45°',size:'100',spec:'SCH80',unit:'Cái',p:461100,vat:497988},
+      {stt:47,name:'Nối thẳng',size:'20',spec:'SCH80',unit:'Cái',p:19100,vat:20628},
+      {stt:48,name:'Nối thẳng',size:'25',spec:'SCH80',unit:'Cái',p:33300,vat:35964},
+      {stt:49,name:'Nối thẳng',size:'32',spec:'SCH80',unit:'Cái',p:56400,vat:60912},
+      {stt:50,name:'Nối thẳng',size:'40',spec:'SCH80',unit:'Cái',p:67100,vat:72468},
+      {stt:51,name:'Nối thẳng',size:'50',spec:'SCH80',unit:'Cái',p:96000,vat:103680},
+      {stt:52,name:'Nối thẳng',size:'65',spec:'SCH40',unit:'Cái',p:201300,vat:217404},
+      {stt:53,name:'Nối thẳng',size:'80',spec:'SCH80',unit:'Cái',p:273700,vat:295596},
+      {stt:54,name:'Nối thẳng',size:'100',spec:'SCH80',unit:'Cái',p:384200,vat:414936},
+      {stt:55,name:'Nối giảm',size:'25x20',spec:'SCH80',unit:'Cái',p:22100,vat:23868},
+      {stt:56,name:'Nối giảm',size:'32x25',spec:'SCH80',unit:'Cái',p:50000,vat:54000},
+      {stt:57,name:'Nối giảm',size:'40x25',spec:'SCH80',unit:'Cái',p:60700,vat:65556},
+      {stt:58,name:'Nối giảm',size:'40x32',spec:'SCH80',unit:'Cái',p:63900,vat:69012},
+      {stt:59,name:'Nối giảm',size:'50x25',spec:'SCH80',unit:'Cái',p:90200,vat:97416},
+      {stt:60,name:'Nối giảm',size:'50x32',spec:'SCH40',unit:'Cái',p:88000,vat:95040},
+      {stt:61,name:'Nối giảm',size:'50x40',spec:'SCH40',unit:'Cái',p:88000,vat:95040},
+      {stt:62,name:'Nối giảm',size:'65x50',spec:'SCH80',unit:'Cái',p:190100,vat:205308},
+      {stt:63,name:'Nối giảm',size:'80x50',spec:'SCH80',unit:'Cái',p:254500,vat:274860},
+      {stt:64,name:'Nối giảm',size:'80x65',spec:'SCH80',unit:'Cái',p:278600,vat:300888},
+      {stt:65,name:'Nối giảm',size:'100x65',spec:'SCH80',unit:'Cái',p:409900,vat:442692},
+      {stt:66,name:'Nối giảm',size:'100x80',spec:'SCH80',unit:'Cái',p:451500,vat:487620},
+      {stt:67,name:'Lơ thu',size:'25x20',spec:'SCH80',unit:'Cái',p:18200,vat:19656},
+      {stt:68,name:'Lơ thu',size:'32x25',spec:'SCH80',unit:'Cái',p:37500,vat:40500},
+      {stt:69,name:'Lơ thu',size:'40x25',spec:'SCH80',unit:'Cái',p:49800,vat:53784},
+      {stt:70,name:'Lơ thu',size:'40x32',spec:'SCH80',unit:'Cái',p:40800,vat:44064},
+      {stt:71,name:'Lơ thu',size:'50x25',spec:'SCH80',unit:'Cái',p:86400,vat:93312},
+      {stt:72,name:'Lơ thu',size:'50x32',spec:'SCH40',unit:'Cái',p:76800,vat:82944},
+      {stt:73,name:'Lơ thu',size:'50x40',spec:'SCH80',unit:'Cái',p:67200,vat:72576},
+      {stt:74,name:'Nối ren trong',size:'20xPT15',spec:'SCH80',unit:'Cái',p:66000,vat:71280},
+      {stt:75,name:'Nối ren trong',size:'25xPT15',spec:'SCH80',unit:'Cái',p:72200,vat:77976},
+      {stt:76,name:'Nối ren trong',size:'25xPT20',spec:'SCH80',unit:'Cái',p:88100,vat:95148},
+      {stt:77,name:'Nối ren trong',size:'25xPT25',spec:'SCH80',unit:'Cái',p:111400,vat:120312},
+      {stt:78,name:'Nối ren trong',size:'32xPT32',spec:'SCH80',unit:'Cái',p:207400,vat:223992},
+      {stt:79,name:'Nối ren trong',size:'40xPT40',spec:'SCH40',unit:'Cái',p:233000,vat:251640},
+      {stt:80,name:'Nối ren trong',size:'50xPT50',spec:'SCH80',unit:'Cái',p:382000,vat:412560},
+      {stt:81,name:'Nối ren ngoài',size:'25xPT25',spec:'SCH80',unit:'Cái',p:174700,vat:188676},
+      {stt:82,name:'Nối ren ngoài',size:'32xPT32',spec:'SCH80',unit:'Cái',p:269800,vat:291384},
+      {stt:83,name:'Nối ren ngoài',size:'40xPT40',spec:'SCH80',unit:'Cái',p:294100,vat:317628},
+      {stt:84,name:'Nối ren ngoài',size:'50xPT50',spec:'SCH80',unit:'Cái',p:466800,vat:504144},
+      {stt:85,name:'Nắp bịt',size:'20',spec:'SCH80',unit:'Cái',p:15900,vat:17172},
+      {stt:86,name:'Nắp bịt',size:'25',spec:'SCH80',unit:'Cái',p:25300,vat:27324},
+      {stt:87,name:'Nắp bịt',size:'32',spec:'SCH80',unit:'Cái',p:48400,vat:52272},
+      {stt:88,name:'Nắp bịt',size:'40',spec:'SCH80',unit:'Cái',p:59100,vat:63828},
+      {stt:89,name:'Nắp bịt',size:'50',spec:'SCH80',unit:'Cái',p:84800,vat:91584},
+      {stt:90,name:'Mặt bích',size:'65',spec:'SCH40',unit:'Cái',p:385600,vat:416448},
+      {stt:91,name:'Mặt bích',size:'80',spec:'SCH80',unit:'Cái',p:491700,vat:531036},
+      {stt:92,name:'Mặt bích',size:'100',spec:'SCH80',unit:'Cái',p:685500,vat:740340},
+      {stt:93,name:'Cút ren trong',size:'20xPT15',spec:'SCH80',unit:'Cái',p:65300,vat:70524},
+      {stt:94,name:'Cút ren trong',size:'25xPT15',spec:'SCH80',unit:'Cái',p:72800,vat:78624},
+      {stt:95,name:'Cút ren trong',size:'25xPT20',spec:'SCH40',unit:'Cái',p:83300,vat:89964},
+      {stt:96,name:'Tê ren trong',size:'20xPT15',spec:'SCH40',unit:'Cái',p:80500,vat:86940},
+      {stt:97,name:'Tê ren trong',size:'25xPT15',spec:'SCH80',unit:'Cái',p:97800,vat:105624},
+      {stt:98,name:'Tê ren trong',size:'25xPT20',spec:'SCH40',unit:'Cái',p:97800,vat:105624},
+      {stt:99,name:'Tê ren trong',size:'25xPT25',spec:'SCH40',unit:'Cái',p:130600,vat:141048},
+      {stt:100,name:'Dung môi 550',size:'946ML',spec:'',unit:'Hộp',p:550000,vat:594000},
+    ];
+    const catList = ['all','Ống CPVC','Tê đều','Tê giảm','Cút 90°','Cút 45°','Nối thẳng','Nối giảm','Lơ thu','khác'];
+    const catButtons = catList.map(c => ({
+      id:c, label:c==='all'?'Tất cả':c==='khác'?'Khác':c,
+      bg:productFilter===c?'#a8003b':'#fff', color:productFilter===c?'#fff':'#1a1a1a',
+      border:productFilter===c?'#a8003b':'#b3b3b3',
+      onClick:()=>this.setState({productFilter:c}),
+    }));
+    const filteredSKU = allSKU.filter(item => {
+      const q = searchQuery.toLowerCase();
+      const ms = !q || item.name.toLowerCase().includes(q) || item.size.toLowerCase().includes(q);
+      let mf = productFilter==='all';
+      if (!mf) {
+        if (productFilter==='khác') {
+          const main=['Ống CPVC','Tê đều','Tê giảm','Cút 90°','Cút 45°','Nối thẳng','Nối giảm','Lơ thu'];
+          mf=!main.includes(item.name);
+        } else mf=item.name===productFilter;
+      }
+      return ms&&mf;
+    });
+    const skuFmt = filteredSKU.map(item => ({
+      ...item,
+      displayPrice: fmt(priceType==='vat'?item.vat:item.p),
+    }));
+    const ptBtns = [{id:'before',label:'Trước VAT'},{id:'vat',label:'Có VAT (8%)'}].map(b => ({
+      ...b, bg:priceType===b.id?'#a8003b':'#fff', color:priceType===b.id?'#fff':'#1a1a1a',
+      onClick:()=>this.setState({priceType:b.id}),
+    }));
+    const colHeader = priceType==='vat'?'Đơn giá có VAT (đ)':'Đơn giá trước VAT (đ)';
+
+    // PLAN ỐNG
+    const pipeWeightMap = {DN20:0.29,DN25:0.41,DN32:0.62,DN40:0.82,DN50:1.26,DN65:1.84,DN80:2.71,DN100:4.304};
+    const pipeSpecs = ['DN20','DN25','DN32','DN40','DN50','DN65','DN80','DN100'];
+    const planRows = pipeSpecs.map(dn => {
+      const meters=planOng[dn]||0, w=pipeWeightMap[dn];
+      const kgTP=meters*w, kgNap=kgTP/0.9, gio=kgNap/140, ngay=gio/8;
+      const hasData=meters>0;
+      return { dn,meters,w, kgFmt:hasData?fmt(Math.round(kgTP)):'—', gioFmt:hasData?gio.toFixed(1):'—', ngayFmt:hasData?ngay.toFixed(1):'—',
+        hasData, rowBg:hasData?'#f0fdf4':'#fff',
+        onChangeMeter:(e)=>this.setState(prev=>({planOng:{...prev.planOng,[dn]:parseFloat(e.target.value)||0}})),
+      };
+    });
+    const totalKgTP = planRows.reduce((s,r)=>s+(r.meters*pipeWeightMap[r.dn]),0);
+    const totalGio  = totalKgTP>0?totalKgTP/0.9/140:0;
+    const caNeeded  = totalGio===0?0:totalGio<=1640?1:totalGio<=3280?2:3;
+    const caColor   = caNeeded===0?'#b3b3b3':caNeeded===1?'#16A34A':caNeeded===2?'#d97706':'#DC2626';
+    const planSummary = {
+      totalKg: totalKgTP>0?fmt(Math.round(totalKgTP)):'—',
+      totalGio: totalGio>0?totalGio.toFixed(1):'—',
+      caNeeded: caNeeded===0?'—':caNeeded+' ca', caColor,
+      nhanCong: caNeeded<=1?'2 người':caNeeded<=2?'4 người':'6 người',
+      nvlOng: totalKgTP>0?fmt(Math.round(totalKgTP/0.9*compLandedOngRepl*1.05)):'—', // NVL dùng replacement
+    };
+
+    // PLAN PHỤ KIỆN — catalog đầy đủ từ Excel v3.4
+    const PK_CATALOG = [
+      {t:'Tê đều',    s:'20',    dn:20,  cy:35,  ca:4, w:0.055},
+      {t:'Tê đều',    s:'25',    dn:25,  cy:40,  ca:4, w:0.09 },
+      {t:'Tê đều',    s:'32',    dn:32,  cy:45,  ca:2, w:0.14 },
+      {t:'Tê đều',    s:'40',    dn:40,  cy:50,  ca:2, w:0.245},
+      {t:'Tê đều',    s:'50',    dn:50,  cy:65,  ca:2, w:0.40 },
+      {t:'Tê đều',    s:'65',    dn:65,  cy:90,  ca:1, w:0.75 },
+      {t:'Tê đều',    s:'80',    dn:80,  cy:120, ca:1, w:1.12 },
+      {t:'Tê đều',    s:'100',   dn:100, cy:160, ca:1, w:2.50 },
+      {t:'Tê giảm',   s:'25x20', dn:25,  cy:40,  ca:4, w:0.08 },
+      {t:'Tê giảm',   s:'32x20', dn:32,  cy:45,  ca:2, w:0.115},
+      {t:'Tê giảm',   s:'32x25', dn:32,  cy:45,  ca:2, w:0.12 },
+      {t:'Tê giảm',   s:'40x20', dn:40,  cy:50,  ca:2, w:0.21 },
+      {t:'Tê giảm',   s:'40x25', dn:40,  cy:50,  ca:2, w:0.22 },
+      {t:'Tê giảm',   s:'40x32', dn:40,  cy:50,  ca:2, w:0.255},
+      {t:'Tê giảm',   s:'50x20', dn:50,  cy:65,  ca:2, w:0.29 },
+      {t:'Tê giảm',   s:'50x25', dn:50,  cy:65,  ca:2, w:0.31 },
+      {t:'Tê giảm',   s:'50x32', dn:50,  cy:65,  ca:2, w:0.34 },
+      {t:'Tê giảm',   s:'50x40', dn:50,  cy:65,  ca:2, w:0.365},
+      {t:'Tê giảm',   s:'65x25', dn:65,  cy:90,  ca:1, w:0.465},
+      {t:'Tê giảm',   s:'65x32', dn:65,  cy:90,  ca:1, w:0.54 },
+      {t:'Tê giảm',   s:'65x40', dn:65,  cy:90,  ca:1, w:0.57 },
+      {t:'Tê giảm',   s:'65x50', dn:65,  cy:90,  ca:1, w:0.634},
+      {t:'Tê giảm',   s:'80x50', dn:80,  cy:120, ca:1, w:0.84 },
+      {t:'Tê giảm',   s:'80x65', dn:80,  cy:120, ca:1, w:1.00 },
+      {t:'Tê giảm',   s:'100x50',dn:100, cy:160, ca:1, w:1.18 },
+      {t:'Tê giảm',   s:'100x65',dn:100, cy:160, ca:1, w:1.24 },
+      {t:'Tê giảm',   s:'100x80',dn:100, cy:160, ca:1, w:1.32 },
+      {t:'Cút 90°',   s:'20',    dn:20,  cy:35,  ca:4, w:0.045},
+      {t:'Cút 90°',   s:'25',    dn:25,  cy:40,  ca:4, w:0.065},
+      {t:'Cút 90°',   s:'32',    dn:32,  cy:45,  ca:2, w:0.115},
+      {t:'Cút 90°',   s:'40',    dn:40,  cy:50,  ca:2, w:0.205},
+      {t:'Cút 90°',   s:'50',    dn:50,  cy:65,  ca:2, w:0.305},
+      {t:'Cút 90°',   s:'65',    dn:65,  cy:90,  ca:1, w:0.585},
+      {t:'Cút 90°',   s:'80',    dn:80,  cy:120, ca:1, w:0.91 },
+      {t:'Cút 90°',   s:'100',   dn:100, cy:160, ca:1, w:1.70 },
+      {t:'Cút 45°',   s:'65',    dn:65,  cy:90,  ca:1, w:0.40 },
+      {t:'Cút 45°',   s:'80',    dn:80,  cy:120, ca:1, w:0.58 },
+      {t:'Cút 45°',   s:'100',   dn:100, cy:160, ca:1, w:0.90 },
+      {t:'Nối thẳng', s:'20',    dn:20,  cy:35,  ca:4, w:0.030},
+      {t:'Nối thẳng', s:'25',    dn:25,  cy:40,  ca:4, w:0.070},
+      {t:'Nối thẳng', s:'32',    dn:32,  cy:45,  ca:2, w:0.100},
+      {t:'Nối thẳng', s:'40',    dn:40,  cy:50,  ca:2, w:0.125},
+      {t:'Nối thẳng', s:'50',    dn:50,  cy:65,  ca:2, w:0.190},
+      {t:'Nối thẳng', s:'65',    dn:65,  cy:90,  ca:1, w:0.325},
+      {t:'Nối thẳng', s:'80',    dn:80,  cy:120, ca:1, w:0.450},
+      {t:'Nối thẳng', s:'100',   dn:100, cy:160, ca:1, w:0.660},
+      {t:'Nối giảm',  s:'25x20', dn:25,  cy:40,  ca:4, w:0.035},
+      {t:'Nối giảm',  s:'32x25', dn:32,  cy:45,  ca:2, w:0.080},
+      {t:'Nối giảm',  s:'40x25', dn:40,  cy:50,  ca:2, w:0.105},
+      {t:'Nối giảm',  s:'40x32', dn:40,  cy:50,  ca:2, w:0.115},
+      {t:'Nối giảm',  s:'50x25', dn:50,  cy:65,  ca:2, w:0.172},
+      {t:'Nối giảm',  s:'50x32', dn:50,  cy:65,  ca:2, w:0.165},
+      {t:'Nối giảm',  s:'50x40', dn:50,  cy:65,  ca:2, w:0.165},
+      {t:'Nối giảm',  s:'65x50', dn:65,  cy:90,  ca:1, w:0.290},
+      {t:'Nối giảm',  s:'80x50', dn:80,  cy:120, ca:1, w:0.390},
+      {t:'Nối giảm',  s:'80x65', dn:80,  cy:120, ca:1, w:0.465},
+      {t:'Nối giảm',  s:'100x65',dn:100, cy:160, ca:1, w:0.740},
+      {t:'Nối giảm',  s:'100x80',dn:100, cy:160, ca:1, w:0.870},
+      {t:'Lơ thu',    s:'25x20', dn:25,  cy:40,  ca:4, w:0.023},
+      {t:'Lơ thu',    s:'32x25', dn:32,  cy:45,  ca:2, w:0.041},
+      {t:'Lơ thu',    s:'40x25', dn:40,  cy:50,  ca:2, w:0.071},
+      {t:'Lơ thu',    s:'40x32', dn:40,  cy:50,  ca:2, w:0.043},
+      {t:'Lơ thu',    s:'50x25', dn:50,  cy:65,  ca:2, w:0.160},
+      {t:'Lơ thu',    s:'50x32', dn:50,  cy:65,  ca:2, w:0.130},
+      {t:'Lơ thu',    s:'50x40', dn:50,  cy:65,  ca:2, w:0.100},
+      {t:'Nối ren trong', s:'20xPT15',dn:20, cy:35, ca:4, w:0.045},
+      {t:'Nối ren trong', s:'25xPT15',dn:25, cy:40, ca:4, w:0.060},
+      {t:'Nối ren trong', s:'25xPT20',dn:25, cy:40, ca:4, w:0.070},
+      {t:'Nối ren trong', s:'25xPT25',dn:25, cy:40, ca:4, w:0.080},
+      {t:'Nối ren trong', s:'32xPT32',dn:32, cy:45, ca:2, w:0.100},
+      {t:'Nối ren trong', s:'40xPT40',dn:40, cy:50, ca:2, w:0.125},
+      {t:'Nối ren trong', s:'50xPT50',dn:50, cy:65, ca:2, w:0.190},
+      {t:'Nối ren ngoài', s:'25xPT25',dn:25, cy:40, ca:4, w:0.070},
+      {t:'Nối ren ngoài', s:'32xPT32',dn:32, cy:45, ca:2, w:0.100},
+      {t:'Nối ren ngoài', s:'40xPT40',dn:40, cy:50, ca:2, w:0.125},
+      {t:'Nối ren ngoài', s:'50xPT50',dn:50, cy:65, ca:2, w:0.190},
+      {t:'Nắp bịt',   s:'20',    dn:20,  cy:35,  ca:4, w:0.020},
+      {t:'Nắp bịt',   s:'25',    dn:25,  cy:40,  ca:4, w:0.045},
+      {t:'Nắp bịt',   s:'32',    dn:32,  cy:45,  ca:2, w:0.075},
+      {t:'Nắp bịt',   s:'40',    dn:40,  cy:50,  ca:2, w:0.100},
+      {t:'Nắp bịt',   s:'50',    dn:50,  cy:65,  ca:2, w:0.155},
+      {t:'Mặt bích',  s:'65',    dn:65,  cy:90,  ca:1, w:0.900},
+      {t:'Mặt bích',  s:'80',    dn:80,  cy:120, ca:1, w:1.130},
+      {t:'Mặt bích',  s:'100',   dn:100, cy:160, ca:1, w:1.600},
+      {t:'Cút ren trong', s:'20xPT15',dn:20,cy:35,ca:4,w:0.043},
+      {t:'Cút ren trong', s:'25xPT15',dn:25,cy:40,ca:4,w:0.062},
+      {t:'Cút ren trong', s:'25xPT20',dn:25,cy:40,ca:4,w:0.055},
+      {t:'Tê ren trong',  s:'20xPT15',dn:20,cy:35,ca:4,w:0.090},
+      {t:'Tê ren trong',  s:'25xPT15',dn:25,cy:40,ca:4,w:0.140},
+      {t:'Tê ren trong',  s:'25xPT20',dn:25,cy:40,ca:4,w:0.140},
+      {t:'Tê ren trong',  s:'25xPT25',dn:25,cy:40,ca:4,w:0.140},
+    ];
+
+    const pkTypes = [...new Set(PK_CATALOG.map(i => i.t))];
+    const planPKRows = PK_CATALOG.map(item => {
+      const key = item.t + '_' + item.s;
+      const qty = planPK[key] || 0;
+      const mhPc = item.cy / (3600 * item.ca * 0.9);
+      const gio = qty * mhPc;
+      const kgTP = qty * item.w;
+      const hasData = qty > 0;
+      return {
+        ...item, key, qty, mhPc,
+        gio, kgTP,
+        gioFmt:  hasData ? gio.toFixed(3) : '—',
+        kgFmt:   hasData ? fmt(Math.round(kgTP * 100) / 100) : '—',
+        hasData,
+        rowBg:   hasData ? '#f0fdf4' : '#fff',
+        isHeader: false,
+        onChangeQty: (e) => {
+          const v = parseInt(e.target.value) || 0;
+          this.setState(prev => ({ planPK: { ...prev.planPK, [key]: v } }));
+        },
+      };
+    });
+
+    // Group by product type for display
+    const pkPlanGroups = pkTypes.map(type => {
+      const rows = planPKRows.filter(r => r.t === type);
+      const typeGio = rows.reduce((s, r) => s + r.gio, 0);
+      const typeKg  = rows.reduce((s, r) => s + r.kgTP, 0);
+      const hasData = rows.some(r => r.hasData);
+      return { type, rows, typeGio, typeKg, hasData,
+        typeGioFmt: hasData ? typeGio.toFixed(2) : '—',
+        typeKgFmt:  hasData ? fmt(Math.round(typeKg)) : '—',
+      };
+    });
+
+    const totalGioPK    = planPKRows.reduce((s, r) => s + r.gio, 0);
+    const totalKgPKPlan = planPKRows.reduce((s, r) => s + r.kgTP, 0);
+    const MHR_AVAIL = giờMayPK > 0 ? giờMayPK : 1968;
+    const pkUtil    = totalGioPK > 0 ? Math.round(totalGioPK / MHR_AVAIL * 100) : 0;
+    const pkCaColor = totalGioPK === 0 ? '#b3b3b3' : totalGioPK <= MHR_AVAIL ? '#16A34A' : '#DC2626';
+    const pkSummary = {
+      totalGio: totalGioPK > 0 ? totalGioPK.toFixed(1) + ' / ' + Math.round(MHR_AVAIL) + ' giờ' : '—',
+      util: pkUtil > 0 ? pkUtil + '%' : '—', utilColor: pkCaColor,
+      utilBar: Math.min(pkUtil, 100) + '%',
+      totalKg: totalKgPKPlan > 0 ? fmt(Math.round(totalKgPKPlan)) : '—',
+      nvlPK: totalKgPKPlan > 0 ? fmt(Math.round(totalKgPKPlan / 0.9 * compLandedPKRepl * 1.05)) : '—',
+    };
+
+    // COMPOUND INVENTORY (ADR-002) — unlimited batches, separate ống / PK
+    const mkInvRows = (arr, stateKey) => arr.map((r, idx) => {
+      const isOpening = idx === 0;
+      const hasData = r.kg > 0 && r.price > 0;
+      return {
+        label: r.label, idx, isOpening, hasData,
+        tan:   r.kg > 0 ? (r.kg / 1000).toFixed(2) : 0,
+        price: r.price > 0 ? r.price : 0,
+        vndKg: r.price > 0 ? fmt(Math.round(r.price * usdRate)) : '—',
+        subtotal: hasData ? fmt(Math.round(r.kg * r.price * usdRate / 1e6) / 1000) + ' tỷ' : '—',
+        rowBg: isOpening ? '#fffbeb' : hasData ? '#f0fdf4' : '#fff',
+        canRemove: idx > 0,
+        onChangeTan:   (e) => { const v = (parseFloat(e.target.value) || 0) * 1000; this.setState(prev => ({ [stateKey]: prev[stateKey].map((row, i) => i === idx ? {...row, kg: v} : row) })); },
+        onChangePrice: (e) => { const v = parseFloat(e.target.value) || 0; this.setState(prev => ({ [stateKey]: prev[stateKey].map((row, i) => i === idx ? {...row, price: v} : row) })); },
+        onRemove:      idx > 0 ? () => this.setState(prev => ({ [stateKey]: prev[stateKey].filter((_, i) => i !== idx) })) : null,
+      };
+    });
+    const invOngRows = mkInvRows(invOng, 'invOng');
+    const invPKRows  = mkInvRows(invPK,  'invPK');
+    const addInvOng  = () => this.setState(prev => ({ invOng: [...prev.invOng, { label: `Đợt ${prev.invOng.length}`, kg: 0, price: 0 }] }));
+    const addInvPK   = () => this.setState(prev => ({ invPK:  [...prev.invPK,  { label: `Đợt ${prev.invPK.length}`,  kg: 0, price: 0 }] }));
+
+    // Inv calculations
+    const totKgOng = invOng.reduce((s,r)=>s+r.kg,0);
+    const wavgOng  = totKgOng>0?invOng.reduce((s,r)=>s+r.kg*r.price,0)/totKgOng:0;
+    const totKgPK  = invPK.reduce((s,r)=>s+r.kg,0);
+    const wavgPK   = totKgPK>0?invPK.reduce((s,r)=>s+r.kg*r.price,0)/totKgPK:0;
+
+    const holdingDeltaOngVND = (compoundOng - wavgOng) * usdRate;
+    const holdingGainOng     = holdingDeltaOngVND * totKgOng;
+    const holdingDeltaPKVND  = (compoundPK  - wavgPK)  * usdRate;
+    const holdingGainPK      = holdingDeltaPKVND  * totKgPK;
+    const totalHolding       = holdingGainOng + holdingGainPK;
+
+    const devOng = wavgOng>0?Math.abs(compoundOng-wavgOng)/wavgOng*100:0;
+    const devPK  = wavgPK>0 ?Math.abs(compoundPK -wavgPK )/wavgPK *100:0;
+
+    const invSummary = {
+      totalTanOng: (totKgOng/1000).toFixed(1),
+      wavgOngUSDFmt: wavgOng.toFixed(2), wavgOngVNDFmt: fmt(Math.round(wavgOng*usdRate)),
+      rplcOngFmt: compoundOng.toFixed(2),
+      holdingGainOngFmt: (holdingGainOng>=0?'+':'')+fmt(Math.round(holdingGainOng)),
+      holdingGainOngColor: holdingGainOng>=0?'#16A34A':'#DC2626',
+      deviationOngFmt: devOng.toFixed(1)+'%',
+      needsVAS02Ong: totKgOng>0&&compoundOng<wavgOng,
+      repriceRecOng: devOng>=3,
+      totalTanPK: (totKgPK/1000).toFixed(1),
+      wavgPKUSDFmt: wavgPK.toFixed(2), wavgPKVNDFmt: fmt(Math.round(wavgPK*usdRate)),
+      rplcPKFmt: compoundPK.toFixed(2),
+      holdingGainPKFmt: (holdingGainPK>=0?'+':'')+fmt(Math.round(holdingGainPK)),
+      holdingGainPKColor: holdingGainPK>=0?'#16A34A':'#DC2626',
+      deviationPKFmt: devPK.toFixed(1)+'%',
+      needsVAS02PK: totKgPK>0&&compoundPK<wavgPK,
+      repriceRecPK: devPK>=3,
+      totalHoldingFmt: (totalHolding>=0?'+':'')+fmt(Math.round(totalHolding)),
+      totalHoldingColor: totalHolding>=0?'#16A34A':'#DC2626',
+    };
+
+    // ASSUMPTIONS display values
+    const dOng = (compLandedOng-85916)/0.9, dPK = compLandedPK-109167;
+    const assumpInputs = {
+      usdRate, compoundOng, compoundPK, markupVFOng, markupVFPK, markupTCG,
+      compLandedOngFmt: fmt(Math.round(compLandedOng)),
+      compLandedPKFmt:  fmt(Math.round(compLandedPK)),
+      fullCostOngFmt: fmt(fullCostOng), fullCostPKFmt: fmt(fullCostPK),
+      targetOngFmt: fmt(targetOng), targetPKFmt: fmt(targetPK),
+      deltaOngFmt: (dOng>=0?'+':'')+fmt(Math.round(dOng)),
+      deltaPKFmt:  (dPK>=0?'+':'')+fmt(Math.round(dPK)),
+      deltaOngColor: dOng>0?'#DC2626':dOng<0?'#16A34A':'#737373',
+      deltaPKColor:  dPK>0?'#DC2626':dPK<0?'#16A34A':'#737373',
+      setUsdRate:      (e)=>this.setState({usdRate:         parseFloat(e.target.value)||26500}),
+      setCompoundOng:  (e)=>this.setState({compoundOng:     parseFloat(e.target.value)||3.03}),
+      setCompoundPK:   (e)=>this.setState({compoundPK:      parseFloat(e.target.value)||3.85}),
+      setBaselineOng:  (e)=>this.setState({baselineOng:     parseFloat(e.target.value)||3.03}),
+      setBaselinePK:   (e)=>this.setState({baselinePK:      parseFloat(e.target.value)||3.85}),
+      setLockThreshold:(e)=>this.setState({lockThresholdPct:parseFloat(e.target.value)||3}),
+      setMarkupVFOng:  (e)=>this.setState({markupVFOng:     parseFloat(e.target.value)||25}),
+      setMarkupVFPK:   (e)=>this.setState({markupVFPK:      parseFloat(e.target.value)||40}),
+      setMarkupTCG:    (e)=>this.setState({markupTCG:       parseFloat(e.target.value)||30}),
+      resetBase: ()=>this.setState({compoundOng:3.03,compoundPK:3.85,baselineOng:3.03,baselinePK:3.85,lockThresholdPct:3,usdRate:26500,markupVFOng:25,markupVFPK:40,markupTCG:30}),
+      // Price lock display
+      baselineOng, baselinePK, lockThresholdPct,
+      pricingOngFmt:   pricingOng.toFixed(2),
+      pricingPKFmt:    pricingPK.toFixed(2),
+      lockStatusOng, lockStatusPK,
+      lockColorOng, lockColorPK,
+      lockBgOng, lockBgPK,
+      devOngPct:  (devOngLock*100).toFixed(1)+'%',
+      devPKPct:   (devPKLock*100).toFixed(1)+'%',
+      staleOng, stalePK,
+      chot: ()=>this.setState({baselineOng:compoundOng, baselinePK:compoundPK}),
+    };
+
+    return {
+      showDashboard:   activeTab==='dashboard',
+      showPriceList:   activeTab==='pricelist',
+      showPlan:        activeTab==='plan',
+      showInventory:   activeTab==='inventory',
+      showAssumptions: activeTab==='assumptions',
+      showOng:         activeTab==='ong',
+      showPK:          activeTab==='pk',
+      userNavItems:  mkNav(userTabs),
+      adminNavItems: mkNav(adminTabs),
+      showAdminGroup, roleSwitcher, roleLabel, canSeeCostDetail, hideCostDetailNote,
+      thangGiaFmt, productionFmt, pipeFmt, moldFmt,
+      skuFmt, catButtons, ptBtns, colHeader,
+      searchQuery, setSearch:(e)=>this.setState({searchQuery:e.target.value}),
+      skuCount: filteredSKU.length,
+      planRows, planSummary, planPKRows, pkPlanGroups, pkSummary,
+      dispGiaCongOng:   fmt(Math.round(giaCongDonViOng)),
+      dispHvToanDNOng:  fmt(hvToanDNOng),
+      dispTargetOng:    fmt(targetOng),
+      dispDinhPhiOng:   fmt(Math.round(dinhPhiOng)),
+      invOngRows, invPKRows, addInvOng, addInvPK, invSummary,
+      // top-down
+      topDownPrice: this.state.topDownPrice,
+      setTopDownPrice: (e) => this.setState({ topDownPrice: parseFloat(e.target.value) || 0 }),
+      tdMarginPct: tdMarginPct !== null ? tdMarginPct.toFixed(1) : '—',
+      tdMaxCompound: tdMaxCompoundUSD !== null ? tdMaxCompoundUSD.toFixed(2) : '—',
+      tdBepQtyFmt: tdBepQty !== null ? fmt(tdBepQty) : '—',
+      tdBepPct: tdBepPct || '—',
+      tdColor, tdStatus,
+      tdAboveFloor, tdAboveFullCost,
+      tdHasData: tdPrice > 0,
+      tdBannerBg: tdAboveFullCost ? '#f0fdf4' : tdAboveFloor ? '#fffbeb' : '#fef2f2',
+      assumpInputs,
+      // price lock global
+      anyUnlocked, anyStale,
+      lockStatusOng, lockStatusPK, lockColorOng, lockColorPK, lockBgOng, lockBgPK,
+      showConfig: activeTab === 'config',
+      // Factory config — handlers + computed metrics
+      cfg: {
+        // Shared params (from cfgOng)
+        daysRun: cfgOng.daysRun, daysMaint: cfgOng.daysMaint,
+        daysPerYear: cfgOng.daysPerYear, hoursPerShift: cfgOng.hoursPerShift,
+        avgSalary: cfgOng.avgSalary, salaryMonths: cfgOng.salaryMonths,
+        bhRate: cfgOng.bhRate, electricityPrice: cfgOng.electricityPrice,
+        waterPrice: cfgOng.waterPrice,
+        // Ống machine params
+        capActual: cfgOng.capActual, shiftsNormal: cfgOng.shiftsNormal,
+        machinePrice: cfgOng.machinePrice, machineCount: cfgOng.machineCount,
+        toolingMold: cfgOng.toolingMold, yearsDeprOng: cfgOng.yearsDepr,
+        maintenanceOng: cfgOng.maintenance, workersOng: cfgOng.workersPerShift,
+        electricityKw: cfgOng.electricityKw, waterM3: cfgOng.waterM3,
+        yieldRateOng: cfgOng.yieldRate, packagingOng: cfgOng.packaging,
+        // PK machine params
+        machineAPrice: cfgPK.machineAPrice, machineACount: cfgPK.machineACount,
+        machineBPrice: cfgPK.machineBPrice, machineBCount: cfgPK.machineBCount,
+        moldTotal: cfgPK.moldTotal, yearsDeprPK: cfgPK.yearsDepr,
+        maintenancePK: cfgPK.maintenanceMold, workersPK: cfgPK.workersPerShift,
+        shiftsPK: cfgPK.shiftsNormal, utilizationPK: cfgPK.utilizationRate,
+        avgYieldPerMh: cfgPK.avgYieldPerMh,
+        electricityPerMh: cfgPK.electricityPerMh, waterPerMh: cfgPK.waterPerMh,
+        yieldRatePK: cfgPK.yieldRate, packagingPK: cfgPK.packaging,
+        // Common costs
+        labCost: cfgCommon.labCost, testUL: cfgCommon.testUL,
+        yearsDeprCommon: cfgCommon.yearsDepr,
+        compliance: cfgCommon.compliance, rent: cfgCommon.rent,
+        opEx: cfgCommon.opEx, finCost: cfgCommon.finCost,
+        // Computed results (metrics)
+        batchesPerYear,
+        hoursVHFmt: fmt(hoursVH), outputOngFmt: fmt(Math.round(outputTP_Ong)),
+        giờMayPKFmt: fmt(Math.round(giờMayPK)), outputPKFmt: fmt(Math.round(outputTP_PK)),
+        mhrFmt: fmt(Math.round(MHR)),
+        tongGiaCongOngFmt: fmt(Math.round(tongGiaCongOng)),
+        tongGiaCongPKFmt:  fmt(Math.round(tongGiaCongPK)),
+        khauHaoOngFmt: fmt(Math.round(khauHaoOng)), nhanCongOngFmt: fmt(Math.round(nhanCongOng)),
+        dienOngFmt: fmt(Math.round(dienOng)), nuocOngFmt: fmt(Math.round(nuocOng)),
+        chiPhiChungOngFmt: fmt(Math.round(chiPhiChungOng)),
+        khauHaoPKFmt: fmt(Math.round(khauHaoPK)), nhanCongPKFmt: fmt(Math.round(nhanCongPK)),
+        dienPKFmt: fmt(Math.round(dienPK)), nuocPKFmt: fmt(Math.round(nuocPK)),
+        chiPhiChungPKFmt: fmt(Math.round(chiPhiChungPK)),
+        commonPerYearFmt: fmt(Math.round(commonPerYear)),
+        fullCostOngFmt: fmt(fullCostOng), fullCostPKFmt: fmt(fullCostPK),
+        floorOngFmt: fmt(floorOng), cashBEOngFmt: fmt(cashBEOng),
+        bepOngFmt: fmt(bepOng), bepPctOng,
+        ratioOngPct: (ratioOng * 100).toFixed(1),
+        // Handlers — Ống
+        setCapActual:    (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,capActual:    +e.target.value||140}})),
+        setShiftsOng:    (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,shiftsNormal: +e.target.value||3}})),
+        setHoursPerShift:(e)=>this.setState(p=>({cfgOng:{...p.cfgOng,hoursPerShift:+e.target.value||8}})),
+        setDaysRun:      (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,daysRun:      +e.target.value||5}})),
+        setDaysMaint:    (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,daysMaint:    +e.target.value||2}})),
+        setDaysPerYear:  (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,daysPerYear:  +e.target.value||287}})),
+        setMachinePrice: (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,machinePrice: +e.target.value||0}})),
+        setMachineCount: (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,machineCount: +e.target.value||1}})),
+        setToolingMold:  (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,toolingMold:  +e.target.value||0}})),
+        setYearsDeprOng: (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,yearsDepr:    +e.target.value||5}})),
+        setMaintenOng:   (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,maintenance:  +e.target.value||0}})),
+        setWorkersOng:   (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,workersPerShift:+e.target.value||2}})),
+        setAvgSalary:    (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,avgSalary:    +e.target.value||0}})),
+        setSalaryMonths: (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,salaryMonths: +e.target.value||14}})),
+        setBhRate:       (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,bhRate:       +e.target.value||0.235}})),
+        setElecKw:       (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,electricityKw:+e.target.value||0}})),
+        setElecPrice:    (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,electricityPrice:+e.target.value||2120}})),
+        setWaterM3:      (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,waterM3:      +e.target.value||0}})),
+        setWaterPrice:   (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,waterPrice:   +e.target.value||21200}})),
+        setYieldOng:     (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,yieldRate:    +e.target.value||0.9}})),
+        setPackagingOng: (e)=>this.setState(p=>({cfgOng:{...p.cfgOng,packaging:    +e.target.value||1500}})),
+        // Handlers — PK
+        setMachineAPrice:(e)=>this.setState(p=>({cfgPK:{...p.cfgPK,machineAPrice: +e.target.value||0}})),
+        setMachineACount:(e)=>this.setState(p=>({cfgPK:{...p.cfgPK,machineACount: +e.target.value||1}})),
+        setMachineBPrice:(e)=>this.setState(p=>({cfgPK:{...p.cfgPK,machineBPrice: +e.target.value||0}})),
+        setMachineBCount:(e)=>this.setState(p=>({cfgPK:{...p.cfgPK,machineBCount: +e.target.value||1}})),
+        setMoldTotal:    (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,moldTotal:     +e.target.value||0}})),
+        setYearsDeprPK:  (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,yearsDepr:    +e.target.value||5}})),
+        setMaintenPK:    (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,maintenanceMold:+e.target.value||0}})),
+        setShiftsPK:     (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,shiftsNormal: +e.target.value||1}})),
+        setUtilization:  (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,utilizationRate:+e.target.value||0.6}})),
+        setAvgYieldPh:   (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,avgYieldPerMh:+e.target.value||44.6}})),
+        setWorkersPK:    (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,workersPerShift:+e.target.value||1}})),
+        setElecPerMh:    (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,electricityPerMh:+e.target.value||30}})),
+        setWaterPerMh:   (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,waterPerMh:   +e.target.value||2}})),
+        setYieldPK:      (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,yieldRate:    +e.target.value||0.9}})),
+        setPackagingPK:  (e)=>this.setState(p=>({cfgPK:{...p.cfgPK,packaging:    +e.target.value||2000}})),
+        // Handlers — Common
+        setLabCost:      (e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,labCost:    +e.target.value||0}})),
+        setTestUL:       (e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,testUL:     +e.target.value||0}})),
+        setCompliance:   (e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,compliance: +e.target.value||0}})),
+        setRent:         (e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,rent:       +e.target.value||0}})),
+        setOpEx:         (e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,opEx:       +e.target.value||0}})),
+        setFinCost:      (e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,finCost:    +e.target.value||0}})),
+        setYearsDeprCommon:(e)=>this.setState(p=>({cfgCommon:{...p.cfgCommon,yearsDepr:+e.target.value||5}})),
+      },
+      // display helpers — Ống
+      dispCompLandedOng: fmt(Math.round(compLandedOng)),
+      dispMatOng: fmt(Math.round(matOng)),
+      dispFullCostOng: fmt(fullCostOng),
+      dispFloorOng: fmt(floorOng),
+      dispCashBEOng: fmt(cashBEOng),
+      dispMarginOng: fmt(marginOng),
+      // display helpers — Phụ Kiện
+      dispCompLandedPK: fmt(Math.round(compLandedPK)),
+      dispMatPK: fmt(Math.round(matPK)),
+      dispGiaCongPK: fmt(Math.round(giaCongDonViPK)),
+      dispMHR: fmt(Math.round(MHR)),
+      dispGiờMayPK: fmt(Math.round(giờMayPK)),
+      dispPackagingPK: fmt(cfgPK.packaging),
+      dispFullCostPK: fmt(fullCostPK),
+      dispFloorPK: fmt(floorPK),
+      dispCashBEPK: fmt(cashBEPK),
+      dispHvToanDNPK: fmt(hvToanDNPK),
+      dispTargetPK: fmt(targetPK),
+      dispTongGiaCongPK: fmt(Math.round(tongGiaCongPK)),
+      dispOutputPK: fmt(Math.round(outputTP_PK)),
+      pkMatPct: fullCostPK > 0 ? Math.round(matPK / fullCostPK * 100) + '%' : '0%',
+      pkGcPct:  fullCostPK > 0 ? Math.round(giaCongDonViPK / fullCostPK * 100) + '%' : '0%',
+      pkPkgPct: fullCostPK > 0 ? Math.max(0, 100 - Math.round(matPK / fullCostPK * 100) - Math.round(giaCongDonViPK / fullCostPK * 100)) + '%' : '0%',
+      // shared
+      dispUsdRate: fmt(usdRate),
+      dispCpOng: compoundOng.toFixed(2),
+      dispCpPK: compoundPK.toFixed(2),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

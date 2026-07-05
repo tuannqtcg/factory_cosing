@@ -1,0 +1,38 @@
+/* BlazeMaster Brand Colors */
+:root {
+  /* === Brand Core === */
+  --color-blaze-red:       #a8003b; /* Primary — BlazeMaster crimson (C0 M100 Y65 K34) */
+  --color-blaze-red-dark:  #7a0029; /* Pressed / hover darkened */
+  --color-blaze-red-light: #d4004a; /* Lighter variant (C0 M100 Y63 K29) */
+
+  /* === Neutrals === */
+  --color-black:           #1a1a1a; /* Near-black — richer than pure */
+  --color-gray-90:         #333333; /* K=80 — primary text, heavy UI chrome */
+  --color-gray-55:         #737373; /* K=55 — secondary text, muted labels */
+  --color-gray-30:         #b3b3b3; /* Light borders, disabled states */
+  --color-gray-10:         #f0f0f0; /* Background surfaces */
+  --color-warm-cream:      #ebe6d4; /* C8 M10 Y17 K0 — warm bg, tan section backgrounds */
+  --color-white:           #ffffff;
+
+  /* === Accent === */
+  --color-fire-orange:     #ff6600; /* Heat/warning accent, never primary CTA */
+
+  /* === Semantic Aliases === */
+  --color-text-primary:    var(--color-gray-90);
+  --color-text-secondary:  var(--color-gray-55);
+  --color-text-inverse:    var(--color-white);
+  --color-text-brand:      var(--color-blaze-red);
+
+  --color-bg-base:         var(--color-white);
+  --color-bg-subtle:       var(--color-gray-10);
+  --color-bg-warm:         var(--color-warm-cream);
+  --color-bg-brand:        var(--color-blaze-red);
+  --color-bg-dark:         var(--color-gray-90);
+
+  --color-border:          var(--color-gray-30);
+  --color-border-strong:   var(--color-gray-55);
+
+  --color-action-primary:  var(--color-blaze-red);
+  --color-action-hover:    var(--color-blaze-red-dark);
+  --color-action-pressed:  var(--color-blaze-red-dark);
+}

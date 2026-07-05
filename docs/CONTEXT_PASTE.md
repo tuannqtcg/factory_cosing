@@ -18,6 +18,11 @@ NGHIỆP VỤ LÕI (không được phát minh khác đi):
    Thẩm quyền giảm giá phân tầng theo bậc; bậc 1 không ai được thủng.
 5. Số vàng để kiểm tra: MHR = 1.344.176 đ/giờ máy (1 ca × 60%); BE@3,50 = 121.012;
    BE@2,80 = 98.958; 8 giá ống + 91 SKU trong tests/fixtures/prices.json.
+6. HAI CHIỀU HOẠCH ĐỊNH (ADR-005): bottom-up = nguồn lực → công suất → giá
+   (forward, đã có). Top-down = mục tiêu → yêu cầu vận hành: (T1) kế hoạch vs
+   nguồn lực; (T2) lợi nhuận mục tiêu → sản lượng + số ca; (T3) giá thị trường
+   → chi phí mục tiêu → biến vận hành (qua solver, cấm công thức ngược tay).
+   Mọi kết quả top-down phải forward-verify trước khi hiển thị.
 
 QUY TRÌNH: 4 pha có cổng — brief → prototype (mock, duyệt UI) → schema+contract
 (đóng băng) → code (không phát minh mới) → test parity + security → merge.

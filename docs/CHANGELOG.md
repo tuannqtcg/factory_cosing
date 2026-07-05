@@ -1,5 +1,14 @@
 # CHANGELOG — Costing App Kit
 
+## v1.2 (2026-07) — chốt ý đồ hoạch định hai chiều
+KHÁC BIỆT so với kit v1.1:
+
+| File | Thay đổi | Lý do |
+|---|---|---|
+| docs/decisions/ADR-005-dual-direction.md | MỚI — forward engine + inverse solver, 3 câu hỏi top-down (T1/T2/T3) | Chốt ý đồ gốc: app là công cụ hoạch định, không phải máy tính giá |
+| skills/inverse-solver | MỚI — luật giải ngược bằng bisection trên forward function, cấm công thức ngược viết tay | Solver là module bắt buộc của engine, không phải tính năng cơi nới sau |
+| docs/CONTEXT_PASTE.md | +điểm 6: hai chiều hoạch định (bottom-up/top-down) | Đồng bộ bản nén 1 trang với ADR-005 |
+
 ## v1.1 (2026-07) — bổ sung cơ chế khóa bảng giá | nguồn Excel: v3.4
 KHÁC BIỆT so với kit v1.0 (nguồn v3.3):
 

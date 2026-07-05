@@ -5,13 +5,24 @@ Engine giá thành cấu hình được cho sản xuất, khởi đầu bằng B
 4 vai: **admin** (toàn quyền) / **pricing** (giả định, thang giá) /
 **sales** (chỉ thang giá + bảng giá) / **production** (kế hoạch, công suất).
 
+**2 tầng top-down (ADR-005, ADR-006)** — mỗi vai chỉ xem đúng tầng của mình:
+- Tầng VẬN HÀNH — vai `production`: kế hoạch SX đã chốt → đối chiếu nguồn lực/
+  tồn kho (T1, màn hình Plan_SX, đã có dạng đóng).
+- Tầng CHIẾN LƯỢC — vai `pricing`/`admin`: mục tiêu ngoại sinh (lợi nhuận kỳ
+  vọng, giá thị trường/giá thâm nhập) → biến vận hành cần đạt (T2/T3, màn hình
+  Target Costing riêng, dùng inverse solver). `production` KHÔNG thấy màn hình này.
+
 ## §2. Phạm vi v1 (khớp Excel v3.4)
 Sản lượng-công suất, giá thành kép (sổ sách/định giá), thang giá 5 bậc, CVP,
-kế hoạch SX (bậc ca, khuôn, NVL, nhân công), tồn kho compound nhiều đợt, CƠ CHẾ KHÓA BẢNG GIÁ baseline + ngưỡng (ADR-004).
+kế hoạch SX (bậc ca, khuôn, NVL, nhân công), tồn kho compound nhiều đợt, CƠ CHẾ
+KHÓA BẢNG GIÁ baseline + ngưỡng (ADR-004), HOẠCH ĐỊNH HAI CHIỀU forward + inverse
+solver phân tầng theo vai (ADR-005, ADR-006).
 NGOÀI phạm vi v1: routing đa công đoạn, MRP lịch tuần, multi-tenant SaaS (xem ADR-003).
 
 ## §3. Kiến trúc
 - `src/engine/` pure TS: (ScenarioInput) → ScenarioOutput. Không I/O. Test parity Excel.
+- `src/engine/solver.ts` (ADR-005): inverse solver chạy TRÊN forward function — không
+  công thức ngược viết tay. Dùng cho tầng chiến lược (ADR-006).
 - `src/schemas/` Zod duy nhất, dùng chung 2 đầu.
 - Firestore: mỗi collection 1 loại doc; TÁCH doc giá bán khỏi doc giá vốn (rules không lọc field).
 - Cost driver là plugin: continuous_kg | machine_hour (mở rộng: labor_hour, batch — ADR-003).

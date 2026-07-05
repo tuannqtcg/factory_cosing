@@ -23,6 +23,10 @@ NGHIỆP VỤ LÕI (không được phát minh khác đi):
    nguồn lực; (T2) lợi nhuận mục tiêu → sản lượng + số ca; (T3) giá thị trường
    → chi phí mục tiêu → biến vận hành (qua solver, cấm công thức ngược tay).
    Mọi kết quả top-down phải forward-verify trước khi hiển thị.
+7. PHÂN TẦNG TOP-DOWN THEO VAI (ADR-006): tầng VẬN HÀNH (T1, vai `production`,
+   màn hình Plan_SX, theo kỳ) KHÁC tầng CHIẾN LƯỢC (T2/T3 + giá thâm nhập, vai
+   `pricing`/`admin`, màn hình Target Costing riêng, khi ra quyết định giá/đầu
+   tư). Không gộp 2 tầng vào 1 màn hình; `production` không thấy Target Costing.
 
 QUY TRÌNH: 4 pha có cổng — brief → prototype (mock, duyệt UI) → schema+contract
 (đóng băng) → code (không phát minh mới) → test parity + security → merge.

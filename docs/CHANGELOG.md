@@ -1,5 +1,15 @@
 # CHANGELOG — Costing App Kit
 
+## v1.3 (2026-07) — phân tầng top-down theo đối tượng xem
+KHÁC BIỆT so với kit v1.2:
+
+| File | Thay đổi | Lý do |
+|---|---|---|
+| docs/decisions/ADR-006-audience-tiers.md | MỚI — 2 tầng top-down: vận hành (`production`, T1, Plan_SX) vs chiến lược (`pricing`/`admin`, T2/T3 + giá thâm nhập, Target Costing) | Mức độ quan tâm/quyết định của SX quản lý và CEO khác nhau — không gộp 1 màn hình |
+| docs/PROJECT_SPEC.md §1, §2, §3 | Gắn 2 tầng vào bảng vai; thêm `src/engine/solver.ts` vào kiến trúc | Đồng bộ constitution với ADR-005/006 |
+| docs/GLOSSARY.md | +4 thuật ngữ: operationalTopDown, strategicTopDown, targetProfit, penetrationPrice | UI tiếng Việt nhất quán |
+| docs/CONTEXT_PASTE.md | +điểm 7: phân tầng top-down theo vai | Đồng bộ bản nén 1 trang |
+
 ## v1.2 (2026-07) — chốt ý đồ hoạch định hai chiều
 KHÁC BIỆT so với kit v1.1:
 

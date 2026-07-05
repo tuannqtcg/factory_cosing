@@ -17,3 +17,7 @@
 | priceLockThreshold | Ngưỡng khóa bảng giá (%) |
 | priceLockStatus | Trạng thái khóa (KHÓA / MỞ KHÓA) |
 | stalenessWarning | Cảnh báo giá tái tạo cũ (so đợt nhập gần nhất) |
+| operationalTopDown | Top-down tầng vận hành (kế hoạch vs nguồn lực — T1) |
+| strategicTopDown | Top-down tầng chiến lược (mục tiêu → nguồn lực cần — T2/T3) |
+| targetProfit | Lợi nhuận mục tiêu |
+| penetrationPrice | Giá thâm nhập |

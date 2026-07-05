@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: factory-cosing-prototype
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: ./prototype
+    routes:
+      - type: rewrite
+        source: /
+        destination: /blazemaster-costing-app.dc.html

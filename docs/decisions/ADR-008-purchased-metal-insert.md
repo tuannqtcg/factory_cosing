@@ -1,5 +1,5 @@
-# ADR-008: Ren kim loại mua ngoài — dòng nguyên liệu thứ 2, áp giá vốn kép
-Ngày: 2026-07 | Trạng thái: CHẤP NHẬN (nguyên tắc) — CHỜ DỮ LIỆU trước khi vào schema
+# ADR-008: Ren kim loại mua ngoài — dòng nguyên liệu thứ 2, áp giá vốn kép + khóa giá riêng
+Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — CHỜ SỐ LIỆU (đơn giá, số lượng/SKU) trước khi vào schema
 
 ## Bối cảnh
 4 họ SKU phụ kiện (Nối ren trong, Nối ren ngoài, Cút ren trong, Tê ren trong) cần ép
@@ -16,27 +16,42 @@ Ren kim loại là **dòng nguyên vật liệu thứ hai**, song song với com
    tồn kho compound (ống/phụ kiện).
 2. **Định giá**: giá tái tạo ren kim loại — dùng để tính `materialCostPerUnit` của
    các SKU thuộc 4 họ "ren".
-3. Công thức mở rộng (thay cho hằng số `brassInsertCost` tĩnh):
+3. Công thức mở rộng (thay cho hằng số `brassInsertCost` tĩnh) — **mua VND trong
+   nước, KHÔNG có bước landed cost/thuế NK** (khác compound):
    ```
    materialCostPerUnit (họ ren) = unitWeightKg × (compoundLandedPerKg/yieldRate + packagingCostPerKg)
-                                   + insertQtyPerUnit × insertPricingCostPerUnit
+                                   + insertQtyPerUnit × insertPricingCostVndPerUnit
    ```
    `insertQtyPerUnit` là số lượng ren/sản phẩm theo BOM từng SKU (không phải hằng số
-   chung — có thể khác nhau giữa các size/họ).
+   chung — có thể khác nhau giữa các size/họ) — **số liệu để sau, user tự nhập**.
 4. Lãi/lỗ giữ kho (§5 BUSINESS_MODEL) mở rộng thêm 1 dòng thứ 3 (ren kim loại) theo
    đúng công thức đang dùng cho ống/phụ kiện, KHÔNG viết công thức riêng khác.
+5. **Tồn kho riêng**: có tab/bảng tồn kho ren kim loại độc lập (nhiều đợt nhập, như
+   tab Tồn Kho hiện có cho compound Ống/Phụ kiện) — dùng để tính bình quân gia
+   quyền + lãi/lỗ giữ kho, không phải 1 giá hiện hành duy nhất.
+6. **Khóa giá riêng (mở rộng ADR-004)**: ren kim loại có `baselinePrice` +
+   `priceLockThreshold` ĐỘC LẬP với compound — cùng công thức
+   `pricingPrice = |replacement/baseline − 1| > ngưỡng% ? replacement : baseline`
+   nhưng là 1 policy riêng, không gộp chung ngưỡng với compound. SKU họ "ren" khi
+   đó có 2 biến định giá độc lập cần khóa: giá compound (đã có) VÀ giá ren kim loại
+   (mới) — `materialCostPerUnit` dùng CẢ HAI `pricingPrice` tương ứng, không phải
+   giá replacement thô.
 
 ## Hệ quả
-- Schema Pha 2: thêm 1 "material stream" độc lập (tồn kho + giá tái tạo riêng),
-  không nhét vào field `brassInsertCost` dạng scalar nữa — cần mô hình BOM
-  (`insertQtyPerUnit` theo từng SKU).
+- Schema Pha 2: thêm 1 "material stream" độc lập (tồn kho VND + giá tái tạo VND
+  riêng, KHÔNG có bước quy đổi ngoại tệ/thuế NK), không nhét vào field
+  `brassInsertCost` dạng scalar nữa — cần mô hình BOM (`insertQtyPerUnit` theo
+  từng SKU) + bảng tồn kho thứ 3 (song song 2 bảng Ống/Phụ kiện đã có).
 - Prototype Pha 1: CHƯA sửa `brassInsertCost` trong file mock ngay (vẫn = 0) vì
-  thiếu dữ liệu thật; khi có số liệu có thể cập nhật demo trước khi vào Pha 2.
-- **Còn treo — cần trả lời trước khi hoàn thiện schema**:
-  1. Có áp cơ chế khóa bảng giá (ADR-004) riêng cho ren kim loại không, hay khóa
-     theo TỔNG chi phí nguyên liệu của SKU (compound + ren gộp lại)?
-  2. Mua VND (trong nước) hay ngoại tệ nhập khẩu (nếu có → cùng landed cost
-     DUTY 7% + logistics 1% như compound)?
-  3. Số lượng ren/sản phẩm theo từng SKU trong 4 họ (không giả định đồng nhất 1/sp).
-  4. Có cần track tồn kho ren kim loại theo nhiều đợt nhập (như tab Tồn Kho hiện có
-     cho compound) hay chỉ 1 giá hiện hành (mua-theo-đơn, không giữ tồn kho)?
+  thiếu số liệu `insertQtyPerUnit` và đơn giá thật; khi có số liệu có thể cập
+  nhật demo trước khi vào Pha 2.
+- Schema Pha 2 (bổ sung): `fitting.priceLock` (ADR-004) cần nhân bản thành 2 policy
+  độc lập — `compound` (đã có) và `metalInsert` (mới) — mỗi cái có
+  `baselinePrice`/`thresholdPct`/`pricingPrice` riêng, KHÔNG dùng chung 1 ngưỡng.
+- **Đã xác nhận**: mua VND trong nước (không ngoại tệ, không DUTY/logistics); có
+  tồn kho riêng nhiều đợt nhập (giống cơ chế Ống/Phụ kiện); khóa giá riêng độc lập
+  với compound (không gộp ngưỡng).
+- **Còn treo — chỉ còn thiếu SỐ LIỆU, không còn thiếu quyết định nguyên tắc**:
+  1. Số lượng ren/sản phẩm theo từng SKU trong 4 họ — user sẽ cung cấp sau.
+  2. Đơn giá ren kim loại hiện hành (VND) + baseline/ngưỡng khóa giá ban đầu —
+     user sẽ cung cấp sau.

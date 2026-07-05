@@ -10,9 +10,11 @@ KHÁC BIỆT so với kit v1.3:
 | docs/GLOSSARY.md | +4 thuật ngữ: moldAsset, asOfYear, purchasedMetalInsert, insertQtyPerUnit | UI tiếng Việt nhất quán |
 | docs/CONTEXT_PASTE.md | +điểm 8, 9: khấu hao khuôn theo thời gian, ren kim loại mua ngoài | Đồng bộ bản nén 1 trang |
 
-**LƯU Ý**: cả 2 ADR ở trạng thái "CHẤP NHẬN nguyên tắc — CHỜ DỮ LIỆU". Chưa đủ số
-liệu thật (giá/năm mua từng khuôn; đơn giá, ngoại tệ, số lượng/SKU của ren kim
-loại) để vào schema Pha 2 chính thức — xem mục "Còn treo" trong từng ADR.
+**Cập nhật cùng ngày**: user cung cấp thêm — khuôn `purchaseYear = 2026` (giá để
+trống, tự nhập sau); ren kim loại mua VND trong nước (không ngoại tệ/DUTY), có
+tồn kho riêng, và có khóa giá riêng độc lập với compound (mở rộng ADR-004). Cả 2
+ADR nay đã CHẤP NHẬN đầy đủ về nguyên tắc — chỉ còn thiếu SỐ LIỆU cụ thể (giá
+từng khuôn; đơn giá + số lượng ren/SKU) trước khi vào schema Pha 2 chính thức.
 
 ## v1.3 (2026-07) — phân tầng top-down theo đối tượng xem
 KHÁC BIỆT so với kit v1.2:

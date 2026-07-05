@@ -26,6 +26,10 @@ sai ngay khi có đợt mua khuôn thứ 2.
 - Schema Pha 2: `moldAssets: MoldAsset[]` thay `moldSetCostTotal66` scalar.
 - Prototype Pha 1 hiện tại (`cfg.moldTotal` — 1 ô input tổng) CHƯA sửa ngay; đây là
   quyết định nguyên tắc, chờ Pha 2 mới đổi cấu trúc input thật.
-- **Còn treo — cần dữ liệu trước khi vào schema chính thức**: giá + năm mua thực tế
-  của 66 bộ khuôn hiện có (ít nhất coi là "đợt mua gốc" để `asOfYear` hiện tại ra
-  đúng số như Excel v3.4 đang có), và của các khuôn dự kiến mua thêm nếu đã biết.
+- **Dữ liệu đã có**: `purchaseYear = 2026` cho toàn bộ 66 bộ khuôn hiện có (mua cùng
+  đợt gốc) → tại `asOfYear = 2026`, tất cả asset đang ở năm khấu hao đầu tiên, số ra
+  giống hệt cách tính gộp hiện tại (không có sai lệch khi bắt đầu). `cost` từng
+  asset ĐỂ TRỐNG — user sẽ tự nhập khi có số liệu; field `cost` trong `MoldAsset`
+  phải cho phép `null`/chưa điền ở Pha 2 (không mặc định = 0, vì 0 sẽ làm sai MHR).
+- **Còn treo**: giá (`cost`) thực tế từng khuôn/lô khuôn — user tự nhập sau; và
+  thông tin khuôn dự kiến mua thêm (nếu có) khi phát sinh.

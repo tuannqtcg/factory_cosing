@@ -73,5 +73,26 @@
     "fittingWeightedAvgUsd": 3.85,
     "pipeInventoryKg": 10000,
     "fittingInventoryKg": 10000
+  },
+  "priceLock": {
+    "_comment": "ADR-004 (nguồn Excel v3.4, Assumptions dòng 45-56). pricingPriceUsd la gia thuc te nap vao Ong!B5 / Phu kien!B5 - diem noi DUY NHAT vao bang gia.",
+    "thresholdPct": 0.03,
+    "pipe": {
+      "baselineUsd": 3.03,
+      "replacementUsd": 3.03,
+      "lastLotPriceUsd": 3.03,
+      "deviationPct": 0,
+      "pricingPriceUsd": 3.03,
+      "lockStatus": "KHÓA — lệch 0.0% trong ngưỡng 3%, bảng giá giữ nguyên"
+    },
+    "fitting": {
+      "baselineUsd": 3.85,
+      "replacementUsd": 3.85,
+      "lastLotPriceUsd": 3.85,
+      "deviationPct": 0,
+      "pricingPriceUsd": 3.85,
+      "lockStatus": "KHÓA — lệch 0.0% trong ngưỡng 3%, bảng giá giữ nguyên"
+    },
+    "stalenessWarning": "Giá tái tạo khớp đợt nhập gần nhất"
   }
 }

@@ -13,3 +13,7 @@
 | weightedAvgCost | Bình quân gia quyền |
 | holdingGainLoss | Lãi/(lỗ) giữ kho |
 | yieldRate | Tỷ lệ sản phẩm đạt chuẩn |
+| baselinePrice | Giá baseline (đã chốt bảng giá hiện hành) |
+| priceLockThreshold | Ngưỡng khóa bảng giá (%) |
+| priceLockStatus | Trạng thái khóa (KHÓA / MỞ KHÓA) |
+| stalenessWarning | Cảnh báo giá tái tạo cũ (so đợt nhập gần nhất) |

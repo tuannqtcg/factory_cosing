@@ -5,7 +5,7 @@
 
 ## Dự án là gì
 Web app tính giá thành sản xuất & định giá bán cho nhà máy CPVC (BlazeMaster),
-chuyển thể từ Excel model `BlazeMaster_Model_v3_3.xlsx` (nguồn chân lý về nghiệp vụ).
+chuyển thể từ Excel model `BlazeMaster_Model_v3_4.xlsx` (nguồn chân lý về nghiệp vụ).
 Hai cost driver: ống theo **kg** (đùn liên tục), phụ kiện theo **giờ máy / MHR** (ép phun).
 
 ## Stack đã chốt — KHÔNG tự ý đổi
@@ -23,7 +23,7 @@ Hai cost driver: ống theo **kg** (đùn liên tục), phụ kiện theo **gi�
 Muốn đổi thiết kế ở pha 3? DỪNG. Quay lại pha 1/2, ghi ADR mới.
 
 ## Luật bất biến
-1. Mọi số liệu engine phải khớp Excel fixture (`tests/fixtures/` — 372 assertion từ v3.3).
+1. Mọi số liệu engine phải khớp Excel fixture (`tests/fixtures/` — 372 assertion + 5 kịch bản khóa giá từ v3.4).
 2. Mọi input qua Zod ở CẢ client và server. Không tin dữ liệu từ client.
 3. Không secret/API key trong code client. Firebase rules theo vai (xem PROJECT_SPEC §5).
 4. UI tiếng Việt, số theo định dạng VN (1.234.567 đ), thuật ngữ theo `docs/GLOSSARY.md`.

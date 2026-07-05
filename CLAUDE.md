@@ -12,4 +12,4 @@
 
 ## Lệnh thường dùng
 - `npm run dev` / `npm test` / `npm run typecheck`
-- Xuất fixture mới từ Excel: `npm run extract-fixtures` (đọc BlazeMaster_Model_v3_3.xlsx)
+- Xuất fixture mới từ Excel: `npm run extract-fixtures` (đọc BlazeMaster_Model_v3_4.xlsx)

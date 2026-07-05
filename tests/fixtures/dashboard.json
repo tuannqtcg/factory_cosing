@@ -70,5 +70,12 @@
     "provisionWarning": "Giá tái tạo ≥ bình quân kho — không cần dự phòng",
     "deltaPipeCostPer01UsdCompoundChange": 3150.55555555556,
     "deltaListPriceCorresponding": 7313.78968253969
+  },
+  "priceLockSummary": {
+    "_comment": "Dashboard dòng 39-42 (mới, v3.4) — thuần hiển thị, tham chiếu Assumptions.priceLock, xem ADR-004",
+    "deviationPctPipe": 0,
+    "lockStatusPipe": "KHÓA — lệch 0.0% trong ngưỡng 3%, bảng giá giữ nguyên",
+    "lockStatusFitting": "KHÓA — lệch 0.0% trong ngưỡng 3%, bảng giá giữ nguyên",
+    "stalenessCheck": "Giá tái tạo khớp đợt nhập gần nhất"
   }
 }

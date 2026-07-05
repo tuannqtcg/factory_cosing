@@ -1,0 +1,56 @@
+{
+  "_comment": "5 kịch bản nghiệm thu cơ chế khóa bảng giá (ADR-004), nguồn Excel v3.4. Kịch bản 1 là trạng thái mặc định của workbook (đã trích trực tiếp từ cell). Kịch bản 2-5 verify bằng công thức tuyến tính của engine (Dashboard!B37: delta = 0.1 USD/kg -> 3150.556 VNĐ/kg), khớp số liệu ghi trong ADR-004 — dùng để viết test parity Pha 4, KHÔNG phải trích xuất cell trực tiếp vì workbook chỉ lưu 1 trạng thái tại 1 thời điểm.",
+  "product": "ống",
+  "baselineUsd": 3.03,
+  "thresholdPct": 0.03,
+  "scenarios": [
+    {
+      "id": 1,
+      "label": "replacement = baseline",
+      "replacementUsd": 3.03,
+      "deviationPct": 0,
+      "expectedLockStatus": "KHÓA",
+      "expectedPricingPriceUsd": 3.03,
+      "expectedBreakEvenFullCostPerKg": 106204.729733113
+    },
+    {
+      "id": 2,
+      "label": "tăng nhẹ trong ngưỡng",
+      "replacementUsd": 3.1,
+      "deviationPct": 0.0231023102310231,
+      "expectedLockStatus": "KHÓA",
+      "expectedPricingPriceUsd": 3.03,
+      "expectedBreakEvenFullCostPerKg": 106204.729733113,
+      "note": "Bảng giá đứng yên tại baseline dù giá tái tạo đã tăng 2,3%; kế hoạch mua NVL/ngoại tệ vẫn dùng replacementUsd=3,10 (không dùng giá khóa)"
+    },
+    {
+      "id": 3,
+      "label": "tăng mạnh vượt ngưỡng",
+      "replacementUsd": 3.5,
+      "deviationPct": 0.155115511551155,
+      "expectedLockStatus": "MỞ KHÓA",
+      "expectedPricingPriceUsd": 3.5,
+      "expectedBreakEvenFullCostPerKg": 121012,
+      "note": "Sau khi duyệt phải CHỐT baseline = 3,50 (reset thủ công, có audit)"
+    },
+    {
+      "id": 4,
+      "label": "giảm vượt ngưỡng (đối xứng 2 chiều)",
+      "replacementUsd": 2.8,
+      "deviationPct": -0.0759075907590759,
+      "expectedLockStatus": "MỞ KHÓA",
+      "expectedPricingPriceUsd": 2.8,
+      "expectedBreakEvenFullCostPerKg": 98958
+    },
+    {
+      "id": 5,
+      "label": "quên cập nhật giá tái tạo theo lô mới",
+      "lastLotPriceUsd": 3.5,
+      "replacementUsd": 3.03,
+      "expectedLockStatus": "KHÓA",
+      "expectedPricingPriceUsd": 3.03,
+      "expectedStalenessWarning": "GIÁ TÁI TẠO CÓ THỂ CŨ — lệch quá ngưỡng so với đợt nhập gần nhất",
+      "note": "Cảnh báo staleness ĐỘC LẬP với trạng thái khóa bảng giá — deviationPct ở đây so replacementUsd với lastLotPriceUsd, không so với baselineUsd"
+    }
+  ]
+}

@@ -5,9 +5,9 @@ Engine giá thành cấu hình được cho sản xuất, khởi đầu bằng B
 4 vai: **admin** (toàn quyền) / **pricing** (giả định, thang giá) /
 **sales** (chỉ thang giá + bảng giá) / **production** (kế hoạch, công suất).
 
-## §2. Phạm vi v1 (khớp Excel v3.3)
+## §2. Phạm vi v1 (khớp Excel v3.4)
 Sản lượng-công suất, giá thành kép (sổ sách/định giá), thang giá 5 bậc, CVP,
-kế hoạch SX (bậc ca, khuôn, NVL, nhân công), tồn kho compound nhiều đợt.
+kế hoạch SX (bậc ca, khuôn, NVL, nhân công), tồn kho compound nhiều đợt, CƠ CHẾ KHÓA BẢNG GIÁ baseline + ngưỡng (ADR-004).
 NGOÀI phạm vi v1: routing đa công đoạn, MRP lịch tuần, multi-tenant SaaS (xem ADR-003).
 
 ## §3. Kiến trúc

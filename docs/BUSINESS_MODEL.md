@@ -1,11 +1,17 @@
-# BUSINESS_MODEL.md — Thuật toán & quy định nghiệp vụ (nguồn: BlazeMaster_Model_v3_3.xlsx)
+# BUSINESS_MODEL.md — Thuật toán & quy định nghiệp vụ (nguồn: BlazeMaster_Model_v3_4.xlsx)
 
 > File Excel gốc KHÔNG nằm trong repo (dữ liệu chi phí/giá thành/margin nhạy cảm kinh
 > doanh — xem `.gitignore`). Tài liệu này + `tests/fixtures/*.json` là bản dịch đầy đủ
 > sang thuật toán/số liệu vàng, đủ để cài lại engine mà không cần file Excel.
-> Số liệu trong fixture được trích xuất 1 lần (2026-07) bằng script đọc trực tiếp ô
-> công thức của Excel — không gõ tay. Khi có bản Excel mới (v3.4+), lặp lại quy trình
-> trích xuất, KHÔNG sửa tay số trong JSON.
+> Số liệu trong fixture được trích xuất bằng script đọc trực tiếp ô công thức của
+> Excel — không gõ tay. Khi có bản Excel mới, lặp lại quy trình trích xuất, KHÔNG
+> sửa tay số trong JSON.
+>
+> **v3.4 (2026-07, kit v1.1):** thêm cơ chế khóa bảng giá — xem §1a và ADR-004.
+> So với v3.3: giá đợt nhập compound (Assumptions dòng 32-44) KHÔNG đổi giá trị;
+> thay đổi duy nhất là Ống!B5 / Phụ kiện!B5 đổi tham chiếu từ giá tái tạo thô sang
+> giá đã qua cơ chế khóa (§1a) — mọi công thức downstream (giá thành, thang giá,
+> bảng giá) giữ nguyên 100%. Xem `docs/CHANGELOG.md` cho lịch sử đầy đủ.
 
 ## 0. Cấu trúc nguồn Excel (6 sheet)
 `Assumptions` (tham số chung) → `Ống` + `Phụ kiện` (2 dòng sản phẩm, tính độc lập,
@@ -42,9 +48,55 @@ Phân bổ vào từng dòng theo tỷ lệ sản lượng kg (xem §4), KHÔNG 
 weightedAvgUsd = Σ(lot.tons × lot.priceUsdPerKg) / Σ(lot.tons)     // nếu không có lô nào → dùng replacementPriceUsd
 inventoryKg    = Σ(lot.tons) × 1000
 ```
-`replacementPriceUsd` là giá chào mua lô kế tiếp — nhập tay, neo cho compound
-landed dùng ĐỊNH GIÁ ở Ống/Phụ kiện §2 (biến `B5`). `weightedAvgUsd` chỉ dùng cho
-dòng SỔ SÁCH (biến `B49`/`B60` ở Ống/Phụ kiện).
+`replacementPriceUsd` là giá chào mua lô kế tiếp — nhập tay. Trước v3.4,
+`replacementPriceUsd` neo thẳng vào compound landed ở Ống/Phụ kiện §2 (biến
+`B5`); từ v3.4, `B5` đi qua cơ chế khóa (§1a) trước — xem chi tiết. `weightedAvgUsd`
+chỉ dùng cho dòng SỔ SÁCH (biến `B49`/`B60` ở Ống/Phụ kiện), không liên quan cơ
+chế khóa (khóa chỉ áp cho dòng ĐỊNH GIÁ).
+
+---
+
+## 1a. Cơ chế khóa bảng giá — baseline + ngưỡng (ADR-004, mới ở v3.4)
+`tests/fixtures/assumptions.json` → `priceLock`; 5 kịch bản nghiệm thu →
+`tests/fixtures/price-lock-scenarios.json`.
+
+**Vấn đề giải quyết:** giá tái tạo (§1) nếu chảy thẳng vào bảng giá thì bảng giá
+rung theo mọi biến động NVL (mất niềm tin kênh phân phối); nếu nhập tay thuần thì
+rủi ro quên cập nhật, bảng giá chạy trên giá cũ vô thời hạn.
+
+```
+deviationPct   = replacementUsd / baselineUsd − 1
+pricingPriceUsd = |deviationPct| > thresholdPct ? replacementUsd : baselineUsd   // ổ khóa
+```
+- `baselineUsd` (ống 3,03 / PK 3,85): giá đã "chốt" bảng giá hiện hành — KHÁC
+  `replacementUsd` (giá tái tạo thị trường hiện tại). Hai giá này trùng nhau ở
+  trạng thái mặc định của workbook (deviation = 0%).
+- `thresholdPct` mặc định 3%, đối xứng 2 chiều (tăng lẫn giảm).
+- **Trong ngưỡng**: `pricingPriceUsd = baselineUsd` — bảng giá ĐỨNG YÊN tuyệt đối,
+  nuốt biến động nhỏ của thị trường.
+- **Vượt ngưỡng**: `pricingPriceUsd = replacementUsd` — toàn chuỗi giá (giá thành
+  → VF → TCG → niêm yết) chuyển theo tái tạo ngay, kèm `lockStatus` = "MỞ KHÓA —
+  ... sau khi duyệt hãy CHỐT BASELINE = <replacementUsd>" (reset `baselineUsd`
+  thủ công, có audit — KHÔNG tự động).
+- **Cảnh báo staleness** (độc lập với khóa/mở khóa bảng giá):
+  `|replacementUsd / lastLotPriceUsd − 1| > thresholdPct` → "GIÁ TÁI TẠO CÓ THỂ
+  CŨ" — phát hiện ai đó quên cập nhật ô giá tái tạo theo đúng lô nhập gần nhất.
+  `lastLotPriceUsd` tự dò dòng cuối cùng có `tons > 0` trong bảng lô (§1).
+- **Điểm nối vào Ống/Phụ kiện**: `Ống!B5` và `Phụ kiện!B5` (compound landed dùng
+  ĐỊNH GIÁ, biến `compoundReplacementPriceUsdPerKg` trong §2.2/§3.3) từ v3.4 đọc
+  `pricingPriceUsd` thay vì `replacementUsd` trực tiếp. Đây là ĐIỂM NỐI DUY NHẤT —
+  không sửa công thức nào khác trong §2/§3.
+- **Kế hoạch mua NVL/ngoại tệ (Plan_SX §6.4) LUÔN dùng `replacementUsd` thô**,
+  KHÔNG đi qua khóa — kế hoạch phải phản ánh giá thị trường thật để mua đúng giá,
+  bảng giá bán mới là thứ cần ổn định.
+
+| # | Kịch bản (ống, baseline 3,03, ngưỡng 3%) | `pricingPriceUsd` | `lockStatus` | BE đầy đủ |
+|---|---|---|---|---|
+| 1 | replacement 3,03 (= baseline) | 3,03 | KHÓA | 106.205 |
+| 2 | replacement 3,10 (+2,3%, trong ngưỡng) | 3,03 | KHÓA | 106.205 |
+| 3 | replacement 3,50 (+15,5%, vượt ngưỡng) | 3,50 | MỞ KHÓA | 121.012 |
+| 4 | replacement 2,80 (−7,6%, vượt ngưỡng) | 2,80 | MỞ KHÓA | 98.958 |
+| 5 | lô mới 3,50 nhưng quên cập nhật replacement (vẫn 3,03) | 3,03 | KHÓA + cảnh báo staleness | 106.205 |
 
 ---
 
@@ -62,6 +114,8 @@ normalCapacityKgYear    = extruderActualCapacityKgPerHour × normalOperatingHour
 chuẩn — đổi số này = đổi chính sách giá, phải có ADR.
 
 ### 2.2 Chi phí sản xuất tại công suất bình thường
+> `compoundReplacementPriceUsdPerKg` ở đây từ v3.4 = `priceLock.pipe.pricingPriceUsd`
+> (§1a), KHÔNG phải giá tái tạo thô — xem §1a để biết khi nào 2 giá trị này khác nhau.
 ```
 compoundLandedPerKg   = compoundReplacementPriceUsdPerKg × (1 + importTaxRate + logisticsFeeRate) × usdVndRate
 materialPerKgFinished = compoundLandedPerKg / yieldRate            // hao hụt phế dồn vào tử số — phế không tái chế (UL)
@@ -129,6 +183,8 @@ chính sách công suất chuẩn (khác hẳn Ống dùng cố định 3 ca), p
 `hệ số huy động` gánh: đổi khuôn, chờ liệu, sự cố — KHÔNG phải hiệu suất máy.
 
 ### 3.3 MHR — đơn giá giờ máy (trái tim ADR-001)
+> `compoundReplacementPriceUsdPerKg` ở đây từ v3.4 = `priceLock.fitting.pricingPriceUsd`
+> (§1a) — cùng nguyên tắc như Ống §2.2.
 ```
 compoundLandedPerKg = compoundReplacementPriceUsdPerKg × (1 + importTaxRate + logisticsFeeRate) × usdVndRate
 machineMoldDepreciation = (machineTypeAPrice×machineTypeACount + machineTypeBPrice×machineTypeBCount + moldSetCostTotal66) / depreciationYears
@@ -237,8 +293,9 @@ hoạch (`src/features/plan`):
    khuôn kèm số bộ cần thêm (ROUNDUP). Đây là ràng buộc RIÊNG của phụ kiện — ống
    không có khái niệm "khuôn theo size" giới hạn công suất tương tự.
 4. **Nguyên liệu + ngoại tệ cần**: kg cần mua = kg nạp máy × (1 + hệ số dự phòng
-   NVL); giá trị VNĐ = ×compoundLandedPerKg; ngoại tệ gốc = ×giá USD gốc (không
-   nhân thuế/phí — dùng cho kế hoạch LC).
+   NVL); giá trị VNĐ = ×compoundLandedPerKg; ngoại tệ gốc = ×`replacementUsd` THÔ
+   (từ v3.4 — KHÔNG qua cơ chế khóa §1a, không nhân thuế/phí — dùng cho kế hoạch
+   LC, phải phản ánh giá mua thật trên thị trường).
 5. **Nhân công cần tuyển** = MAX(0, số ca cần × người/ca − nhân công hiện có).
 6. **Chi phí/kg thực tế tại sản lượng kế hoạch** (chỉ Ống, dùng đánh giá công suất
    nhàn rỗi): `variableCostFloor + fixedCostPerYear × hệ số kỳ / kg kế hoạch` — so

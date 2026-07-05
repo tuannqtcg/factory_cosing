@@ -6,7 +6,7 @@ description: Viết và chạy test đối chiếu engine TypeScript với Excel
 # Skill: Excel Parity Testing (Pha 4)
 
 ## Nguyên tắc
-Excel `BlazeMaster_Model_v3_3.xlsx` là NGUỒN CHÂN LÝ nghiệp vụ. Engine TS đúng
+Excel `BlazeMaster_Model_v3_4.xlsx` là NGUỒN CHÂN LÝ nghiệp vụ. Engine TS đúng
 khi và chỉ khi tái tạo được từng con số của Excel với cùng input.
 
 ## Bộ fixture vàng (defaults kịch bản EU)
@@ -17,6 +17,7 @@ khi và chỉ khi tái tạo được từng con số của Excel với cùng in
 | Thang giá ống 5 bậc | 100.663 / 104.298 / 106.205 / 110.604 / 132.756 |
 | 8 giá ống + 91 giá SKU | tests/fixtures/prices.json (xuất từ Excel) |
 | Kho 2 đợt (100t@3,03 + 50t@3,5; tái tạo 3,5) | AVG=3,1867; BE định giá=121.012; lãi giữ kho=1.332.685.000 |
+| KHÓA GIÁ (baseline 3,03, ngưỡng 3%) | 5 kịch bản trong ADR-004: 3,10→BE giữ nguyên; 3,50→121.012; 2,80→98.958; staleness warning |
 
 ## Cách viết test
 1. Fixture xuất từ Excel bằng script, KHÔNG gõ tay (tránh lỗi chép số).

@@ -1024,6 +1024,36 @@
           <strong>ADR-002:</strong> Giá thành <strong>{{ dispFullCostPK }} đ/kg</strong> tính theo giá ĐỊNH GIÁ (tái tạo). Sổ sách dùng bình quân gia quyền kho → đo lãi thật từng kỳ — KHÔNG dùng chào giá. Ngưỡng reprice khuyến nghị: lệch ±3–5%.
         </div>
 
+        <!-- BẢNG GIÁ 5 MỨC THEO SKU — chuỗi markup, BUSINESS_MODEL §3.4 -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">BẢNG GIÁ THEO SKU — CHUỖI MARKUP (91 SKU)</div></div>
+        <div style="font-size:10px;color:#737373;margin-bottom:8px">Giá thành (§3.4 breakEvenPerUnit) → +{{ assumpInputs.markupVFPK }}% Giá VF → +{{ assumpInputs.markupTCG }}% Giá TCG → Niêm yết (làm tròn hàng trăm) → Có VAT 8%</div>
+        <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:20px">
+          <div style="display:grid;grid-template-columns:32px 1fr 90px 100px 100px 100px 110px 110px;padding:9px 16px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px;position:sticky;top:0">
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">#</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-transform:uppercase">Sản phẩm</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Size</div>
+            <div style="font-size:9px;font-weight:700;color:#DC2626;text-align:right;text-transform:uppercase">Giá thành</div>
+            <div style="font-size:9px;font-weight:700;color:#2563eb;text-align:right;text-transform:uppercase">Giá VF</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Giá TCG</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Niêm yết</div>
+            <div style="font-size:9px;font-weight:700;color:#737373;text-align:right;text-transform:uppercase">Có VAT</div>
+          </div>
+          <div style="max-height:520px;overflow-y:auto">
+            <sc-for list="{{ pkPriceLadderFmt }}" as="row" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:32px 1fr 90px 100px 100px 100px 110px 110px;padding:8px 16px;border-bottom:1px solid #f2f2f2;align-items:center;gap:8px">
+                <div style="font-size:10px;color:#b3b3b3;font-variant-numeric:tabular-nums">{{ row.idx }}</div>
+                <div style="font-size:11px;font-weight:600">{{ row.t }}</div>
+                <div style="font-size:11px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ row.s }}</div>
+                <div style="font-size:11px;color:#DC2626;text-align:right;font-variant-numeric:tabular-nums">{{ row.beFmt }}</div>
+                <div style="font-size:11px;color:#2563eb;text-align:right;font-variant-numeric:tabular-nums">{{ row.vfFmt }}</div>
+                <div style="font-size:11px;color:#1a1a1a;text-align:right;font-variant-numeric:tabular-nums">{{ row.tcgFmt }}</div>
+                <div style="font-size:12px;font-weight:600;text-align:right;font-variant-numeric:tabular-nums">{{ row.nyFmt }}</div>
+                <div style="font-size:11px;color:#737373;text-align:right;font-variant-numeric:tabular-nums">{{ row.vatFmt }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:11px"><div style="width:3px;height:14px;background:#a8003b;border-radius:1px;flex-shrink:0"></div><div style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#a8003b">BẢNG KHUÔN THEO SIZE — 66 BỘ KHUÔN</div></div>
         <div style="background:#fff;border:1px solid #d8d8d8;border-radius:2px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)">
           <div style="display:grid;grid-template-columns:80px 90px 90px 100px 120px;padding:9px 16px;background:#f5f5f3;border-bottom:1px solid #e5e5e5;gap:8px">
@@ -1426,6 +1456,105 @@ class Component extends DCLogic {
       {dn:'DN80',  cycle:120, cavity:1, pcsH:30.0 },
       {dn:'DN100', cycle:160, cavity:1, pcsH:22.5 },
     ].map(m => ({...m, cycleFmt:m.cycle+'s', shotsH:(3600/m.cycle).toFixed(1), pcsHFmt:m.pcsH.toFixed(1)}));
+
+    // PK PRICE LADDER — chuỗi markup theo SKU (BUSINESS_MODEL §3.4), số vàng từ fitting.json
+    const pkPriceLadderRaw = [
+      {t:'Tê đều',s:'20',be:10411,vf:14576,tcg:18949,ny:27100,vat:29268},
+      {t:'Tê đều',s:'25',be:15245,vf:21344,tcg:27747,ny:39700,vat:42876},
+      {t:'Tê đều',s:'32',be:26596,vf:37234,tcg:48405,ny:69200,vat:74736},
+      {t:'Tê đều',s:'40',be:40579,vf:56811,tcg:73854,ny:105600,vat:114048},
+      {t:'Tê đều',s:'50',be:62802,vf:87923,tcg:114299,ny:163300,vat:176364},
+      {t:'Tê đều',s:'65',be:129811,vf:181735,tcg:236255,ny:337600,vat:364608},
+      {t:'Tê đều',s:'80',be:187876,vf:263027,tcg:341935,ny:488500,vat:527580},
+      {t:'Tê đều',s:'100',be:374620,vf:524468,tcg:681808,ny:974100,vat:1052028},
+      {t:'Tê giảm',s:'25x20',be:14012,vf:19617,tcg:25503,ny:36500,vat:39420},
+      {t:'Tê giảm',s:'32x20',be:23514,vf:32919,tcg:42795,ny:61200,vat:66096},
+      {t:'Tê giảm',s:'32x25',be:24130,vf:33782,tcg:43917,ny:62800,vat:67824},
+      {t:'Tê giảm',s:'40x20',be:36264,vf:50770,tcg:66000,ny:94300,vat:101844},
+      {t:'Tê giảm',s:'40x25',be:37497,vf:52496,tcg:68244,ny:97500,vat:105300},
+      {t:'Tê giảm',s:'40x32',be:41812,vf:58537,tcg:76098,ny:108800,vat:117504},
+      {t:'Tê giảm',s:'50x20',be:49239,vf:68935,tcg:89615,ny:128100,vat:138348},
+      {t:'Tê giảm',s:'50x25',be:51705,vf:72387,tcg:94103,ny:134500,vat:145260},
+      {t:'Tê giảm',s:'50x32',be:55404,vf:77566,tcg:100835,ny:144100,vat:155628},
+      {t:'Tê giảm',s:'50x40',be:58486,vf:81881,tcg:106445,ny:152100,vat:164268},
+      {t:'Tê giảm',s:'65x25',be:94671,vf:132539,tcg:172301,ny:246200,vat:265896},
+      {t:'Tê giảm',s:'65x32',be:103918,vf:145486,tcg:189131,ny:270200,vat:291816},
+      {t:'Tê giảm',s:'65x40',be:107617,vf:150664,tcg:195863,ny:279900,vat:302292},
+      {t:'Tê giảm',s:'65x50',be:115508,vf:161711,tcg:210225,ny:300400,vat:324432},
+      {t:'Tê giảm',s:'80x50',be:153353,vf:214695,tcg:279103,ny:398800,vat:430704},
+      {t:'Tê giảm',s:'80x65',be:173081,vf:242313,tcg:315007,ny:450100,vat:486108},
+      {t:'Tê giảm',s:'100x80',be:229130,vf:320782,tcg:417017,ny:595800,vat:643464},
+      {t:'Tê giảm',s:'100x65',be:219267,vf:306973,tcg:399065,ny:570100,vat:615708},
+      {t:'Tê giảm',s:'100x50',be:211869,vf:296616,tcg:385601,ny:550900,vat:594972},
+      {t:'Cút 90°',s:'20',be:9178,vf:12850,tcg:16705,ny:23900,vat:25812},
+      {t:'Cút 90°',s:'25',be:12163,vf:17028,tcg:22137,ny:31700,vat:34236},
+      {t:'Cút 90°',s:'32',be:23514,vf:32919,tcg:42795,ny:61200,vat:66096},
+      {t:'Cút 90°',s:'40',be:35647,vf:49906,tcg:64878,ny:92700,vat:100116},
+      {t:'Cút 90°',s:'50',be:51089,vf:71524,tcg:92981,ny:132900,vat:143532},
+      {t:'Cút 90°',s:'65',be:109467,vf:153253,tcg:199229,ny:284700,vat:307476},
+      {t:'Cút 90°',s:'80',be:161984,vf:226778,tcg:294811,ny:421200,vat:454896},
+      {t:'Cút 90°',s:'100',be:275983,vf:386376,tcg:502289,ny:717600,vat:775008},
+      {t:'Cút 45°',s:'65',be:86657,vf:121319,tcg:157715,ny:225400,vat:243432},
+      {t:'Cút 45°',s:'80',be:121296,vf:169815,tcg:220759,ny:315400,vat:340632},
+      {t:'Cút 45°',s:'100',be:177346,vf:248284,tcg:322769,ny:461100,vat:497988},
+      {t:'Nối thẳng',s:'20',be:7329,vf:10261,tcg:13339,ny:19100,vat:20628},
+      {t:'Nối thẳng',s:'25',be:12779,vf:17891,tcg:23259,ny:33300,vat:35964},
+      {t:'Nối thẳng',s:'32',be:21664,vf:30330,tcg:39429,ny:56400,vat:60912},
+      {t:'Nối thẳng',s:'40',be:25784,vf:36097,tcg:46926,ny:67100,vat:72468},
+      {t:'Nối thẳng',s:'50',be:36910,vf:51673,tcg:67175,ny:96000,vat:103680},
+      {t:'Nối thẳng',s:'65',be:77410,vf:108373,tcg:140885,ny:201300,vat:217404},
+      {t:'Nối thẳng',s:'80',be:105268,vf:147375,tcg:191587,ny:273700,vat:295596},
+      {t:'Nối thẳng',s:'100',be:147755,vf:206857,tcg:268913,ny:384200,vat:414936},
+      {t:'Nối giảm',s:'25x20',be:8464,vf:11850,tcg:15405,ny:22100,vat:23868},
+      {t:'Nối giảm',s:'32x25',be:19198,vf:26878,tcg:34941,ny:50000,vat:54000},
+      {t:'Nối giảm',s:'40x25',be:23318,vf:32645,tcg:42438,ny:60700,vat:65556},
+      {t:'Nối giảm',s:'40x32',be:24551,vf:34371,tcg:44682,ny:63900,vat:69012},
+      {t:'Nối giảm',s:'50x25',be:34690,vf:48566,tcg:63136,ny:90200,vat:97416},
+      {t:'Nối giảm',s:'50x32',be:33827,vf:47358,tcg:61565,ny:88000,vat:95040},
+      {t:'Nối giảm',s:'50x40',be:33827,vf:47358,tcg:61565,ny:88000,vat:95040},
+      {t:'Nối giảm',s:'65x50',be:73094,vf:102332,tcg:133031,ny:190100,vat:205308},
+      {t:'Nối giảm',s:'80x50',be:97870,vf:137018,tcg:178123,ny:254500,vat:274860},
+      {t:'Nối giảm',s:'80x65',be:107117,vf:149964,tcg:194953,ny:278600,vat:300888},
+      {t:'Nối giảm',s:'100x65',be:157618,vf:220666,tcg:286865,ny:409900,vat:442692},
+      {t:'Nối giảm',s:'100x80',be:173647,vf:243106,tcg:316037,ny:451500,vat:487620},
+      {t:'Lơ thu',s:'25x20',be:6985,vf:9778,tcg:12712,ny:18200,vat:19656},
+      {t:'Lơ thu',s:'32x25',be:14390,vf:20146,tcg:26189,ny:37500,vat:40500},
+      {t:'Lơ thu',s:'40x25',be:19126,vf:26776,tcg:34809,ny:49800,vat:53784},
+      {t:'Lơ thu',s:'40x32',be:15673,vf:21943,tcg:28526,ny:40800,vat:44064},
+      {t:'Lơ thu',s:'50x25',be:33211,vf:46495,tcg:60443,ny:86400,vat:93312},
+      {t:'Lơ thu',s:'50x32',be:29512,vf:41316,tcg:53711,ny:76800,vat:82944},
+      {t:'Lơ thu',s:'50x40',be:25813,vf:36138,tcg:46979,ny:67200,vat:72576},
+      {t:'Nối ren trong',s:'20xPT15',be:25378,vf:35530,tcg:46189,ny:66000,vat:71280},
+      {t:'Nối ren trong',s:'25xPT15',be:27746,vf:38845,tcg:50499,ny:72200,vat:77976},
+      {t:'Nối ren trong',s:'25xPT20',be:33879,vf:47431,tcg:61661,ny:88100,vat:95148},
+      {t:'Nối ren trong',s:'25xPT25',be:42812,vf:59937,tcg:77919,ny:111400,vat:120312},
+      {t:'Nối ren trong',s:'32xPT32',be:79764,vf:111670,tcg:145171,ny:207400,vat:223992},
+      {t:'Nối ren trong',s:'40xPT40',be:89584,vf:125417,tcg:163042,ny:233000,vat:251640},
+      {t:'Nối ren trong',s:'50xPT50',be:146910,vf:205673,tcg:267375,ny:382000,vat:412560},
+      {t:'Nối ren ngoài',s:'25xPT25',be:67179,vf:94051,tcg:122267,ny:174700,vat:188676},
+      {t:'Nối ren ngoài',s:'32xPT32',be:103764,vf:145270,tcg:188851,ny:269800,vat:291384},
+      {t:'Nối ren ngoài',s:'40xPT40',be:113084,vf:158317,tcg:205812,ny:294100,vat:317628},
+      {t:'Nối ren ngoài',s:'50xPT50',be:179510,vf:251313,tcg:326707,ny:466800,vat:504144},
+      {t:'Nắp bịt',s:'20',be:6096,vf:8534,tcg:11095,ny:15900,vat:17172},
+      {t:'Nắp bịt',s:'25',be:9697,vf:13576,tcg:17649,ny:25300,vat:27324},
+      {t:'Nắp bịt',s:'32',be:18582,vf:26014,tcg:33819,ny:48400,vat:52272},
+      {t:'Nắp bịt',s:'40',be:22701,vf:31782,tcg:41316,ny:59100,vat:63828},
+      {t:'Nắp bịt',s:'50',be:32594,vf:45632,tcg:59321,ny:84800,vat:91584},
+      {t:'Mặt bích',s:'65',be:148305,vf:207627,tcg:269915,ny:385600,vat:416448},
+      {t:'Mặt bích',s:'80',be:189109,vf:264753,tcg:344179,ny:491700,vat:531036},
+      {t:'Mặt bích',s:'100',be:263653,vf:369115,tcg:479849,ny:685500,vat:740340},
+      {t:'Cút ren trong',s:'20xPT15',be:25101,vf:35141,tcg:45684,ny:65300,vat:70524},
+      {t:'Cút ren trong',s:'25xPT15',be:27962,vf:39147,tcg:50891,ny:72800,vat:78624},
+      {t:'Cút ren trong',s:'25xPT20',be:32030,vf:44842,tcg:58295,ny:83300,vat:89964},
+      {t:'Tê ren trong',s:'20xPT15',be:30927,vf:43297,tcg:56287,ny:80500,vat:86940},
+      {t:'Tê ren trong',s:'25xPT15',be:37610,vf:52654,tcg:68451,ny:97800,vat:105624},
+      {t:'Tê ren trong',s:'25xPT20',be:37610,vf:52654,tcg:68451,ny:97800,vat:105624},
+      {t:'Tê ren trong',s:'25xPT25',be:50210,vf:70294,tcg:91383,ny:130600,vat:141048},
+    ];
+    const pkPriceLadderFmt = pkPriceLadderRaw.map((r,i) => ({
+      ...r, idx:i+1,
+      beFmt: fmt(r.be), vfFmt: fmt(r.vf), tcgFmt: fmt(r.tcg), nyFmt: fmt(r.ny), vatFmt: fmt(r.vat),
+    }));
 
     // PRICE LIST
     const allSKU = [
@@ -1830,7 +1959,7 @@ class Component extends DCLogic {
       userNavItems:  mkNav(userTabs),
       adminNavItems: mkNav(adminTabs),
       showAdminGroup, roleSwitcher, roleLabel, canSeeCostDetail, hideCostDetailNote,
-      thangGiaFmt, productionFmt, pipeFmt, moldFmt,
+      thangGiaFmt, productionFmt, pipeFmt, moldFmt, pkPriceLadderFmt,
       skuFmt, catButtons, ptBtns, colHeader,
       searchQuery, setSearch:(e)=>this.setState({searchQuery:e.target.value}),
       skuCount: filteredSKU.length,

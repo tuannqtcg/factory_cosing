@@ -21,3 +21,7 @@
 | strategicTopDown | Top-down tầng chiến lược (mục tiêu → nguồn lực cần — T2/T3) |
 | targetProfit | Lợi nhuận mục tiêu |
 | penetrationPrice | Giá thâm nhập |
+| moldAsset | Khuôn (tài sản) — 1 bộ khuôn/lô khuôn, khấu hao riêng theo năm mua |
+| asOfYear | Mốc thời gian đánh giá (năm hiện tại của kịch bản, dùng tính khấu hao động) |
+| purchasedMetalInsert | Ren kim loại mua ngoài (đồng thau, lắp ép vào phụ kiện ren) |
+| insertQtyPerUnit | Số lượng ren kim loại / sản phẩm (theo BOM từng SKU) |

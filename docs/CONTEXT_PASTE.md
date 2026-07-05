@@ -27,6 +27,14 @@ NGHIỆP VỤ LÕI (không được phát minh khác đi):
    màn hình Plan_SX, theo kỳ) KHÁC tầng CHIẾN LƯỢC (T2/T3 + giá thâm nhập, vai
    `pricing`/`admin`, màn hình Target Costing riêng, khi ra quyết định giá/đầu
    tư). Không gộp 2 tầng vào 1 màn hình; `production` không thấy Target Costing.
+8. KHẤU HAO KHUÔN THEO THỜI ĐIỂM MUA (ADR-007 — CHỜ DỮ LIỆU): khuôn phụ kiện
+   KHÔNG còn là 1 số gộp tĩnh (`moldSetCostTotal66`) — mỗi khuôn/lô khuôn là 1
+   `moldAsset` riêng (giá, năm mua, số năm khấu hao). MHR tính động theo
+   `asOfYear` — sẽ tự đổi khi mua thêm khuôn hoặc khuôn cũ hết khấu hao.
+9. REN KIM LOẠI MUA NGOÀI (ADR-008 — CHỜ DỮ LIỆU): 4 họ SKU ren (Nối ren
+   trong/ngoài, Cút ren trong, Tê ren trong) có thêm dòng nguyên liệu THỨ 2
+   (ren đồng thau mua ngoài) — áp ĐÚNG giá vốn kép như ADR-002 (bình quân gia
+   quyền sổ sách vs giá tái tạo định giá), KHÔNG cộng thẳng hằng số tĩnh.
 
 QUY TRÌNH: 4 pha có cổng — brief → prototype (mock, duyệt UI) → schema+contract
 (đóng băng) → code (không phát minh mới) → test parity + security → merge.

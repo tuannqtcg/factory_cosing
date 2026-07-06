@@ -40,6 +40,11 @@ vào `tests/fixtures/metal-insert.json`. Tổng tồn kho: 29.000 cái, 1.016.30
 lô duy nhất → bình quân gia quyền = giá tái tạo). ADR-008 chỉ còn thiếu
 baseline/ngưỡng khóa giá ban đầu.
 
+**Cập nhật lần 4 cùng ngày — chốt ngưỡng khóa giá**: user xác nhận **ngưỡng khóa
+giá ren kim loại = 5%**, baseline = giá hiện hành tại lần chốt đầu tiên (độ lệch=0%,
+KHÓA). Thêm `priceLock` vào cả 10 dòng `insertCatalog`. **ADR-008 nay ĐẦY ĐỦ DỮ
+LIỆU cho 11 SKU hiện có** — sẵn sàng lên schema Pha 2 chính thức.
+
 ## v1.3 (2026-07) — phân tầng top-down theo đối tượng xem
 KHÁC BIỆT so với kit v1.2:
 

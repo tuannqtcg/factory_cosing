@@ -1,5 +1,5 @@
 # ADR-008: Ren kim loại mua ngoài — dòng nguyên liệu thứ 2, áp giá vốn kép + khóa giá riêng
-Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — ĐÃ CÓ ĐƠN GIÁ + TỒN KHO BAN ĐẦU, chỉ còn chờ baseline/ngưỡng khóa giá
+Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — ĐẦY ĐỦ DỮ LIỆU cho 11 SKU hiện có (đơn giá + tồn kho + khóa giá 5%)
 
 ## Bối cảnh
 Ban đầu nghĩ 4 họ SKU (Nối ren trong, Nối ren ngoài, Cút ren trong, Tê ren trong)
@@ -85,10 +85,16 @@ tái tạo hiện hành đã có → bình quân gia quyền = giá tái tạo, 
 vì chưa có lịch sử nhập nhiều đợt). Lưu tại `tests/fixtures/metal-insert.json`
 (`insertCatalog` + `skuToInsertMap`).
 
+## Dữ liệu thật — Khóa giá (2026-07, user xác nhận)
+**Ngưỡng khóa giá = 5%** cho cả 10 loại ren kim loại (policy độc lập, không gộp
+ngưỡng compound — đúng mục 6 ở trên). Baseline = giá hiện hành tại lần chốt đầu
+tiên (cùng ngày với giá trong `Gia_phu_kien_ren.pdf`) → độ lệch = 0%, trạng thái
+KHÓA cho cả 10 loại. Lưu trong `insertCatalog[].priceLock` (`baselinePriceVnd`,
+`thresholdPct: 5`, `replacementPriceVnd`, `deviationPct`, `isLocked`, `pricingPriceVnd`).
+
+→ **ADR-008 nay đã đủ dữ liệu để lên schema Pha 2 chính thức cho 11 SKU hiện có.**
+
 ## Còn treo
-- `baselinePriceVnd` + `thresholdPct` ban đầu cho cơ chế khóa giá ren kim loại
-  (mục 6 ở trên) — đơn giá hiện có coi là giá tái tạo hiện hành, nhưng chưa có
-  baseline đã "chốt" trước đó để so sánh (có thể mặc định = giá hiện hành cho lần
-  chốt đầu tiên, cần user xác nhận).
 - Khi 7 SKU Cút/Tê ren trong thật sự vào sản xuất (mua khuôn — xem ADR-007), cần
-  đơn giá + tồn kho ren kim loại cho chúng lúc đó (chưa có, không giả định trước).
+  đơn giá + tồn kho + baseline khóa giá cho loại ren mới của chúng lúc đó (chưa
+  có, không giả định trước).

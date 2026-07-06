@@ -1,19 +1,20 @@
 {
   "_meta": {
     "adr": "ADR-008",
-    "status": "Đã có đơn giá (11/11 SKU) + tồn kho ban đầu (10 loại theo PT size) — chờ baseline/ngưỡng khóa giá",
+    "status": "ĐẦY ĐỦ dữ liệu cho 11 SKU hiện có (đơn giá + tồn kho + khóa giá 5%) — chỉ còn thiếu dữ liệu cho 7 SKU Cút/Tê ren trong khi vào sản xuất thật",
     "sourceFile": "Gia_phu_kien_ren.pdf (upload 2026-07)",
     "currency": "VND — mua trong nước, KHÔNG có bước landed cost/thuế NK (đã xác nhận ADR-008)",
     "insertQtyPerUnit": "= 1 cho toàn bộ 11 SKU (PDF chỉ có 1 đơn giá/SKU, không có cột số lượng riêng)",
     "crossCheck": "unitWeightKg khớp 100% với PK_CATALOG hiện có trong prototype — xác nhận đúng SKU",
     "note": "Cút ren trong (3 SKU) và Tê ren trong (4 SKU) KHÔNG có trong file này — khớp với phát hiện ở mold-assets.json (8 SKU này chưa sản xuất/chưa mua khuôn, xác nhận bởi user).",
     "stillOpen": [
-      "baselinePriceVnd + thresholdPct ban đầu cho cơ chế khóa giá ren kim loại (ADR-008 mục 6) — chưa có, cần user cung cấp hoặc mặc định = giá tái tạo hiện hành lúc chốt bảng giá đầu tiên"
+      "Khi 7 SKU Cút ren trong/Tê ren trong thật sự vào sản xuất (mua khuôn — ADR-007), cần đơn giá + tồn kho + baseline khóa giá cho loại ren mới của chúng — chưa giả định trước."
     ],
     "insertIdentityNote": "PHÁT HIỆN (2026-07, xác nhận bởi user): ren kim loại thực chất là 10 loại vật tư riêng biệt theo (renType, ptSize) — KHÔNG phải 11 loại theo từng SKU đầy đủ. Bằng chứng: giá PT15 giống hệt nhau cho cả SKU 20xPT15 và 25xPT15 (16.200đ) — 2 SKU khác nhau dùng CHUNG 1 loại ren. `metalInsertSkus` dưới đây giữ granularity theo SKU (đủ cho tính giá thành/SKU), còn `insertCatalog` + `skuToInsertMap` là granularity ĐÚNG cho tồn kho/mua hàng (không giữ tồn kho tách theo SKU).",
     "inventorySource": "User cung cấp trực tiếp trong chat (2026-07) — tồn kho hiện có, 1 lô duy nhất, giá = giá đã có trong Gia_phu_kien_ren.pdf (bình quân gia quyền = giá tái tạo, chưa có lãi/lỗ giữ kho vì chưa có lịch sử nhập nhiều đợt)",
     "totalInventoryQty": 29000,
-    "totalInventoryValueVnd": 1016300000
+    "totalInventoryValueVnd": 1016300000,
+    "priceLockNote": "User xác nhận ngưỡng khóa giá ren kim loại = 5% (2026-07). Baseline = giá hiện hành (chốt lần đầu, ngày upload Gia_phu_kien_ren.pdf) — vì là lần chốt đầu tiên, replacement=baseline nên độ lệch=0%, trạng thái KHÓA. Công thức giống hệt ADR-004 nhưng là policy độc lập (không dùng chung ngưỡng compound)."
   },
   "metalInsertSkus": [
     {
@@ -101,7 +102,15 @@
       "unitPriceVnd": 16200,
       "inventoryQtyOnHand": 11000,
       "inventoryValueVnd": 178200000,
-      "weightedAvgPriceVnd": 16200
+      "weightedAvgPriceVnd": 16200,
+      "priceLock": {
+        "baselinePriceVnd": 16200,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 16200,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 16200
+      }
     },
     {
       "renType": "trong",
@@ -109,7 +118,15 @@
       "unitPriceVnd": 21100,
       "inventoryQtyOnHand": 10000,
       "inventoryValueVnd": 211000000,
-      "weightedAvgPriceVnd": 21100
+      "weightedAvgPriceVnd": 21100,
+      "priceLock": {
+        "baselinePriceVnd": 21100,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 21100,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 21100
+      }
     },
     {
       "renType": "trong",
@@ -117,7 +134,15 @@
       "unitPriceVnd": 28800,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 28800000,
-      "weightedAvgPriceVnd": 28800
+      "weightedAvgPriceVnd": 28800,
+      "priceLock": {
+        "baselinePriceVnd": 28800,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 28800,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 28800
+      }
     },
     {
       "renType": "trong",
@@ -125,7 +150,15 @@
       "unitPriceVnd": 58100,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 58100000,
-      "weightedAvgPriceVnd": 58100
+      "weightedAvgPriceVnd": 58100,
+      "priceLock": {
+        "baselinePriceVnd": 58100,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 58100,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 58100
+      }
     },
     {
       "renType": "trong",
@@ -133,7 +166,15 @@
       "unitPriceVnd": 63800,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 63800000,
-      "weightedAvgPriceVnd": 63800
+      "weightedAvgPriceVnd": 63800,
+      "priceLock": {
+        "baselinePriceVnd": 63800,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 63800,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 63800
+      }
     },
     {
       "renType": "trong",
@@ -141,7 +182,15 @@
       "unitPriceVnd": 110000,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 110000000,
-      "weightedAvgPriceVnd": 110000
+      "weightedAvgPriceVnd": 110000,
+      "priceLock": {
+        "baselinePriceVnd": 110000,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 110000,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 110000
+      }
     },
     {
       "renType": "ngoài",
@@ -149,7 +198,15 @@
       "unitPriceVnd": 54400,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 54400000,
-      "weightedAvgPriceVnd": 54400
+      "weightedAvgPriceVnd": 54400,
+      "priceLock": {
+        "baselinePriceVnd": 54400,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 54400,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 54400
+      }
     },
     {
       "renType": "ngoài",
@@ -157,7 +214,15 @@
       "unitPriceVnd": 82100,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 82100000,
-      "weightedAvgPriceVnd": 82100
+      "weightedAvgPriceVnd": 82100,
+      "priceLock": {
+        "baselinePriceVnd": 82100,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 82100,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 82100
+      }
     },
     {
       "renType": "ngoài",
@@ -165,7 +230,15 @@
       "unitPriceVnd": 87300,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 87300000,
-      "weightedAvgPriceVnd": 87300
+      "weightedAvgPriceVnd": 87300,
+      "priceLock": {
+        "baselinePriceVnd": 87300,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 87300,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 87300
+      }
     },
     {
       "renType": "ngoài",
@@ -173,7 +246,15 @@
       "unitPriceVnd": 142600,
       "inventoryQtyOnHand": 1000,
       "inventoryValueVnd": 142600000,
-      "weightedAvgPriceVnd": 142600
+      "weightedAvgPriceVnd": 142600,
+      "priceLock": {
+        "baselinePriceVnd": 142600,
+        "thresholdPct": 5,
+        "replacementPriceVnd": 142600,
+        "deviationPct": 0.0,
+        "isLocked": true,
+        "pricingPriceVnd": 142600
+      }
     }
   ],
   "skuToInsertMap": [

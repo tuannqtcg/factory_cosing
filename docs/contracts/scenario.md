@@ -64,9 +64,19 @@ export const ScenarioOutputSchema = z.object({
       evaluation: MetalInsertPriceLockEvaluationSchema,
     })),
   }),
+  // Sửa 2026-07-06 (code review PR #1): `fitting.pctUtilized` KHÔNG khớp tên
+  // thật của engine (`pctOfUtilizedHours`, src/engine/cvp.ts) — đã sửa lại +
+  // đối xứng field 2 dòng SP (không phát minh field mới, lấy nguyên từ
+  // PipeCvp/FittingCvp).
   cvp: z.object({
-    pipe: z.object({ variableCostPerKg: z.number(), breakEvenKgYear: z.number(), pctOfNormalCapacity: z.number() }),
-    fitting: z.object({ breakEvenMachineHours: z.number(), pctUtilized: z.number() }),
+    pipe: z.object({
+      variableCostPerKg: z.number(), contributionMarginPerKg: z.number(), fixedCostPerYear: z.number(),
+      breakEvenKgYear: z.number(), pctOfNormalCapacity: z.number(),
+    }),
+    fitting: z.object({
+      variableCostPerKg: z.number(), contributionMarginPerKg: z.number(), fixedCostPerYear: z.number(),
+      breakEvenKgYear: z.number(), breakEvenMachineHours: z.number(), pctOfUtilizedHours: z.number(),
+    }),
   }),
   dualCosting: z.object({
     pipe: z.object({ bookCostPerKg: z.number(), holdingGainLossVnd: z.number(), provisionWarning: z.string().nullable() }),
@@ -95,7 +105,7 @@ export const PlanInputSchema = z.object({
 export type PlanInput = z.infer<typeof PlanInputSchema>;
 ```
 > **Sửa 2026-07-06 (Pha 3 M9)**: bổ sung `periodMonths`/`currentLaborHeadcount` —
-> sót ở bản đóng băng đầu, không phải quyết định kiến trúc mới.
+> sót ở bản đóng băng đầu. Ghi nhận đầy đủ ở ADR-009 (docs/decisions/).
 ```ts
 
 export const PlanResultSchema = z.object({

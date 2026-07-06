@@ -26,7 +26,7 @@ export function calculatePipePriceLadder5Tier(inputs: {
   cost: PipeCostAtNormalCapacity;
   cvp: PipeCvp;
   costPool: CostPool;
-  /** = otherLine.normalCapacityKgYear × otherLine.vfPricePerKgRef (cross-ref — xem ghi chú đầu file). */
+  /** = otherLine(Phụ kiện).estimatedProductionKgYear × otherLine.vfPricePerKgRef (cross-ref — xem ghi chú đầu file; sửa comment sai ở code review PR #1, trước ghi nhầm tên field bên Ống). */
   otherLineRevenueVnd: number;
 }): PriceLadder5Tier {
   const { capacity, cost, cvp, costPool, otherLineRevenueVnd } = inputs;
@@ -101,14 +101,20 @@ function roundUpToHundred(value: number): number {
   return Math.ceil(value / 100) * 100;
 }
 
-function chainFromBreakEven(
-  breakEvenPerUnit: number,
-  materialCostPerUnit: number,
-  processingCostPerUnit: number,
-  markupVf: number,
-  markup: Pick<MarkupChain, 'markupTcg' | 'listPriceMargin'>,
-  vatOutputRate: number,
-): SkuPriceChain {
+interface ChainFromBreakEvenInputs {
+  breakEvenPerUnit: number;
+  materialCostPerUnit: number;
+  processingCostPerUnit: number;
+  markupVf: number;
+  markup: Pick<MarkupChain, 'markupTcg' | 'listPriceMargin'>;
+  vatOutputRate: number;
+}
+
+// Sửa 2026-07-06 (code review PR #1): đổi 6 tham số vị trí sang 1 object —
+// tránh nhầm thứ tự 2 tham số cùng kiểu number cạnh nhau (breakEvenPerUnit,
+// materialCostPerUnit), nhất quán với mọi hàm nhiều tham số khác trong repo.
+function chainFromBreakEven(inputs: ChainFromBreakEvenInputs): SkuPriceChain {
+  const { breakEvenPerUnit, materialCostPerUnit, processingCostPerUnit, markupVf, markup, vatOutputRate } = inputs;
   const vfPricePerUnit = breakEvenPerUnit * (1 + markupVf);
   const tcgPricePerUnit = vfPricePerUnit * (1 + markup.markupTcg);
   const listPriceBeforeVat = roundUpToHundred(tcgPricePerUnit / (1 - markup.listPriceMargin));
@@ -123,7 +129,14 @@ export function calculatePipeSkuPriceChain(
   costPool: Pick<CostPool, 'markup' | 'currency'>,
 ): SkuPriceChain {
   const breakEvenPerUnit = fullCostPerKg * unitWeightKgPerM;
-  return chainFromBreakEven(breakEvenPerUnit, breakEvenPerUnit, 0, costPool.markup.markupVfPipe, costPool.markup, costPool.currency.vatOutputRate);
+  return chainFromBreakEven({
+    breakEvenPerUnit,
+    materialCostPerUnit: breakEvenPerUnit,
+    processingCostPerUnit: 0,
+    markupVf: costPool.markup.markupVfPipe,
+    markup: costPool.markup,
+    vatOutputRate: costPool.currency.vatOutputRate,
+  });
 }
 
 export function calculateMachineHoursPerUnit(cycleTimeSec: number, cavity: number, yieldRate: number): number {
@@ -144,12 +157,12 @@ export function calculateFittingSkuPriceChain(
 ): SkuPriceChain {
   const processingCostPerUnit = machineHoursPerUnit * mhrPerMachineHour;
   const breakEvenPerUnit = materialCostPerUnit + processingCostPerUnit;
-  return chainFromBreakEven(
+  return chainFromBreakEven({
     breakEvenPerUnit,
     materialCostPerUnit,
     processingCostPerUnit,
-    costPool.markup.markupVfFitting,
-    costPool.markup,
-    costPool.currency.vatOutputRate,
-  );
+    markupVf: costPool.markup.markupVfFitting,
+    markup: costPool.markup,
+    vatOutputRate: costPool.currency.vatOutputRate,
+  });
 }

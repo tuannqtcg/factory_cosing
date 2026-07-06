@@ -16,8 +16,8 @@ import {
   calculateFittingSkuPriceChain,
   calculateMachineHoursPerUnit,
 } from '../../src/engine/price-ladder.js';
-import type { ContinuousKgResource, MachineHourResource } from '../../src/schemas/resource.js';
-import type { CostPool } from '../../src/schemas/cost-pool.js';
+import { ContinuousKgResourceSchema, MachineHourResourceSchema } from '../../src/schemas/resource.js';
+import { CostPoolSchema } from '../../src/schemas/cost-pool.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures');
 function loadFixture<T = unknown>(name: string): T {
@@ -34,7 +34,7 @@ const skusWithoutMold: Set<string> = new Set(
   loadFixture<any>('mold-assets.json').skusWithoutMold.map((s: any) => `${s.productName}|${s.sizeLabel}`),
 );
 
-const pipeResource: ContinuousKgResource = {
+const pipeResource = ContinuousKgResourceSchema.parse({
   driverType: 'continuous_kg',
   maxCapacityKgPerHour: pipeFixture.params.extruderMaxCapacityKgPerHour,
   actualCapacityKgPerHour: pipeFixture.params.extruderActualCapacityKgPerHour,
@@ -57,9 +57,9 @@ const pipeResource: ContinuousKgResource = {
   electricityPricePerKwh: pipeFixture.params.electricityPricePerKwh,
   waterM3PerHour: pipeFixture.params.waterM3PerHour,
   waterPricePerM3: pipeFixture.params.waterPricePerM3,
-};
+});
 
-const fittingResource: MachineHourResource = {
+const fittingResource = MachineHourResourceSchema.parse({
   driverType: 'machine_hour',
   machineTypes: [
     { id: 'A', priceVnd: fittingFixture.params.machineTypeAPrice, count: fittingFixture.params.machineTypeACount },
@@ -84,9 +84,9 @@ const fittingResource: MachineHourResource = {
   electricityPricePerKwh: fittingFixture.params.electricityPricePerKwh,
   waterM3PerMachineHour: fittingFixture.params.waterM3PerMachineHour,
   waterPricePerM3: fittingFixture.params.waterPricePerM3,
-};
+});
 
-const costPool: CostPool = {
+const costPool = CostPoolSchema.parse({
   sharedFixedCosts: assumptions.sharedFixedCosts,
   nonProductionCosts: assumptions.nonProductionCosts,
   currency: {
@@ -103,7 +103,7 @@ const costPool: CostPool = {
     listPriceMargin: assumptions.listPriceMargin,
   },
   solvent550PricePerBox: assumptions.solvent550PricePerBox,
-};
+});
 
 const pipeCapacity = calculatePipeCapacity(pipeResource);
 const pipeCost = calculatePipeCostAtNormalCapacity({

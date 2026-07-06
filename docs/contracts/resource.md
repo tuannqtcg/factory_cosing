@@ -9,9 +9,12 @@
 > bị SÓT ở bản đóng băng đầu (lương/điện/nước/bao bì — `packagingCostPerKg`,
 > `avgSalaryMonthly`, `monthsSalaryPerYear`, `electricityKw(PerMachineHour)`,
 > `electricityPricePerKwh`, `waterM3Per(Machine)Hour`, `waterPricePerM3`, và
-> `avgProductivityKgPerMachineHour` cho Phụ kiện) — đây là SỬA LỖI THIẾU SÓT khi
-> dịch ADR-001 sang schema (công thức chi phí gia công §2.2/§3.3 BUSINESS_MODEL
-> luôn cần các field này), KHÔNG phải quyết định kiến trúc mới nên không cần ADR.
+> `avgProductivityKgPerMachineHour` cho Phụ kiện, `depreciationYears` cho máy ép
+> Phụ kiện) — đây là SỬA LỖI THIẾU SÓT khi dịch ADR-001 sang schema (công thức
+> chi phí gia công §2.2/§3.3 BUSINESS_MODEL luôn cần các field này). Ghi nhận
+> đầy đủ ở ADR-009 (docs/decisions/) — theo code review PR #1, MỌI lần sửa cấu
+> trúc field ở đây đều cần ghi vào ADR-009 (hoặc ADR riêng nếu đủ lớn), kể cả
+> khi được đánh giá là "chỉ sửa thiếu sót".
 
 ## Nguyên tắc
 
@@ -44,7 +47,17 @@ export const MoldAssetSchema = z.object({
   costVnd: z.number().int().nonnegative(), // = costUsd × usdVndRate tại thời điểm mua — LƯU CỨNG, không tính lại theo tỷ giá hiện hành (giá vốn tài sản cố định, không phải giao dịch ngoại tệ đang mở)
   purchaseYear: z.number().int(),
   usefulLifeYears: z.number().int().positive(),
-  maintenancePerYearVnd: z.number().int().nonnegative().optional(), // optional: mặc định dùng annualMoldMaintenance chung ở CostPool, chỉ set khi khuôn này có bảo trì riêng khác mức chung
+  // ⚠ Sửa 2026-07-06 (code review PR #1): comment cũ ghi "ghi đè nếu có" nhưng
+  // src/engine/fitting.ts (M3) CHƯA implement override này — engine hiện dùng
+  // thẳng `annualMoldMaintenance` (1 số tổng duy nhất, đúng khớp Excel/BUSINESS_MODEL
+  // §3.3, đã verify parity) cho MỌI khuôn, bỏ qua field này hoàn toàn. Lý do
+  // CHƯA sửa formula: annualMoldMaintenance là 1 TỔNG duy nhất từ Excel (không
+  // decompose theo từng khuôn) — "override" 1 khuôn cụ thể đòi hỏi biết phần
+  // tổng đó vốn thuộc về khuôn nào, dữ liệu này KHÔNG có. Cần quyết định nghiệp
+  // vụ (annualMoldMaintenance có tính thêm/thay khuôn override hay không) TRƯỚC
+  // khi sửa công thức — hiện field này coi như CHƯA CÓ TÁC DỤNG, giữ trong
+  // schema để dành chỗ, không xóa.
+  maintenancePerYearVnd: z.number().int().nonnegative().optional(),
   source: z.string().optional(), // optional: đường dẫn/tên chứng từ gốc (hợp đồng, PDF) — không bắt buộc cho khuôn nhập tay sau này
 });
 export type MoldAsset = z.infer<typeof MoldAssetSchema>;

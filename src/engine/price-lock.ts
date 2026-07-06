@@ -25,7 +25,13 @@ export interface PriceLockEvaluation {
 export function evaluatePriceLock(inputs: EvaluatePriceLockInputs): PriceLockEvaluation {
   const { baseline, thresholdPct, replacement, lastLotPrice } = inputs;
 
-  const deviationPct = replacement / baseline - 1;
+  // baseline=0 là hợp lệ theo schema (nonnegative) nhưng replacement/baseline
+  // sẽ ra NaN (0/0) hoặc Infinity — cả 2 đều không so sánh được với threshold,
+  // khiến isLocked luôn false và pricingPrice=replacement lọt qua KHÔNG cảnh
+  // báo (phát hiện ở code review PR #1). Xử lý rõ ràng: chưa có baseline thật
+  // (=0) thì coi như lệch vô hạn nếu replacement≠0 (bắt buộc dùng replacement,
+  // không thể "khóa" quanh 1 baseline vô nghĩa), lệch 0 nếu cả 2 đều 0.
+  const deviationPct = baseline === 0 ? (replacement === 0 ? 0 : Infinity) : replacement / baseline - 1;
   const isLocked = Math.abs(deviationPct) <= thresholdPct;
   const pricingPrice = isLocked ? baseline : replacement;
 

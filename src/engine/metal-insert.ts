@@ -12,6 +12,7 @@
 //   `evaluatePriceLock()` (M5, DÙNG LẠI NGUYÊN — không viết price-lock riêng
 //   cho ren, chỉ khác policy/threshold, xem tests/parity/metal-insert.test.ts).
 import type { CurrencyParams } from '../schemas/cost-pool.js';
+import { landedCostPerKgVnd } from './cost-pool.js';
 
 export interface MaterialCostPerUnitWithInsertInputs {
   unitWeightKg: number;
@@ -29,10 +30,7 @@ export interface MaterialCostPerUnitWithInsertInputs {
  * hằng số tĩnh `brassInsertCost` cộng riêng ở `breakEvenPerUnit`.
  */
 export function materialCostPerUnitWithInsert(inputs: MaterialCostPerUnitWithInsertInputs): number {
-  const compoundLandedPerKg =
-    inputs.compoundPricingPriceUsdPerKg *
-    (1 + inputs.currency.compoundImportTaxRate + inputs.currency.customsLogisticsFeeRate) *
-    inputs.currency.usdVndRate;
+  const compoundLandedPerKg = landedCostPerKgVnd(inputs.compoundPricingPriceUsdPerKg, inputs.currency);
   const plasticCostPerUnit = inputs.unitWeightKg * (compoundLandedPerKg / inputs.yieldRate + inputs.packagingCostPerKg);
   return plasticCostPerUnit + inputs.insertQtyPerUnit * inputs.insertPricingPriceVnd;
 }

@@ -24,6 +24,10 @@ export const MoldAssetSchema = z.object({
   costVnd: z.number().int().nonnegative(),
   purchaseYear: z.number().int(),
   usefulLifeYears: z.number().int().positive(),
+  // ⚠ CHƯA CÓ TÁC DỤNG trong engine (src/engine/fitting.ts dùng thẳng
+  // `annualMoldMaintenance` tổng, bỏ qua field này) — annualMoldMaintenance là
+  // 1 tổng duy nhất từ Excel, không decompose theo khuôn nên chưa có cách
+  // override an toàn. Xem docs/contracts/resource.md để biết lý do đầy đủ.
   maintenancePerYearVnd: z.number().int().nonnegative().optional(),
   source: z.string().optional(),
 });

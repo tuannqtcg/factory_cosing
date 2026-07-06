@@ -61,13 +61,27 @@ export const ScenarioOutputSchema = z.object({
       }),
     ),
   }),
+  // Sửa 2026-07-06 (code review PR #1): field `fitting.pctUtilized` KHÔNG khớp
+  // tên thật của engine (`pctOfUtilizedHours` trong src/engine/cvp.ts) — sửa
+  // lại đúng tên + bổ sung `variableCostPerKg`/`breakEvenKgYear`/
+  // `contributionMarginPerKg`/`fixedCostPerYear` cho `fitting` để đối xứng với
+  // `pipe` (đều lấy nguyên từ PipeCvp/FittingCvp, không phát minh field mới).
   cvp: z.object({
     pipe: z.object({
       variableCostPerKg: z.number(),
+      contributionMarginPerKg: z.number(),
+      fixedCostPerYear: z.number(),
       breakEvenKgYear: z.number(),
       pctOfNormalCapacity: z.number(),
     }),
-    fitting: z.object({ breakEvenMachineHours: z.number(), pctUtilized: z.number() }),
+    fitting: z.object({
+      variableCostPerKg: z.number(),
+      contributionMarginPerKg: z.number(),
+      fixedCostPerYear: z.number(),
+      breakEvenKgYear: z.number(),
+      breakEvenMachineHours: z.number(),
+      pctOfUtilizedHours: z.number(),
+    }),
   }),
   dualCosting: z.object({
     pipe: z.object({
@@ -106,7 +120,7 @@ export const PlanInputSchema = z.object({
   // SÓT ở bản đóng băng đầu: BUSINESS_MODEL §6.2/§6.5 luôn cần "hệ số kỳ" và
   // "nhân công hiện có" để đánh giá ca máy/nhân công cần tuyển. KHÔNG suy ra
   // được từ chuỗi `period` (vd "2026-Q3") một cách an toàn — phải là input rõ
-  // ràng. Đây là sửa lỗi thiếu sót, không phải quyết định kiến trúc mới.
+  // ràng. Ghi nhận đầy đủ ở ADR-009 (docs/decisions/).
   periodMonths: z.number().positive(),
   currentLaborHeadcount: z.object({
     pipe: z.number().int().nonnegative(),

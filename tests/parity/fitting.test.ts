@@ -6,8 +6,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from '../../src/engine/fitting.js';
 import { calculatePipeCapacity } from '../../src/engine/pipe.js';
-import type { MachineHourResource, ContinuousKgResource } from '../../src/schemas/resource.js';
-import type { CostPool } from '../../src/schemas/cost-pool.js';
+import { MachineHourResourceSchema, ContinuousKgResourceSchema } from '../../src/schemas/resource.js';
+import { CostPoolSchema } from '../../src/schemas/cost-pool.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures');
 function loadFixture<T = unknown>(name: string): T {
@@ -19,7 +19,7 @@ const pipeFixture = loadFixture<any>('pipe.json');
 const moldAssets = loadFixture<any>('mold-assets.json').moldAssets;
 const assumptions = loadFixture<any>('assumptions.json');
 
-const resource: MachineHourResource = {
+const resource = MachineHourResourceSchema.parse({
   driverType: 'machine_hour',
   machineTypes: [
     { id: 'A', priceVnd: fittingFixture.params.machineTypeAPrice, count: fittingFixture.params.machineTypeACount },
@@ -44,9 +44,9 @@ const resource: MachineHourResource = {
   electricityPricePerKwh: fittingFixture.params.electricityPricePerKwh,
   waterM3PerMachineHour: fittingFixture.params.waterM3PerMachineHour,
   waterPricePerM3: fittingFixture.params.waterPricePerM3,
-};
+});
 
-const pipeResource: ContinuousKgResource = {
+const pipeResource = ContinuousKgResourceSchema.parse({
   driverType: 'continuous_kg',
   maxCapacityKgPerHour: pipeFixture.params.extruderMaxCapacityKgPerHour,
   actualCapacityKgPerHour: pipeFixture.params.extruderActualCapacityKgPerHour,
@@ -69,9 +69,9 @@ const pipeResource: ContinuousKgResource = {
   electricityPricePerKwh: pipeFixture.params.electricityPricePerKwh,
   waterM3PerHour: pipeFixture.params.waterM3PerHour,
   waterPricePerM3: pipeFixture.params.waterPricePerM3,
-};
+});
 
-const costPool: CostPool = {
+const costPool = CostPoolSchema.parse({
   sharedFixedCosts: assumptions.sharedFixedCosts,
   nonProductionCosts: assumptions.nonProductionCosts,
   currency: {
@@ -88,7 +88,7 @@ const costPool: CostPool = {
     listPriceMargin: assumptions.listPriceMargin,
   },
   solvent550PricePerBox: assumptions.solvent550PricePerBox,
-};
+});
 
 describe('fitting.ts — parity với tests/fixtures/fitting.json', () => {
   const capacity = calculateFittingCapacity(resource);

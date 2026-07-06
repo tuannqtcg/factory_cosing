@@ -9,8 +9,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { evaluatePriceLock } from '../../src/engine/price-lock.js';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from '../../src/engine/pipe.js';
-import type { ContinuousKgResource } from '../../src/schemas/resource.js';
-import type { CostPool } from '../../src/schemas/cost-pool.js';
+import { ContinuousKgResourceSchema } from '../../src/schemas/resource.js';
+import { CostPoolSchema } from '../../src/schemas/cost-pool.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures');
 function loadFixture<T = unknown>(name: string): T {
@@ -22,7 +22,7 @@ const fittingFixture = loadFixture<any>('fitting.json');
 const assumptions = loadFixture<any>('assumptions.json');
 const lockScenarios = loadFixture<any>('price-lock-scenarios.json');
 
-const resource: ContinuousKgResource = {
+const resource = ContinuousKgResourceSchema.parse({
   driverType: 'continuous_kg',
   maxCapacityKgPerHour: pipeFixture.params.extruderMaxCapacityKgPerHour,
   actualCapacityKgPerHour: pipeFixture.params.extruderActualCapacityKgPerHour,
@@ -45,9 +45,9 @@ const resource: ContinuousKgResource = {
   electricityPricePerKwh: pipeFixture.params.electricityPricePerKwh,
   waterM3PerHour: pipeFixture.params.waterM3PerHour,
   waterPricePerM3: pipeFixture.params.waterPricePerM3,
-};
+});
 
-const costPool: CostPool = {
+const costPool = CostPoolSchema.parse({
   sharedFixedCosts: assumptions.sharedFixedCosts,
   nonProductionCosts: assumptions.nonProductionCosts,
   currency: {
@@ -64,7 +64,7 @@ const costPool: CostPool = {
     listPriceMargin: assumptions.listPriceMargin,
   },
   solvent550PricePerBox: assumptions.solvent550PricePerBox,
-};
+});
 
 describe('Nối dây price-lock → pipe.ts — 5 kịch bản ADR-004 khớp breakEvenFullCost', () => {
   const capacity = calculatePipeCapacity(resource);

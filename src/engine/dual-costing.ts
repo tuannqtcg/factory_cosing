@@ -1,6 +1,8 @@
 // Nguồn nghiệp vụ: docs/BUSINESS_MODEL.md §1, §5 — ADR-002 (giá vốn kép: bình
 // quân gia quyền sổ sách vs giá tái tạo định giá), mở rộng bởi ADR-008 (ren
 // kim loại — cùng công thức, tồn kho/policy riêng).
+import { landedCostPerKgVnd } from './cost-pool.js';
+
 export interface InventoryLot {
   tons: number;
   priceUsdPerKg: number;
@@ -30,7 +32,7 @@ export interface HoldingGainLossInputs {
 /** holdingGainLoss = (tái tạo − bình quân) × tồn kho, quy đổi landed cost. Dương = lãi giữ kho, âm = cần dự phòng VAS 02. */
 export function holdingGainLossVnd(inputs: HoldingGainLossInputs): number {
   const deltaUsd = (inputs.replacementPriceUsdPerKg - inputs.weightedAvgUsdPerKg) * inputs.inventoryKg;
-  return deltaUsd * (1 + inputs.compoundImportTaxRate + inputs.customsLogisticsFeeRate) * inputs.usdVndRate;
+  return landedCostPerKgVnd(deltaUsd, inputs);
 }
 
 export function provisionWarning(holdingGainLoss: number): string {

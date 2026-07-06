@@ -11,9 +11,9 @@ import { calculatePlan } from '../../src/engine/plan.js';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from '../../src/engine/pipe.js';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from '../../src/engine/fitting.js';
 import { calculatePipeCvp } from '../../src/engine/cvp.js';
-import type { ContinuousKgResource, MachineHourResource } from '../../src/schemas/resource.js';
+import { ContinuousKgResourceSchema, MachineHourResourceSchema } from '../../src/schemas/resource.js';
 import type { PipeProduct, FittingProduct } from '../../src/schemas/product.js';
-import type { CostPool } from '../../src/schemas/cost-pool.js';
+import { CostPoolSchema } from '../../src/schemas/cost-pool.js';
 import type { PlanInput } from '../../src/schemas/scenario.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures');
@@ -26,7 +26,7 @@ const fittingFixture = loadFixture<any>('fitting.json');
 const moldAssets = loadFixture<any>('mold-assets.json').moldAssets;
 const assumptions = loadFixture<any>('assumptions.json');
 
-const pipeResource: ContinuousKgResource = {
+const pipeResource = ContinuousKgResourceSchema.parse({
   driverType: 'continuous_kg',
   maxCapacityKgPerHour: pipeFixture.params.extruderMaxCapacityKgPerHour,
   actualCapacityKgPerHour: pipeFixture.params.extruderActualCapacityKgPerHour,
@@ -49,9 +49,9 @@ const pipeResource: ContinuousKgResource = {
   electricityPricePerKwh: pipeFixture.params.electricityPricePerKwh,
   waterM3PerHour: pipeFixture.params.waterM3PerHour,
   waterPricePerM3: pipeFixture.params.waterPricePerM3,
-};
+});
 
-const fittingResource: MachineHourResource = {
+const fittingResource = MachineHourResourceSchema.parse({
   driverType: 'machine_hour',
   machineTypes: [
     { id: 'A', priceVnd: fittingFixture.params.machineTypeAPrice, count: fittingFixture.params.machineTypeACount },
@@ -76,9 +76,9 @@ const fittingResource: MachineHourResource = {
   electricityPricePerKwh: fittingFixture.params.electricityPricePerKwh,
   waterM3PerMachineHour: fittingFixture.params.waterM3PerMachineHour,
   waterPricePerM3: fittingFixture.params.waterPricePerM3,
-};
+});
 
-const costPool: CostPool = {
+const costPool = CostPoolSchema.parse({
   sharedFixedCosts: assumptions.sharedFixedCosts,
   nonProductionCosts: assumptions.nonProductionCosts,
   currency: {
@@ -95,7 +95,7 @@ const costPool: CostPool = {
     listPriceMargin: assumptions.listPriceMargin,
   },
   solvent550PricePerBox: assumptions.solvent550PricePerBox,
-};
+});
 
 const pipeProducts: PipeProduct[] = pipeFixture.priceLadderByDN.map((row: any) => ({
   kind: 'pipe' as const,

@@ -37,3 +37,19 @@ describe('evaluatePriceLock — 5 kịch bản ADR-004 (price-lock-scenarios.jso
     });
   }
 });
+
+describe('evaluatePriceLock — biên baseline=0 (phát hiện code review PR #1: 0/0 ra NaN)', () => {
+  it('baseline=0, replacement=0 → không NaN, coi như lệch 0, KHÓA quanh baseline=0', () => {
+    const result = evaluatePriceLock({ baseline: 0, thresholdPct: 0.03, replacement: 0 });
+    expect(result.deviationPct).toBe(0);
+    expect(result.isLocked).toBe(true);
+    expect(result.pricingPrice).toBe(0);
+  });
+
+  it('baseline=0, replacement>0 → lệch vô hạn, MỞ KHÓA, dùng thẳng replacement (không lọt số 0 vô nghĩa)', () => {
+    const result = evaluatePriceLock({ baseline: 0, thresholdPct: 0.03, replacement: 5 });
+    expect(result.deviationPct).toBe(Infinity);
+    expect(result.isLocked).toBe(false);
+    expect(result.pricingPrice).toBe(5);
+  });
+});

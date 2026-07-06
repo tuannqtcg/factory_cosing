@@ -12,9 +12,15 @@
 //   `mhrPerMachineHour` trực tiếp, xem §3.4 — thuộc M7).
 // - Dòng SỔ SÁCH (bookFullCostPerKgRef, dùng weightedAvgUsd — ADR-002) chưa làm,
 //   thuộc M5 (giá vốn kép), cùng phạm vi với pipe.ts.
+// - `MoldAsset.maintenancePerYearVnd` (per-asset override) CHƯA được dùng ở
+//   đây — `moldMaintenancePerYear` lấy thẳng `annualMoldMaintenance` (tổng
+//   duy nhất, khớp Excel) cho MỌI khuôn (phát hiện ở code review PR #1). Cần
+//   quyết định nghiệp vụ trước khi sửa: annualMoldMaintenance có tính CỘNG
+//   THÊM hay THAY THẾ phần của khuôn có override — xem
+//   docs/contracts/resource.md để biết lý do chưa tự suy đoán công thức.
 import type { MachineHourResource } from '../schemas/resource.js';
 import type { CostPool } from '../schemas/cost-pool.js';
-import { sharedFixedCostsTotalPerYear } from './cost-pool.js';
+import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear } from './cost-pool.js';
 import { moldDepreciationPerYear as calculateMoldDepreciationPerYear } from './mold-depreciation.js';
 
 export interface FittingCapacity {
@@ -86,10 +92,7 @@ export function calculateFittingCostAtNormalCapacity(
     inputs;
   const { currency, markup } = costPool;
 
-  const compoundLandedPerKg =
-    compoundPricingPriceUsdPerKg *
-    (1 + currency.compoundImportTaxRate + currency.customsLogisticsFeeRate) *
-    currency.usdVndRate;
+  const compoundLandedPerKg = landedCostPerKgVnd(compoundPricingPriceUsdPerKg, currency);
   const materialPerKgFinishedRef = compoundLandedPerKg / resource.yieldRate;
 
   const machineDepreciationPerYear =

@@ -12,7 +12,7 @@
 //   replacement — ADR-002) CHƯA làm ở đây, thuộc M5 (giá vốn kép).
 import type { ContinuousKgResource } from '../schemas/resource.js';
 import type { CostPool } from '../schemas/cost-pool.js';
-import { sharedFixedCostsTotalPerYear } from './cost-pool.js';
+import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear } from './cost-pool.js';
 
 export interface PipeCapacity {
   batchesPerYear: number;
@@ -72,10 +72,7 @@ export function calculatePipeCostAtNormalCapacity(
   const { resource, capacity, costPool, otherLineEstimatedProductionKgYear, compoundPricingPriceUsdPerKg } = inputs;
   const { currency, markup } = costPool;
 
-  const compoundLandedPerKg =
-    compoundPricingPriceUsdPerKg *
-    (1 + currency.compoundImportTaxRate + currency.customsLogisticsFeeRate) *
-    currency.usdVndRate;
+  const compoundLandedPerKg = landedCostPerKgVnd(compoundPricingPriceUsdPerKg, currency);
   const materialPerKgFinished = compoundLandedPerKg / resource.yieldRate;
 
   const extruderDepreciationPerYear =

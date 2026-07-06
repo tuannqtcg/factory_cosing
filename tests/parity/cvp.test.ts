@@ -7,8 +7,9 @@ import { describe, expect, it } from 'vitest';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from '../../src/engine/pipe.js';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from '../../src/engine/fitting.js';
 import { calculatePipeCvp, calculateFittingCvp } from '../../src/engine/cvp.js';
-import type { ContinuousKgResource, MachineHourResource } from '../../src/schemas/resource.js';
-import type { CostPool } from '../../src/schemas/cost-pool.js';
+import { ContinuousKgResourceSchema, MachineHourResourceSchema } from '../../src/schemas/resource.js';
+import { CostPoolSchema } from '../../src/schemas/cost-pool.js';
+import { ScenarioOutputSchema } from '../../src/schemas/scenario.js';
 
 const fixturesDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../fixtures');
 function loadFixture<T = unknown>(name: string): T {
@@ -20,7 +21,7 @@ const fittingFixture = loadFixture<any>('fitting.json');
 const moldAssets = loadFixture<any>('mold-assets.json').moldAssets;
 const assumptions = loadFixture<any>('assumptions.json');
 
-const pipeResource: ContinuousKgResource = {
+const pipeResource = ContinuousKgResourceSchema.parse({
   driverType: 'continuous_kg',
   maxCapacityKgPerHour: pipeFixture.params.extruderMaxCapacityKgPerHour,
   actualCapacityKgPerHour: pipeFixture.params.extruderActualCapacityKgPerHour,
@@ -43,9 +44,9 @@ const pipeResource: ContinuousKgResource = {
   electricityPricePerKwh: pipeFixture.params.electricityPricePerKwh,
   waterM3PerHour: pipeFixture.params.waterM3PerHour,
   waterPricePerM3: pipeFixture.params.waterPricePerM3,
-};
+});
 
-const fittingResource: MachineHourResource = {
+const fittingResource = MachineHourResourceSchema.parse({
   driverType: 'machine_hour',
   machineTypes: [
     { id: 'A', priceVnd: fittingFixture.params.machineTypeAPrice, count: fittingFixture.params.machineTypeACount },
@@ -70,9 +71,9 @@ const fittingResource: MachineHourResource = {
   electricityPricePerKwh: fittingFixture.params.electricityPricePerKwh,
   waterM3PerMachineHour: fittingFixture.params.waterM3PerMachineHour,
   waterPricePerM3: fittingFixture.params.waterPricePerM3,
-};
+});
 
-const costPool: CostPool = {
+const costPool = CostPoolSchema.parse({
   sharedFixedCosts: assumptions.sharedFixedCosts,
   nonProductionCosts: assumptions.nonProductionCosts,
   currency: {
@@ -89,7 +90,7 @@ const costPool: CostPool = {
     listPriceMargin: assumptions.listPriceMargin,
   },
   solvent550PricePerBox: assumptions.solvent550PricePerBox,
-};
+});
 
 describe('CVP Ống — khớp tuyệt đối pipe.json.cvp', () => {
   const capacity = calculatePipeCapacity(pipeResource);
@@ -113,6 +114,10 @@ describe('CVP Ống — khớp tuyệt đối pipe.json.cvp', () => {
     expect(cvp.fixedCostPerYear).toBeCloseTo(golden.fixedCostPerYear, 3);
     expect(cvp.breakEvenKgYear).toBeCloseTo(golden.breakEvenKgYear, 6);
     expect(cvp.pctOfNormalCapacity).toBeCloseTo(golden.pctOfNormalCapacity, 6);
+  });
+
+  it('khớp đúng ScenarioOutputSchema.cvp.pipe', () => {
+    expect(() => ScenarioOutputSchema.shape.cvp.shape.pipe.parse(cvp)).not.toThrow();
   });
 });
 
@@ -140,5 +145,9 @@ describe('CVP Phụ kiện — khớp tuyệt đối fitting.json.cvp', () => {
     expect(cvp.breakEvenKgYear).toBeCloseTo(golden.breakEvenKgYear, 6);
     expect(cvp.breakEvenMachineHours).toBeCloseTo(golden.breakEvenMachineHours, 6);
     expect(cvp.pctOfUtilizedHours).toBeCloseTo(golden.pctOfUtilizedHours, 6);
+  });
+
+  it('khớp đúng ScenarioOutputSchema.cvp.fitting (code review PR #1: bắt lỗi lệch tên field pctUtilized/pctOfUtilizedHours)', () => {
+    expect(() => ScenarioOutputSchema.shape.cvp.shape.fitting.parse(cvp)).not.toThrow();
   });
 });

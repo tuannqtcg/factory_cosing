@@ -24,14 +24,24 @@ import { calculateMachineHoursPerUnit } from './price-ladder.js';
 
 type ShiftsNeeded = 1 | 2 | 3 | { status: 'insufficient'; extraMachinesNeeded: number };
 
+/**
+ * ROUNDUP số ĐƠN VỊ công suất cần thêm để bù thiếu hụt — dùng chung cho "số
+ * máy cần thêm" (đánh giá ca) và "số bộ khuôn cần thêm" (ràng buộc khuôn theo
+ * size), 2 chỗ trước đây viết `Math.ceil(deficit / perUnit)` độc lập (code
+ * review PR #1). `perUnitCapacity` là công suất của ĐÚNG 1 đơn vị (1 máy /
+ * 1 bộ khuôn) — ý nghĩa "1 đơn vị" khác nhau ở 2 nơi gọi, xem comment tại chỗ gọi.
+ */
+function ceilExtraUnitsNeeded(deficit: number, perUnitCapacity: number): number {
+  return Math.ceil(deficit / perUnitCapacity);
+}
+
 function evaluateShiftsNeeded(requiredHours: number, hoursAvailableAtShift: (shifts: 1 | 2 | 3) => number): ShiftsNeeded {
   if (requiredHours <= hoursAvailableAtShift(1)) return 1;
   if (requiredHours <= hoursAvailableAtShift(2)) return 2;
   const hours3 = hoursAvailableAtShift(3);
   if (requiredHours <= hours3) return 3;
-  const deficitHours = requiredHours - hours3;
-  const extraMachinesNeeded = Math.ceil(deficitHours / hours3);
-  return { status: 'insufficient', extraMachinesNeeded };
+  // "1 đơn vị" ở đây = TOÀN BỘ công suất 3-ca hiện tại (xem giả định đầu file).
+  return { status: 'insufficient', extraMachinesNeeded: ceilExtraUnitsNeeded(requiredHours - hours3, hours3) };
 }
 
 function resolvedShiftCount(shiftsNeeded: ShiftsNeeded): number {
@@ -118,7 +128,8 @@ export function calculatePlan(
     const moldSetCount = fitting.moldSetCountBySizeDN[sizeDN] ?? 0;
     const availableMachineHours = moldSetCount * hoursPerMoldSet3Shift;
     if (requiredMachineHours > availableMachineHours) {
-      const extraMoldSetsNeeded = Math.ceil((requiredMachineHours - availableMachineHours) / hoursPerMoldSet3Shift);
+      // "1 đơn vị" ở đây = công suất 3-ca của ĐÚNG 1 bộ khuôn (khác evaluateShiftsNeeded).
+      const extraMoldSetsNeeded = ceilExtraUnitsNeeded(requiredMachineHours - availableMachineHours, hoursPerMoldSet3Shift);
       moldConstraintWarnings.push({ sizeDN, requiredMachineHours, availableMachineHours, extraMoldSetsNeeded });
     }
   }

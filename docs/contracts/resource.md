@@ -99,6 +99,7 @@ export const MachineHourResourceSchema = z.object({
   yieldRate: YieldRate,
   packagingCostPerKg: z.number().int().nonnegative(),
   avgProductivityKgPerMachineHour: z.number().positive(), // quy đổi giờ máy → kg tại công suất tham chiếu
+  depreciationYears: z.number().int().positive(), // khấu hao MÁY ép — tách khỏi MoldAsset.usefulLifeYears (khấu hao KHUÔN, ADR-007)
   annualMoldMaintenance: z.number().int().nonnegative(), // mức chung — MoldAsset.maintenancePerYearVnd ghi đè nếu có
   peoplePerShift: z.number().int().nonnegative(),
   avgSalaryMonthly: z.number().int().nonnegative(),

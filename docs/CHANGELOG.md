@@ -1,5 +1,23 @@
 # CHANGELOG — Costing App Kit
 
+## v1.10 (2026-07-06) — Pha 3 M3: engine Phụ kiện (fitting.ts)
+`src/engine/fitting.ts` — `calculateFittingCapacity()` +
+`calculateFittingCostAtNormalCapacity()` (BUSINESS_MODEL §3.2-3.3), khớp tuyệt
+đối `mhrPerMachineHour = 1344175.79463858` (trái tim ADR-001).
+
+**Sửa lỗi thiếu sót**: `MachineHourResourceSchema` (M1) thiếu `depreciationYears`
+(khấu hao MÁY ép — tách khỏi `MoldAsset.usefulLifeYears` là khấu hao KHUÔN) —
+bổ sung vào `src/schemas/resource.ts` + `docs/contracts/resource.md`.
+
+**Quyết định thiết kế**: tách `machineDepreciationPerYear` và
+`moldDepreciationPerYear` thành 2 field riêng (Excel gộp chung 1
+`machineMoldDepreciation`) — chuẩn bị sẵn cho M4 (khấu hao khuôn động theo
+`asOfYear`, ADR-007) chỉ cần sửa field mold, không đụng field máy. Verify: 2
+field cộng lại khớp tuyệt đối số Excel gốc.
+
+`npm test` 18/18 xanh. **M4 tiếp theo**: lọc `moldDepreciationPerYear` theo
+`asOfYear` — xem `docs/PHASE3_PLAN.md`.
+
 ## v1.9 (2026-07-06) — Pha 3 M2: engine Ống (pipe.ts)
 `src/engine/pipe.ts` — `calculatePipeCapacity()` + `calculatePipeCostAtNormalCapacity()`
 (BUSINESS_MODEL §2.1-2.2), khớp tuyệt đối `tests/fixtures/pipe.json.costAtNormalCapacity`

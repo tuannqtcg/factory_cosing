@@ -79,6 +79,7 @@ describe('ResourceSchema', () => {
       yieldRate: fitting.params.yieldRate,
       packagingCostPerKg: fitting.params.packagingCostPerKg,
       avgProductivityKgPerMachineHour: fitting.params.avgProductivityKgPerMachineHour,
+      depreciationYears: fitting.params.depreciationYears,
       annualMoldMaintenance: fitting.params.annualMoldMaintenance,
       peoplePerShift: fitting.params.peoplePerShift,
       avgSalaryMonthly: fitting.params.avgSalaryMonthly,

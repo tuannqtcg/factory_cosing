@@ -24,8 +24,12 @@
   bình thường), khớp tuyệt đối `fullCostPerKg=106.204,73`/`vfPricePerKg=132.755,91`
   (`tests/parity/pipe.test.ts`, 4 test xanh). Phát hiện + sửa luôn: schema
   Resource (M1) thiếu 12 field lương/điện/nước/bao bì — đã bổ sung, xem
-  `docs/PHASE3_PLAN.md` mục "Nhật ký milestone". **M3 tiếp theo**:
-  `src/engine/fitting.ts` (công suất ép phun + MHR).
+  `docs/PHASE3_PLAN.md` mục "Nhật ký milestone". **M3** — `src/engine/fitting.ts`
+  (công suất ép phun + MHR, ADR-001), khớp tuyệt đối
+  `mhrPerMachineHour=1.344.175,79` (`tests/parity/fitting.test.ts`, 4 test
+  xanh). `moldDepreciationPerYear` đã tách riêng khỏi khấu hao máy — sẵn sàng
+  cho M4 chỉ cần thêm điều kiện lọc `asOfYear`. **M4 tiếp theo**: khấu hao
+  khuôn động theo `asOfYear` (ADR-007, trọng tâm).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

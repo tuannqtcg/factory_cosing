@@ -1,5 +1,14 @@
 # CHANGELOG — Costing App Kit
 
+## v1.6 (2026-07-06) — Pha 1 duyệt, mở cổng Pha 2
+User duyệt UI chính thức cho prototype (Pha 1). Không đổi nghiệp vụ, chỉ chuyển
+pha trong quy trình 4 pha có cổng.
+
+| File | Thay đổi | Lý do |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Đổi khối "TRẠNG THÁI HIỆN TẠI" Pha 1 → Pha 2 | Phản ánh đúng cổng vừa mở, việc tiếp theo là flow + schema Zod |
+| docs/sessions/SESSION_2026-07-06.md | MỚI — ghi lại quyết định duyệt Pha 1 | Luật bất biến #6 (AGENTS.md): mọi phiên phải ghi session log |
+
 ## v1.5 (2026-07) — đóng gói tri thức cho phiên mới (ADR-007/008 đã đủ dữ liệu)
 KHÁC BIỆT so với kit v1.4 (thuần đồng bộ tài liệu, không đổi nghiệp vụ so với các
 bản cập nhật cuối v1.4):

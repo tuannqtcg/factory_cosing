@@ -2,9 +2,12 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Pha: 1 (Prototype)** — đã có bản mock `prototype/blazemaster-costing-app.dc.html`,
-  đang tiếp tục tinh chỉnh theo dữ liệu thật. **CHƯA được duyệt UI chính thức** —
-  chưa được sang Pha 2 (schema đóng băng).
+- **Pha: 2 (Flow + Zod schema + API contract)** — Pha 1 (Prototype) đã được user
+  **DUYỆT UI chính thức ngày 2026-07-06**. `prototype/blazemaster-costing-app.dc.html`
+  là nguồn tham chiếu UI/UX đóng băng cho Pha 3 — KHÔNG được đổi thiết kế màn hình
+  ở Pha 2/3 mà không quay lại Pha 1 ghi ADR mới. Việc tiếp theo: dựng flow +
+  schema Zod (dùng skill `schema-design`) cho toàn bộ nghiệp vụ đã chốt (điểm 1-10
+  dưới đây), rồi ⛔ đóng băng schema trước khi viết code Pha 3.
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

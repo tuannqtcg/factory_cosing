@@ -1,16 +1,19 @@
 {
   "_meta": {
     "adr": "ADR-008",
-    "status": "Đã có đơn giá thật (11/11 SKU họ Nối ren trong/ngoài) — chờ baseline+ngưỡng khóa giá, chờ tồn kho ban đầu",
+    "status": "Đã có đơn giá (11/11 SKU) + tồn kho ban đầu (10 loại theo PT size) — chờ baseline/ngưỡng khóa giá",
     "sourceFile": "Gia_phu_kien_ren.pdf (upload 2026-07)",
     "currency": "VND — mua trong nước, KHÔNG có bước landed cost/thuế NK (đã xác nhận ADR-008)",
     "insertQtyPerUnit": "= 1 cho toàn bộ 11 SKU (PDF chỉ có 1 đơn giá/SKU, không có cột số lượng riêng)",
     "crossCheck": "unitWeightKg khớp 100% với PK_CATALOG hiện có trong prototype — xác nhận đúng SKU",
     "note": "Cút ren trong (3 SKU) và Tê ren trong (4 SKU) KHÔNG có trong file này — khớp với phát hiện ở mold-assets.json (8 SKU này chưa sản xuất/chưa mua khuôn, xác nhận bởi user).",
     "stillOpen": [
-      "baselinePriceVnd + thresholdPct ban đầu cho cơ chế khóa giá ren kim loại (ADR-008 mục 6)",
-      "Tồn kho ban đầu (đợt nhập, số lượng, giá) cho tab Tồn Kho Ren Kim Loại — hiện assume giá trên là giá tái tạo (replacement) hiện hành, CHƯA có bình quân gia quyền vì chưa có lịch sử nhập"
-    ]
+      "baselinePriceVnd + thresholdPct ban đầu cho cơ chế khóa giá ren kim loại (ADR-008 mục 6) — chưa có, cần user cung cấp hoặc mặc định = giá tái tạo hiện hành lúc chốt bảng giá đầu tiên"
+    ],
+    "insertIdentityNote": "PHÁT HIỆN (2026-07, xác nhận bởi user): ren kim loại thực chất là 10 loại vật tư riêng biệt theo (renType, ptSize) — KHÔNG phải 11 loại theo từng SKU đầy đủ. Bằng chứng: giá PT15 giống hệt nhau cho cả SKU 20xPT15 và 25xPT15 (16.200đ) — 2 SKU khác nhau dùng CHUNG 1 loại ren. `metalInsertSkus` dưới đây giữ granularity theo SKU (đủ cho tính giá thành/SKU), còn `insertCatalog` + `skuToInsertMap` là granularity ĐÚNG cho tồn kho/mua hàng (không giữ tồn kho tách theo SKU).",
+    "inventorySource": "User cung cấp trực tiếp trong chat (2026-07) — tồn kho hiện có, 1 lô duy nhất, giá = giá đã có trong Gia_phu_kien_ren.pdf (bình quân gia quyền = giá tái tạo, chưa có lãi/lỗ giữ kho vì chưa có lịch sử nhập nhiều đợt)",
+    "totalInventoryQty": 29000,
+    "totalInventoryValueVnd": 1016300000
   },
   "metalInsertSkus": [
     {
@@ -89,6 +92,156 @@
       "unitWeightKg": 0.19,
       "insertQtyPerUnit": 1,
       "insertPricingCostVndPerUnit": 142600
+    }
+  ],
+  "insertCatalog": [
+    {
+      "renType": "trong",
+      "ptSize": "15",
+      "unitPriceVnd": 16200,
+      "inventoryQtyOnHand": 11000,
+      "inventoryValueVnd": 178200000,
+      "weightedAvgPriceVnd": 16200
+    },
+    {
+      "renType": "trong",
+      "ptSize": "20",
+      "unitPriceVnd": 21100,
+      "inventoryQtyOnHand": 10000,
+      "inventoryValueVnd": 211000000,
+      "weightedAvgPriceVnd": 21100
+    },
+    {
+      "renType": "trong",
+      "ptSize": "25",
+      "unitPriceVnd": 28800,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 28800000,
+      "weightedAvgPriceVnd": 28800
+    },
+    {
+      "renType": "trong",
+      "ptSize": "32",
+      "unitPriceVnd": 58100,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 58100000,
+      "weightedAvgPriceVnd": 58100
+    },
+    {
+      "renType": "trong",
+      "ptSize": "40",
+      "unitPriceVnd": 63800,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 63800000,
+      "weightedAvgPriceVnd": 63800
+    },
+    {
+      "renType": "trong",
+      "ptSize": "50",
+      "unitPriceVnd": 110000,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 110000000,
+      "weightedAvgPriceVnd": 110000
+    },
+    {
+      "renType": "ngoài",
+      "ptSize": "25",
+      "unitPriceVnd": 54400,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 54400000,
+      "weightedAvgPriceVnd": 54400
+    },
+    {
+      "renType": "ngoài",
+      "ptSize": "32",
+      "unitPriceVnd": 82100,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 82100000,
+      "weightedAvgPriceVnd": 82100
+    },
+    {
+      "renType": "ngoài",
+      "ptSize": "40",
+      "unitPriceVnd": 87300,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 87300000,
+      "weightedAvgPriceVnd": 87300
+    },
+    {
+      "renType": "ngoài",
+      "ptSize": "50",
+      "unitPriceVnd": 142600,
+      "inventoryQtyOnHand": 1000,
+      "inventoryValueVnd": 142600000,
+      "weightedAvgPriceVnd": 142600
+    }
+  ],
+  "skuToInsertMap": [
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "20xPT15",
+      "renType": "trong",
+      "ptSize": "15"
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "25xPT15",
+      "renType": "trong",
+      "ptSize": "15"
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "25xPT20",
+      "renType": "trong",
+      "ptSize": "20"
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "25xPT25",
+      "renType": "trong",
+      "ptSize": "25"
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "32xPT32",
+      "renType": "trong",
+      "ptSize": "32"
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "40xPT40",
+      "renType": "trong",
+      "ptSize": "40"
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "50xPT50",
+      "renType": "trong",
+      "ptSize": "50"
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "25xPT25",
+      "renType": "ngoài",
+      "ptSize": "25"
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "32xPT32",
+      "renType": "ngoài",
+      "ptSize": "32"
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "40xPT40",
+      "renType": "ngoài",
+      "ptSize": "40"
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "50xPT50",
+      "renType": "ngoài",
+      "ptSize": "50"
     }
   ]
 }

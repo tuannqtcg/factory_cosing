@@ -31,6 +31,15 @@ giá thật:
   mua thêm cho 8 SKU kia; baseline/ngưỡng khóa giá ban đầu + tồn kho ban đầu cho
   ren kim loại (ADR-008).
 
+**Cập nhật lần 3 cùng ngày — tồn kho ban đầu ren kim loại**: user cung cấp số lượng
+tồn kho (10 dòng, đơn vị Cái). Phát hiện quan trọng: ren kim loại thực chất chỉ có
+**10 loại vật tư theo (renType, ptSize)**, không phải 11 loại theo SKU — SKU
+"20xPT15" và "25xPT15" dùng CHUNG 1 loại ren PT15 (cùng giá 16.200đ, xác nhận qua
+đối chiếu giá đã có). Thêm `insertCatalog` (10 dòng, có tồn kho) + `skuToInsertMap`
+vào `tests/fixtures/metal-insert.json`. Tổng tồn kho: 29.000 cái, 1.016.300.000đ (1
+lô duy nhất → bình quân gia quyền = giá tái tạo). ADR-008 chỉ còn thiếu
+baseline/ngưỡng khóa giá ban đầu.
+
 ## v1.3 (2026-07) — phân tầng top-down theo đối tượng xem
 KHÁC BIỆT so với kit v1.2:
 

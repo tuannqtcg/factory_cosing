@@ -1,5 +1,5 @@
 # ADR-008: Ren kim loại mua ngoài — dòng nguyên liệu thứ 2, áp giá vốn kép + khóa giá riêng
-Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — ĐÃ CÓ ĐƠN GIÁ (11/11 SKU), chờ baseline khóa giá + tồn kho ban đầu
+Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — ĐÃ CÓ ĐƠN GIÁ + TỒN KHO BAN ĐẦU, chỉ còn chờ baseline/ngưỡng khóa giá
 
 ## Bối cảnh
 Ban đầu nghĩ 4 họ SKU (Nối ren trong, Nối ren ngoài, Cút ren trong, Tê ren trong)
@@ -68,11 +68,27 @@ ngoài (4 SKU)** = 11 SKU có giá ren — khớp chính xác với 11 SKU CÓ k
 ADR-007 (mold-assets.json). Cút ren trong/Tê ren trong (7 SKU) không có cả khuôn
 lẫn giá ren — nhất quán, vì chưa sản xuất thật.
 
+**PHÁT HIỆN QUAN TRỌNG (sửa lại mục 3 công thức)**: ren kim loại thực chất chỉ có
+**10 loại vật tư riêng biệt theo (renType, ptSize)** — KHÔNG phải 11 loại theo từng
+SKU. Bằng chứng: giá PT15 giống hệt nhau cho cả SKU "20xPT15" và "25xPT15" (cùng
+16.200đ) vì 2 SKU nhựa khác nhau dùng CHUNG 1 loại ren kim loại. Nghĩa là:
+- `insertQtyPerUnit = 1` cho tất cả 11 SKU (xác nhận, không có SKU cần >1 ren).
+- Tồn kho/mua hàng phải quản lý theo **10 loại (renType, ptSize)**, KHÔNG tách tồn
+  kho theo 11 SKU (vì 20xPT15 và 25xPT15 rút từ CÙNG 1 kho ren PT15).
+- Field đúng cho `materialCostPerUnit` mỗi SKU vẫn dùng `insertPricingCostVndPerUnit`
+  (tra theo SKU→insertType), nhưng field tồn kho/giá vốn kép phải nằm ở cấp
+  `insertCatalog` (10 dòng), không phải cấp SKU.
+
+## Dữ liệu thật — Tồn kho ban đầu (2026-07, user cung cấp trực tiếp)
+10 loại ren, tổng 29.000 cái, tổng giá trị 1.016.300.000đ (1 lô duy nhất, giá = giá
+tái tạo hiện hành đã có → bình quân gia quyền = giá tái tạo, CHƯA có lãi/lỗ giữ kho
+vì chưa có lịch sử nhập nhiều đợt). Lưu tại `tests/fixtures/metal-insert.json`
+(`insertCatalog` + `skuToInsertMap`).
+
 ## Còn treo
 - `baselinePriceVnd` + `thresholdPct` ban đầu cho cơ chế khóa giá ren kim loại
-  (mục 6 ở trên) — đơn giá trong file coi là giá tái tạo (replacement) hiện hành,
-  nhưng chưa có baseline đã "chốt" trước đó để so sánh.
-- Tồn kho ban đầu (đợt nhập, số lượng, giá) cho bảng tồn kho ren kim loại mới —
-  hiện chưa có lịch sử nhập nên chưa tính được bình quân gia quyền thật.
+  (mục 6 ở trên) — đơn giá hiện có coi là giá tái tạo hiện hành, nhưng chưa có
+  baseline đã "chốt" trước đó để so sánh (có thể mặc định = giá hiện hành cho lần
+  chốt đầu tiên, cần user xác nhận).
 - Khi 7 SKU Cút/Tê ren trong thật sự vào sản xuất (mua khuôn — xem ADR-007), cần
-  đơn giá ren kim loại cho chúng lúc đó (chưa có, không giả định trước).
+  đơn giá + tồn kho ren kim loại cho chúng lúc đó (chưa có, không giả định trước).

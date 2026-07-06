@@ -1,5 +1,18 @@
 # CHANGELOG — Costing App Kit
 
+## v1.16 (2026-07-06) — Đóng gói tri thức cuối ngày cho phiên mới
+Không đổi nghiệp vụ — chỉ rà soát + chốt sổ cuối ngày (9/12 milestone Pha 3
+xong: M1-M9), theo đúng thông lệ "kit vX" đã thiết lập ở v1.5 (2026-07-05).
+
+| File | Kiểm tra | Kết quả |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Thêm dòng tóm tắt tiến độ ngay đầu khối trạng thái | Đã cập nhật |
+| docs/PHASE3_PLAN.md | Bảng M1-M9 `[x]`, con trỏ M10 chính xác | Đã đúng, không cần sửa |
+| docs/GLOSSARY.md | Rà soát thuật ngữ mới phát sinh ở M1-M9 | Không có thuật ngữ UI mới (các field mới như `periodMonths`, `moldSetCountBySizeDN` là nội bộ engine, chưa lên UI) |
+| AGENTS.md | Thứ tự đọc file đầu phiên còn đúng không (đã có PHASE3_PLAN.md) | Đúng — CONTEXT_PASTE.md tự trỏ sang PHASE3_PLAN.md, không cần sửa AGENTS.md |
+| git | `git status` sạch, đã push hết lên `claude/nifty-dirac-wuamy6` | Sạch |
+| test | `npm test` | 171/171 xanh |
+
 ## v1.15 (2026-07-06) — Pha 3 M9: Plan_SX (T1, BUSINESS_MODEL §6)
 `src/engine/plan.ts` — `calculatePlan()` hiện thực đủ 6 quy tắc §6: quy đổi kế
 hoạch → giờ máy, đánh giá bậc ca, ràng buộc khuôn theo size (chỉ Phụ kiện),

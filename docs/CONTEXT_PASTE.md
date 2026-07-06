@@ -2,6 +2,9 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
+- **Tiến độ Pha 3: 9/12 milestone xong (M1-M9), tiếp theo M10** — 171/171 test
+  xanh, mọi commit đã push lên `claude/nifty-dirac-wuamy6`, không có gì dở
+  dang. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
   `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng

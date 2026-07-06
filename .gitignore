@@ -19,3 +19,6 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 .firebase/
+
+# Cloud Functions build output (M12.4)
+functions/lib/

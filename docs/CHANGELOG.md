@@ -1,5 +1,27 @@
 # CHANGELOG — Costing App Kit
 
+## v1.22 (2026-07-06) — Pha 3 M12.4: Cloud Function onScenarioWrite (lõi) + ADR-010
+`docs/decisions/ADR-010-cloud-function-boundaries.md` (mới) — tách M12.4
+thành 3 phần sau khi phát hiện Plan_SX chưa được `calculateScenario()`
+orchestrate (thiếu `moldSetCountBySizeDN`) và `TargetPriceRequestSchema` (T3)
+thiếu trường chọn SKU: M12.4 (lõi, xong ngay) / M12.4b (`outputs/plan`, hoãn)
+/ M12.4c (`outputs/targetCosting`, hoãn).
+Scaffold `functions/` (Cloud Functions TS riêng `package.json`,
+`firebase-functions@7`+`firebase-admin@13`, tsconfig dùng chung kiểu module
+ESM/Bundler với root để tái dùng thẳng `src/engine`/`src/schemas`).
+`firebase.json` +block `functions` + emulator port 5001; `.firebaserc` mới
+(`demo-costing-app`, bắt buộc để Firestore+Functions Emulator chung project
+khi chạy `emulators:exec`). `functions/src/index.ts`: `onScenarioWrite`
+(Firestore trigger `scenarios/{id}`) → `calculateScenario()` (tái dùng M12.1)
+→ ghi `outputs/internal` (đầy đủ) + `outputs/priceList` (lược field giá vốn —
+sales-safe); xóa doc → dọn cả 2.
+Tách `tests/helpers/scenario-fixture.ts` khỏi `tests/parity/scenario.test.ts`
+(refactor thuần) để dùng lại ở `tests/functions/on-scenario-write.test.ts` (2
+test, chạy thật trên Firestore+Functions Emulator qua `npm run test:functions`
+mới, tách khỏi `npm test`).
+`npm test` 286/286, `npm run typecheck` (root + `functions/`) sạch, `npm run
+test:rules` (M12.3) vẫn 33/33 sau khi thêm `.firebaserc`.
+
 ## v1.21 (2026-07-06) — Pha 3 M12.3: Firebase Emulator Suite + Firestore Security Rules
 Cài `firebase-tools@15`/`firebase@12`/`@firebase/rules-unit-testing@5`.
 `firebase.json` (emulator firestore:8080 + auth:9099 + ui) +

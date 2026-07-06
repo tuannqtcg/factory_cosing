@@ -1,10 +1,11 @@
 import { defineConfig } from 'vitest/config';
 
-// M12.3 — `npm test` (engine, Node-only) KHÔNG được phụ thuộc Firestore
-// Emulator. `tests/rules/**` loại trừ ở đây, chạy riêng qua
-// `npm run test:rules` (vitest.rules.config.ts + firebase emulators:exec).
+// M12.3/M12.4 — `npm test` (engine, Node-only) KHÔNG được phụ thuộc Firestore/
+// Functions Emulator. `tests/rules/**`/`tests/functions/**` loại trừ ở đây,
+// chạy riêng qua `npm run test:rules`/`npm run test:functions`
+// (vitest.rules.config.ts/vitest.functions.config.ts + firebase emulators:exec).
 export default defineConfig({
   test: {
-    exclude: ['**/node_modules/**', '**/dist/**', 'tests/rules/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/rules/**', 'tests/functions/**'],
   },
 });

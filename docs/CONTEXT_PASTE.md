@@ -9,8 +9,11 @@
   M12.2 (scaffold Vite+React 18+TS strict+Tailwind+Recharts, đã verify chạy
   thật bằng dev server + screenshot), M12.3 (Firebase Emulator Suite +
   `firestore.rules` theo bảng phân quyền `scenario.md` §5-6, 33 test rules
-  chạy thật trên emulator qua `npm run test:rules`). Tiếp theo: **M12.4**
-  (Cloud Function `onScenarioWrite` — ghi tách 4 doc con `outputs/*`).
+  chạy thật trên emulator qua `npm run test:rules`), M12.4 (Cloud Function
+  `onScenarioWrite` — `functions/`, ghi `outputs/internal`+`outputs/priceList`,
+  2 test tích hợp thật qua `npm run test:functions`; ADR-010 tách M12.4b/c
+  hoãn vì Plan_SX chưa orchestrate + T3 thiếu trường chọn SKU). Tiếp theo:
+  **M12.4b** (Cloud Function `onPlanInputWrite` — ghi `outputs/plan`).
   `npm test` 286/286 xanh, `npm run build` chạy được. Mọi commit push thẳng
   vào branch làm việc do hạ tầng phiên chỉ định lúc bắt đầu (tên đổi theo
   từng phiên — xem branch Git hiện tại, KHÔNG cố định 1 tên qua nhiều phiên;

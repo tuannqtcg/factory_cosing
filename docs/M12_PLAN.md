@@ -21,7 +21,9 @@
 | M12.1 | Orchestrator `calculateScenario(ScenarioInput) → ScenarioOutput` nối toàn bộ M2-M9 | `docs/contracts/scenario.md` §1-2 | `src/engine/scenario.ts` | **[x] 2026-07-06** |
 | M12.2 | Scaffold frontend thật (Vite + React 18 + TS strict + Tailwind + Recharts) | AGENTS.md stack | `src/features/`, `vite.config.ts`, `tailwind.config.ts` | **[x] 2026-07-06** |
 | M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | **[x] 2026-07-06** |
-| M12.4 | Cloud Function `onScenarioWrite` — chạy `calculateScenario()` server-side, ghi tách 4 doc con theo vai | `scenario.md` §5 | `functions/src/index.ts` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
+| M12.4 | Cloud Function `onScenarioWrite` (Firestore trigger `scenarios/{id}`) — chạy `calculateScenario()` server-side, ghi `outputs/internal` + `outputs/priceList` | `scenario.md` §5, ADR-010 | `functions/src/index.ts` | **[x] 2026-07-06** |
+| M12.4b | Cloud Function `onPlanInputWrite` (trigger `planInputs/{period}`) — ghi `outputs/plan` (T1). Cần thêm `deriveMoldSetCountBySizeDN()` trong engine trước (chưa tồn tại) | ADR-010, `plan.ts` (M9) | `functions/src/index.ts`, `src/engine/plan-support.ts` (mới) | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
+| M12.4c | HTTPS Callable `computeTargetCosting` — T2 (`solveTargetProfit`, dạng đóng, làm được ngay) + T3 (`solve()`, CẦN sửa `TargetPriceRequestSchema` thêm trường chọn SKU trước — đóng băng Pha 2, cần ADR riêng) | ADR-010, `solver.ts` (M10) | `functions/src/index.ts` | [ ] |
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] |
@@ -40,25 +42,86 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.4: Cloud Function `onScenarioWrite`.** Đọc `docs/contracts/scenario.md`
-§5 (bảng doc split — cột "Ghi") trước khi viết. Ý chính: 1 Cloud Function
-Firestore trigger (`onWrite` trên `scenarios/{id}`) chạy `calculateScenario()`
-(đã có, `src/engine/scenario.ts`, M12.1) bằng Admin SDK (đọc được toàn bộ
-`ScenarioInput` kể cả giá vốn), rồi ghi tách kết quả vào 4 doc con đúng ranh
-giới đã khóa ở `firestore.rules` (M12.3): `outputs/internal` (toàn bộ
-`ScenarioOutput`), `outputs/priceList` (chỉ `skuPriceChains[].chain` 4 field
-cuối + `priceLadder`), `outputs/plan` (từ `planInputs/{period}` + `PlanResult`,
-`src/engine/plan.ts` M9), `outputs/targetCosting` (từ T2/T3 request, `solver.ts`
-M10). `firestore.rules` hiện đã chặn client ghi trực tiếp cả 4 doc `outputs/*`
-(`allow write: if false`) — đúng ý đồ, vì Admin SDK bỏ qua rules nên Cloud
-Function không bị chặn. Cần thêm `functions/` (Node runtime riêng, `package.json`
-riêng theo yêu cầu Cloud Functions) + khai báo `functions` block trong
-`firebase.json` (hiện chưa có, chỉ có `firestore`/`emulators`). Test: rules
-unit test (`tests/rules/`) đã tự chứng minh client không ghi được `outputs/*`
-trực tiếp — cần thêm test riêng cho function (dùng `firebase-functions-test`
-hoặc gọi trực tiếp function đã export, chạy trên emulator `functions`+`firestore`).
+→ **M12.4b: Cloud Function `onPlanInputWrite`.** Đọc ADR-010 (lý do tách khỏi
+M12.4 xong) + `docs/contracts/scenario.md` §5 (dòng `outputs/plan`) trước khi
+viết.
+1. Viết `deriveMoldSetCountBySizeDN(moldAssets: MoldAsset[], products:
+   FittingProduct[]): Record<number, number>` (file mới, gợi ý
+   `src/engine/plan-support.ts`) — với mỗi `MoldAsset`, tra `producesSkus` →
+   `FittingProduct.moldSizeDN` (join qua `productName`+`sizeLabel`), 1
+   `MoldAsset` = 1 bộ khuôn (cộng 1 vào đúng `sizeDN` — 1 khuôn có thể ra
+   nhiều SKU cùng size DN, không cộng trùng nếu 1 khuôn map tới NHIỀU SKU
+   cùng 1 size). Viết `tests/unit/` verify bằng `mold-assets.json`+`fitting.json`
+   thật (không có số vàng Excel riêng cho hàm này — plan.ts vốn đã "không có
+   số vàng Excel", xem cảnh báo đầu `plan.ts`).
+2. Trong `functions/src/index.ts`: thêm `onPlanInputWrite` (Firestore trigger
+   `onWrite` trên `scenarios/{id}/planInputs/{period}`) — đọc `scenarios/{id}`
+   (ScenarioInput), gọi lại `calculatePipeCapacity`/`calculatePipeCostAtNormalCapacity`/
+   `calculatePipeCvp`/`calculateFittingCapacity`/`calculateFittingCostAtNormalCapacity`
+   (CHẤP NHẬN gọi lại theo ADR-010, không viết công thức mới) + hàm mới ở
+   bước 1, rồi gọi `calculatePlan()` (đã có, M9) → ghi `outputs/plan`
+   (GHI ĐÈ — 1 doc duy nhất theo đúng path `scenario.md` §5, không tạo
+   sub-collection theo period, xem lý do ở ADR-010).
+3. Test tích hợp giống `tests/functions/on-scenario-write.test.ts` (M12.4) —
+   tái dùng `tests/helpers/scenario-fixture.ts`, ghi `planInputs/{period}` rồi
+   verify `outputs/plan` xuất hiện đúng.
+4. Cập nhật bảng M12.4b `[x]` + nhật ký.
+
+Sau M12.4b: **M12.4c** (HTTPS Callable `computeTargetCosting`, T2 trước — xem
+ADR-010 mục 3; T3 cần ADR riêng sửa `TargetPriceRequestSchema` thêm trường
+chọn SKU, KHÔNG tự thêm field ngầm).
 
 ## Nhật ký milestone đã xong
+
+- **M12.4 (2026-07-06)**: Cloud Function `onScenarioWrite`. Phát hiện khi bắt
+  tay code (đã tưởng làm cả 4 doc `outputs/*` trong 1 hàm theo mô tả gốc của
+  bảng): 2 khoảng trống thiết kế chặn `outputs/plan`/`outputs/targetCosting`
+  (Plan_SX chưa được `calculateScenario()` orchestrate — thiếu hàm dẫn xuất
+  `moldSetCountBySizeDN`; `TargetPriceRequestSchema` (T3) thiếu trường chọn
+  SKU) — ghi **ADR-010** quyết định tách M12.4 thành 3 Cloud Function riêng
+  (M12.4 lõi xong ngay, M12.4b/M12.4c hoãn có lý do rõ, không lặng lẽ bỏ sót).
+  Scaffold `functions/` (Cloud Functions TS project riêng `package.json`):
+  `firebase-functions@7` + `firebase-admin@13` (ghim `^13` vì `firebase-functions@7`
+  peer-dep chỉ chấp nhận admin `^11|^12|^13`, KHÔNG phải `^14` mới nhất),
+  `functions/tsconfig.json` dùng CHUNG kiểu module với root
+  (`module: ESNext`, `moduleResolution: Bundler`) để tái dùng thẳng
+  `src/engine`/`src/schemas` qua import tương đối `../../src/...` — `include`
+  gồm cả `functions/src/**` lẫn `../src/{engine,schemas}/**`, tsc tự suy
+  `rootDir` = gốc repo → output lồng `functions/lib/functions/src/index.js` +
+  `functions/lib/src/engine/*.js` cùng cấp tương đối, import path GIỮ NGUYÊN
+  lúc biên dịch nên tự khớp đúng (verify bằng chạy `node --experimental` import
+  thử file compiled trước khi tin, không chỉ tin `tsc` không báo lỗi).
+  `firebase.json` thêm block `functions` (source `functions/`, predeploy chạy
+  `npm run build`) + emulator `functions` port 5001. Thêm `.firebaserc`
+  (`demo-costing-app`) — BẮT BUỘC để Firestore Emulator + Functions Emulator
+  cùng chạy chung 1 project ID khi dùng `firebase emulators:exec` (khác
+  `tests/rules/` — ở đó `@firebase/rules-unit-testing` nói chuyện trực tiếp
+  với Firestore Emulator nên project ID nào cũng được, không cần khớp CLI).
+  `functions/src/index.ts`: `onScenarioWrite` (`onDocumentWritten`
+  `scenarios/{scenarioId}`) — parse `ScenarioInputSchema`, gọi
+  `calculateScenario()` (M12.1, TÁI DÙNG NGUYÊN), parse `ScenarioOutputSchema`,
+  ghi `outputs/internal` (đầy đủ) + `outputs/priceList` (lược còn
+  `productKey`/`managementStatus`/4 field giá cuối + `priceLadder` — đúng
+  ranh giới sales-safe `scenario.md` §5); doc bị xóa → dọn 2 `outputs/*`.
+  Tách `tests/helpers/scenario-fixture.ts` (dựng `ScenarioInput` thật từ
+  fixture v3.4) ra khỏi `tests/parity/scenario.test.ts` (refactor thuần, không
+  đổi hành vi — verify lại `npm test` vẫn 286/286 sau khi tách) để dùng lại ở
+  `tests/functions/on-scenario-write.test.ts` (2 test, ghi thật lên Firestore
+  Emulator bằng `firebase-admin`, đợi Cloud Function tự chạy trên Functions
+  Emulator, xác nhận `outputs/internal` CÓ field giá vốn còn `outputs/priceList`
+  KHÔNG CÓ — đúng bằng chứng ranh giới, không chỉ tin code đọc đúng; test xóa
+  doc → 2 `outputs/*` bị dọn). Script `npm run test:functions`
+  (build `functions/` trước, rồi `firebase emulators:exec --only
+  firestore,functions,auth`), `vitest.functions.config.ts` riêng (như pattern
+  `vitest.rules.config.ts` M12.3), loại `tests/functions/**` khỏi `npm test`
+  thường (`vitest.config.ts`).
+  **Verify THẬT**: `npm run test:functions` — 2/2 pass trên Firestore+Functions
+  Emulator sống (không mock). `npm test` vẫn 286/286 (kể cả sau refactor
+  fixture helper). `npm run typecheck` (root) sạch — phải sửa 1 lỗi
+  `noUncheckedIndexedAccess` (`skuPriceChains[0]` có thể `undefined`) ở chính
+  test mới. `cd functions && npm run typecheck` sạch riêng cho Cloud Functions
+  project. `npm run test:rules` (M12.3) chạy lại vẫn 33/33 — xác nhận thêm
+  `.firebaserc` không phá vỡ test cũ.
 
 - **M12.3 (2026-07-06)**: Firebase Local Emulator Suite + Firestore Security
   Rules. Cài `firebase-tools@15`, `firebase@12` (SDK client),

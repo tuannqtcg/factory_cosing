@@ -1,5 +1,64 @@
 # CHANGELOG — Costing App Kit
 
+## v1.23 (2026-07-06) — Đóng gói tri thức cho phiên mới (checkpoint sau M12.4)
+Không đổi nghiệp vụ/code — rà soát + chốt sổ theo yêu cầu user, cùng thông lệ
+"kit vX" đã thiết lập ở v1.5/v1.16/v1.20. Phát hiện + vá 2 chỗ tài liệu lỗi
+thời (không phải bug code): `CONTEXT_PASTE.md` thiếu ADR-009/010 trong danh
+sách ADR đã chấp nhận; `PROJECT_SPEC.md` §3 chưa nhắc `functions/`/Cloud
+Function dù đã có ADR-010.
+
+| File | Kiểm tra | Kết quả |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Danh sách "ADR đã CHẤP NHẬN" đủ chưa | Thiếu 009/010 — đã bổ sung |
+| docs/PROJECT_SPEC.md | §3 Kiến trúc có nhắc Cloud Function chưa | Thiếu — thêm 1 dòng khớp ADR-010 |
+| docs/M12_PLAN.md | Bảng M12.1-M12.4 `[x]` đúng chưa, M12.4b con trỏ đúng chưa | Đã đúng từ Phiên 17-18, không cần sửa |
+| docs/PHASE3_PLAN.md | M12 trỏ đúng `M12_PLAN.md` chưa | Đã đúng |
+| docs/GLOSSARY.md | Thuật ngữ mới (`moldSetCountBySizeDN`, tên Cloud Function...) cần thêm không | Không cần — nội bộ engine/hạ tầng, chưa lên UI |
+| AGENTS.md | Thứ tự đọc file đầu phiên còn đúng không | Đúng |
+| git | `git status` sạch, đã push hết lên `claude/firebase-emulator-security-rules-5eij5z` | Sạch, 2 commit (M12.3, M12.4) |
+| test | `npm test` / `npm run typecheck` / `npm run build` | 286/286 xanh, sạch, build được |
+
+## v1.22 (2026-07-06) — Pha 3 M12.4: Cloud Function onScenarioWrite (lõi) + ADR-010
+`docs/decisions/ADR-010-cloud-function-boundaries.md` (mới) — tách M12.4
+thành 3 phần sau khi phát hiện Plan_SX chưa được `calculateScenario()`
+orchestrate (thiếu `moldSetCountBySizeDN`) và `TargetPriceRequestSchema` (T3)
+thiếu trường chọn SKU: M12.4 (lõi, xong ngay) / M12.4b (`outputs/plan`, hoãn)
+/ M12.4c (`outputs/targetCosting`, hoãn).
+Scaffold `functions/` (Cloud Functions TS riêng `package.json`,
+`firebase-functions@7`+`firebase-admin@13`, tsconfig dùng chung kiểu module
+ESM/Bundler với root để tái dùng thẳng `src/engine`/`src/schemas`).
+`firebase.json` +block `functions` + emulator port 5001; `.firebaserc` mới
+(`demo-costing-app`, bắt buộc để Firestore+Functions Emulator chung project
+khi chạy `emulators:exec`). `functions/src/index.ts`: `onScenarioWrite`
+(Firestore trigger `scenarios/{id}`) → `calculateScenario()` (tái dùng M12.1)
+→ ghi `outputs/internal` (đầy đủ) + `outputs/priceList` (lược field giá vốn —
+sales-safe); xóa doc → dọn cả 2.
+Tách `tests/helpers/scenario-fixture.ts` khỏi `tests/parity/scenario.test.ts`
+(refactor thuần) để dùng lại ở `tests/functions/on-scenario-write.test.ts` (2
+test, chạy thật trên Firestore+Functions Emulator qua `npm run test:functions`
+mới, tách khỏi `npm test`).
+`npm test` 286/286, `npm run typecheck` (root + `functions/`) sạch, `npm run
+test:rules` (M12.3) vẫn 33/33 sau khi thêm `.firebaserc`.
+
+## v1.21 (2026-07-06) — Pha 3 M12.3: Firebase Emulator Suite + Firestore Security Rules
+Cài `firebase-tools@15`/`firebase@12`/`@firebase/rules-unit-testing@5`.
+`firebase.json` (emulator firestore:8080 + auth:9099 + ui) +
+`firestore.indexes.json` (rỗng). `firestore.rules` dịch bảng phân quyền
+`docs/contracts/scenario.md` §5-6 (4 vai admin/pricing/sales/production × 6
+vùng dữ liệu, doc split vật lý cho `scenarios/{id}`/`outputs/internal`/
+`outputs/priceList`/`outputs/plan`/`planInputs/{period}`/`outputs/targetCosting`/
+`moldAssets/{moldId}`) — field-lock cho `pricing` ghi `scenarios/{id}` đúng
+danh sách `resource.md`/`cost-pool.md` (+ `thresholdPct` từ `pricing-chain.md`
+cho 2 field không phải mảng); CHƯA khóa `products[]`/
+`metalInsert[].priceLock.thresholdPct` (mảng, ngoài phạm vi câu chữ scenario.md
+§5 dòng 1 — ghi rõ còn treo, cần ADR nếu muốn mở rộng).
+`tests/rules/firestore.rules.test.ts` (33 test, chạy THẬT trên Firestore
+Emulator qua `npm run test:rules` mới, tách khỏi `npm test` bằng
+`vitest.config.ts`/`vitest.rules.config.ts`) — bao phủ mỗi vai × mỗi vùng dữ
+liệu, xác nhận `sales` không đọc được `outputs/internal`, `production` không
+đọc được `outputs/internal`/`outputs/targetCosting`/`scenarios/{id}`.
+`npm test` vẫn 286/286, `npm run typecheck` sạch.
+
 ## v1.20 (2026-07-06) — Đóng gói tri thức cho phiên mới (checkpoint M12.3)
 Không đổi nghiệp vụ — rà soát + chốt sổ theo yêu cầu user ("lưu lại tri thức
 đánh dấu các mission xong để phiên kế tiếp khởi tạo mới sẽ hiểu và làm

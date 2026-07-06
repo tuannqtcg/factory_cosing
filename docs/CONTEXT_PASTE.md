@@ -5,13 +5,19 @@
 - **Tiến độ Pha 3: engine lõi M1-M11 xong, M12 (UI thật + Firestore) ĐANG LÀM
   — user đã xác nhận mở rộng phạm vi 2026-07-06.** M12 tự chia nhỏ M12.1-M12.10
   ở **`docs/M12_PLAN.md`** (đọc file đó, KHÔNG lặp lại chi tiết ở đây) — đã
-  xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`) +
+  xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`),
   M12.2 (scaffold Vite+React 18+TS strict+Tailwind+Recharts, đã verify chạy
-  thật bằng dev server + screenshot). Tiếp theo: **M12.3** (Firebase Emulator
-  Suite + Security Rules — quyết định hạ tầng: CHƯA có project Firebase thật,
-  dùng Emulator). `npm test` 286/286 xanh, `npm run build` chạy được. Mọi
-  commit push thẳng vào nhánh mặc định `claude/project-knowledge-setup-2au4hr`
-  (repo KHÔNG có `main`; theo yêu cầu user 2026-07-06, KHÔNG qua PR). Chi tiết
+  thật bằng dev server + screenshot), M12.3 (Firebase Emulator Suite +
+  `firestore.rules` theo bảng phân quyền `scenario.md` §5-6, 33 test rules
+  chạy thật trên emulator qua `npm run test:rules`), M12.4 (Cloud Function
+  `onScenarioWrite` — `functions/`, ghi `outputs/internal`+`outputs/priceList`,
+  2 test tích hợp thật qua `npm run test:functions`; ADR-010 tách M12.4b/c
+  hoãn vì Plan_SX chưa orchestrate + T3 thiếu trường chọn SKU). Tiếp theo:
+  **M12.4b** (Cloud Function `onPlanInputWrite` — ghi `outputs/plan`).
+  `npm test` 286/286 xanh, `npm run build` chạy được. Mọi commit push thẳng
+  vào branch làm việc do hạ tầng phiên chỉ định lúc bắt đầu (tên đổi theo
+  từng phiên — xem branch Git hiện tại, KHÔNG cố định 1 tên qua nhiều phiên;
+  repo KHÔNG có `main`; theo yêu cầu user 2026-07-06, KHÔNG qua PR). Chi tiết
   đầy đủ bên dưới + `docs/PHASE3_PLAN.md` + `docs/M12_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
@@ -52,8 +58,9 @@
   `npm test` 278/278 xanh, mọi fixture vàng nay đều có ít nhất 1 test tham
   chiếu. **Engine lõi Pha 3 (M1-M11) coi như HOÀN THÀNH** — chỉ còn M12 (UI
   thật + Firestore), CHỜ user xác nhận mở rộng phạm vi trước khi bắt đầu.
-- ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
-  liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
+- ADR đã CHẤP NHẬN: 001-008 (đầy đủ, xem chi tiết bên dưới điểm 8, 9, 10),
+  **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3),
+  **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4).
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

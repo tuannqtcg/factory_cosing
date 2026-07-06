@@ -1,5 +1,22 @@
 # CHANGELOG — Costing App Kit
 
+## v1.13 (2026-07-06) — Pha 3 M6: dòng vật liệu ren kim loại (ADR-008)
+`src/engine/metal-insert.ts` — `materialCostPerUnitWithInsert()`,
+`weightedAvgInsertPriceVnd()`, `metalInsertHoldingGainLossVnd()` (bản KHÔNG quy
+đổi ngoại tệ, vì ren mua VND trong nước). `evaluatePriceLock()` (M5) dùng lại
+nguyên cho cả policy compound lẫn ren kim loại.
+
+**Phát hiện quan trọng (sửa nhận định sai trong BUSINESS_MODEL/ADR-008)**:
+`fitting.json.skus[].brassInsertCost` KHÔNG phải 0 cho toàn bộ 91 SKU như tài
+liệu cũ ghi — 18 SKU họ "ren" đã có giá trị thật khớp `metal-insert.json`. Dùng
+`materialCostPerUnit + brassInsertCost` (fixture) làm số vàng tự-đối-chiếu —
+khớp tuyệt đối 11/11 SKU ren có khuôn thật (`tests/parity/metal-insert.test.ts`,
+14 test). 7 SKU Cút/Tê ren trong (`pending_mold`) không dùng số này làm chính
+thức (ADR-008 "stillOpen"), nhưng vô hại vì đã bị ẩn khỏi danh mục vận hành.
+
+`npm test` 57/57 xanh, typecheck sạch. **M7 tiếp theo**: thang giá 5 bậc +
+chuỗi markup SKU — xem `docs/PHASE3_PLAN.md`.
+
 ## v1.12 (2026-07-06) — Pha 3 M5: khóa bảng giá (ADR-004) + giá vốn kép (ADR-002)
 `src/engine/price-lock.ts` — `evaluatePriceLock()`, dùng CHUNG cho compound
 (USD) và ren kim loại (VND, sẽ dùng lại ở M6) vì công thức không phụ thuộc đơn

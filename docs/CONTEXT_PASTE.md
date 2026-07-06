@@ -14,28 +14,16 @@
   (code + `npm test` xanh + commit) để không tốn tool call và dừng được khi gần
   hết token — KHÔNG cố làm hết Pha 3 trong 1 phiên. File đó có bảng trạng thái
   M1..M12 và "việc tiếp theo ngay" — đọc đúng dòng đầu tiên chưa `[x]`.
-  **Đã xong**: M1 — scaffold (`package.json`, `tsconfig.json`, vitest) +
-  `src/schemas/*.ts` (5 file thật từ contract) + `tests/unit/schemas.test.ts`
-  (10 test, parse toàn bộ fixture thật, xanh). 1 phát hiện đã xử lý bằng test:
-  `thresholdPct` trong `metal-insert.json` dùng đơn vị SỐ NGUYÊN % (5) khác
-  `assumptions.json` dùng THẬP PHÂN (0.03) — schema chốt thập phân, Zod CHỦ
-  ĐỘNG TỪ CHỐI giá trị chưa chuẩn hóa (xem test "SAI đơn vị... phải bị schema
-  từ chối"). **M2** — `src/engine/pipe.ts` (công suất + chi phí SX Ống tại CS
-  bình thường), khớp tuyệt đối `fullCostPerKg=106.204,73`/`vfPricePerKg=132.755,91`
-  (`tests/parity/pipe.test.ts`, 4 test xanh). Phát hiện + sửa luôn: schema
-  Resource (M1) thiếu 12 field lương/điện/nước/bao bì — đã bổ sung, xem
-  `docs/PHASE3_PLAN.md` mục "Nhật ký milestone". **M3** — `src/engine/fitting.ts`
-  (công suất ép phun + MHR, ADR-001), khớp tuyệt đối
-  `mhrPerMachineHour=1.344.175,79` (`tests/parity/fitting.test.ts`, 4 test
-  xanh). `moldDepreciationPerYear` đã tách riêng khỏi khấu hao máy — sẵn sàng
-  cho M4 chỉ cần thêm điều kiện lọc `asOfYear`. **M4** — `src/engine/mold-depreciation.ts`
-  (khấu hao khuôn động theo `asOfYear`, ADR-007), nối vào `fitting.ts`; 10 test
-  mới gồm kịch bản tổng hợp chứng minh lọc chọn lọc đúng (không phải
-  tất-cả-hoặc-không). **M5** — `src/engine/price-lock.ts` (ADR-004, dùng chung
-  USD/VND) + `src/engine/dual-costing.ts` (ADR-002); nối dây vào `pipe.ts` qua
-  test tích hợp — khớp đủ 5 kịch bản ADR-004 kể cả 2 kịch bản MỞ KHÓA
-  (121.012/98.958). `npm test` 43/43 xanh. **M6 tiếp theo**: dòng vật liệu ren
-  kim loại (ADR-008) — tái dùng `evaluatePriceLock`/`holdingGainLossVnd` đã có.
+  **Đã xong M1-M6** (chi tiết đầy đủ từng milestone → mục "Nhật ký milestone đã
+  xong" trong `docs/PHASE3_PLAN.md`, KHÔNG lặp lại ở đây): schema thật
+  (`src/schemas/`), engine Ống (`pipe.ts`), engine Phụ kiện + MHR (`fitting.ts`),
+  khấu hao khuôn động theo `asOfYear` (`mold-depreciation.ts`, ADR-007), khóa
+  bảng giá + giá vốn kép (`price-lock.ts`/`dual-costing.ts`, ADR-002/004, đã nối
+  dây vào `pipe.ts`), dòng vật liệu ren kim loại (`metal-insert.ts`, ADR-008).
+  `npm test` 57/57 xanh. **M7 tiếp theo**: thang giá 5 bậc + chuỗi markup SKU
+  (gom M2-M6 thành giá bán 99 dòng: 8 ống + 91 phụ kiện) — LƯU Ý bậc 2/4 tham
+  chiếu chéo 2 dòng SP, đã có 2 lỗi công thức thật ở đây tại Pha 1 (Phiên
+  2026-07-05 Phiên 5).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

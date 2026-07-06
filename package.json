@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:rules": "firebase emulators:exec --only firestore,auth \"vitest run --config vitest.rules.config.ts\"",
     "typecheck": "tsc --noEmit",
     "extract-fixtures": "echo 'Script trích fixture từ Excel chưa viết (fixture hiện có đã trích tay Phiên 1-13) — xem CLAUDE.md' && exit 1"
   },
@@ -17,11 +18,14 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@types/node": "^20.14.15",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.5.2",
+    "firebase": "^12.15.0",
+    "firebase-tools": "^15.22.4",
     "postcss": "^8.5.16",
     "recharts": "^3.9.2",
     "tailwindcss": "^3.4.19",

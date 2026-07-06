@@ -1,5 +1,24 @@
 # CHANGELOG — Costing App Kit
 
+## v1.21 (2026-07-06) — Pha 3 M12.3: Firebase Emulator Suite + Firestore Security Rules
+Cài `firebase-tools@15`/`firebase@12`/`@firebase/rules-unit-testing@5`.
+`firebase.json` (emulator firestore:8080 + auth:9099 + ui) +
+`firestore.indexes.json` (rỗng). `firestore.rules` dịch bảng phân quyền
+`docs/contracts/scenario.md` §5-6 (4 vai admin/pricing/sales/production × 6
+vùng dữ liệu, doc split vật lý cho `scenarios/{id}`/`outputs/internal`/
+`outputs/priceList`/`outputs/plan`/`planInputs/{period}`/`outputs/targetCosting`/
+`moldAssets/{moldId}`) — field-lock cho `pricing` ghi `scenarios/{id}` đúng
+danh sách `resource.md`/`cost-pool.md` (+ `thresholdPct` từ `pricing-chain.md`
+cho 2 field không phải mảng); CHƯA khóa `products[]`/
+`metalInsert[].priceLock.thresholdPct` (mảng, ngoài phạm vi câu chữ scenario.md
+§5 dòng 1 — ghi rõ còn treo, cần ADR nếu muốn mở rộng).
+`tests/rules/firestore.rules.test.ts` (33 test, chạy THẬT trên Firestore
+Emulator qua `npm run test:rules` mới, tách khỏi `npm test` bằng
+`vitest.config.ts`/`vitest.rules.config.ts`) — bao phủ mỗi vai × mỗi vùng dữ
+liệu, xác nhận `sales` không đọc được `outputs/internal`, `production` không
+đọc được `outputs/internal`/`outputs/targetCosting`/`scenarios/{id}`.
+`npm test` vẫn 286/286, `npm run typecheck` sạch.
+
 ## v1.20 (2026-07-06) — Đóng gói tri thức cho phiên mới (checkpoint M12.3)
 Không đổi nghiệp vụ — rà soát + chốt sổ theo yêu cầu user ("lưu lại tri thức
 đánh dấu các mission xong để phiên kế tiếp khởi tạo mới sẽ hiểu và làm

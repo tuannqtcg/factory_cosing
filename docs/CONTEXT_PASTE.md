@@ -5,13 +5,16 @@
 - **Tiến độ Pha 3: engine lõi M1-M11 xong, M12 (UI thật + Firestore) ĐANG LÀM
   — user đã xác nhận mở rộng phạm vi 2026-07-06.** M12 tự chia nhỏ M12.1-M12.10
   ở **`docs/M12_PLAN.md`** (đọc file đó, KHÔNG lặp lại chi tiết ở đây) — đã
-  xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`) +
+  xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`),
   M12.2 (scaffold Vite+React 18+TS strict+Tailwind+Recharts, đã verify chạy
-  thật bằng dev server + screenshot). Tiếp theo: **M12.3** (Firebase Emulator
-  Suite + Security Rules — quyết định hạ tầng: CHƯA có project Firebase thật,
-  dùng Emulator). `npm test` 286/286 xanh, `npm run build` chạy được. Mọi
-  commit push thẳng vào nhánh mặc định `claude/project-knowledge-setup-2au4hr`
-  (repo KHÔNG có `main`; theo yêu cầu user 2026-07-06, KHÔNG qua PR). Chi tiết
+  thật bằng dev server + screenshot), M12.3 (Firebase Emulator Suite +
+  `firestore.rules` theo bảng phân quyền `scenario.md` §5-6, 33 test rules
+  chạy thật trên emulator qua `npm run test:rules`). Tiếp theo: **M12.4**
+  (Cloud Function `onScenarioWrite` — ghi tách 4 doc con `outputs/*`).
+  `npm test` 286/286 xanh, `npm run build` chạy được. Mọi commit push thẳng
+  vào branch làm việc do hạ tầng phiên chỉ định lúc bắt đầu (tên đổi theo
+  từng phiên — xem branch Git hiện tại, KHÔNG cố định 1 tên qua nhiều phiên;
+  repo KHÔNG có `main`; theo yêu cầu user 2026-07-06, KHÔNG qua PR). Chi tiết
   đầy đủ bên dưới + `docs/PHASE3_PLAN.md` + `docs/M12_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;

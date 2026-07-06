@@ -13,3 +13,9 @@ node_modules/
 dist/
 build/
 .DS_Store
+
+# Firebase Emulator (M12.3)
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/

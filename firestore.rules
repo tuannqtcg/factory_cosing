@@ -1,0 +1,100 @@
+// firestore.rules — dịch bảng phân quyền docs/contracts/scenario.md §5-6.
+// Nguồn duy nhất của luật: scenario.md. KHÔNG thêm quy tắc không có trong đó.
+// Role lấy từ Firebase Auth custom claim `role` — cơ chế cấp/thu hồi claim
+// chưa thiết kế (ngoài phạm vi M12.3, xem "Còn treo" ở scenario.md).
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function hasRole(r) {
+      return isSignedIn() && request.auth.token.role == r;
+    }
+    function isAdmin() { return hasRole('admin'); }
+    function isPricing() { return hasRole('pricing'); }
+    function isSales() { return hasRole('sales'); }
+    function isProduction() { return hasRole('production'); }
+
+    // Danh sách field khóa của scenarios/{id} — resource.md + cost-pool.md
+    // (scenario.md §5 dòng 1: "pricing các field KHÔNG nằm trong danh sách
+    // khóa (resource.md/cost-pool.md đã liệt kê)"). product.md
+    // ("Product chỉ admin ghi") và pricing-chain.md (thresholdPct admin-only
+    // trong metalInsert[] theo từng dòng) KHÔNG đưa vào đây — scenario.md
+    // không trỏ 2 nguồn đó cho hàng này, và rules không có vòng lặp để khóa
+    // field trong TỪNG phần tử mảng metalInsert theo (renType, ptSize). Ghi
+    // rõ ở docs/M12_PLAN.md nhật ký M12.3 làm việc còn treo.
+    function scenarioLockedFieldsUnchanged(existing, incoming) {
+      return incoming.resources.pipe.actualCapacityKgPerHour == existing.resources.pipe.actualCapacityKgPerHour
+        && incoming.resources.pipe.extruderPriceEach == existing.resources.pipe.extruderPriceEach
+        && incoming.resources.pipe.extruderCount == existing.resources.pipe.extruderCount
+        && incoming.resources.pipe.moldPullerCutterCost == existing.resources.pipe.moldPullerCutterCost
+        && incoming.resources.pipe.yieldRate == existing.resources.pipe.yieldRate
+        && incoming.resources.fitting.yieldRate == existing.resources.fitting.yieldRate
+        && incoming.resources.fitting.machineTypes == existing.resources.fitting.machineTypes
+        && incoming.resources.fitting.moldAssets == existing.resources.fitting.moldAssets
+        // cost-pool.md: toàn bộ CostPool khóa TRỪ markup/currency
+        && incoming.costPool.sharedFixedCosts == existing.costPool.sharedFixedCosts
+        && incoming.costPool.nonProductionCosts == existing.costPool.nonProductionCosts
+        && incoming.costPool.solvent550PricePerBox == existing.costPool.solvent550PricePerBox
+        // pricing-chain.md: thresholdPct của priceLock compound (không phải
+        // mảng, nên khóa được trực tiếp) — admin only, baseline vẫn mở cho pricing
+        && incoming.inventory.pipe.priceLock.thresholdPct == existing.inventory.pipe.priceLock.thresholdPct
+        && incoming.inventory.fitting.priceLock.thresholdPct == existing.inventory.fitting.priceLock.thresholdPct;
+    }
+
+    // scenarios/{id} — ScenarioInput đầy đủ (scenario.md §5 dòng 1)
+    match /scenarios/{scenarioId} {
+      allow read: if isAdmin() || isPricing();
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+        || (isPricing() && scenarioLockedFieldsUnchanged(resource.data, request.resource.data));
+      allow delete: if isAdmin();
+
+      // outputs/internal — ScenarioOutput đầy đủ, chỉ Cloud Function (Admin
+      // SDK) ghi — Admin SDK bỏ qua rules nên `allow write: if false` không
+      // chặn Cloud Function, chỉ chặn client.
+      match /outputs/internal {
+        allow read: if isAdmin() || isPricing();
+        allow write: if false;
+      }
+
+      // outputs/priceList — chỉ 4 field cuối chuỗi giá + priceLadder, sales đọc được
+      match /outputs/priceList {
+        allow read: if isAdmin() || isPricing() || isSales();
+        allow write: if false;
+      }
+
+      // outputs/plan — PlanResult (T1), Cloud Function tính từ planInputs/{period}
+      match /outputs/plan {
+        allow read: if isAdmin() || isPricing() || isProduction();
+        allow write: if false;
+      }
+
+      // planInputs/{period} — PlanInput do production nhập, Cloud Function đọc để tính outputs/plan
+      match /planInputs/{period} {
+        allow read: if isAdmin() || isPricing() || isProduction();
+        allow write: if isAdmin() || isProduction();
+      }
+
+      // outputs/targetCosting — kết quả T2/T3, production KHÔNG đọc được (ADR-006)
+      match /outputs/targetCosting {
+        allow read: if isAdmin() || isPricing();
+        allow write: if false;
+      }
+
+      // moldAssets/{moldId} — audit log riêng khi mua khuôn mới, chỉ admin ghi
+      match /moldAssets/{moldId} {
+        allow read: if isAdmin() || isPricing();
+        allow write: if isAdmin();
+      }
+    }
+
+    // Mặc định: từ chối mọi path khác không khai báo ở trên.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

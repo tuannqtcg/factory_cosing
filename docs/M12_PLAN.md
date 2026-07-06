@@ -20,8 +20,8 @@
 |---|---|---|---|---|
 | M12.1 | Orchestrator `calculateScenario(ScenarioInput) → ScenarioOutput` nối toàn bộ M2-M9 | `docs/contracts/scenario.md` §1-2 | `src/engine/scenario.ts` | **[x] 2026-07-06** |
 | M12.2 | Scaffold frontend thật (Vite + React 18 + TS strict + Tailwind + Recharts) | AGENTS.md stack | `src/features/`, `vite.config.ts`, `tailwind.config.ts` | **[x] 2026-07-06** |
-| M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.4 | Cloud Function `onScenarioWrite` — chạy `calculateScenario()` server-side, ghi tách 4 doc con theo vai | `scenario.md` §5 | `functions/src/index.ts` | [ ] |
+| M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | **[x] 2026-07-06** |
+| M12.4 | Cloud Function `onScenarioWrite` — chạy `calculateScenario()` server-side, ghi tách 4 doc con theo vai | `scenario.md` §5 | `functions/src/index.ts` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] |
@@ -34,42 +34,90 @@
 2. Đọc đúng mục "Nguồn" tương ứng trước khi code.
 3. Code xong: `npm test` + `npm run typecheck` xanh, cập nhật bảng NGAY (đừng
    để dồn sang phiên sau ghi lại — Phiên 15 đã quên tick M12.2 xong ngay lúc
-   đó, phải vá lại ở Phiên 16), commit, push thẳng
-   `claude/project-knowledge-setup-2au4hr` (KHÔNG tạo PR — quy trình đã chốt
-   từ Phiên 13).
+   đó, phải vá lại ở Phiên 16), commit, push thẳng branch làm việc hiện tại
+   của phiên đó (tên branch do hạ tầng phiên chỉ định lúc bắt đầu — KHÔNG cố
+   định 1 tên qua nhiều phiên, xem branch Git hiện tại) (KHÔNG tạo PR — quy
+   trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.3: Firebase Emulator Suite + Firestore Security Rules.** Đọc
-`docs/contracts/scenario.md` §5-6 (bảng phân quyền 4 vai × 6 vùng dữ liệu +
-lý do tách doc vật lý — "sales không đọc được cost") TRƯỚC khi viết rules.
-1. Cài `firebase-tools` (CLI, để chạy emulator) + `firebase` (SDK client) +
-   `@firebase/rules-unit-testing` (devDependency, để viết test rules chạy
-   trên emulator qua vitest — KHÔNG cần project thật, emulator tự cấp
-   `projectId` giả).
-2. `firebase.json` — khai báo emulator: `firestore` (port mặc định 8080),
-   `auth` (port 9099). CHƯA cần `hosting`/`functions` block cho tới M12.4.
-3. `firestore.rules` — dịch ĐÚNG bảng phân quyền `scenario.md` §5-6 thành
-   rules thật (KHÔNG phát minh quy tắc mới): mỗi collection/doc path trong
-   bảng đó → 1 khối `match` riêng, role đọc lấy từ Auth custom claims (`role`
-   ∈ {admin, pricing, sales, production}). Nhớ đúng nguyên tắc "tách DOC vật
-   lý cho mỗi tầng đọc" — `scenarios/{id}` (đầy đủ) KHÁC
-   `scenarios/{id}/outputs/priceList` (sales đọc được) KHÁC
-   `scenarios/{id}/outputs/internal` (sales KHÔNG đọc được).
-4. `firestore.indexes.json` — để trống/mặc định trừ khi rules-unit-test đòi
-   composite index cụ thể.
-5. Test bắt buộc: `tests/rules/*.test.ts` dùng
-   `@firebase/rules-unit-testing` (`initializeTestEnvironment`) chạy NHẮM
-   VÀO EMULATOR (cần emulator đang chạy — cân nhắc script `npm run
-   test:rules` riêng gọi `firebase emulators:exec`, KHÔNG gộp vào `npm test`
-   hiện tại vì `vitest run` (engine) không cần emulator, tránh làm chậm/hỏng
-   suite engine nếu thiếu Firebase CLI ở môi trường CI). Test tối thiểu mỗi
-   vai × mỗi vùng dữ liệu trong bảng phân quyền: 1 test ĐƯỢC phép, 1 test BỊ
-   từ chối — đặc biệt `sales` đọc `outputs/internal`/`outputs/targetCosting`
-   PHẢI bị từ chối (luật bất biến PROJECT_SPEC §5, AGENTS.md).
-6. Cập nhật bảng trạng thái (M12.3 → `[x]`) + nhật ký bên dưới TRƯỚC khi
-   dừng phiên, dù chỉ làm xong 1 phần (ghi rõ phần nào xong/dở dang).
+→ **M12.4: Cloud Function `onScenarioWrite`.** Đọc `docs/contracts/scenario.md`
+§5 (bảng doc split — cột "Ghi") trước khi viết. Ý chính: 1 Cloud Function
+Firestore trigger (`onWrite` trên `scenarios/{id}`) chạy `calculateScenario()`
+(đã có, `src/engine/scenario.ts`, M12.1) bằng Admin SDK (đọc được toàn bộ
+`ScenarioInput` kể cả giá vốn), rồi ghi tách kết quả vào 4 doc con đúng ranh
+giới đã khóa ở `firestore.rules` (M12.3): `outputs/internal` (toàn bộ
+`ScenarioOutput`), `outputs/priceList` (chỉ `skuPriceChains[].chain` 4 field
+cuối + `priceLadder`), `outputs/plan` (từ `planInputs/{period}` + `PlanResult`,
+`src/engine/plan.ts` M9), `outputs/targetCosting` (từ T2/T3 request, `solver.ts`
+M10). `firestore.rules` hiện đã chặn client ghi trực tiếp cả 4 doc `outputs/*`
+(`allow write: if false`) — đúng ý đồ, vì Admin SDK bỏ qua rules nên Cloud
+Function không bị chặn. Cần thêm `functions/` (Node runtime riêng, `package.json`
+riêng theo yêu cầu Cloud Functions) + khai báo `functions` block trong
+`firebase.json` (hiện chưa có, chỉ có `firestore`/`emulators`). Test: rules
+unit test (`tests/rules/`) đã tự chứng minh client không ghi được `outputs/*`
+trực tiếp — cần thêm test riêng cho function (dùng `firebase-functions-test`
+hoặc gọi trực tiếp function đã export, chạy trên emulator `functions`+`firestore`).
 
 ## Nhật ký milestone đã xong
+
+- **M12.3 (2026-07-06)**: Firebase Local Emulator Suite + Firestore Security
+  Rules. Cài `firebase-tools@15`, `firebase@12` (SDK client),
+  `@firebase/rules-unit-testing@5` (devDependency — Java 21 đã có sẵn trong
+  môi trường, cần cho Firestore Emulator chạy thật, không mock). `firebase.json`
+  khai báo emulator `firestore` (port 8080) + `auth` (port 9099) + `ui` — CHƯA
+  có `hosting`/`functions` block (để dành M12.4). `firestore.indexes.json`
+  rỗng (`indexes: []`) — chưa có composite query nào đòi index.
+  `firestore.rules` dịch bảng `scenario.md` §5 (doc split theo collection
+  path) + §6 (4 vai × 6 vùng dữ liệu) thành rules thật: role đọc từ Auth custom
+  claim `request.auth.token.role`; mỗi doc path 1 khối `match` riêng
+  (`scenarios/{id}`, `outputs/internal`, `outputs/priceList`, `outputs/plan`,
+  `planInputs/{period}`, `outputs/targetCosting`, `moldAssets/{moldId}`); mọi
+  `outputs/*` chặn client ghi (`allow write: if false` — Cloud Function dùng
+  Admin SDK bỏ qua rules, đúng thiết kế §5); mặc định từ chối path không khai
+  báo (`match /{document=**} { allow read, write: if false; }`).
+  Field-lock cho `scenarios/{id}.update` khi vai `pricing` ghi (đúng câu
+  scenario.md §5 dòng 1: "field KHÔNG nằm trong danh sách khóa
+  (resource.md/cost-pool.md đã liệt kê)") — hàm
+  `scenarioLockedFieldsUnchanged()` so `request.resource.data` với
+  `resource.data` cho đúng 8 field khóa từ `resource.md`
+  (`resources.pipe.{actualCapacityKgPerHour,extruderPriceEach,extruderCount,
+  moldPullerCutterCost,yieldRate}`, `resources.fitting.{yieldRate,machineTypes,
+  moldAssets}`) + 3 field khóa từ `cost-pool.md`
+  (`costPool.{sharedFixedCosts,nonProductionCosts,solvent550PricePerBox}` —
+  `markup`/`currency` mở cho pricing) + 2 field từ `pricing-chain.md`
+  (`inventory.{pipe,fitting}.priceLock.thresholdPct`, không phải mảng nên khóa
+  được trực tiếp).
+  **Còn treo (phạm vi hẹp có chủ đích, không phải thiếu sót quên)**:
+  `product.md` ("Product chỉ admin ghi" — toàn bộ `products[]`) và
+  `pricing-chain.md` (`thresholdPct` admin-only TỪNG dòng trong
+  `inventory.metalInsert[]`, theo `(renType, ptSize)`) CHƯA đưa vào field-lock
+  vì `scenario.md` §5 dòng 1 chỉ trỏ rõ "resource.md/cost-pool.md" cho hàng
+  này (không trỏ product.md/pricing-chain.md), và rules không có vòng lặp để
+  khóa field trong TỪNG phần tử mảng — khóa cả mảng `products`/`metalInsert`
+  sẽ chặn luôn phần pricing được phép sửa (vd `metalInsert[].lots`), không
+  đúng ý đồ. Cần ADR/cập nhật `scenario.md` §5 nếu muốn khóa thêm — không tự
+  quyết ở milestone này (AGENTS.md luật #5).
+  Test: `tests/rules/firestore.rules.test.ts` (33 test) dùng
+  `@firebase/rules-unit-testing` (`initializeTestEnvironment` +
+  `assertSucceeds`/`assertFails`), chạy THẬT trên Firestore Emulator qua
+  script mới `npm run test:rules` (`firebase emulators:exec --only
+  firestore,auth "vitest run --config vitest.rules.config.ts"`). Bao phủ mỗi
+  vai (admin/pricing/sales/production) × mỗi vùng dữ liệu ở bảng §6: đọc
+  được/không đọc được, ghi field khóa bị từ chối/field không khóa được phép,
+  tạo/xóa scenario chỉ admin, `outputs/internal` không ai ghi trực tiếp được
+  kể cả admin, `sales` đọc `outputs/internal`/`outputs/plan` bị từ chối,
+  `production` đọc `outputs/internal`/`outputs/targetCosting`/`scenarios/{id}`
+  bị từ chối (đúng yêu cầu bắt buộc của milestone), path lạ mặc định từ chối.
+  Thêm `vitest.config.ts` (loại `tests/rules/**` khỏi `npm test` thường —
+  trước đây không có file này, `npm test` dùng default config của
+  `vite.config.ts` không `test` field) + `vitest.rules.config.ts` (include
+  riêng `tests/rules/**`, timeout 20s vì gọi mạng tới emulator). Verify THẬT:
+  chạy `npm run test:rules` — emulator tự tải `cloud-firestore-emulator-v1.21.0.jar`
+  lần đầu, 33/33 test pass trên emulator sống (không phải mock). `npm test`
+  vẫn 286/286 (engine không đụng, `tests/rules` bị loại đúng ý). `npm run
+  typecheck` sạch. `.gitignore` thêm `firebase-debug.log`,
+  `firestore-debug.log`, `ui-debug.log`, `.firebase/` (artifact chạy emulator,
+  không commit).
 
 - **M12.2 (2026-07-06)**: Scaffold frontend thật — cài `react@18`/`react-dom@18`
   (ghim đúng bản 18 theo AGENTS.md, npm mặc định kéo về 19), `vite@5` +

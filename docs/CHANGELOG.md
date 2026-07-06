@@ -1,5 +1,23 @@
 # CHANGELOG — Costing App Kit
 
+## v1.23 (2026-07-06) — Đóng gói tri thức cho phiên mới (checkpoint sau M12.4)
+Không đổi nghiệp vụ/code — rà soát + chốt sổ theo yêu cầu user, cùng thông lệ
+"kit vX" đã thiết lập ở v1.5/v1.16/v1.20. Phát hiện + vá 2 chỗ tài liệu lỗi
+thời (không phải bug code): `CONTEXT_PASTE.md` thiếu ADR-009/010 trong danh
+sách ADR đã chấp nhận; `PROJECT_SPEC.md` §3 chưa nhắc `functions/`/Cloud
+Function dù đã có ADR-010.
+
+| File | Kiểm tra | Kết quả |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Danh sách "ADR đã CHẤP NHẬN" đủ chưa | Thiếu 009/010 — đã bổ sung |
+| docs/PROJECT_SPEC.md | §3 Kiến trúc có nhắc Cloud Function chưa | Thiếu — thêm 1 dòng khớp ADR-010 |
+| docs/M12_PLAN.md | Bảng M12.1-M12.4 `[x]` đúng chưa, M12.4b con trỏ đúng chưa | Đã đúng từ Phiên 17-18, không cần sửa |
+| docs/PHASE3_PLAN.md | M12 trỏ đúng `M12_PLAN.md` chưa | Đã đúng |
+| docs/GLOSSARY.md | Thuật ngữ mới (`moldSetCountBySizeDN`, tên Cloud Function...) cần thêm không | Không cần — nội bộ engine/hạ tầng, chưa lên UI |
+| AGENTS.md | Thứ tự đọc file đầu phiên còn đúng không | Đúng |
+| git | `git status` sạch, đã push hết lên `claude/firebase-emulator-security-rules-5eij5z` | Sạch, 2 commit (M12.3, M12.4) |
+| test | `npm test` / `npm run typecheck` / `npm run build` | 286/286 xanh, sạch, build được |
+
 ## v1.22 (2026-07-06) — Pha 3 M12.4: Cloud Function onScenarioWrite (lõi) + ADR-010
 `docs/decisions/ADR-010-cloud-function-boundaries.md` (mới) — tách M12.4
 thành 3 phần sau khi phát hiện Plan_SX chưa được `calculateScenario()`

@@ -58,8 +58,9 @@
   `npm test` 278/278 xanh, mọi fixture vàng nay đều có ít nhất 1 test tham
   chiếu. **Engine lõi Pha 3 (M1-M11) coi như HOÀN THÀNH** — chỉ còn M12 (UI
   thật + Firestore), CHỜ user xác nhận mở rộng phạm vi trước khi bắt đầu.
-- ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
-  liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
+- ADR đã CHẤP NHẬN: 001-008 (đầy đủ, xem chi tiết bên dưới điểm 8, 9, 10),
+  **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3),
+  **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4).
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

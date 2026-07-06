@@ -2,9 +2,14 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Tiến độ Pha 3: 10/12 milestone xong (M1-M10), tiếp theo M11** — 185/185 test
-  xanh, mọi commit đã push lên `claude/pensive-gates-4e0jmo`, không có gì dở
-  dang. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md`.
+- **Tiến độ Pha 3: 11/12 milestone xong (M1-M11) — ENGINE LÕI ĐÃ HOÀN THÀNH,
+  chỉ còn M12 (UI thật)** — 278/278 test xanh, mọi commit đã push thẳng vào
+  nhánh mặc định `claude/project-knowledge-setup-2au4hr` (repo KHÔNG có
+  `main` — nhánh này đóng vai trò main; theo yêu cầu user 2026-07-06, từ nay
+  push thẳng, KHÔNG qua PR). **M12 CHƯA được xác nhận mở rộng phạm vi** — user
+  đã chọn "chỉ M11" khi được hỏi lại (phạm vi mơ hồ giữa "chỉ xong M11" và
+  "làm cả M12"), nên KHÔNG tự bắt đầu UI/Firestore, chờ yêu cầu rõ ràng lần
+  sau. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
   `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng
@@ -36,9 +41,14 @@
   (T2 dạng đóng, tái dùng `cvp.ts`). Phát hiện thiếu field `baseInput` ở
   `SolveParams` đã đóng băng — bổ sung + ghi ADR-009 dòng #4. Test case chuẩn
   T3 (DN50 mục tiêu 260.000đ/m) forward-verify khớp tuyệt đối; case infeasible
-  trả đúng `achievableRange`. `npm test` 185/185 xanh. **M11 tiếp theo**: gom
-  M2-M9 thành 1 bộ test parity Excel đầy đủ 372 assertion trong
-  `tests/parity/` (KHÔNG viết engine mới, chỉ tổng hợp/audit).
+  trả đúng `achievableRange`. **M11** — audit toàn bộ `tests/fixtures/*.json`,
+  phát hiện `price-list.json` (bảng phẳng 99 dòng, sheet "PriceList") là
+  fixture DUY NHẤT chưa có test tham chiếu → viết
+  `tests/parity/price-list-snapshot.test.ts` (93 test) đối chiếu ĐỘC LẬP,
+  khớp 100% (trừ 8 SKU `pending_mold` cố tình bỏ qua so giá trị — đúng ADR-008).
+  `npm test` 278/278 xanh, mọi fixture vàng nay đều có ít nhất 1 test tham
+  chiếu. **Engine lõi Pha 3 (M1-M11) coi như HOÀN THÀNH** — chỉ còn M12 (UI
+  thật + Firestore), CHỜ user xác nhận mở rộng phạm vi trước khi bắt đầu.
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

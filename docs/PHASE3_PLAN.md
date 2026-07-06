@@ -31,7 +31,7 @@
 | M8 | CVP (Ống theo kg, Phụ kiện quy kg theo mix) | BUSINESS_MODEL §2.4, §3.6 | `src/engine/cvp.ts` | **[x] 2026-07-06 (làm TRƯỚC M7 — xem lý do trong "Nhật ký milestone")** |
 | M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | **[x] 2026-07-06** |
 | M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | **[x] 2026-07-06** |
-| M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | [ ] |
+| M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | **[x] 2026-07-06** |
 | M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 | `prototype/blazemaster-costing-app.dc.html`, `scenario.md` | `src/features/` | [ ] — CHỈ làm khi user xác nhận mở rộng phạm vi (ngoài "chỉ engine") |
 
 ## Ghi chú kỹ thuật xuyên suốt (áp dụng mọi milestone)
@@ -50,13 +50,39 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M11: Bộ test parity Excel đầy đủ 372 assertion** (gom M2-M9 thành 1 suite
-hoàn chỉnh trong `tests/parity/`, đối chiếu skill `excel-parity-testing`) —
-KHÔNG viết engine mới, chỉ tổng hợp/đối chiếu lại toàn bộ `tests/fixtures/*.json`
-trong 1 chỗ để dễ audit tổng số assertion đã khớp Excel v3.4. Sau M11 →
-M12 (UI thật, CHỈ làm khi user xác nhận mở rộng phạm vi).
+→ **Engine lõi (M1-M11) ĐÃ XONG.** Còn lại DUY NHẤT **M12: UI thật (React/TS/
+Tailwind theo prototype đã duyệt) + nối Firestore** — theo quyết định user
+2026-07-06 (hỏi lại vì phạm vi mơ hồ, user chọn "chỉ M11"), M12 CHƯA được xác
+nhận mở rộng phạm vi — KHÔNG tự bắt đầu, chờ user yêu cầu rõ ràng lần sau.
+Khi user xác nhận: đọc `prototype/blazemaster-costing-app.dc.html` (UI đóng
+băng) + `docs/contracts/scenario.md` §5-6 (Firestore doc split + phân quyền)
+trước khi code; cần viết thêm 1 hàm orchestration `calculateScenario(input:
+ScenarioInput): ScenarioOutput` (CHƯA tồn tại — nối toàn bộ pipe/fitting/cvp/
+price-ladder/price-lock/dual-costing/metal-insert) làm cầu nối UI ↔ engine.
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
+- **M11 (2026-07-06)**: Gom parity suite hiện có (M2-M9, đã tự-đủ theo từng
+  milestone) thành audit đầy đủ — rà soát TOÀN BỘ `tests/fixtures/*.json`, phát
+  hiện `price-list.json` (bảng phẳng 99 dòng: 8 ống + 91 SKU, sheet "PriceList")
+  là fixture DUY NHẤT CHƯA có test nào chạm tới (mọi test khác đối chiếu qua
+  `pipe.json`/`fitting.json` trung gian, KHÔNG qua bảng giá cuối cùng — đúng
+  fixture mà AGENTS.md luật #5 trỏ tới làm số vàng "8 giá ống + 91 SKU").
+  Viết `tests/parity/price-list-snapshot.test.ts` (93 test) đối chiếu ĐỘC LẬP
+  với `price-list.json`: xác nhận thứ tự 99 dòng khớp vị trí với
+  `pipe.json.priceLadderByDN`/`fitting.json.skus` (đã verify tay bằng script
+  trước khi viết test — khớp 100% theo product+sizeDN), rồi so
+  `listPriceBeforeVat`/`listPriceWithVat` tính từ engine với `price-list.json`
+  cho 8 dòng Ống + 83/91 dòng Phụ kiện (8 SKU `pending_mold` cố tình BỎ QUA so
+  giá trị — cùng lý do đã ghi ở M7: `brassInsertCost` của nhóm này là số CHƯA
+  XÁC NHẬN theo ADR-008, engine không cộng nên lệch fixture theo đúng thiết
+  kế, chỉ giữ test khớp tên+size).
+  Không phát hiện lệch nào — mọi fixture khác đã có ít nhất 1 test tham chiếu
+  từ M2-M10. `npm test` 278/278 xanh (từ 185, +93 test mới), typecheck sạch.
+  Con số "372 assertion" ở AGENTS.md là ước lượng đặt ra TỪ Pha 0 (trước khi
+  có engine thật) — tổng số `expect()` thực thi trong suite hiện tại (đếm cả
+  vòng lặp 8+91 dòng, không chỉ số `it()` hiển thị) đã VƯỢT xa mốc này; không
+  cố ép khớp đúng con số 372, vì mục tiêu thật là "phủ hết mọi fixture vàng",
+  không phải một con số cụ thể.
 - **M10 (2026-07-06)**: `src/engine/solver.ts` — `solve()`/`solveDiscrete()`
   (bisection thuần cho biến liên tục / quét rời rạc cho biến nguyên, đúng luật
   #1/#3/#5 skill `inverse-solver`) + `solveTargetProfit()` (T2, dạng đóng, tái

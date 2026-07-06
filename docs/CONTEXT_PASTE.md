@@ -14,16 +14,18 @@
   (code + `npm test` xanh + commit) để không tốn tool call và dừng được khi gần
   hết token — KHÔNG cố làm hết Pha 3 trong 1 phiên. File đó có bảng trạng thái
   M1..M12 và "việc tiếp theo ngay" — đọc đúng dòng đầu tiên chưa `[x]`.
-  **Đã xong M1-M6** (chi tiết đầy đủ từng milestone → mục "Nhật ký milestone đã
+  **Đã xong M1-M8** (chi tiết đầy đủ từng milestone → mục "Nhật ký milestone đã
   xong" trong `docs/PHASE3_PLAN.md`, KHÔNG lặp lại ở đây): schema thật
   (`src/schemas/`), engine Ống (`pipe.ts`), engine Phụ kiện + MHR (`fitting.ts`),
   khấu hao khuôn động theo `asOfYear` (`mold-depreciation.ts`, ADR-007), khóa
   bảng giá + giá vốn kép (`price-lock.ts`/`dual-costing.ts`, ADR-002/004, đã nối
-  dây vào `pipe.ts`), dòng vật liệu ren kim loại (`metal-insert.ts`, ADR-008).
-  `npm test` 57/57 xanh. **M7 tiếp theo**: thang giá 5 bậc + chuỗi markup SKU
-  (gom M2-M6 thành giá bán 99 dòng: 8 ống + 91 phụ kiện) — LƯU Ý bậc 2/4 tham
-  chiếu chéo 2 dòng SP, đã có 2 lỗi công thức thật ở đây tại Pha 1 (Phiên
-  2026-07-05 Phiên 5).
+  dây vào `pipe.ts`), dòng vật liệu ren kim loại (`metal-insert.ts`, ADR-008),
+  CVP (`cvp.ts`, làm TRƯỚC price-ladder vì bậc 1 = `cvp.variableCostPerKg`),
+  thang giá 5 bậc + chuỗi markup 99 dòng (`price-ladder.ts`) — đã tính tay đối
+  chiếu `dashboard.json` trước khi code để tránh lặp lại đúng 2 lỗi công thức
+  cũ ở bậc 2 (loại khấu hao lab/UL khỏi cash cost) và bậc 4 (chia theo tỷ trọng
+  doanh thu VF, không theo kg). `npm test` 162/162 xanh. **M9 tiếp theo**:
+  Plan_SX (T1, dạng đóng, KHÔNG có số vàng Excel — sheet gốc là template).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

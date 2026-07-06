@@ -1,5 +1,28 @@
 # CHANGELOG — Costing App Kit
 
+## v1.14 (2026-07-06) — Pha 3 M7+M8: thang giá 5 bậc + CVP (làm M8 trước M7)
+Kiểm tra lại công thức bậc 2/4 bằng tính tay đối chiếu `dashboard.json` TRƯỚC
+khi code (theo yêu cầu user, tránh lặp lại 2 lỗi công thức thật đã xảy ra ở
+prototype Pha 1 — xem `docs/sessions/SESSION_2026-07-05.md` Phiên 5). Phát hiện
+bậc 1 (`variableCostFloor`) CHÍNH LÀ `cvp.variableCostPerKg` → đảo thứ tự, làm
+CVP (M8) trước price-ladder (M7).
+
+`src/engine/cvp.ts` — `calculatePipeCvp()`/`calculateFittingCvp()`, tái dùng
+output đã có từ M2/M3. `src/engine/price-ladder.ts` —
+`calculate{Pipe,Fitting}PriceLadder5Tier()` (bậc 2 chỉ cộng compliance+rent qua
+`sharedCostAllocationRatio`, KHÔNG gồm khấu hao lab/UL; bậc 4 dùng
+`revenueShare` theo doanh thu VF, KHÔNG chia theo kg — cả 2 đúng ngược lại với
+2 lỗi cũ), `calculate{Pipe,Fitting}SkuPriceChain()` (bỏ hẳn tham số
+`brassInsertCost` cộng riêng — ADR-008 đã gập vào `materialCostPerUnit` từ M6).
+
+Test: `tests/parity/cvp.test.ts` (8 test) + `tests/parity/price-ladder.test.ts`
+(101 test: thang giá 5 bậc cả 2 dòng SP, 8 dòng bảng giá Ống, 91 dòng bảng giá
+SKU Phụ kiện — xử lý riêng 7 SKU `pending_mold` có `brassInsertCost` chưa xác
+nhận trong fixture).
+
+`npm test` 162/162 xanh, typecheck sạch. **M9 tiếp theo**: Plan_SX (T1) — xem
+`docs/PHASE3_PLAN.md`.
+
 ## v1.13 (2026-07-06) — Pha 3 M6: dòng vật liệu ren kim loại (ADR-008)
 `src/engine/metal-insert.ts` — `materialCostPerUnitWithInsert()`,
 `weightedAvgInsertPriceVnd()`, `metalInsertHoldingGainLossVnd()` (bản KHÔNG quy

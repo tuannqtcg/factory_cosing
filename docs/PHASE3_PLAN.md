@@ -27,8 +27,8 @@
 | M4 | Khấu hao khuôn động theo `asOfYear` (ADR-007) — nuôi vào MHR thay `moldSetCostTotal66` | ADR-007, `resource.md` | `src/engine/mold-depreciation.ts` | **[x] 2026-07-06** |
 | M5 | Giá vốn kép (ADR-002) + khóa bảng giá (ADR-004) — cả compound Ống/Phụ kiện | BUSINESS_MODEL §1a, §5; `price-lock-scenarios.json` (5 kịch bản) | `src/engine/dual-costing.ts`, `src/engine/price-lock.ts` | **[x] 2026-07-06** |
 | M6 | Dòng vật liệu ren kim loại (ADR-008) — giá vốn kép + khóa giá riêng + `materialCostPerUnit` mở rộng cho 11 SKU họ ren | ADR-008, `pricing-chain.md` | `src/engine/metal-insert.ts` | **[x] 2026-07-06** |
-| M7 | Thang giá 5 bậc + chuỗi markup SKU (99 dòng: 8 ống + 91 phụ kiện) | BUSINESS_MODEL §2.3, §3.4, §4 | `src/engine/price-ladder.ts` | [ ] |
-| M8 | CVP (Ống theo kg, Phụ kiện quy kg theo mix) | BUSINESS_MODEL §2.4, §3.6 | `src/engine/cvp.ts` | [ ] |
+| M7 | Thang giá 5 bậc + chuỗi markup SKU (99 dòng: 8 ống + 91 phụ kiện) | BUSINESS_MODEL §2.3, §3.4, §4 | `src/engine/price-ladder.ts` | **[x] 2026-07-06** |
+| M8 | CVP (Ống theo kg, Phụ kiện quy kg theo mix) | BUSINESS_MODEL §2.4, §3.6 | `src/engine/cvp.ts` | **[x] 2026-07-06 (làm TRƯỚC M7 — xem lý do trong "Nhật ký milestone")** |
 | M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | [ ] |
 | M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | [ ] |
 | M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | [ ] |
@@ -50,29 +50,49 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M7: thang giá 5 bậc + chuỗi markup SKU** (BUSINESS_MODEL §2.3, §3.4, §4).
-Đây là milestone GOM tất cả M2-M6 lại thành số bán ra cuối cùng cho 99 dòng (8
-ống + 91 phụ kiện):
-1. `src/engine/price-ladder.ts` — 5 bậc thang giá (`variableCostFloor`,
-   `cashBreakEven`, `breakEvenFullCost`, `enterpriseBreakEven`, `targetPrice`)
-   theo ĐÚNG công thức §4 — LƯU Ý bậc 2 và bậc 4 THAM CHIẾU CHÉO cả 2 dòng SP
-   (đã có 2 lỗi công thức thật ở đây trong prototype Pha 1, xem session log
-   Phiên 5 ngày 2026-07-05), viết test riêng cho 2 bậc này trước khi tin.
-2. Chuỗi markup từng SKU (§2.3 Ống theo mét, §3.4 Phụ kiện theo cái) —
-   `machineHoursPerUnit`, `breakEvenPerUnit`, `vfPricePerUnit`, `tcgPricePerUnit`,
-   `listPriceBeforeVat` (ROUNDUP hàng trăm), `listPriceWithVat`. Với 11 SKU họ
-   ren, `materialCostPerUnit` phải gọi `materialCostPerUnitWithInsert()` (M6)
-   thay vì công thức thường; 80 SKU còn lại + 8 Ống dùng công thức cũ
-   (`fitting.ts`/`pipe.ts`, M2/M3).
-3. Verify khớp tuyệt đối `tests/fixtures/pipe.json.priceLadderByDN` (8 dòng) +
-   `tests/fixtures/fitting.json.skus` (91 dòng, dùng `materialCostPerUnit` GỐC
-   — chưa cộng insert — cho 80 SKU thường, và verify riêng 11 SKU ren bằng công
-   thức M6 đã có, không lẫn 2 cách tính).
-4. `tests/fixtures/dashboard.json.priceLadder5Tier` là số vàng đối chiếu chính
-   cho bậc 1-5 (cả Ống và Phụ kiện).
+→ **M9: Plan_SX (T1 — tầng vận hành, dạng đóng)**. Đọc `docs/BUSINESS_MODEL.md`
+§6 (KHÔNG có "số vàng" thật — sheet Excel là template input=0, chỉ có QUY TẮC).
+1. `src/engine/plan.ts` — quy đổi kế hoạch → giờ máy (Ống: mét→kg→kg nạp
+   máy→giờ máy đùn; Phụ kiện: số lượng SKU→giờ máy→kg thành phẩm), đánh giá bậc
+   ca (so với 1×/2×/3× giờ khả dụng), ràng buộc khuôn theo size (CHỈ Phụ kiện —
+   `moldSetCount` × giới hạn giờ 3-ca so với tổng giờ cần), nguyên liệu + ngoại
+   tệ cần mua (dùng `replacementUsd` THÔ, KHÔNG qua price-lock — khác mọi hàm
+   trước đó dùng `pricingPrice`), nhân công cần tuyển, chi phí/kg thực tế so
+   công suất nhàn rỗi (chỉ Ống).
+2. Khớp `PlanInputSchema`/`PlanResultSchema` đã có ở `src/schemas/scenario.ts`
+   (Pha 2, đã đóng băng) — không phát minh field mới ngoài đó.
+3. KHÔNG có golden number Excel → viết test với input mẫu TỰ CHỌN (vd kế hoạch
+   500t Ống DN50 + 10.000 cái Tê đều 20/quý), verify bằng cách TÍNH TAY từng
+   bước theo đúng quy tắc §6, ghi rõ trong comment test đây là input mẫu không
+   phải số vàng Excel (khác mọi test trước — cần nói rõ để không nhầm là parity
+   thật).
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
-- **M6 (2026-07-06)**: `src/engine/metal-insert.ts` —
+- **M7+M8 (2026-07-06, làm M8 TRƯỚC M7)**: kiểm tra lại công thức bậc 2/4 bằng
+  tính tay đối chiếu `dashboard.json` TRƯỚC khi code (theo yêu cầu user) — phát
+  hiện bậc 1 (`variableCostFloor`) CHÍNH LÀ `cvp.variableCostPerKg`, nghĩa là
+  price-ladder (M7) phụ thuộc CVP (M8) → đảo thứ tự làm CVP trước để tái dùng,
+  không tính trùng công thức.
+  `src/engine/cvp.ts` — `calculatePipeCvp()`/`calculateFittingCvp()`, nhận
+  thẳng output đã có từ `pipe.ts`/`fitting.ts` (M2/M3) làm input, không tính
+  lại từ đầu. Test `tests/parity/cvp.test.ts` (8 test) khớp tuyệt đối
+  `{pipe,fitting}.json.cvp`.
+  `src/engine/price-ladder.ts` — `calculatePipePriceLadder5Tier()`/
+  `calculateFittingPriceLadder5Tier()` (bậc 2 chỉ cộng phần compliance+rent qua
+  `sharedCostAllocationRatio`, KHÔNG gồm khấu hao lab/UL — tránh đúng bug cũ;
+  bậc 4 dùng `revenueShare = ownRevenue/(ownRevenue+otherLineRevenue)`, KHÔNG
+  chia theo kg — tránh đúng bug cũ thứ 2), `calculatePipeSkuPriceChain()`/
+  `calculateFittingSkuPriceChain()` (bỏ hẳn tham số `brassInsertCost` cộng
+  riêng — ADR-008 đã gập vào `materialCostPerUnit` từ M6, không giữ field cũ).
+  Test `tests/parity/price-ladder.test.ts` (101 test): 2 test thang giá 5 bậc
+  (cả 2 dòng SP) + 8 test bảng giá Ống theo DN + 91 test bảng giá SKU Phụ kiện
+  (11 SKU ren gọi `materialCostPerUnitWithInsert()` M6, còn lại dùng
+  `materialCostPerUnit` gốc). Phát hiện thêm: 7 SKU `pending_mold` (Cút/Tê ren
+  trong) có `brassInsertCost` trong fixture nhưng KHÔNG được cộng (số chưa xác
+  nhận, ADR-008 "stillOpen") — xử lý riêng trong test bằng `mold-assets.json.skusWithoutMold`.
+  Sửa 1 lỗi test nhỏ: `listPriceWithVat` phải dùng `toBeCloseTo` thay vì `toBe`
+  (sai số float từ phép nhân `× (1+vatOutputRate)`, KHÔNG phải lỗi công thức).
+  `npm test` 162/162 xanh.
   `materialCostPerUnitWithInsert()`, `weightedAvgInsertPriceVnd()`,
   `metalInsertHoldingGainLossVnd()` (bản KHÔNG quy đổi ngoại tệ — viết hàm
   riêng thay vì tái dùng `dual-costing.ts` với tham số giả để vô hiệu hóa quy

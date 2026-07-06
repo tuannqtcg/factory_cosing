@@ -1,5 +1,24 @@
 # CHANGELOG — Costing App Kit
 
+## v1.12 (2026-07-06) — Pha 3 M5: khóa bảng giá (ADR-004) + giá vốn kép (ADR-002)
+`src/engine/price-lock.ts` — `evaluatePriceLock()`, dùng CHUNG cho compound
+(USD) và ren kim loại (VND, sẽ dùng lại ở M6) vì công thức không phụ thuộc đơn
+vị tiền. `src/engine/dual-costing.ts` — `weightedAvgUsdPerKg()`,
+`holdingGainLossVnd()`, `provisionWarning()`.
+
+**Nối dây** (`tests/parity/price-lock-integration.test.ts`): với mỗi kịch bản
+ADR-004, gọi `evaluatePriceLock()` rồi feed `pricingPrice` vào
+`calculatePipeCostAtNormalCapacity()` (M2) — khớp `fullCostPerKg` cả 5 kịch bản
+kể cả 2 kịch bản MỞ KHÓA (121.012 và 98.958). KHÔNG sửa signature
+`pipe.ts`/`fitting.ts`, chỉ thay nguồn giá trị đầu vào ở tầng gọi.
+
+Test mới: `tests/unit/price-lock.test.ts` (5 kịch bản ADR-004),
+`tests/unit/dual-costing.test.ts` (kịch bản kho 2 đợt, lãi giữ kho =
+1.332.685.000đ, khớp skill excel-parity-testing), `tests/parity/price-lock-integration.test.ts`
+(5 test tích hợp). `npm test` 43/43 xanh, typecheck sạch.
+
+**M6 tiếp theo**: dòng vật liệu ren kim loại (ADR-008) — xem `docs/PHASE3_PLAN.md`.
+
 ## v1.11 (2026-07-06) — Pha 3 M4: khấu hao khuôn động theo asOfYear (ADR-007)
 `src/engine/mold-depreciation.ts` — `isMoldAssetStillDepreciating()` +
 `moldDepreciationPerYear()`, nối vào `fitting.ts` (thêm `asOfYear` vào

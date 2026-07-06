@@ -25,7 +25,7 @@
 | M2 | Engine Ống — công suất + chi phí SX tại CS bình thường | BUSINESS_MODEL §2.1-2.2 | `src/engine/pipe.ts` | **[x] 2026-07-06** |
 | M3 | Engine Phụ kiện — công suất ép phun + MHR (ADR-001) | BUSINESS_MODEL §3.1-3.3 | `src/engine/fitting.ts` | **[x] 2026-07-06** |
 | M4 | Khấu hao khuôn động theo `asOfYear` (ADR-007) — nuôi vào MHR thay `moldSetCostTotal66` | ADR-007, `resource.md` | `src/engine/mold-depreciation.ts` | **[x] 2026-07-06** |
-| M5 | Giá vốn kép (ADR-002) + khóa bảng giá (ADR-004) — cả compound Ống/Phụ kiện | BUSINESS_MODEL §1a, §5; `price-lock-scenarios.json` (5 kịch bản) | `src/engine/dual-costing.ts`, `src/engine/price-lock.ts` | [ ] |
+| M5 | Giá vốn kép (ADR-002) + khóa bảng giá (ADR-004) — cả compound Ống/Phụ kiện | BUSINESS_MODEL §1a, §5; `price-lock-scenarios.json` (5 kịch bản) | `src/engine/dual-costing.ts`, `src/engine/price-lock.ts` | **[x] 2026-07-06** |
 | M6 | Dòng vật liệu ren kim loại (ADR-008) — giá vốn kép + khóa giá riêng + `materialCostPerUnit` mở rộng cho 11 SKU họ ren | ADR-008, `pricing-chain.md` | `src/engine/metal-insert.ts` | [ ] |
 | M7 | Thang giá 5 bậc + chuỗi markup SKU (99 dòng: 8 ống + 91 phụ kiện) | BUSINESS_MODEL §2.3, §3.4, §4 | `src/engine/price-ladder.ts` | [ ] |
 | M8 | CVP (Ống theo kg, Phụ kiện quy kg theo mix) | BUSINESS_MODEL §2.4, §3.6 | `src/engine/cvp.ts` | [ ] |
@@ -50,29 +50,44 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M5: giá vốn kép (ADR-002) + khóa bảng giá (ADR-004)**. Đọc
-`docs/BUSINESS_MODEL.md` §1a + §5, và `tests/fixtures/price-lock-scenarios.json`
-(5 kịch bản nghiệm thu ADR-004). Viết:
-1. `src/engine/price-lock.ts` — hàm thuần `evaluatePriceLock({baseline,
-   replacement, thresholdPct}) → {deviationPct, isLocked, pricingPrice,
-   stalenessWarning}` khớp `CompoundPriceLockEvaluationSchema`/
-   `MetalInsertPriceLockEvaluationSchema` đã có ở `src/schemas/pricing-chain.ts`.
-   Test đủ 5 kịch bản ADR-004 (baseline 3,03, ngưỡng 3%: replacement 3,03/3,10/
-   3,50/2,80 + kịch bản staleness lô mới 3,50 nhưng replacement quên ở 3,03).
-2. `src/engine/dual-costing.ts` — `weightedAvgUsdPerKg(lots)` +
-   `holdingGainLossVnd(...)` (BUSINESS_MODEL §5), verify bằng kịch bản kho 2 đợt
-   trong skill `excel-parity-testing` (100t@3,03 + 50t@3,5 → AVG=3,1867, lãi giữ
-   kho=1.332.685.000).
-3. **NỐI DÂY vào `pipe.ts`/`fitting.ts`**: thay `compoundPricingPriceUsdPerKg`
-   (hiện nhận trực tiếp làm input, xem comment đầu 2 file) bằng
-   `evaluatePriceLock(...).pricingPrice` — đây là lúc 2 tham số "tạm thời" từ
-   M2/M3 được nối đúng, KHÔNG sửa công thức `pipe.ts`/`fitting.ts`, chỉ thay
-   nguồn giá trị đầu vào ở tầng gọi (orchestration).
-4. Verify lại toàn bộ `pipe.test.ts`/`fitting.test.ts` vẫn xanh sau khi nối dây
-   (kịch bản mặc định baseline=replacement=3,03/3,85 → deviation=0% → KHÓA →
-   `pricingPrice = baseline` = đúng giá trị cũ đang dùng, không lệch số vàng).
+→ **M6: dòng vật liệu ren kim loại** (ADR-008). Đọc `docs/contracts/pricing-chain.md`
+(⚠ cảnh báo chuẩn hóa `thresholdPct`) + `tests/fixtures/metal-insert.json`.
+1. Viết `src/engine/metal-insert.ts` — `materialCostPerUnitWithInsert({unitWeightKg,
+   compoundPricingPriceUsdPerKg, yieldRate, packagingCostPerKg,
+   insertQtyPerUnit, insertPricingPriceVnd, currency})` theo công thức ADR-008:
+   `unitWeightKg × (compoundLandedPerKg/yieldRate + packagingCostPerKg) +
+   insertQtyPerUnit × insertPricingPriceVnd` (compoundLandedPerKg tính như
+   `pipe.ts`/`fitting.ts` đã làm — có thể tái dùng công thức, KHÔNG viết lại).
+2. `evaluatePriceLock()` (đã có, M5) DÙNG LẠI NGUYÊN, không viết hàm mới — chỉ
+   gọi với `{baseline: insertCatalog[i].priceLock.baselinePriceVnd, thresholdPct:
+   0.05, replacement: ...}`. NHỚ chuẩn hóa `thresholdPct` (chia 100) khi đọc từ
+   `metal-insert.json` — xem cảnh báo đơn vị đã ghi ở M1.
+3. `weightedAvgUsdPerKg`/`holdingGainLossVnd` (đã có, M5) áp dụng lại cho tồn
+   kho ren kim loại (VND, không quy đổi ngoại tệ — ADR-008 mục 3) — có thể cần
+   viết biến thể VND của `holdingGainLossVnd` (không nhân `usdVndRate`/thuế NK,
+   khác compound) thay vì tái dùng y nguyên hàm compound.
+4. Test parity: 11 SKU họ "Nối ren trong/ngoài" trong `fitting.json.skus` hiện
+   có `brassInsertCost=0` (CHƯA áp dụng ADR-008 vào fixture gốc) — verify bằng
+   cách TỰ TÍNH lại `materialCostPerUnit` cho 11 SKU này bằng công thức mới +
+   dữ liệu `metal-insert.json`, so sánh hợp lý (không có "số vàng Excel" cho
+   phần này vì Excel gốc chưa có ren kim loại, xem ADR-008).
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
+- **M5 (2026-07-06)**: `src/engine/price-lock.ts` — `evaluatePriceLock({baseline,
+  thresholdPct, replacement, lastLotPrice}) → {deviationPct, isLocked,
+  pricingPrice, stalenessWarning}`, dùng CHUNG cho compound (USD) và ren kim
+  loại (VND, M6 sẽ dùng lại) vì công thức không phụ thuộc đơn vị tiền. Test
+  `tests/unit/price-lock.test.ts` khớp đủ 5 kịch bản `price-lock-scenarios.json`.
+  `src/engine/dual-costing.ts` — `weightedAvgUsdPerKg()`, `totalInventoryKg()`,
+  `holdingGainLossVnd()`, `provisionWarning()`; test
+  `tests/unit/dual-costing.test.ts` khớp tuyệt đối kịch bản kho 2 đợt trong
+  skill `excel-parity-testing` (lãi giữ kho = 1.332.685.000đ). **NỐI DÂY**:
+  `tests/parity/price-lock-integration.test.ts` — với MỖI kịch bản ADR-004, gọi
+  `evaluatePriceLock()` rồi feed `pricingPrice` vào
+  `calculatePipeCostAtNormalCapacity()` (M2), verify `fullCostPerKg` khớp cả 5
+  kịch bản (kể cả 2 kịch bản MỞ KHÓA: 121.012 và 98.958) — KHÔNG sửa signature
+  `pipe.ts`/`fitting.ts`, chỉ thay nguồn giá trị ở tầng gọi. `npm test` 43/43
+  xanh.
 - **M4 (2026-07-06)**: `src/engine/mold-depreciation.ts` —
   `isMoldAssetStillDepreciating(asset, asOfYear)` +
   `moldDepreciationPerYear(moldAssets, asOfYear)`. Nối vào `fitting.ts` (thêm

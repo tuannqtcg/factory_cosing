@@ -2,14 +2,17 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Tiến độ Pha 3: 11/12 milestone xong (M1-M11) — ENGINE LÕI ĐÃ HOÀN THÀNH,
-  chỉ còn M12 (UI thật)** — 278/278 test xanh, mọi commit đã push thẳng vào
-  nhánh mặc định `claude/project-knowledge-setup-2au4hr` (repo KHÔNG có
-  `main` — nhánh này đóng vai trò main; theo yêu cầu user 2026-07-06, từ nay
-  push thẳng, KHÔNG qua PR). **M12 CHƯA được xác nhận mở rộng phạm vi** — user
-  đã chọn "chỉ M11" khi được hỏi lại (phạm vi mơ hồ giữa "chỉ xong M11" và
-  "làm cả M12"), nên KHÔNG tự bắt đầu UI/Firestore, chờ yêu cầu rõ ràng lần
-  sau. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md`.
+- **Tiến độ Pha 3: engine lõi M1-M11 xong, M12 (UI thật + Firestore) ĐANG LÀM
+  — user đã xác nhận mở rộng phạm vi 2026-07-06.** M12 tự chia nhỏ M12.1-M12.10
+  ở **`docs/M12_PLAN.md`** (đọc file đó, KHÔNG lặp lại chi tiết ở đây) — đã
+  xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`) +
+  M12.2 (scaffold Vite+React 18+TS strict+Tailwind+Recharts, đã verify chạy
+  thật bằng dev server + screenshot). Tiếp theo: **M12.3** (Firebase Emulator
+  Suite + Security Rules — quyết định hạ tầng: CHƯA có project Firebase thật,
+  dùng Emulator). `npm test` 286/286 xanh, `npm run build` chạy được. Mọi
+  commit push thẳng vào nhánh mặc định `claude/project-knowledge-setup-2au4hr`
+  (repo KHÔNG có `main`; theo yêu cầu user 2026-07-06, KHÔNG qua PR). Chi tiết
+  đầy đủ bên dưới + `docs/PHASE3_PLAN.md` + `docs/M12_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
   `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng

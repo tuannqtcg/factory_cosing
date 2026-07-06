@@ -32,7 +32,7 @@
 | M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | **[x] 2026-07-06** |
 | M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | **[x] 2026-07-06** |
 | M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | **[x] 2026-07-06** |
-| M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 | `prototype/blazemaster-costing-app.dc.html`, `scenario.md` | `src/features/` | [ ] — CHỈ làm khi user xác nhận mở rộng phạm vi (ngoài "chỉ engine") |
+| M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 — **user đã xác nhận 2026-07-06, chia nhỏ tiếp ở `docs/M12_PLAN.md` (M12.1-M12.10)** | `prototype/blazemaster-costing-app.dc.html`, `scenario.md`, `docs/M12_PLAN.md` | `src/features/` | **ĐANG LÀM** — xem `docs/M12_PLAN.md` cho trạng thái chi tiết từng milestone con |
 
 ## Ghi chú kỹ thuật xuyên suốt (áp dụng mọi milestone)
 - Mọi hàm engine PURE — không I/O, không side-effect (PROJECT_SPEC §3).
@@ -50,15 +50,16 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **Engine lõi (M1-M11) ĐÃ XONG.** Còn lại DUY NHẤT **M12: UI thật (React/TS/
-Tailwind theo prototype đã duyệt) + nối Firestore** — theo quyết định user
-2026-07-06 (hỏi lại vì phạm vi mơ hồ, user chọn "chỉ M11"), M12 CHƯA được xác
-nhận mở rộng phạm vi — KHÔNG tự bắt đầu, chờ user yêu cầu rõ ràng lần sau.
-Khi user xác nhận: đọc `prototype/blazemaster-costing-app.dc.html` (UI đóng
-băng) + `docs/contracts/scenario.md` §5-6 (Firestore doc split + phân quyền)
-trước khi code; cần viết thêm 1 hàm orchestration `calculateScenario(input:
-ScenarioInput): ScenarioOutput` (CHƯA tồn tại — nối toàn bộ pipe/fitting/cvp/
-price-ladder/price-lock/dual-costing/metal-insert) làm cầu nối UI ↔ engine.
+→ **Engine lõi (M1-M11) ĐÃ XONG. M12 (UI thật + Firestore) ĐANG LÀM** — user
+đã xác nhận mở rộng phạm vi ngày 2026-07-06 ("hoàn thiện nốt pha 3... M12 UI
+thật + Firestore"). M12 tự chia nhỏ thành M12.1-M12.10, xem
+**`docs/M12_PLAN.md`** cho bảng trạng thái + nhật ký chi tiết + "cách phiên
+mới bắt đầu" — đọc file đó TRƯỚC, KHÔNG lặp lại chi tiết ở đây (giống cách
+`PHASE3_PLAN.md` này tách khỏi `CONTEXT_PASTE.md`).
+Đã xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`).
+Tiếp theo: **M12.2** — scaffold frontend thật (Vite + React 18 + TS strict +
+Tailwind + Recharts). Quyết định hạ tầng đã chốt: CHƯA có Firebase project
+thật → dùng Emulator Suite (xem đầu `docs/M12_PLAN.md`).
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
 - **M11 (2026-07-06)**: Gom parity suite hiện có (M2-M9, đã tự-đủ theo từng

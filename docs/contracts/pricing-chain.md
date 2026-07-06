@@ -58,9 +58,12 @@ export const InventoryLotSchema = z.object({
   priceUsdPerKg: z.number().nonnegative(),
 });
 
+// Bổ sung `replacementPriceUsdPerKg` 2026-07-06 (Pha 3 M12) — xem ADR-009
+// (bảng bổ sung field, dòng #5).
 export const CompoundInventorySchema = z.object({
-  lots: z.array(InventoryLotSchema).max(5), // Excel giữ tối đa 5 đợt nhập gần nhất
+  lots: z.array(InventoryLotSchema).max(5), // Excel giữ tối đa 5 đợt nhập gần nhất, [0] = gần nhất
   priceLock: CompoundPriceLockPolicySchema, // baseline/threshold cho bảng giá dòng SP này
+  replacementPriceUsdPerKg: z.number().nonnegative(), // giá tái tạo thị trường hiện hành — input cho evaluatePriceLock()
 });
 export type CompoundInventory = z.infer<typeof CompoundInventorySchema>;
 ```
@@ -82,6 +85,7 @@ export const MetalInsertCatalogEntrySchema = z.object({
   ptSize: z.string(),
   lots: z.array(MetalInsertLotSchema).max(5), // đối xứng compound — nhiều đợt nhập
   priceLock: MetalInsertPriceLockPolicySchema, // ĐỘC LẬP với compound (ADR-008 mục 6)
+  replacementPriceVnd: z.number().int().nonnegative(), // đối xứng CompoundInventorySchema.replacementPriceUsdPerKg
 });
 export type MetalInsertCatalogEntry = z.infer<typeof MetalInsertCatalogEntrySchema>;
 

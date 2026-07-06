@@ -11,10 +11,10 @@
   "moldAssets": [
     {
       "id": "mold-01",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "20"
         }
       ],
@@ -27,10 +27,10 @@
     },
     {
       "id": "mold-02",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "25"
         }
       ],
@@ -43,10 +43,10 @@
     },
     {
       "id": "mold-03",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "32"
         }
       ],
@@ -59,10 +59,10 @@
     },
     {
       "id": "mold-04",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "40"
         }
       ],
@@ -75,10 +75,10 @@
     },
     {
       "id": "mold-05",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "50"
         }
       ],
@@ -91,10 +91,10 @@
     },
     {
       "id": "mold-06",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "65"
         }
       ],
@@ -107,10 +107,10 @@
     },
     {
       "id": "mold-07",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "80"
         }
       ],
@@ -123,10 +123,10 @@
     },
     {
       "id": "mold-08",
-      "label": "Cút 90°",
+      "label": "Cút 90º",
       "producesSkus": [
         {
-          "productName": "Cút 90°",
+          "productName": "Cút 90º",
           "sizeLabel": "100"
         }
       ],
@@ -139,10 +139,10 @@
     },
     {
       "id": "mold-09",
-      "label": "Cút 45°",
+      "label": "Cút 45º",
       "producesSkus": [
         {
-          "productName": "Cút 45°",
+          "productName": "Cút 45º",
           "sizeLabel": "65"
         }
       ],
@@ -155,10 +155,10 @@
     },
     {
       "id": "mold-10",
-      "label": "Cút 45°",
+      "label": "Cút 45º",
       "producesSkus": [
         {
-          "productName": "Cút 45°",
+          "productName": "Cút 45º",
           "sizeLabel": "80"
         }
       ],
@@ -171,10 +171,10 @@
     },
     {
       "id": "mold-11",
-      "label": "Cút 45°",
+      "label": "Cút 45º",
       "producesSkus": [
         {
-          "productName": "Cút 45°",
+          "productName": "Cút 45º",
           "sizeLabel": "100"
         }
       ],

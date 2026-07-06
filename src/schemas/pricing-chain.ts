@@ -44,9 +44,18 @@ export const InventoryLotSchema = z.object({
 });
 export type InventoryLot = z.infer<typeof InventoryLotSchema>;
 
+// Bổ sung 2026-07-06 (Pha 3 M12, orchestrator scenario.ts) — xem ADR-009 bảng
+// bổ sung field, dòng #5: `replacementPriceUsdPerKg` (giá tái tạo thị trường
+// HIỆN HÀNH, admin/pricing tự cập nhật khi có báo giá mới — ĐỘC LẬP với `lots`
+// là lịch sử đã MUA). Không có field này thì evaluatePriceLock() không có
+// "replacement" để so với baseline (pricing-chain.md dòng 21-23: replacement
+// "phụ thuộc giá thị trường hiện hành NHẬP Ở TỒN KHO" — nhưng schema gốc chỉ
+// có lots (lịch sử) + priceLock policy (baseline/threshold), thiếu đúng chỗ
+// nhập giá thị trường hiện hành).
 export const CompoundInventorySchema = z.object({
-  lots: z.array(InventoryLotSchema).max(5),
+  lots: z.array(InventoryLotSchema).max(5), // [0] = lô GẦN NHẤT (giả định thiết kế, dùng cho staleness warning)
   priceLock: CompoundPriceLockPolicySchema,
+  replacementPriceUsdPerKg: z.number().nonnegative(),
 });
 export type CompoundInventory = z.infer<typeof CompoundInventorySchema>;
 
@@ -59,8 +68,9 @@ export type MetalInsertLot = z.infer<typeof MetalInsertLotSchema>;
 export const MetalInsertCatalogEntrySchema = z.object({
   renType: z.enum(['trong', 'ngoài']),
   ptSize: z.string(),
-  lots: z.array(MetalInsertLotSchema).max(5),
+  lots: z.array(MetalInsertLotSchema).max(5), // [0] = lô GẦN NHẤT, đối xứng CompoundInventorySchema
   priceLock: MetalInsertPriceLockPolicySchema,
+  replacementPriceVnd: z.number().int().nonnegative(), // đối xứng replacementPriceUsdPerKg — xem comment CompoundInventorySchema
 });
 export type MetalInsertCatalogEntry = z.infer<typeof MetalInsertCatalogEntrySchema>;
 

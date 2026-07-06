@@ -118,7 +118,15 @@ function chainFromBreakEven(inputs: ChainFromBreakEvenInputs): SkuPriceChain {
   const vfPricePerUnit = breakEvenPerUnit * (1 + markupVf);
   const tcgPricePerUnit = vfPricePerUnit * (1 + markup.markupTcg);
   const listPriceBeforeVat = roundUpToHundred(tcgPricePerUnit / (1 - markup.listPriceMargin));
-  const listPriceWithVat = listPriceBeforeVat * (1 + vatOutputRate);
+  // Math.round (2026-07-06, Pha 3 M12): đ VND không có đơn vị lẻ — listPriceBeforeVat
+  // đã là số nguyên (ROUNDUP -2), nhân (1+vatOutputRate) về lý thuyết vẫn ra số
+  // nguyên nhưng phép nhân float có thể lệch ~1e-9 (đã né bằng toBeCloseTo ở
+  // M7, xem price-ladder.test.ts) — lệch này khiến `SkuPriceChainSchema`
+  // (`listPriceWithVat: z.number().int()`) reject khi validate qua
+  // ScenarioOutputSchema.parse() lần đầu ở M12 (scenario.ts, chưa ai gọi
+  // parse() trên toàn bộ 99 dòng trước đó). Làm tròn ở đây khớp đúng ý nghĩa
+  // nghiệp vụ (giá niêm yết luôn là đồng nguyên) và khớp tuyệt đối fixture.
+  const listPriceWithVat = Math.round(listPriceBeforeVat * (1 + vatOutputRate));
   return { materialCostPerUnit, processingCostPerUnit, breakEvenPerUnit, vfPricePerUnit, tcgPricePerUnit, listPriceBeforeVat, listPriceWithVat };
 }
 

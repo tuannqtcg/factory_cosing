@@ -19,8 +19,8 @@
 | # | Milestone | Nguồn | File chính | Trạng thái |
 |---|---|---|---|---|
 | M12.1 | Orchestrator `calculateScenario(ScenarioInput) → ScenarioOutput` nối toàn bộ M2-M9 | `docs/contracts/scenario.md` §1-2 | `src/engine/scenario.ts` | **[x] 2026-07-06** |
-| M12.2 | Scaffold frontend thật (Vite + React 18 + TS strict + Tailwind + Recharts) | AGENTS.md stack | `src/features/`, `vite.config.ts`, `tailwind.config.ts` | [ ] |
-| M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | [ ] |
+| M12.2 | Scaffold frontend thật (Vite + React 18 + TS strict + Tailwind + Recharts) | AGENTS.md stack | `src/features/`, `vite.config.ts`, `tailwind.config.ts` | **[x] 2026-07-06** |
+| M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.4 | Cloud Function `onScenarioWrite` — chạy `calculateScenario()` server-side, ghi tách 4 doc con theo vai | `scenario.md` §5 | `functions/src/index.ts` | [ ] |
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] |
@@ -32,12 +32,64 @@
 ## Cách phiên mới bắt đầu
 1. Đọc bảng trên, tìm milestone đầu tiên chưa `[x]`.
 2. Đọc đúng mục "Nguồn" tương ứng trước khi code.
-3. Code xong: `npm test` + `npm run typecheck` xanh, cập nhật bảng, commit,
-   push thẳng `claude/project-knowledge-setup-2au4hr` (KHÔNG tạo PR — quy
-   trình đã chốt từ Phiên 13).
+3. Code xong: `npm test` + `npm run typecheck` xanh, cập nhật bảng NGAY (đừng
+   để dồn sang phiên sau ghi lại — Phiên 15 đã quên tick M12.2 xong ngay lúc
+   đó, phải vá lại ở Phiên 16), commit, push thẳng
+   `claude/project-knowledge-setup-2au4hr` (KHÔNG tạo PR — quy trình đã chốt
+   từ Phiên 13).
+
+## Việc tiếp theo ngay khi phiên sau vào
+→ **M12.3: Firebase Emulator Suite + Firestore Security Rules.** Đọc
+`docs/contracts/scenario.md` §5-6 (bảng phân quyền 4 vai × 6 vùng dữ liệu +
+lý do tách doc vật lý — "sales không đọc được cost") TRƯỚC khi viết rules.
+1. Cài `firebase-tools` (CLI, để chạy emulator) + `firebase` (SDK client) +
+   `@firebase/rules-unit-testing` (devDependency, để viết test rules chạy
+   trên emulator qua vitest — KHÔNG cần project thật, emulator tự cấp
+   `projectId` giả).
+2. `firebase.json` — khai báo emulator: `firestore` (port mặc định 8080),
+   `auth` (port 9099). CHƯA cần `hosting`/`functions` block cho tới M12.4.
+3. `firestore.rules` — dịch ĐÚNG bảng phân quyền `scenario.md` §5-6 thành
+   rules thật (KHÔNG phát minh quy tắc mới): mỗi collection/doc path trong
+   bảng đó → 1 khối `match` riêng, role đọc lấy từ Auth custom claims (`role`
+   ∈ {admin, pricing, sales, production}). Nhớ đúng nguyên tắc "tách DOC vật
+   lý cho mỗi tầng đọc" — `scenarios/{id}` (đầy đủ) KHÁC
+   `scenarios/{id}/outputs/priceList` (sales đọc được) KHÁC
+   `scenarios/{id}/outputs/internal` (sales KHÔNG đọc được).
+4. `firestore.indexes.json` — để trống/mặc định trừ khi rules-unit-test đòi
+   composite index cụ thể.
+5. Test bắt buộc: `tests/rules/*.test.ts` dùng
+   `@firebase/rules-unit-testing` (`initializeTestEnvironment`) chạy NHẮM
+   VÀO EMULATOR (cần emulator đang chạy — cân nhắc script `npm run
+   test:rules` riêng gọi `firebase emulators:exec`, KHÔNG gộp vào `npm test`
+   hiện tại vì `vitest run` (engine) không cần emulator, tránh làm chậm/hỏng
+   suite engine nếu thiếu Firebase CLI ở môi trường CI). Test tối thiểu mỗi
+   vai × mỗi vùng dữ liệu trong bảng phân quyền: 1 test ĐƯỢC phép, 1 test BỊ
+   từ chối — đặc biệt `sales` đọc `outputs/internal`/`outputs/targetCosting`
+   PHẢI bị từ chối (luật bất biến PROJECT_SPEC §5, AGENTS.md).
+6. Cập nhật bảng trạng thái (M12.3 → `[x]`) + nhật ký bên dưới TRƯỚC khi
+   dừng phiên, dù chỉ làm xong 1 phần (ghi rõ phần nào xong/dở dang).
 
 ## Nhật ký milestone đã xong
 
+- **M12.2 (2026-07-06)**: Scaffold frontend thật — cài `react@18`/`react-dom@18`
+  (ghim đúng bản 18 theo AGENTS.md, npm mặc định kéo về 19), `vite@5` +
+  `@vitejs/plugin-react@4` (ghim bản tương thích `vite@5` vì `vitest@2` đang
+  dùng — bản mới nhất của plugin-react đòi `vite@8`, xung đột peer dep),
+  `tailwindcss@3`, `recharts@3`. Thêm `vite.config.ts` (KHÔNG có `test` field
+  — `npm test` chạy độc lập, không phụ thuộc), `tailwind.config.ts`,
+  `postcss.config.js`, `index.html`, `src/main.tsx`, `src/App.tsx` (placeholder
+  TRUNG THỰC hiển thị đúng bảng trạng thái M12.1-M12.10, KHÔNG giả lập dữ
+  liệu — phân biệt rõ với `prototype/*.dc.html` là mockup Pha 1 dữ liệu giả),
+  `src/index.css` (Tailwind directives). Sửa `tsconfig.json`: thêm
+  `lib: [..., "DOM", "DOM.Iterable"]` + `jsx: "react-jsx"` — DÙNG CHUNG 1
+  tsconfig cho engine Node-only lẫn frontend (không tách file, vì engine
+  không đụng DOM nên an toàn). Thêm script `dev`/`build`/`preview` vào
+  `package.json` (trước đây `dev` là placeholder cố ý báo lỗi).
+  **Verify THẬT** (đúng skill `run`/`verify`, không chỉ tin build xanh):
+  `npm run build` thành công (Tailwind sinh CSS thật ~7KB, không rỗng) +
+  khởi động `npm run dev`, dùng Playwright chụp màn hình `127.0.0.1:5183` —
+  xác nhận React render đúng, Tailwind áp dụng đúng style — rồi tắt dev
+  server. `npm test` không đổi (286/286, engine không phụ thuộc frontend).
 - **M12.1 (2026-07-06)**: `src/engine/scenario.ts` — `calculateScenario()`
   nối pipe/fitting/cvp/price-ladder/price-lock/dual-costing/metal-insert theo
   đúng thứ tự phụ thuộc chéo 2 dòng SP (Ống cần otherLine=Phụ kiện và ngược

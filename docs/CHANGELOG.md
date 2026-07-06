@@ -1,5 +1,72 @@
 # CHANGELOG — Costing App Kit
 
+## v1.20 (2026-07-06) — Đóng gói tri thức cho phiên mới (checkpoint M12.3)
+Không đổi nghiệp vụ — rà soát + chốt sổ theo yêu cầu user ("lưu lại tri thức
+đánh dấu các mission xong để phiên kế tiếp khởi tạo mới sẽ hiểu và làm
+tiếp"), cùng thông lệ "kit vX" đã thiết lập ở v1.5/v1.16. Nhân dịp rà soát,
+phát hiện + vá 1 lỗ hổng quy trình: `docs/M12_PLAN.md` bị BỎ SÓT cập nhật
+M12.2 → `[x]` ngay sau khi làm xong (Phiên 15) — CONTEXT_PASTE.md/session log
+đã ghi đúng nhưng file theo dõi chính thức (nguồn duy nhất phiên sau đọc để
+biết việc tiếp theo) thì chưa — đã vá lại trong phiên này.
+
+| File | Kiểm tra | Kết quả |
+|---|---|---|
+| docs/M12_PLAN.md | M12.2 đã tick `[x]` chưa? Có "Việc tiếp theo ngay" chi tiết cho M12.3 chưa? | Thiếu cả 2 — đã bổ sung (tick M12.2 + thêm 6 bước cụ thể cho M12.3) |
+| docs/CONTEXT_PASTE.md | Tiến độ M12.1/M12.2 đã đúng chưa | Đã đúng từ Phiên 15, không cần sửa |
+| docs/PHASE3_PLAN.md | M12 trỏ đúng `M12_PLAN.md` chưa | Đã đúng, không cần sửa |
+| docs/GLOSSARY.md | Thuật ngữ mới (`replacementPriceUsdPerKg`...) cần thêm không | Không cần — đã có sẵn `replacementCost` (Giá tái tạo) bao quát đúng khái niệm |
+| AGENTS.md | Thứ tự đọc file đầu phiên còn đúng không | Đúng, không cần sửa |
+| git | `git status` sạch, đã push hết lên `claude/project-knowledge-setup-2au4hr` | Sạch |
+| test | `npm test` / `npm run typecheck` / `npm run build` | 286/286 xanh, sạch, build được |
+
+## v1.19 (2026-07-06) — Pha 3 M12.1+M12.2: orchestrator + scaffold frontend thật
+User xác nhận mở rộng phạm vi sang M12 (UI thật + Firestore) — chia nhỏ
+M12.1-M12.10 ở `docs/M12_PLAN.md` (mới), quyết định hạ tầng: CHƯA có project
+Firebase thật → dùng Firebase Local Emulator Suite trước.
+
+**M12.1** — `src/engine/scenario.ts`: `calculateScenario(ScenarioInput) →
+ScenarioOutput` nối toàn bộ pipe/fitting/cvp/price-ladder/price-lock/
+dual-costing/metal-insert qua 1 cửa ngõ duy nhất. Bổ sung field thiếu ở
+schema đã đóng băng: `CompoundInventorySchema.replacementPriceUsdPerKg`,
+`MetalInsertCatalogEntrySchema.replacementPriceVnd` (ADR-009 dòng #5).
+Phát hiện + sửa 2 lỗi có thật khi lần đầu chạy `ScenarioOutputSchema.parse()`
+trên toàn bộ 99 SKU: (1) `listPriceWithVat` float vi phạm `z.number().int()`
+→ làm tròn `Math.round()` trong `price-ladder.ts`; (2) `mold-assets.json`
+dùng sai ký tự Unicode cho "Cút 90°/45°" (U+00B0) thay vì đúng ký tự
+`fitting.json` ("Cút 90º/45º", U+00BA) → 11 SKU bị phân loại nhầm
+`managementStatus`. Test `tests/parity/scenario.test.ts` (8 test).
+
+**M12.2** — scaffold Vite + React 18 (ghim đúng bản, npm mặc định kéo 19) +
+TS strict + Tailwind + Recharts. Verify chạy thật bằng `npm run build` +
+`npm run dev` + screenshot Playwright (không chỉ tin build xanh).
+
+`npm test` 286/286 xanh (từ 278), typecheck sạch, `npm run build` chạy được.
+
+## v1.18 (2026-07-06) — Pha 3 M11: audit fixture coverage
+Rà soát toàn bộ `tests/fixtures/*.json`, phát hiện `price-list.json` (bảng
+phẳng 99 dòng, sheet "PriceList") là fixture DUY NHẤT chưa có test nào tham
+chiếu (mọi test khác đối chiếu qua `pipe.json`/`fitting.json` trung gian).
+Viết `tests/parity/price-list-snapshot.test.ts` (93 test) đối chiếu ĐỘC LẬP —
+8 dòng Ống + 83/91 dòng Phụ kiện khớp tuyệt đối (8 SKU `pending_mold` cố tình
+bỏ qua so giá trị, đúng ADR-008). Mọi fixture vàng nay đều có ít nhất 1 test.
+
+`npm test` 278/278 xanh (từ 185), typecheck sạch.
+
+## v1.17 (2026-07-06) — Pha 3 M10: Inverse solver (T2/T3, ADR-005/006)
+`src/engine/solver.ts` — `solve()`/`solveDiscrete()` (bisection thuần cho
+biến liên tục, quét rời rạc cho biến nguyên — skill `inverse-solver`) +
+`solveTargetProfit()` (T2 dạng đóng, tái dùng `cvp.ts`, KHÔNG qua solver vì
+đây CHÍNH LÀ forward CVP). Generic `<TInput, TOutput>` vì chưa có
+orchestrator `calculateScenario()` (làm ở M12.1). Bổ sung field `baseInput`
+thiếu ở `SolveParams` đã đóng băng (ADR-009 dòng #4).
+
+Test: round-trip trên fixture thật; case chuẩn T3 (DN50 mục tiêu 260.000đ/m,
+forward-verify khớp tuyệt đối `listPriceBeforeVat=260000`); case infeasible
+(dưới sàn biến phí) → `feasible:false` kèm `achievableRange`; T2 khớp tuyệt
+đối `pipe.json.cvp.breakEvenKgYear`.
+
+`npm test` 185/185 xanh (từ 171), typecheck sạch.
+
 ## v1.16 (2026-07-06) — Đóng gói tri thức cuối ngày cho phiên mới
 Không đổi nghiệp vụ — chỉ rà soát + chốt sổ cuối ngày (9/12 milestone Pha 3
 xong: M1-M9), theo đúng thông lệ "kit vX" đã thiết lập ở v1.5 (2026-07-05).

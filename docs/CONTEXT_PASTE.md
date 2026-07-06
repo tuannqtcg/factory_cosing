@@ -2,18 +2,25 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Pha: 2 (Flow + Zod schema + API contract)** — Pha 1 (Prototype) đã được user
-  **DUYỆT UI chính thức ngày 2026-07-06**. `prototype/blazemaster-costing-app.dc.html`
-  là nguồn tham chiếu UI/UX đóng băng cho Pha 3 — KHÔNG được đổi thiết kế màn hình
-  ở Pha 2/3 mà không quay lại Pha 1 ghi ADR mới.
-  **Schema nháp ĐÃ VIẾT ĐẦY ĐỦ** (2026-07-06) tại `docs/contracts/{resource,
-  product,cost-pool,pricing-chain,scenario}.md` — 5 file khớp đúng cấu trúc
-  `src/schemas/` dự kiến ở AGENTS.md, kèm Firestore doc split + bảng phân quyền
-  4 vai × 6 vùng dữ liệu (`scenario.md` §5-6). **CHƯA ĐÓNG BĂNG** — đang chờ user
-  duyệt (cổng thứ 2, sau đó mới viết code Pha 3). 1 phát hiện cần xử lý trước khi
-  migrate: `thresholdPct` trong `metal-insert.json` dùng đơn vị SỐ NGUYÊN % (5)
-  khác với `assumptions.json` dùng THẬP PHÂN (0.03) — schema đã chốt dùng thập
-  phân, xem cảnh báo đầu `docs/contracts/pricing-chain.md`.
+- **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
+  user **DUYỆT UI chính thức ngày 2026-07-06**;
+  `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng
+  băng — đổi thiết kế màn hình phải quay lại Pha 1 ghi ADR mới. Schema Pha 2
+  (`docs/contracts/{resource,product,cost-pool,pricing-chain,scenario}.md`) đã
+  được user duyệt **ĐÓNG BĂNG ngày 2026-07-06** ("thực hiện theo đề xuất") —
+  sửa cấu trúc field bắt buộc có ADR mới.
+  **QUAN TRỌNG — đọc `docs/PHASE3_PLAN.md` TRƯỚC KHI CODE TIẾP**: theo yêu cầu
+  user, Pha 3 chia thành nhiều milestone nhỏ (M1..M12), mỗi milestone tự chứa
+  (code + `npm test` xanh + commit) để không tốn tool call và dừng được khi gần
+  hết token — KHÔNG cố làm hết Pha 3 trong 1 phiên. File đó có bảng trạng thái
+  M1..M12 và "việc tiếp theo ngay" — đọc đúng dòng đầu tiên chưa `[x]`.
+  **Đã xong**: M1 — scaffold (`package.json`, `tsconfig.json`, vitest) +
+  `src/schemas/*.ts` (5 file thật từ contract) + `tests/unit/schemas.test.ts`
+  (10 test, parse toàn bộ fixture thật, xanh). 1 phát hiện đã xử lý bằng test:
+  `thresholdPct` trong `metal-insert.json` dùng đơn vị SỐ NGUYÊN % (5) khác
+  `assumptions.json` dùng THẬP PHÂN (0.03) — schema chốt thập phân, Zod CHỦ
+  ĐỘNG TỪ CHỐI giá trị chưa chuẩn hóa (xem test "SAI đơn vị... phải bị schema
+  từ chối").
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

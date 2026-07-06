@@ -1,5 +1,21 @@
 # CHANGELOG — Costing App Kit
 
+## v1.8 (2026-07-06) — Schema ĐÓNG BĂNG, mở Pha 3 (M1: scaffold + src/schemas)
+User duyệt schema Pha 2 ("thực hiện theo đề xuất") → 5 file `docs/contracts/*.md`
+chính thức ĐÓNG BĂNG. Yêu cầu chia Pha 3 thành nhiều milestone nhỏ để tiết kiệm
+tool call/token — xem `docs/PHASE3_PLAN.md` (bảng trạng thái M1..M12).
+
+| File | Thay đổi |
+|---|---|
+| docs/PHASE3_PLAN.md | MỚI — lộ trình 12 milestone, mỗi milestone tự chứa (code + test xanh + commit) |
+| package.json, tsconfig.json | MỚI — scaffold TypeScript strict + Zod + Vitest |
+| src/schemas/{resource,product,cost-pool,pricing-chain,scenario}.ts | MỚI — code thật từ 5 file contract, không sửa cấu trúc so với `.md` |
+| tests/unit/schemas.test.ts | MỚI — 10 test parse toàn bộ fixture thật (mold-assets 66 dòng, fitting.skus 91 dòng, pipe 8 dòng) + test xác nhận Zod từ chối `thresholdPct` chưa chuẩn hóa đơn vị |
+| docs/CONTEXT_PASTE.md | Pha 2 → Pha 3, trỏ PHASE3_PLAN.md, ghi rõ M1 đã xong |
+
+**M1 hoàn tất**: `npm run typecheck` sạch, `npm test` 10/10 xanh. **M2 tiếp theo**:
+`src/engine/pipe.ts` (công suất + chi phí SX Ống tại CS bình thường).
+
 ## v1.7 (2026-07-06) — Schema nháp Pha 2 (5 file contract, CHƯA đóng băng)
 Hiện thực hóa ADR-001..008 thành Zod schema cụ thể. Chưa phải quyết định kiến
 trúc mới (không ADR), chỉ là bước chuyển ADR → schema đúng vai trò Pha 2.

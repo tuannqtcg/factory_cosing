@@ -2,8 +2,8 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Tiến độ Pha 3: 9/12 milestone xong (M1-M9), tiếp theo M10** — 171/171 test
-  xanh, mọi commit đã push lên `claude/nifty-dirac-wuamy6`, không có gì dở
+- **Tiến độ Pha 3: 10/12 milestone xong (M1-M10), tiếp theo M11** — 185/185 test
+  xanh, mọi commit đã push lên `claude/pensive-gates-4e0jmo`, không có gì dở
   dang. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
@@ -30,9 +30,15 @@
   doanh thu VF, không theo kg). **M9** — Plan_SX (`plan.ts`, T1, BUSINESS_MODEL
   §6) — KHÁC mọi milestone trước: KHÔNG có số vàng Excel (sheet gốc là
   template), verify bằng 2 kịch bản tự chọn tính tay (script Python độc lập)
-  thay vì đối chiếu Excel. `npm test` 171/171 xanh. **M10 tiếp theo**: inverse
-  solver (T2/T3, ADR-005/006) — milestone cuối của engine lõi trước khi vào
-  M11 (parity suite tổng hợp).
+  thay vì đối chiếu Excel. **M10** — Inverse solver (`solver.ts`, T2/T3,
+  ADR-005/006): `solve()`/`solveDiscrete()` GENERIC (chưa có orchestrator
+  `calculateScenario()` nối toàn bộ engine → M11/M12) + `solveTargetProfit()`
+  (T2 dạng đóng, tái dùng `cvp.ts`). Phát hiện thiếu field `baseInput` ở
+  `SolveParams` đã đóng băng — bổ sung + ghi ADR-009 dòng #4. Test case chuẩn
+  T3 (DN50 mục tiêu 260.000đ/m) forward-verify khớp tuyệt đối; case infeasible
+  trả đúng `achievableRange`. `npm test` 185/185 xanh. **M11 tiếp theo**: gom
+  M2-M9 thành 1 bộ test parity Excel đầy đủ 372 assertion trong
+  `tests/parity/` (KHÔNG viết engine mới, chỉ tổng hợp/audit).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

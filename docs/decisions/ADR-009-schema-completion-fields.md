@@ -29,6 +29,7 @@ vào còn thiếu:
 | 1 | `ContinuousKgResourceSchema` (resource.ts) | `packagingCostPerKg`, `avgSalaryMonthly`, `monthsSalaryPerYear`, `electricityKw`, `electricityPricePerKwh`, `waterM3PerHour`, `waterPricePerM3` | Công thức chi phí SX Ống (§2.2) luôn cần lương/điện/nước/bao bì — sót khi dịch ADR-001 sang schema | M2 (`pipe.ts`) |
 | 2 | `MachineHourResourceSchema` (resource.ts) | Cùng nhóm field trên (bản Phụ kiện) + `avgProductivityKgPerMachineHour`, `depreciationYears` (khấu hao MÁY ép, tách khỏi `MoldAsset.usefulLifeYears` là khấu hao KHUÔN) | Công thức MHR (§3.3) cần đủ các field này | M3 (`fitting.ts`) |
 | 3 | `PlanInputSchema` (scenario.ts) | `periodMonths` (hệ số kỳ), `currentLaborHeadcount` (nhân công hiện có) | Công thức Plan_SX (§6.2, §6.5) cần 2 dữ liệu này, không suy được từ `period` (chuỗi tự do) | M9 (`plan.ts`) |
+| 4 | `SolveParams` (scenario.ts) | `baseInput: ScenarioInput` | `forwardFn: (input: ScenarioInput) => ScenarioOutput` cần 1 input GỐC để `solve()` clone rồi set giá trị dò vào theo `freeVarPath` trước mỗi lần gọi — bản đóng băng liệt kê forwardFn/freeVarPath/targetSelector/target/bounds/tol nhưng bỏ sót chỗ chứa input gốc | M10 (`solver.ts`) |
 
 Từ ADR này trở đi: **mọi lần sửa cấu trúc field ở `src/schemas/*.ts` hoặc
 `docs/contracts/*.md`, dù được đánh giá là "sửa lỗi thiếu sót", PHẢI thêm 1

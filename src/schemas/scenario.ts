@@ -154,7 +154,12 @@ export const PlanResultSchema = z.object({
 export type PlanResult = z.infer<typeof PlanResultSchema>;
 
 // ── Inverse solver (T2/T3 — tầng CHIẾN LƯỢC, ADR-005/006) ───────────────────
+// Bổ sung `baseInput` 2026-07-06 (Pha 3 M10, src/engine/solver.ts) — thiếu sót
+// ở bản đóng băng: forwardFn nhận (input: ScenarioInput) nhưng không có input
+// gốc nào để solve() clone rồi set giá trị dò vào theo freeVarPath. Xem
+// ADR-009 (bảng bổ sung field, dòng #4).
 export type SolveParams = {
+  baseInput: ScenarioInput;
   forwardFn: (input: ScenarioInput) => ScenarioOutput;
   freeVarPath: string;
   targetSelector: (output: ScenarioOutput) => number;

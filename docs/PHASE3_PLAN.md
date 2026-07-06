@@ -30,7 +30,7 @@
 | M7 | Thang giá 5 bậc + chuỗi markup SKU (99 dòng: 8 ống + 91 phụ kiện) | BUSINESS_MODEL §2.3, §3.4, §4 | `src/engine/price-ladder.ts` | **[x] 2026-07-06** |
 | M8 | CVP (Ống theo kg, Phụ kiện quy kg theo mix) | BUSINESS_MODEL §2.4, §3.6 | `src/engine/cvp.ts` | **[x] 2026-07-06 (làm TRƯỚC M7 — xem lý do trong "Nhật ký milestone")** |
 | M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | **[x] 2026-07-06** |
-| M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | [ ] |
+| M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | **[x] 2026-07-06** |
 | M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | [ ] |
 | M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 | `prototype/blazemaster-costing-app.dc.html`, `scenario.md` | `src/features/` | [ ] — CHỈ làm khi user xác nhận mở rộng phạm vi (ngoài "chỉ engine") |
 
@@ -50,27 +50,42 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M10: Inverse solver (T2/T3 — tầng CHIẾN LƯỢC, ADR-005/006)**. Đọc skill
-`inverse-solver` + `docs/decisions/ADR-005-dual-direction.md` + `scenario.md`
-§4 (đã có `SolveParams`/`SolveResult`/`TargetProfitRequest`/`TargetPriceRequest`
-đóng băng ở Pha 2).
-1. `src/engine/solver.ts` — `solve({forwardFn, freeVarPath, targetSelector,
-   target, bounds, tol})`: bisection THUẦN, kiểm tra `f(lo)`/`f(hi)` kẹp target
-   trước khi chia đôi — không kẹp → trả `{feasible:false, reason,
-   achievableRange}`, KHÔNG trả số bừa (luật bắt buộc, skill `inverse-solver`).
-2. T2 (lợi nhuận mục tiêu) — DẠNG ĐÓNG, KHÔNG qua solver (đúng skill mục 2):
-   `Q = (fixedCostPerYear + targetProfitVnd) / contributionMarginPerKg` — tái
-   dùng `cvp.ts` (M8) đã có sẵn 2 số này, so Q với `normalCapacityKgYear` để
-   trả `feasibleWithinNormalCapacity`.
-3. T3 (giá thị trường/giá thâm nhập) — QUA SOLVER thật, dùng đúng case chuẩn
-   trong skill: "giá niêm yết DN50 mục tiêu 260.000đ/m — huy động phụ kiện
-   không đổi, hỏi giá compound tối đa được phép".
-4. Test bắt buộc (skill `inverse-solver`): round-trip
-   `|forward(solve(target)) − target| < tol`; case chuẩn T3 nêu trên; case
-   infeasible (mục tiêu dưới sàn biến phí bậc 1) → trả infeasible kèm lý do.
-   Biến nguyên (`shifts`) PHẢI quét rời rạc 1/2/3, KHÔNG bisection liên tục.
+→ **M11: Bộ test parity Excel đầy đủ 372 assertion** (gom M2-M9 thành 1 suite
+hoàn chỉnh trong `tests/parity/`, đối chiếu skill `excel-parity-testing`) —
+KHÔNG viết engine mới, chỉ tổng hợp/đối chiếu lại toàn bộ `tests/fixtures/*.json`
+trong 1 chỗ để dễ audit tổng số assertion đã khớp Excel v3.4. Sau M11 →
+M12 (UI thật, CHỈ làm khi user xác nhận mở rộng phạm vi).
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
+- **M10 (2026-07-06)**: `src/engine/solver.ts` — `solve()`/`solveDiscrete()`
+  (bisection thuần cho biến liên tục / quét rời rạc cho biến nguyên, đúng luật
+  #1/#3/#5 skill `inverse-solver`) + `solveTargetProfit()` (T2, dạng đóng, tái
+  dùng thẳng `fixedCostPerYear`/`contributionMarginPerKg` từ `cvp.ts` M8 —
+  KHÔNG tính lại). Viết GENERIC `<TInput, TOutput>` thay vì khoá cứng
+  `ScenarioInput`/`ScenarioOutput` (`scenario.ts`) vì CHƯA có hàm orchestration
+  `calculateScenario()` nối toàn bộ engine thành 1 `ScenarioOutput` (thuộc phạm
+  vi M11/M12) — solve() hoạt động với bất kỳ input/output nào, giống mọi module
+  engine khác (pipe.ts không phụ thuộc ScenarioInput). Phát hiện thiếu sót ở
+  `SolveParams` đã đóng băng: thiếu field `baseInput` (input gốc để set giá trị
+  dò vào theo `freeVarPath`) — bổ sung vào `scenario.ts`/`scenario.md`, ghi vào
+  bảng ADR-009 (dòng #4) theo đúng quy trình ADR-009 đã đặt ra (không lặp lại
+  lỗi "chỉ ghi code comment" của 3 lần đầu).
+  Test: `tests/unit/solver.test.ts` (5 test, hàm số học đơn giản — kiểm tra cơ
+  chế bisection/quét rời rạc/infeasible độc lập nghiệp vụ) +
+  `tests/parity/solver.test.ts` (5 test, trên forward function THẬT của
+  `pipe.ts`/`price-ladder.ts` + fixture v3.4): round-trip
+  `|forward(solve(target)) − target| < tol` hội tụ đúng
+  `compoundReplacementPriceUsdPerKg` gốc (3.03); case chuẩn T3 skill
+  `inverse-solver` — "giá niêm yết DN50 mục tiêu 260.000đ/m, huy động phụ kiện
+  không đổi, hỏi giá compound tối đa được phép" → nghiệm ≈2.48 USD/kg,
+  forward-verify khớp TUYỆT ĐỐI `listPriceBeforeVat=260000` (hàm bậc-thang do
+  `roundUpToHundred`, bisection vẫn hội tụ đúng vì hàm đơn điệu không giảm);
+  case infeasible (mục tiêu dưới sàn — dưới cả `listPriceBeforeVat` khi giá
+  compound=0) → `feasible:false` kèm `achievableRange`; T2
+  `solveTargetProfit(targetProfitVnd=0)` khớp tuyệt đối
+  `pipe.json.cvp.breakEvenKgYear` (107039.627408882) vì Q hòa vốn KHÔNG lợi
+  nhuận chính là breakEvenKgYear — cùng công thức, không phải 2 con số độc lập.
+  `npm test` 185/185 xanh, `npm run typecheck` sạch.
 - **M9 (2026-07-06)**: `src/engine/plan.ts` — `calculatePlan()` theo
   BUSINESS_MODEL §6 (6 quy tắc: quy đổi giờ máy, đánh giá ca, ràng buộc khuôn
   theo size, nguyên liệu+ngoại tệ RAW không qua price-lock, nhân công cần

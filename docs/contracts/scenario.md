@@ -132,7 +132,9 @@ CHÍNH LÀ T1 trong ADR-005 ("kế hoạch có khả thi với nguồn lực hi�
 ## 4. Inverse Solver (T2/T3 — tầng CHIẾN LƯỢC, ADR-005/006, skill `inverse-solver`)
 
 ```ts
+// Bổ sung `baseInput` 2026-07-06 (Pha 3 M10) — xem ADR-009 (bảng bổ sung field, dòng #4).
 export type SolveParams = {
+  baseInput: ScenarioInput;     // input gốc — solve() clone rồi set giá trị dò vào theo freeVarPath
   forwardFn: (input: ScenarioInput) => ScenarioOutput;
   freeVarPath: string;          // vd "resources.fitting.normalUtilizationFactor" — biến hợp lệ v1: xem skill inverse-solver
   targetSelector: (output: ScenarioOutput) => number; // đọc field cần đạt, vd output => output.priceLadder.fitting.breakEvenFullCost

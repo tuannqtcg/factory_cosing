@@ -46,9 +46,25 @@ Cút ren trong (20xPT15, 25xPT15, 25xPT20), Tê ren trong (20xPT15, 25xPT15, 25x
 khi mở rộng SKU), field `cost`/`purchaseYear` để trống trong fixture cho tới khi có
 khuôn thật.
 
+## Quyết định bổ sung — loại tạm 8 SKU khỏi danh mục quản lý (2026-07, user xác nhận)
+User xác nhận: **loại tạm thời cả 8 SKU chưa có khuôn khỏi danh mục quản lý** (Cút
+ren trong ×3, Tê ren trong ×4, VÀ Tê giảm 50x40 — nhất quán theo tiêu chí "chưa có
+khuôn thật", không chỉ riêng nhóm ren). Nghĩa là: SKU chưa có `moldAsset` → mặc
+định KHÔNG hiển thị trong danh mục sản phẩm đang quản lý (Bảng Giá, Kế Hoạch SX,
+bảng giá SKU Phụ Kiện) — dữ liệu/công thức Excel vẫn giữ nguyên (không xóa), chỉ ẩn
+khỏi các màn hình vận hành cho tới khi mua khuôn thật.
+
+**Prototype Pha 1**: đã áp dụng — thêm `EXCLUDED_SKUS` (Set 8 key `tên|size`) +
+helper `isExcludedSku()`, filter tại 3 nơi: `pkPriceLadderFmt` (bảng giá SKU Phụ
+Kiện), `filteredSKU` (tab Bảng Giá, 100→92 dòng), `PK_CATALOG_ACTIVE` (Kế Hoạch SX,
+91→83). Dữ liệu gốc (`pkPriceLadderRaw`, `allSKU`, `PK_CATALOG`) KHÔNG bị xóa —
+chỉ lọc khi hiển thị, để dễ đảo ngược khi SKU vào sản xuất thật.
+
 ## Còn treo
 - Giá + năm mua của khuôn MỚI khi công ty thực sự mua thêm (cho 8 SKU nói trên hoặc
   SKU tương lai khác) — cập nhật thêm vào `moldAssets`, không sửa asset cũ.
-- Schema Pha 2 chính thức: quyết định field `MoldAsset.cost` có cho phép `null`
-  (chưa mua khuôn nhưng SKU đã định nghĩa) hay tách hẳn SKU chưa có khuôn ra khỏi
-  danh mục sản phẩm đang bán (khác nhau về ý nghĩa business — cần bàn ở Pha 2).
+- Khi khuôn thật về: bỏ key tương ứng khỏi `EXCLUDED_SKUS` trong prototype VÀ thêm
+  `moldAsset` thật vào `mold-assets.json` — 2 việc phải làm cùng lúc.
+- Schema Pha 2 chính thức: mô hình hoá field kiểu `managementStatus` (`active` /
+  `pending_mold`) trên Product entity, để logic lọc này không nằm rải rác trong UI
+  mà nằm 1 chỗ trong schema (tự động ẩn nếu chưa có `moldAsset` tương ứng).

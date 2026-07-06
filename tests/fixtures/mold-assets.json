@@ -5,7 +5,8 @@
     "sourceFile": "contract_mold_price_from_David2506062.pdf (upload 2026-07)",
     "usdVndRateUsed": 26500,
     "verify": "Σ costUsd × usdRate = 246,900 × 26,500 = 6,542,850,000đ — khớp tuyệt đối với fitting.json.params.moldSetCostTotal66 hiện có",
-    "note": "66 khuôn vật lý sản xuất 83/91 SKU (một số khuôn dùng chung cho nhiều biến thể — vd 1 khuôn ra cả Nối thẳng + Nắp bịt + Nối giảm cùng size). 8 SKU còn lại CHƯA có khuôn (chưa sản xuất) — xem `skusWithoutMold`."
+    "note": "66 khuôn vật lý sản xuất 83/91 SKU (một số khuôn dùng chung cho nhiều biến thể — vd 1 khuôn ra cả Nối thẳng + Nắp bịt + Nối giảm cùng size). 8 SKU còn lại CHƯA có khuôn (chưa sản xuất) — xem `skusWithoutMold`.",
+    "managementStatusNote": "User xác nhận (2026-07): 8 SKU trong `skusWithoutMold` bị loại TẠM THỜI khỏi danh mục quản lý (không hiển thị Bảng Giá/Kế Hoạch SX/bảng giá SKU trong prototype — xem EXCLUDED_SKUS trong blazemaster-costing-app.dc.html). Khi mua khuôn thật: thêm moldAsset vào đây VÀ gỡ key khỏi EXCLUDED_SKUS cùng lúc."
   },
   "moldAssets": [
     {

@@ -45,6 +45,13 @@ giá ren kim loại = 5%**, baseline = giá hiện hành tại lần chốt đ�
 KHÓA). Thêm `priceLock` vào cả 10 dòng `insertCatalog`. **ADR-008 nay ĐẦY ĐỦ DỮ
 LIỆU cho 11 SKU hiện có** — sẵn sàng lên schema Pha 2 chính thức.
 
+**Cập nhật lần 5 cùng ngày — loại tạm 8 SKU khỏi danh mục quản lý**: user xác nhận
+loại TẠM THỜI cả 8 SKU chưa có khuôn (7 SKU ren + Tê giảm 50x40, nhất quán theo
+tiêu chí "chưa có khuôn thật", không chỉ riêng nhóm ren). Prototype: thêm
+`EXCLUDED_SKUS` + `isExcludedSku()`, filter tại 3 nơi — bảng giá SKU Phụ Kiện,
+tab Bảng Giá (100→92 dòng), Kế Hoạch SX Phụ Kiện (91→83). Dữ liệu Excel gốc KHÔNG
+xóa, chỉ ẩn khỏi màn hình vận hành. ADR-007 cập nhật quyết định bổ sung.
+
 ## v1.3 (2026-07) — phân tầng top-down theo đối tượng xem
 KHÁC BIỆT so với kit v1.2:
 

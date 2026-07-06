@@ -1457,6 +1457,18 @@ class Component extends DCLogic {
       {dn:'DN100', cycle:160, cavity:1, pcsH:22.5 },
     ].map(m => ({...m, cycleFmt:m.cycle+'s', shotsH:(3600/m.cycle).toFixed(1), pcsHFmt:m.pcsH.toFixed(1)}));
 
+    // TẠM LOẠI KHỎI DANH MỤC QUẢN LÝ (user xác nhận 2026-07): 8 SKU chưa có khuôn
+    // thật (ADR-007 mold-assets.json.skusWithoutMold) — Cút ren trong (3), Tê ren
+    // trong (4), Tê giảm 50x40 (1). Vẫn có công thức/số Excel hợp lệ (giữ nguyên
+    // dữ liệu bên dưới), chỉ ẩn khỏi Bảng Giá/Kế Hoạch SX/bảng giá SKU cho tới khi
+    // mua khuôn thật. Gỡ dòng này khi SKU chính thức vào sản xuất.
+    const EXCLUDED_SKUS = new Set([
+      'Cút ren trong|20xPT15', 'Cút ren trong|25xPT15', 'Cút ren trong|25xPT20',
+      'Tê ren trong|20xPT15', 'Tê ren trong|25xPT15', 'Tê ren trong|25xPT20', 'Tê ren trong|25xPT25',
+      'Tê giảm|50x40',
+    ]);
+    const isExcludedSku = (name, size) => EXCLUDED_SKUS.has(name + '|' + size);
+
     // PK PRICE LADDER — chuỗi markup theo SKU (BUSINESS_MODEL §3.4), số vàng từ fitting.json
     const pkPriceLadderRaw = [
       {t:'Tê đều',s:'20',be:10411,vf:14576,tcg:18949,ny:27100,vat:29268},
@@ -1551,10 +1563,12 @@ class Component extends DCLogic {
       {t:'Tê ren trong',s:'25xPT20',be:37610,vf:52654,tcg:68451,ny:97800,vat:105624},
       {t:'Tê ren trong',s:'25xPT25',be:50210,vf:70294,tcg:91383,ny:130600,vat:141048},
     ];
-    const pkPriceLadderFmt = pkPriceLadderRaw.map((r,i) => ({
-      ...r, idx:i+1,
-      beFmt: fmt(r.be), vfFmt: fmt(r.vf), tcgFmt: fmt(r.tcg), nyFmt: fmt(r.ny), vatFmt: fmt(r.vat),
-    }));
+    const pkPriceLadderFmt = pkPriceLadderRaw
+      .filter(r => !isExcludedSku(r.t, r.s))
+      .map((r,i) => ({
+        ...r, idx:i+1,
+        beFmt: fmt(r.be), vfFmt: fmt(r.vf), tcgFmt: fmt(r.tcg), nyFmt: fmt(r.ny), vatFmt: fmt(r.vat),
+      }));
 
     // PRICE LIST
     const allSKU = [
@@ -1666,7 +1680,7 @@ class Component extends DCLogic {
       border:productFilter===c?'#a8003b':'#b3b3b3',
       onClick:()=>this.setState({productFilter:c}),
     }));
-    const filteredSKU = allSKU.filter(item => {
+    const filteredSKU = allSKU.filter(item => !isExcludedSku(item.name, item.size)).filter(item => {
       const q = searchQuery.toLowerCase();
       const ms = !q || item.name.toLowerCase().includes(q) || item.size.toLowerCase().includes(q);
       let mf = productFilter==='all';
@@ -1807,8 +1821,9 @@ class Component extends DCLogic {
       {t:'Tê ren trong',  s:'25xPT25',dn:25,cy:40,ca:4,w:0.140},
     ];
 
-    const pkTypes = [...new Set(PK_CATALOG.map(i => i.t))];
-    const planPKRows = PK_CATALOG.map(item => {
+    const PK_CATALOG_ACTIVE = PK_CATALOG.filter(item => !isExcludedSku(item.t, item.s));
+    const pkTypes = [...new Set(PK_CATALOG_ACTIVE.map(i => i.t))];
+    const planPKRows = PK_CATALOG_ACTIVE.map(item => {
       const key = item.t + '_' + item.s;
       const qty = planPK[key] || 0;
       const mhPc = item.cy / (3600 * item.ca * 0.9);

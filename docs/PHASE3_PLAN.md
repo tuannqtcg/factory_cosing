@@ -22,7 +22,7 @@
 | # | Milestone | Nguồn công thức | File chính | Trạng thái |
 |---|---|---|---|---|
 | M1 | Scaffold (package.json/tsconfig/vitest) + `src/schemas/*.ts` (5 file) + smoke test parse fixture thật | `docs/contracts/*.md` | `src/schemas/` | **[x] 2026-07-06** |
-| M2 | Engine Ống — công suất + chi phí SX tại CS bình thường | BUSINESS_MODEL §2.1-2.2 | `src/engine/pipe.ts` | [ ] |
+| M2 | Engine Ống — công suất + chi phí SX tại CS bình thường | BUSINESS_MODEL §2.1-2.2 | `src/engine/pipe.ts` | **[x] 2026-07-06** |
 | M3 | Engine Phụ kiện — công suất ép phun + MHR (ADR-001) | BUSINESS_MODEL §3.1-3.3 | `src/engine/fitting.ts` | [ ] |
 | M4 | Khấu hao khuôn động theo `asOfYear` (ADR-007) — nuôi vào MHR thay `moldSetCostTotal66` | ADR-007, `resource.md` | `src/engine/mold-depreciation.ts` | [ ] |
 | M5 | Giá vốn kép (ADR-002) + khóa bảng giá (ADR-004) — cả compound Ống/Phụ kiện | BUSINESS_MODEL §1a, §5; `price-lock-scenarios.json` (5 kịch bản) | `src/engine/dual-costing.ts`, `src/engine/price-lock.ts` | [ ] |
@@ -50,9 +50,28 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M2: `src/engine/pipe.ts`** — đọc `docs/BUSINESS_MODEL.md` §2.1-2.2, viết
-hàm tính `normalCapacityKgYear`, `batchesPerYear`, `extruderDepreciationPerYear`,
-`fullCostPerKg`, `vfPricePerKg`... nhận `ContinuousKgResource` (từ
-`src/schemas/resource.ts`) + `CostPool`, trả về khớp TUYỆT ĐỐI
-`tests/fixtures/pipe.json.costAtNormalCapacity` (vd `fullCostPerKg =
-106204.729733113`).
+→ **M3: `src/engine/fitting.ts`** — đọc `docs/BUSINESS_MODEL.md` §3.1-3.3, viết
+hàm tính công suất ép phun (`normalMachineHoursUtilized`,
+`estimatedProductionKgYear`) + MHR (`mhrPerMachineHour`, ADR-001) — CÙNG PATTERN
+đã dùng ở `src/engine/pipe.ts` (M2): tách `calculateFittingCapacity(resource)` +
+`calculateFittingCostAtNormalCapacity({resource, capacity, costPool,
+otherLineEstimatedProductionKgYear, compoundPricingPriceUsdPerKg})`, cross-ref
+sang Ống qua tham số plain number (KHÔNG import pipe.ts). Verify khớp tuyệt đối
+`tests/fixtures/fitting.json.costAtNormalCapacity.mhrPerMachineHour =
+1344175.79463858`. LƯU Ý: `MachineHourResource` hiện vẫn dùng
+`resource.moldAssets` thô (Σ cost/usefulLifeYears không lọc theo `asOfYear`) —
+khấu hao khuôn ĐỘNG theo `asOfYear` là M4, M3 có thể tạm cộng thẳng
+`Σ asset.costVnd/asset.usefulLifeYears` cho toàn bộ 66 khuôn (đúng số vàng hiện
+tại vì `purchaseYear=2026` toàn bộ, xem ADR-007) rồi M4 mới thêm điều kiện lọc.
+
+## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
+- **M2 (2026-07-06)**: `src/engine/pipe.ts` — `calculatePipeCapacity()` +
+  `calculatePipeCostAtNormalCapacity()`. Phát hiện + sửa: `ContinuousKgResourceSchema`/
+  `MachineHourResourceSchema` (M1) THIẾU 12 field (lương/điện/nước/bao bì/năng
+  suất quy đổi) — đã bổ sung vào `src/schemas/resource.ts` +
+  `docs/contracts/resource.md` (ghi chú "sửa lỗi thiếu sót", không phải ADR).
+  `otherLineEstimatedProductionKgYear` và `compoundPricingPriceUsdPerKg` là 2
+  tham số CHƯA nối dây thật (cross-ref Phụ kiện chưa tồn tại tới M3; price-lock
+  chưa tồn tại tới M5) — nhận trực tiếp làm input, ghi rõ trong comment đầu
+  `pipe.ts`. Test: `tests/parity/pipe.test.ts` (4 test, khớp tuyệt đối
+  `fullCostPerKg`/`vfPricePerKg` và toàn bộ field trung gian).

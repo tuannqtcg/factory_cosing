@@ -1,5 +1,21 @@
 # CHANGELOG — Costing App Kit
 
+## v1.9 (2026-07-06) — Pha 3 M2: engine Ống (pipe.ts)
+`src/engine/pipe.ts` — `calculatePipeCapacity()` + `calculatePipeCostAtNormalCapacity()`
+(BUSINESS_MODEL §2.1-2.2), khớp tuyệt đối `tests/fixtures/pipe.json.costAtNormalCapacity`
+(`fullCostPerKg=106204.729733113`, `vfPricePerKg=132755.912166391`).
+
+**Sửa lỗi thiếu sót phát hiện khi viết engine** (không phải ADR — không đổi
+nghiệp vụ): `ContinuousKgResourceSchema`/`MachineHourResourceSchema` (M1) THIẾU
+12 field mà công thức §2.2/§3.3 luôn cần (`packagingCostPerKg`,
+`avgSalaryMonthly`, `monthsSalaryPerYear`, `electricityKw(PerMachineHour)`,
+`electricityPricePerKwh`, `waterM3Per(Machine)Hour`, `waterPricePerM3`,
+`avgProductivityKgPerMachineHour`) — bổ sung vào `src/schemas/resource.ts` +
+`docs/contracts/resource.md` + `tests/unit/schemas.test.ts`, vẫn 10/10 xanh.
+
+`npm run typecheck` sạch, `npm test` 14/14 xanh (10 schema + 4 parity pipe).
+**M3 tiếp theo**: `src/engine/fitting.ts` — xem `docs/PHASE3_PLAN.md`.
+
 ## v1.8 (2026-07-06) — Schema ĐÓNG BĂNG, mở Pha 3 (M1: scaffold + src/schemas)
 User duyệt schema Pha 2 ("thực hiện theo đề xuất") → 5 file `docs/contracts/*.md`
 chính thức ĐÓNG BĂNG. Yêu cầu chia Pha 3 thành nhiều milestone nhỏ để tiết kiệm

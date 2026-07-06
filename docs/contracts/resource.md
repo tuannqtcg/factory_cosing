@@ -4,6 +4,14 @@
 > ADR mới (AGENTS.md luật #5), không sửa tùy tiện khi code Pha 3.
 > Nguồn nghiệp vụ: ADR-001 (cost driver), ADR-003 (driver là plugin), ADR-007
 > (khấu hao khuôn theo thời điểm mua).
+>
+> **Sửa 2026-07-06 (Pha 3 M2, khi viết `src/engine/pipe.ts`)**: bổ sung 12 field
+> bị SÓT ở bản đóng băng đầu (lương/điện/nước/bao bì — `packagingCostPerKg`,
+> `avgSalaryMonthly`, `monthsSalaryPerYear`, `electricityKw(PerMachineHour)`,
+> `electricityPricePerKwh`, `waterM3Per(Machine)Hour`, `waterPricePerM3`, và
+> `avgProductivityKgPerMachineHour` cho Phụ kiện) — đây là SỬA LỖI THIẾU SÓT khi
+> dịch ADR-001 sang schema (công thức chi phí gia công §2.2/§3.3 BUSINESS_MODEL
+> luôn cần các field này), KHÔNG phải quyết định kiến trúc mới nên không cần ADR.
 
 ## Nguyên tắc
 
@@ -57,12 +65,19 @@ export const ContinuousKgResourceSchema = z.object({
   hoursPerShift: z.number().positive(),
   normalShifts: z.number().int().min(1).max(3),
   yieldRate: YieldRate,
+  packagingCostPerKg: z.number().int().nonnegative(),
   extruderPriceEach: z.number().int().nonnegative(), // machinePrice — admin-only
   extruderCount: z.number().int().positive(),        // machineCount — admin-only
   moldPullerCutterCost: z.number().int().nonnegative(), // toolingMold — admin-only; 1 hằng số duy nhất (không time-phased như MoldAsset — ống không thay khuôn theo SKU)
   depreciationYears: z.number().int().positive(),
   annualMaintenance: z.number().int().nonnegative(),
   peoplePerShift: z.number().int().nonnegative(),
+  avgSalaryMonthly: z.number().int().nonnegative(),
+  monthsSalaryPerYear: z.number().positive(),
+  electricityKw: z.number().positive(),
+  electricityPricePerKwh: z.number().int().nonnegative(),
+  waterM3PerHour: z.number().nonnegative(),
+  waterPricePerM3: z.number().int().nonnegative(),
 });
 export type ContinuousKgResource = z.infer<typeof ContinuousKgResourceSchema>;
 
@@ -82,8 +97,16 @@ export const MachineHourResourceSchema = z.object({
   normalShifts: z.number().int().min(1).max(3),
   normalUtilizationFactor: z.number().min(0).max(1), // hệ số huy động, vd 0.6
   yieldRate: YieldRate,
+  packagingCostPerKg: z.number().int().nonnegative(),
+  avgProductivityKgPerMachineHour: z.number().positive(), // quy đổi giờ máy → kg tại công suất tham chiếu
   annualMoldMaintenance: z.number().int().nonnegative(), // mức chung — MoldAsset.maintenancePerYearVnd ghi đè nếu có
   peoplePerShift: z.number().int().nonnegative(),
+  avgSalaryMonthly: z.number().int().nonnegative(),
+  monthsSalaryPerYear: z.number().positive(),
+  electricityKwPerMachineHour: z.number().positive(),
+  electricityPricePerKwh: z.number().int().nonnegative(),
+  waterM3PerMachineHour: z.number().nonnegative(),
+  waterPricePerM3: z.number().int().nonnegative(),
 });
 export type MachineHourResource = z.infer<typeof MachineHourResourceSchema>;
 

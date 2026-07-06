@@ -39,12 +39,19 @@ export const ContinuousKgResourceSchema = z.object({
   hoursPerShift: z.number().positive(),
   normalShifts: z.number().int().min(1).max(3),
   yieldRate: YieldRate,
+  packagingCostPerKg: z.number().int().nonnegative(),
   extruderPriceEach: z.number().int().nonnegative(),
   extruderCount: z.number().int().positive(),
   moldPullerCutterCost: z.number().int().nonnegative(),
   depreciationYears: z.number().int().positive(),
   annualMaintenance: z.number().int().nonnegative(),
   peoplePerShift: z.number().int().nonnegative(),
+  avgSalaryMonthly: z.number().int().nonnegative(),
+  monthsSalaryPerYear: z.number().positive(),
+  electricityKw: z.number().positive(),
+  electricityPricePerKwh: z.number().int().nonnegative(),
+  waterM3PerHour: z.number().nonnegative(),
+  waterPricePerM3: z.number().int().nonnegative(),
 });
 export type ContinuousKgResource = z.infer<typeof ContinuousKgResourceSchema>;
 
@@ -67,8 +74,16 @@ export const MachineHourResourceSchema = z.object({
   normalShifts: z.number().int().min(1).max(3),
   normalUtilizationFactor: z.number().min(0).max(1),
   yieldRate: YieldRate,
+  packagingCostPerKg: z.number().int().nonnegative(),
+  avgProductivityKgPerMachineHour: z.number().positive(),
   annualMoldMaintenance: z.number().int().nonnegative(),
   peoplePerShift: z.number().int().nonnegative(),
+  avgSalaryMonthly: z.number().int().nonnegative(),
+  monthsSalaryPerYear: z.number().positive(),
+  electricityKwPerMachineHour: z.number().positive(),
+  electricityPricePerKwh: z.number().int().nonnegative(),
+  waterM3PerMachineHour: z.number().nonnegative(),
+  waterPricePerM3: z.number().int().nonnegative(),
 });
 export type MachineHourResource = z.infer<typeof MachineHourResourceSchema>;
 

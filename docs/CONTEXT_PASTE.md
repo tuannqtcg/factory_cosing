@@ -20,7 +20,12 @@
   `thresholdPct` trong `metal-insert.json` dùng đơn vị SỐ NGUYÊN % (5) khác
   `assumptions.json` dùng THẬP PHÂN (0.03) — schema chốt thập phân, Zod CHỦ
   ĐỘNG TỪ CHỐI giá trị chưa chuẩn hóa (xem test "SAI đơn vị... phải bị schema
-  từ chối").
+  từ chối"). **M2** — `src/engine/pipe.ts` (công suất + chi phí SX Ống tại CS
+  bình thường), khớp tuyệt đối `fullCostPerKg=106.204,73`/`vfPricePerKg=132.755,91`
+  (`tests/parity/pipe.test.ts`, 4 test xanh). Phát hiện + sửa luôn: schema
+  Resource (M1) thiếu 12 field lương/điện/nước/bao bì — đã bổ sung, xem
+  `docs/PHASE3_PLAN.md` mục "Nhật ký milestone". **M3 tiếp theo**:
+  `src/engine/fitting.ts` (công suất ép phun + MHR).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

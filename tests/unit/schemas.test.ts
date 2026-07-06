@@ -35,12 +35,19 @@ describe('ResourceSchema', () => {
       hoursPerShift: pipe.params.hoursPerShift,
       normalShifts: pipe.params.normalShifts,
       yieldRate: pipe.params.yieldRate,
+      packagingCostPerKg: pipe.params.packagingCostPerKg,
       extruderPriceEach: pipe.params.extruderPriceEach,
       extruderCount: pipe.params.extruderCount,
       moldPullerCutterCost: pipe.params.moldPullerCutterCost,
       depreciationYears: pipe.params.depreciationYears,
       annualMaintenance: pipe.params.annualMaintenance,
       peoplePerShift: pipe.params.peoplePerShift,
+      avgSalaryMonthly: pipe.params.avgSalaryMonthly,
+      monthsSalaryPerYear: pipe.params.monthsSalaryPerYear,
+      electricityKw: pipe.params.electricityKw,
+      electricityPricePerKwh: pipe.params.electricityPricePerKwh,
+      waterM3PerHour: pipe.params.waterM3PerHour,
+      waterPricePerM3: pipe.params.waterPricePerM3,
     });
     expect(parsed.normalShifts).toBe(3);
   });
@@ -70,8 +77,16 @@ describe('ResourceSchema', () => {
       normalShifts: fitting.params.normalShifts,
       normalUtilizationFactor: fitting.params.normalUtilizationFactor,
       yieldRate: fitting.params.yieldRate,
+      packagingCostPerKg: fitting.params.packagingCostPerKg,
+      avgProductivityKgPerMachineHour: fitting.params.avgProductivityKgPerMachineHour,
       annualMoldMaintenance: fitting.params.annualMoldMaintenance,
       peoplePerShift: fitting.params.peoplePerShift,
+      avgSalaryMonthly: fitting.params.avgSalaryMonthly,
+      monthsSalaryPerYear: fitting.params.monthsSalaryPerYear,
+      electricityKwPerMachineHour: fitting.params.electricityKwPerMachineHour,
+      electricityPricePerKwh: fitting.params.electricityPricePerKwh,
+      waterM3PerMachineHour: fitting.params.waterM3PerMachineHour,
+      waterPricePerM3: fitting.params.waterPricePerM3,
     });
     expect(parsed.moldAssets).toHaveLength(66);
   });

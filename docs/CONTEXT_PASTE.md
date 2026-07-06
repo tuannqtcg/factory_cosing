@@ -24,8 +24,12 @@
   thang giá 5 bậc + chuỗi markup 99 dòng (`price-ladder.ts`) — đã tính tay đối
   chiếu `dashboard.json` trước khi code để tránh lặp lại đúng 2 lỗi công thức
   cũ ở bậc 2 (loại khấu hao lab/UL khỏi cash cost) và bậc 4 (chia theo tỷ trọng
-  doanh thu VF, không theo kg). `npm test` 162/162 xanh. **M9 tiếp theo**:
-  Plan_SX (T1, dạng đóng, KHÔNG có số vàng Excel — sheet gốc là template).
+  doanh thu VF, không theo kg). **M9** — Plan_SX (`plan.ts`, T1, BUSINESS_MODEL
+  §6) — KHÁC mọi milestone trước: KHÔNG có số vàng Excel (sheet gốc là
+  template), verify bằng 2 kịch bản tự chọn tính tay (script Python độc lập)
+  thay vì đối chiếu Excel. `npm test` 171/171 xanh. **M10 tiếp theo**: inverse
+  solver (T2/T3, ADR-005/006) — milestone cuối của engine lõi trước khi vào
+  M11 (parity suite tổng hợp).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

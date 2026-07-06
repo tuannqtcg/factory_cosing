@@ -102,6 +102,16 @@ const ShiftsNeeded = z.union([z.literal(1), z.literal(2), z.literal(3), Insuffic
 export const PlanInputSchema = z.object({
   scenarioId: z.string(),
   period: z.string(),
+  // Sửa 2026-07-06 (Pha 3 M9, khi viết src/engine/plan.ts) — bổ sung 2 field bị
+  // SÓT ở bản đóng băng đầu: BUSINESS_MODEL §6.2/§6.5 luôn cần "hệ số kỳ" và
+  // "nhân công hiện có" để đánh giá ca máy/nhân công cần tuyển. KHÔNG suy ra
+  // được từ chuỗi `period` (vd "2026-Q3") một cách an toàn — phải là input rõ
+  // ràng. Đây là sửa lỗi thiếu sót, không phải quyết định kiến trúc mới.
+  periodMonths: z.number().positive(),
+  currentLaborHeadcount: z.object({
+    pipe: z.number().int().nonnegative(),
+    fitting: z.number().int().nonnegative(),
+  }),
   pipePlan: z.array(z.object({ dn: z.string(), meters: z.number().nonnegative() })),
   fittingPlan: z.array(
     z.object({ productName: z.string(), sizeLabel: z.string(), qty: z.number().int().nonnegative() }),

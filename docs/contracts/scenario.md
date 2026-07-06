@@ -86,11 +86,17 @@ export type ScenarioOutput = z.infer<typeof ScenarioOutputSchema>;
 export const PlanInputSchema = z.object({
   scenarioId: z.string(),
   period: z.string(),        // "2026-Q3" — theo kỳ kế hoạch
+  periodMonths: z.number().positive(), // hệ số kỳ (số tháng/12) — BUSINESS_MODEL §6.2, không suy được từ chuỗi `period`
+  currentLaborHeadcount: z.object({ pipe: z.number().int().nonnegative(), fitting: z.number().int().nonnegative() }), // BUSINESS_MODEL §6.5
   pipePlan: z.array(z.object({ dn: z.string(), meters: z.number().nonnegative() })),
   fittingPlan: z.array(z.object({ productName: z.string(), sizeLabel: z.string(), qty: z.number().int().nonnegative() })),
   materialSafetyStockFactor: z.number().min(0), // hệ số dự phòng NVL, BUSINESS_MODEL §6.4
 });
 export type PlanInput = z.infer<typeof PlanInputSchema>;
+```
+> **Sửa 2026-07-06 (Pha 3 M9)**: bổ sung `periodMonths`/`currentLaborHeadcount` —
+> sót ở bản đóng băng đầu, không phải quyết định kiến trúc mới.
+```ts
 
 export const PlanResultSchema = z.object({
   shiftsNeeded: z.object({

@@ -1,5 +1,23 @@
 # CHANGELOG — Costing App Kit
 
+## v1.15 (2026-07-06) — Pha 3 M9: Plan_SX (T1, BUSINESS_MODEL §6)
+`src/engine/plan.ts` — `calculatePlan()` hiện thực đủ 6 quy tắc §6: quy đổi kế
+hoạch → giờ máy, đánh giá bậc ca, ràng buộc khuôn theo size (chỉ Phụ kiện),
+nguyên liệu+ngoại tệ cần (dùng giá RAW, không qua price-lock — khác mọi hàm
+trước), nhân công cần tuyển, chi phí/kg thực tế so công suất nhàn rỗi (chỉ Ống).
+
+Bổ sung 2 field bị sót vào `PlanInputSchema` (đã đóng băng Pha 2):
+`periodMonths`, `currentLaborHeadcount` — không phải đổi kiến trúc, chỉ sửa
+thiếu sót khi công thức yêu cầu dữ liệu chưa có chỗ chứa.
+
+**Khác biệt quan trọng với mọi milestone trước**: sheet `Plan_SX` gốc trong
+Excel là template (input=0) nên KHÔNG có số vàng thật để đối chiếu.
+`tests/parity/plan.test.ts` (9 test) dùng 2 kịch bản TỰ CHỌN, tính tay độc lập
+bằng script Python trước khi viết assertion — không phải parity Excel.
+
+`npm test` 171/171 xanh, typecheck sạch. **M10 tiếp theo**: inverse solver
+(T2/T3) — xem `docs/PHASE3_PLAN.md`.
+
 ## v1.14 (2026-07-06) — Pha 3 M7+M8: thang giá 5 bậc + CVP (làm M8 trước M7)
 Kiểm tra lại công thức bậc 2/4 bằng tính tay đối chiếu `dashboard.json` TRƯỚC
 khi code (theo yêu cầu user, tránh lặp lại 2 lỗi công thức thật đã xảy ra ở

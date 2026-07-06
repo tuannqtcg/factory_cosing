@@ -29,7 +29,7 @@
 | M6 | Dòng vật liệu ren kim loại (ADR-008) — giá vốn kép + khóa giá riêng + `materialCostPerUnit` mở rộng cho 11 SKU họ ren | ADR-008, `pricing-chain.md` | `src/engine/metal-insert.ts` | **[x] 2026-07-06** |
 | M7 | Thang giá 5 bậc + chuỗi markup SKU (99 dòng: 8 ống + 91 phụ kiện) | BUSINESS_MODEL §2.3, §3.4, §4 | `src/engine/price-ladder.ts` | **[x] 2026-07-06** |
 | M8 | CVP (Ống theo kg, Phụ kiện quy kg theo mix) | BUSINESS_MODEL §2.4, §3.6 | `src/engine/cvp.ts` | **[x] 2026-07-06 (làm TRƯỚC M7 — xem lý do trong "Nhật ký milestone")** |
-| M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | [ ] |
+| M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | **[x] 2026-07-06** |
 | M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | [ ] |
 | M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | [ ] |
 | M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 | `prototype/blazemaster-costing-app.dc.html`, `scenario.md` | `src/features/` | [ ] — CHỈ làm khi user xác nhận mở rộng phạm vi (ngoài "chỉ engine") |
@@ -50,24 +50,46 @@
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M9: Plan_SX (T1 — tầng vận hành, dạng đóng)**. Đọc `docs/BUSINESS_MODEL.md`
-§6 (KHÔNG có "số vàng" thật — sheet Excel là template input=0, chỉ có QUY TẮC).
-1. `src/engine/plan.ts` — quy đổi kế hoạch → giờ máy (Ống: mét→kg→kg nạp
-   máy→giờ máy đùn; Phụ kiện: số lượng SKU→giờ máy→kg thành phẩm), đánh giá bậc
-   ca (so với 1×/2×/3× giờ khả dụng), ràng buộc khuôn theo size (CHỈ Phụ kiện —
-   `moldSetCount` × giới hạn giờ 3-ca so với tổng giờ cần), nguyên liệu + ngoại
-   tệ cần mua (dùng `replacementUsd` THÔ, KHÔNG qua price-lock — khác mọi hàm
-   trước đó dùng `pricingPrice`), nhân công cần tuyển, chi phí/kg thực tế so
-   công suất nhàn rỗi (chỉ Ống).
-2. Khớp `PlanInputSchema`/`PlanResultSchema` đã có ở `src/schemas/scenario.ts`
-   (Pha 2, đã đóng băng) — không phát minh field mới ngoài đó.
-3. KHÔNG có golden number Excel → viết test với input mẫu TỰ CHỌN (vd kế hoạch
-   500t Ống DN50 + 10.000 cái Tê đều 20/quý), verify bằng cách TÍNH TAY từng
-   bước theo đúng quy tắc §6, ghi rõ trong comment test đây là input mẫu không
-   phải số vàng Excel (khác mọi test trước — cần nói rõ để không nhầm là parity
-   thật).
+→ **M10: Inverse solver (T2/T3 — tầng CHIẾN LƯỢC, ADR-005/006)**. Đọc skill
+`inverse-solver` + `docs/decisions/ADR-005-dual-direction.md` + `scenario.md`
+§4 (đã có `SolveParams`/`SolveResult`/`TargetProfitRequest`/`TargetPriceRequest`
+đóng băng ở Pha 2).
+1. `src/engine/solver.ts` — `solve({forwardFn, freeVarPath, targetSelector,
+   target, bounds, tol})`: bisection THUẦN, kiểm tra `f(lo)`/`f(hi)` kẹp target
+   trước khi chia đôi — không kẹp → trả `{feasible:false, reason,
+   achievableRange}`, KHÔNG trả số bừa (luật bắt buộc, skill `inverse-solver`).
+2. T2 (lợi nhuận mục tiêu) — DẠNG ĐÓNG, KHÔNG qua solver (đúng skill mục 2):
+   `Q = (fixedCostPerYear + targetProfitVnd) / contributionMarginPerKg` — tái
+   dùng `cvp.ts` (M8) đã có sẵn 2 số này, so Q với `normalCapacityKgYear` để
+   trả `feasibleWithinNormalCapacity`.
+3. T3 (giá thị trường/giá thâm nhập) — QUA SOLVER thật, dùng đúng case chuẩn
+   trong skill: "giá niêm yết DN50 mục tiêu 260.000đ/m — huy động phụ kiện
+   không đổi, hỏi giá compound tối đa được phép".
+4. Test bắt buộc (skill `inverse-solver`): round-trip
+   `|forward(solve(target)) − target| < tol`; case chuẩn T3 nêu trên; case
+   infeasible (mục tiêu dưới sàn biến phí bậc 1) → trả infeasible kèm lý do.
+   Biến nguyên (`shifts`) PHẢI quét rời rạc 1/2/3, KHÔNG bisection liên tục.
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
+- **M9 (2026-07-06)**: `src/engine/plan.ts` — `calculatePlan()` theo
+  BUSINESS_MODEL §6 (6 quy tắc: quy đổi giờ máy, đánh giá ca, ràng buộc khuôn
+  theo size, nguyên liệu+ngoại tệ RAW không qua price-lock, nhân công cần
+  tuyển, chi phí/kg thực tế so công suất nhàn rỗi). Bổ sung 2 field bị SÓT vào
+  `PlanInputSchema` (đã đóng băng ở Pha 2): `periodMonths` (hệ số kỳ — công
+  thức §6.2 luôn cần, không suy được từ chuỗi `period`) và
+  `currentLaborHeadcount` (§6.5 cần, chưa có ở đâu trong schema). 2 giả định
+  thiết kế (KHÔNG có Excel xác nhận, ghi rõ trong comment `plan.ts` để dễ chỉnh
+  khi có kịch bản thật): "số máy cần thêm" khi thiếu cả 3 ca coi công suất
+  3-ca hiện tại là 1 đơn vị, ROUNDUP số đơn vị cần thêm; `moldSetCountBySizeDN`
+  nhận làm cross-ref input thay vì tự suy từ `moldAssets`+`products` (join phức
+  tạp, để tầng orchestration cấp).
+  Test `tests/parity/plan.test.ts` (9 test, 2 kịch bản tự chọn TÍNH TAY bằng
+  script Python độc lập trước khi viết assertion — KHÔNG phải số vàng Excel,
+  ghi rõ trong comment đầu file): kịch bản A (kế hoạch vừa công suất, 2 ca Ống/
+  1 ca Phụ kiện, không cảnh báo khuôn) + kịch bản B (kế hoạch Phụ kiện vượt xa
+  công suất → thiếu cả 3 ca cần thêm 1 máy, thiếu khuôn cần thêm 3 bộ, Ống
+  không có kế hoạch → `idleCapacityCostPipePerKg=null` tránh chia 0).
+  `npm test` 171/171 xanh.
 - **M7+M8 (2026-07-06, làm M8 TRƯỚC M7)**: kiểm tra lại công thức bậc 2/4 bằng
   tính tay đối chiếu `dashboard.json` TRƯỚC khi code (theo yêu cầu user) — phát
   hiện bậc 1 (`variableCostFloor`) CHÍNH LÀ `cvp.variableCostPerKg`, nghĩa là

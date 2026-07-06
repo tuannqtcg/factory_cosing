@@ -12,11 +12,22 @@ Engine giá thành cấu hình được cho sản xuất, khởi đầu bằng B
   vọng, giá thị trường/giá thâm nhập) → biến vận hành cần đạt (T2/T3, màn hình
   Target Costing riêng, dùng inverse solver). `production` KHÔNG thấy màn hình này.
 
-## §2. Phạm vi v1 (khớp Excel v3.4)
+## §2. Phạm vi v1 (khớp Excel v3.4 + bổ sung xác nhận sau v3.4)
 Sản lượng-công suất, giá thành kép (sổ sách/định giá), thang giá 5 bậc, CVP,
 kế hoạch SX (bậc ca, khuôn, NVL, nhân công), tồn kho compound nhiều đợt, CƠ CHẾ
 KHÓA BẢNG GIÁ baseline + ngưỡng (ADR-004), HOẠCH ĐỊNH HAI CHIỀU forward + inverse
 solver phân tầng theo vai (ADR-005, ADR-006).
+
+**Bổ sung ngoài Excel v3.4 (đã CHẤP NHẬN, có số liệu thật)**:
+- KHẤU HAO KHUÔN THEO THỜI ĐIỂM MUA (ADR-007): `moldAssets[]` thay 1 số gộp
+  tĩnh — MHR tính động theo mốc thời gian đánh giá (asOfYear), tự đổi khi mua
+  thêm khuôn.
+- REN KIM LOẠI MUA NGOÀI (ADR-008): dòng nguyên liệu thứ 2 cho SKU họ "Nối ren"
+  (11/91 SKU hiện có khuôn), áp giá vốn kép (ADR-002) + khóa giá riêng (ADR-004
+  mở rộng, ngưỡng 5% độc lập với compound), tồn kho riêng theo (renType, ptSize).
+- Sản phẩm chưa có khuôn thật → tạm loại khỏi danh mục quản lý (8/91 SKU hiện
+  tại), tự động hiện lại khi có `moldAsset` tương ứng.
+
 NGOÀI phạm vi v1: routing đa công đoạn, MRP lịch tuần, multi-tenant SaaS (xem ADR-003).
 
 ## §3. Kiến trúc

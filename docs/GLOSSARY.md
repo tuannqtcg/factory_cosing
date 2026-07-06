@@ -25,3 +25,5 @@
 | asOfYear | Mốc thời gian đánh giá (năm hiện tại của kịch bản, dùng tính khấu hao động) |
 | purchasedMetalInsert | Ren kim loại mua ngoài (đồng thau, lắp ép vào phụ kiện ren) |
 | insertQtyPerUnit | Số lượng ren kim loại / sản phẩm (theo BOM từng SKU) |
+| insertCatalog | Danh mục vật tư ren kim loại theo (loại ren, cỡ PT) — cấp đúng để quản lý tồn kho, khác cấp SKU nhựa |
+| managementStatus | Trạng thái quản lý sản phẩm (active / pending_mold — SKU chưa có khuôn tạm ẩn khỏi danh mục vận hành) |

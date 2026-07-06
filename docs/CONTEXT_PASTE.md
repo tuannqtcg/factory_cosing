@@ -1,9 +1,15 @@
 # CONTEXT PASTE — Costing App (dán vào đầu phiên Claude Design / chat mới)
 
-Dự án: web app giá thành & định giá cho nhà máy CPVC BlazeMaster (VF/TCG).
-Nguồn chân lý nghiệp vụ: Excel `BlazeMaster_Model_v3_4.xlsx`. Stack chốt:
-React 18 + TS strict + Zod + Tailwind + Recharts; storage v1 = JSON file qua
-repository interface (đổi Firestore ở v2, không sửa engine/UI).
+## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
+## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
+- **Pha: 1 (Prototype)** — đã có bản mock `prototype/blazemaster-costing-app.dc.html`,
+  đang tiếp tục tinh chỉnh theo dữ liệu thật. **CHƯA được duyệt UI chính thức** —
+  chưa được sang Pha 2 (schema đóng băng).
+- ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
+  liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
+- File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
+  `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
+  đúng vùng nghiệp vụ đó).
 
 NGHIỆP VỤ LÕI (không được phát minh khác đi):
 1. Hai cost driver (ADR-001): ống theo kg; phụ kiện theo GIỜ MÁY —
@@ -27,17 +33,29 @@ NGHIỆP VỤ LÕI (không được phát minh khác đi):
    màn hình Plan_SX, theo kỳ) KHÁC tầng CHIẾN LƯỢC (T2/T3 + giá thâm nhập, vai
    `pricing`/`admin`, màn hình Target Costing riêng, khi ra quyết định giá/đầu
    tư). Không gộp 2 tầng vào 1 màn hình; `production` không thấy Target Costing.
-8. KHẤU HAO KHUÔN THEO THỜI ĐIỂM MUA (ADR-007 — chờ giá): khuôn phụ kiện
-   KHÔNG còn là 1 số gộp tĩnh (`moldSetCostTotal66`) — mỗi khuôn/lô khuôn là 1
-   `moldAsset` riêng (giá, năm mua, số năm khấu hao). MHR tính động theo
-   `asOfYear` — sẽ tự đổi khi mua thêm khuôn hoặc khuôn cũ hết khấu hao.
-   66 bộ khuôn hiện có: `purchaseYear = 2026`, giá từng khuôn để trống chờ nhập.
-9. REN KIM LOẠI MUA NGOÀI (ADR-008 — chờ số liệu): 4 họ SKU ren (Nối ren
-   trong/ngoài, Cút ren trong, Tê ren trong) có thêm dòng nguyên liệu THỨ 2
-   (ren đồng thau, mua VND trong nước, KHÔNG ngoại tệ/DUTY) — áp ĐÚNG giá vốn
-   kép như ADR-002 (bình quân gia quyền sổ sách vs giá tái tạo định giá) VÀ
-   khóa giá riêng (mở rộng ADR-004, ngưỡng độc lập với compound) + tồn kho
-   riêng nhiều đợt nhập. Còn thiếu: đơn giá + số lượng ren/SKU.
+8. KHẤU HAO KHUÔN THEO THỜI ĐIỂM MUA (ADR-007 — ĐÃ CÓ SỐ LIỆU): khuôn phụ kiện
+   KHÔNG còn là 1 số gộp tĩnh (`moldSetCostTotal66`) — mỗi khuôn là 1 `moldAsset`
+   riêng (giá, năm mua, số năm khấu hao). MHR tính động theo `asOfYear` — sẽ tự
+   đổi khi mua thêm khuôn hoặc khuôn cũ hết khấu hao. Dữ liệu thật: 66/66 khuôn
+   có giá (`tests/fixtures/mold-assets.json`, verify khớp tuyệt đối
+   `moldSetCostTotal66` cũ), `purchaseYear=2026` cho toàn bộ. 66 khuôn chỉ tạo
+   được 83/91 SKU (nhiều khuôn dùng chung nhiều biến thể) — 8 SKU còn lại chưa
+   có khuôn, xem điểm 10.
+9. REN KIM LOẠI MUA NGOÀI (ADR-008 — ĐÃ CÓ ĐỦ DỮ LIỆU): Nối ren trong (7 SKU) +
+   Nối ren ngoài (4 SKU) = 11 SKU có thêm dòng nguyên liệu THỨ 2 (ren đồng thau,
+   mua VND trong nước, KHÔNG ngoại tệ/DUTY) — áp ĐÚNG giá vốn kép như ADR-002 +
+   khóa giá riêng (ngưỡng 5%, độc lập với compound). PHÁT HIỆN: ren thực chất
+   chỉ có 10 loại vật tư theo (renType, ptSize) — không phải 11 loại theo SKU
+   (2 SKU nhựa khác nhau có thể dùng chung 1 loại ren, vd 20xPT15 và 25xPT15
+   cùng dùng ren PT15). Tồn kho ban đầu: 29.000 cái, 1.016.300.000đ. Dữ liệu ở
+   `tests/fixtures/metal-insert.json` (`insertCatalog` 10 dòng có priceLock,
+   `skuToInsertMap` 11 dòng, `metalInsertSkus` 11 dòng theo SKU).
+10. DANH MỤC QUẢN LÝ TẠM THU HẸP: 8 SKU chưa có khuôn thật (Cút ren trong ×3,
+    Tê ren trong ×4, Tê giảm 50x40 ×1 — xem `mold-assets.json.skusWithoutMold`)
+    bị loại TẠM THỜI khỏi Bảng Giá/Kế Hoạch SX/bảng giá SKU trong prototype
+    (`EXCLUDED_SKUS` trong file .dc.html) — dữ liệu Excel gốc KHÔNG xóa, chỉ ẩn
+    hiển thị. Khi mua khuôn thật cho 1 SKU: PHẢI làm 2 việc cùng lúc — thêm
+    `moldAsset` vào fixture VÀ gỡ key khỏi `EXCLUDED_SKUS`.
 
 QUY TRÌNH: 4 pha có cổng — brief → prototype (mock, duyệt UI) → schema+contract
 (đóng băng) → code (không phát minh mới) → test parity + security → merge.

@@ -1,5 +1,20 @@
 # CHANGELOG — Costing App Kit
 
+## v1.5 (2026-07) — đóng gói tri thức cho phiên mới (ADR-007/008 đã đủ dữ liệu)
+KHÁC BIỆT so với kit v1.4 (thuần đồng bộ tài liệu, không đổi nghiệp vụ so với các
+bản cập nhật cuối v1.4):
+
+| File | Thay đổi | Lý do |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Thêm khối "TRẠNG THÁI HIỆN TẠI" ở đầu file; viết lại điểm 8, 9 (ADR-007/008 từ "chờ dữ liệu" → "đã có số liệu thật"); thêm điểm 10 (8 SKU tạm loại khỏi danh mục quản lý) | File này là bản duy nhất được dán vào đầu phiên mới — phải phản ánh đúng trạng thái mới nhất, không được để "chờ dữ liệu" khi đã có rồi |
+| docs/PROJECT_SPEC.md §2 | Thêm mục "Bổ sung ngoài Excel v3.4" ghi rõ ADR-007/008 đã trong phạm vi v1 | Constitution phải khớp thực tế các ADR đã chấp nhận |
+| docs/GLOSSARY.md | +2 thuật ngữ: insertCatalog, managementStatus | UI tiếng Việt nhất quán khi lên Pha 2 |
+
+**Lý do bump version dù không đổi nghiệp vụ**: các bản ghi "Cập nhật lần 1-5" bên
+dưới (trong v1.4) đã đưa nghiệp vụ vào trạng thái ổn định, nhưng nằm rải rác thành
+nhiều đoạn nhỏ khó quét nhanh — v1.5 gom lại thành 1 bản CONTEXT_PASTE.md sạch, để
+phiên chat mới không cần đọc lại toàn bộ lịch sử session mới nắm được trạng thái.
+
 ## v1.4 (2026-07) — khấu hao khuôn theo thời gian + ren kim loại mua ngoài (CHỜ DỮ LIỆU)
 KHÁC BIỆT so với kit v1.3:
 

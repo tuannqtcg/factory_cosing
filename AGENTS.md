@@ -2,6 +2,9 @@
 
 > File này là LUẬT CHUNG cho mọi AI agent (Claude, Gemini, Copilot, Cursor).
 > Đọc file này TRƯỚC KHI làm bất cứ việc gì. Chi tiết đầy đủ: `docs/PROJECT_SPEC.md`.
+> **Phiên mới (chat/session mới)**: đọc tiếp `docs/CONTEXT_PASTE.md` — có khối
+> "TRẠNG THÁI HIỆN TẠI" ở đầu, luôn cập nhật mỗi khi đổi pha hoặc chốt ADR. Không
+> cần đọc lại toàn bộ `docs/sessions/` trừ khi cần chi tiết lý do 1 quyết định cụ thể.
 
 ## Dự án là gì
 Web app tính giá thành sản xuất & định giá bán cho nhà máy CPVC (BlazeMaster),
@@ -35,5 +38,8 @@ Muốn đổi thiết kế ở pha 3? DỪNG. Quay lại pha 1/2, ghi ADR mới.
 src/engine/    # pure functions: costing, pricing ladder, CVP, capacity
 src/schemas/   # Zod: Scenario, Resource, CostPool, Product, PricingChain
 src/features/  # UI theo màn hình (dashboard, pricing, plan, inventory)
-tests/fixtures/# số liệu vàng xuất từ Excel v3.3
+tests/fixtures/# số liệu vàng: phần lớn xuất từ Excel v3.4 (BUSINESS_MODEL.md §1-7);
+               # mold-assets.json + metal-insert.json là dữ liệu thật NGOÀI Excel
+               # (ADR-007/008 — hợp đồng khuôn + bảng giá ren kim loại, xem ADR để
+               # biết nguồn và trạng thái)
 ```

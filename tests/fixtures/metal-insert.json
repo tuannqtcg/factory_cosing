@@ -1,0 +1,94 @@
+{
+  "_meta": {
+    "adr": "ADR-008",
+    "status": "Đã có đơn giá thật (11/11 SKU họ Nối ren trong/ngoài) — chờ baseline+ngưỡng khóa giá, chờ tồn kho ban đầu",
+    "sourceFile": "Gia_phu_kien_ren.pdf (upload 2026-07)",
+    "currency": "VND — mua trong nước, KHÔNG có bước landed cost/thuế NK (đã xác nhận ADR-008)",
+    "insertQtyPerUnit": "= 1 cho toàn bộ 11 SKU (PDF chỉ có 1 đơn giá/SKU, không có cột số lượng riêng)",
+    "crossCheck": "unitWeightKg khớp 100% với PK_CATALOG hiện có trong prototype — xác nhận đúng SKU",
+    "note": "Cút ren trong (3 SKU) và Tê ren trong (4 SKU) KHÔNG có trong file này — khớp với phát hiện ở mold-assets.json (8 SKU này chưa sản xuất/chưa mua khuôn, xác nhận bởi user).",
+    "stillOpen": [
+      "baselinePriceVnd + thresholdPct ban đầu cho cơ chế khóa giá ren kim loại (ADR-008 mục 6)",
+      "Tồn kho ban đầu (đợt nhập, số lượng, giá) cho tab Tồn Kho Ren Kim Loại — hiện assume giá trên là giá tái tạo (replacement) hiện hành, CHƯA có bình quân gia quyền vì chưa có lịch sử nhập"
+    ]
+  },
+  "metalInsertSkus": [
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "20xPT15",
+      "unitWeightKg": 0.045,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 16200
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "25xPT15",
+      "unitWeightKg": 0.06,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 16200
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "25xPT20",
+      "unitWeightKg": 0.07,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 21100
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "25xPT25",
+      "unitWeightKg": 0.08,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 28800
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "32xPT32",
+      "unitWeightKg": 0.1,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 58100
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "40xPT40",
+      "unitWeightKg": 0.125,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 63800
+    },
+    {
+      "productName": "Nối ren trong",
+      "sizeLabel": "50xPT50",
+      "unitWeightKg": 0.19,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 110000
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "25xPT25",
+      "unitWeightKg": 0.07,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 54400
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "32xPT32",
+      "unitWeightKg": 0.1,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 82100
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "40xPT40",
+      "unitWeightKg": 0.125,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 87300
+    },
+    {
+      "productName": "Nối ren ngoài",
+      "sizeLabel": "50xPT50",
+      "unitWeightKg": 0.19,
+      "insertQtyPerUnit": 1,
+      "insertPricingCostVndPerUnit": 142600
+    }
+  ]
+}

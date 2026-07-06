@@ -1,13 +1,16 @@
 # ADR-008: Ren kim loại mua ngoài — dòng nguyên liệu thứ 2, áp giá vốn kép + khóa giá riêng
-Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — CHỜ SỐ LIỆU (đơn giá, số lượng/SKU) trước khi vào schema
+Ngày: 2026-07 | Trạng thái: CHẤP NHẬN — ĐÃ CÓ ĐƠN GIÁ (11/11 SKU), chờ baseline khóa giá + tồn kho ban đầu
 
 ## Bối cảnh
-4 họ SKU phụ kiện (Nối ren trong, Nối ren ngoài, Cút ren trong, Tê ren trong) cần ép
-thêm 1 phần ren kim loại (đồng thau) mua từ nhà cung cấp KHÁC (không phải nhà cung
-cấp compound nhựa) vào phụ kiện nhựa để tạo sản phẩm hoàn thiện. Field
-`brassInsertCost` đã có sẵn trong `fitting.skus` từ kit gốc (hiện = 0 cho cả 91 SKU,
-giữ chỗ đúng cho tình huống này) nhưng đang được mô hình như 1 hằng số cộng thẳng
-vào `breakEvenPerUnit` — không đủ nếu giá ren biến động như compound.
+Ban đầu nghĩ 4 họ SKU (Nối ren trong, Nối ren ngoài, Cút ren trong, Tê ren trong)
+đều cần ren kim loại — nhưng dữ liệu thật (xem dưới) xác nhận: **chỉ Nối ren
+trong/ngoài (11 SKU) cần**; Cút ren trong/Tê ren trong (7 SKU) hiện CHƯA sản xuất
+(không có khuôn, không có giá ren — xem ADR-007). Ren kim loại (đồng thau) mua từ
+nhà cung cấp KHÁC (không phải nhà cung cấp compound nhựa) ép vào phụ kiện nhựa để
+tạo sản phẩm hoàn thiện. Field `brassInsertCost` đã có sẵn trong `fitting.skus` từ
+kit gốc (hiện = 0 cho cả 91 SKU, giữ chỗ đúng cho tình huống này) nhưng đang được
+mô hình như 1 hằng số cộng thẳng vào `breakEvenPerUnit` — không đủ nếu giá ren biến
+động như compound.
 
 ## Quyết định
 Ren kim loại là **dòng nguyên vật liệu thứ hai**, song song với compound, áp dụng
@@ -51,7 +54,25 @@ Ren kim loại là **dòng nguyên vật liệu thứ hai**, song song với com
 - **Đã xác nhận**: mua VND trong nước (không ngoại tệ, không DUTY/logistics); có
   tồn kho riêng nhiều đợt nhập (giống cơ chế Ống/Phụ kiện); khóa giá riêng độc lập
   với compound (không gộp ngưỡng).
-- **Còn treo — chỉ còn thiếu SỐ LIỆU, không còn thiếu quyết định nguyên tắc**:
-  1. Số lượng ren/sản phẩm theo từng SKU trong 4 họ — user sẽ cung cấp sau.
-  2. Đơn giá ren kim loại hiện hành (VND) + baseline/ngưỡng khóa giá ban đầu —
-     user sẽ cung cấp sau.
+
+## Dữ liệu thật (2026-07, từ `Gia_phu_kien_ren.pdf`)
+Đơn giá cho đủ 11/11 SKU — lưu tại `tests/fixtures/metal-insert.json`.
+`insertQtyPerUnit = 1` cho toàn bộ 11 SKU (file chỉ có 1 đơn giá/SKU, không có cột
+số lượng riêng — nếu thực tế có SKU cần >1 ren, cần sửa lại field này).
+
+**Cross-check**: cột `unitWeightKg` trong file khớp 100% với `PK_CATALOG` đã có
+trong prototype → xác nhận đúng SKU, không nhầm dòng.
+
+**Phạm vi SKU đã thu hẹp đúng thực tế**: chỉ **Nối ren trong (7 SKU)** và **Nối ren
+ngoài (4 SKU)** = 11 SKU có giá ren — khớp chính xác với 11 SKU CÓ khuôn trong
+ADR-007 (mold-assets.json). Cút ren trong/Tê ren trong (7 SKU) không có cả khuôn
+lẫn giá ren — nhất quán, vì chưa sản xuất thật.
+
+## Còn treo
+- `baselinePriceVnd` + `thresholdPct` ban đầu cho cơ chế khóa giá ren kim loại
+  (mục 6 ở trên) — đơn giá trong file coi là giá tái tạo (replacement) hiện hành,
+  nhưng chưa có baseline đã "chốt" trước đó để so sánh.
+- Tồn kho ban đầu (đợt nhập, số lượng, giá) cho bảng tồn kho ren kim loại mới —
+  hiện chưa có lịch sử nhập nên chưa tính được bình quân gia quyền thật.
+- Khi 7 SKU Cút/Tê ren trong thật sự vào sản xuất (mua khuôn — xem ADR-007), cần
+  đơn giá ren kim loại cho chúng lúc đó (chưa có, không giả định trước).

@@ -1,0 +1,1170 @@
+{
+  "_meta": {
+    "adr": "ADR-007",
+    "status": "Đã có số liệu thật (66/66 khuôn) — chờ chốt schema Pha 2",
+    "sourceFile": "contract_mold_price_from_David2506062.pdf (upload 2026-07)",
+    "usdVndRateUsed": 26500,
+    "verify": "Σ costUsd × usdRate = 246,900 × 26,500 = 6,542,850,000đ — khớp tuyệt đối với fitting.json.params.moldSetCostTotal66 hiện có",
+    "note": "66 khuôn vật lý sản xuất 83/91 SKU (một số khuôn dùng chung cho nhiều biến thể — vd 1 khuôn ra cả Nối thẳng + Nắp bịt + Nối giảm cùng size). 8 SKU còn lại CHƯA có khuôn (chưa sản xuất) — xem `skusWithoutMold`."
+  },
+  "moldAssets": [
+    {
+      "id": "mold-01",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2520.0,
+      "costVnd": 66780000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-02",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2610.0,
+      "costVnd": 69165000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-03",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "32"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2205.0,
+      "costVnd": 58432500,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-04",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "40"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2700.0,
+      "costVnd": 71550000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-05",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "50"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 4050.0,
+      "costVnd": 107325000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-06",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "65"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3105.0,
+      "costVnd": 82282500,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-07",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "80"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3870.0,
+      "costVnd": 102555000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-08",
+      "label": "Cút 90°",
+      "producesSkus": [
+        {
+          "productName": "Cút 90°",
+          "sizeLabel": "100"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 5040.0,
+      "costVnd": 133560000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-09",
+      "label": "Cút 45°",
+      "producesSkus": [
+        {
+          "productName": "Cút 45°",
+          "sizeLabel": "65"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3105.0,
+      "costVnd": 82282500,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-10",
+      "label": "Cút 45°",
+      "producesSkus": [
+        {
+          "productName": "Cút 45°",
+          "sizeLabel": "80"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3870.0,
+      "costVnd": 102555000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-11",
+      "label": "Cút 45°",
+      "producesSkus": [
+        {
+          "productName": "Cút 45°",
+          "sizeLabel": "100"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 4905.0,
+      "costVnd": 129982500,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-12",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2574.0,
+      "costVnd": 68211000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-13",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2835.0,
+      "costVnd": 75127500,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-14",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "32"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2322.0,
+      "costVnd": 61533000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-15",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "40"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2970.0,
+      "costVnd": 78705000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-16",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "50"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 4410.0,
+      "costVnd": 116865000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-17",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "65"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3420.0,
+      "costVnd": 90630000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-18",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "80"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 4320.0,
+      "costVnd": 114480000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-19",
+      "label": "Tê đều",
+      "producesSkus": [
+        {
+          "productName": "Tê đều",
+          "sizeLabel": "100"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 5805.0,
+      "costVnd": 153832500,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-20",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "25x20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2880.0,
+      "costVnd": 76320000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-21",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "32x20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-22",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "32x25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-23",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "40x20"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2880.0,
+      "costVnd": 76320000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-24",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "40x25"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2880.0,
+      "costVnd": 76320000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-25",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "40x32"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2880.0,
+      "costVnd": 76320000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-26",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "50x20"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 4410.0,
+      "costVnd": 116865000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-27",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "50x25"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 4410.0,
+      "costVnd": 116865000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-28",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "50x32"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 4410.0,
+      "costVnd": 116865000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-29",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "65x25"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-30",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "65x32"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-31",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "65x40"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-32",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "65x50"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3420.0,
+      "costVnd": 90630000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-33",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "80x50"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 4140.0,
+      "costVnd": 109710000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-34",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "80x65"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 4140.0,
+      "costVnd": 109710000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-35",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "100x80"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 5310.0,
+      "costVnd": 140715000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-36",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "100x65"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 5310.0,
+      "costVnd": 140715000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-37",
+      "label": "Tê giảm",
+      "producesSkus": [
+        {
+          "productName": "Tê giảm",
+          "sizeLabel": "100x50"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 5040.0,
+      "costVnd": 133560000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-38",
+      "label": "socket+cap+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "20"
+        },
+        {
+          "productName": "Nắp bịt",
+          "sizeLabel": "20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2970.0,
+      "costVnd": 78705000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-39",
+      "label": "socket+cap+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "25"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "25x20"
+        },
+        {
+          "productName": "Nắp bịt",
+          "sizeLabel": "25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 4050.0,
+      "costVnd": 107325000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-40",
+      "label": "socket+cap+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "32"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "32x25"
+        },
+        {
+          "productName": "Nắp bịt",
+          "sizeLabel": "32"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 4320.0,
+      "costVnd": 114480000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-41",
+      "label": "socket+cap+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "40"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "40x25"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "40x32"
+        },
+        {
+          "productName": "Nắp bịt",
+          "sizeLabel": "40"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 5490.0,
+      "costVnd": 145485000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-42",
+      "label": "socket+cap+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "50"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "50x25"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "50x32"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "50x40"
+        },
+        {
+          "productName": "Nắp bịt",
+          "sizeLabel": "50"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 7560.0,
+      "costVnd": 200340000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-43",
+      "label": "socket+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "65"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "65x50"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 5400.0,
+      "costVnd": 143100000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-44",
+      "label": "socket+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "80"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "80x50"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "80x65"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 7560.0,
+      "costVnd": 200340000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-45",
+      "label": "socket+reducing (khuôn dùng chung)",
+      "producesSkus": [
+        {
+          "productName": "Nối thẳng",
+          "sizeLabel": "100"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "100x80"
+        },
+        {
+          "productName": "Nối giảm",
+          "sizeLabel": "100x65"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 9900.0,
+      "costVnd": 262350000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-46",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "25x20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 1800.0,
+      "costVnd": 47700000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-47",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "32x25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 1980.0,
+      "costVnd": 52470000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-48",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "40x25"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2340.0,
+      "costVnd": 62010000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-49",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "40x32"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2340.0,
+      "costVnd": 62010000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-50",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "50x25"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2700.0,
+      "costVnd": 71550000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-51",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "50x32"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2700.0,
+      "costVnd": 71550000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-52",
+      "label": "Lơ thu",
+      "producesSkus": [
+        {
+          "productName": "Lơ thu",
+          "sizeLabel": "50x40"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 2700.0,
+      "costVnd": 71550000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-53",
+      "label": "Nối ren trong (Sprinkler Head Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "20xPT15"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2610.0,
+      "costVnd": 69165000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-54",
+      "label": "Nối ren trong (Sprinkler Head Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "25xPT15"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2700.0,
+      "costVnd": 71550000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-55",
+      "label": "Nối ren trong (Sprinkler Head Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "25xPT20"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 2970.0,
+      "costVnd": 78705000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-56",
+      "label": "Nối ren trong (Female Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "25xPT25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3104.0,
+      "costVnd": 82256000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-57",
+      "label": "Nối ren trong (Female Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "32xPT32"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-58",
+      "label": "Nối ren trong (Female Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "40xPT40"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3600.0,
+      "costVnd": 95400000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-59",
+      "label": "Nối ren trong (Female Adapter w/Brass)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren trong",
+          "sizeLabel": "50xPT50"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 3100.0,
+      "costVnd": 82150000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-60",
+      "label": "Nối ren ngoài (Male adapter)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren ngoài",
+          "sizeLabel": "25xPT25"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3240.0,
+      "costVnd": 85860000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-61",
+      "label": "Nối ren ngoài (Male adapter)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren ngoài",
+          "sizeLabel": "32xPT32"
+        }
+      ],
+      "cavity": 4,
+      "costUsd": 3510.0,
+      "costVnd": 93015000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-62",
+      "label": "Nối ren ngoài (Male adapter)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren ngoài",
+          "sizeLabel": "40xPT40"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 3150.0,
+      "costVnd": 83475000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-63",
+      "label": "Nối ren ngoài (Male adapter)",
+      "producesSkus": [
+        {
+          "productName": "Nối ren ngoài",
+          "sizeLabel": "50xPT50"
+        }
+      ],
+      "cavity": 2,
+      "costUsd": 3600.0,
+      "costVnd": 95400000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-64",
+      "label": "Mặt bích",
+      "producesSkus": [
+        {
+          "productName": "Mặt bích",
+          "sizeLabel": "65"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 3600.0,
+      "costVnd": 95400000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-65",
+      "label": "Mặt bích",
+      "producesSkus": [
+        {
+          "productName": "Mặt bích",
+          "sizeLabel": "80"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 4410.0,
+      "costVnd": 116865000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    },
+    {
+      "id": "mold-66",
+      "label": "Mặt bích",
+      "producesSkus": [
+        {
+          "productName": "Mặt bích",
+          "sizeLabel": "100"
+        }
+      ],
+      "cavity": 1,
+      "costUsd": 5310.0,
+      "costVnd": 140715000,
+      "purchaseYear": 2026,
+      "usefulLifeYears": 5,
+      "source": "contract_mold_price_from_David2506062.pdf"
+    }
+  ],
+  "skusWithoutMold": [
+    {
+      "productName": "Cút ren trong",
+      "sizeLabel": "20xPT15"
+    },
+    {
+      "productName": "Cút ren trong",
+      "sizeLabel": "25xPT15"
+    },
+    {
+      "productName": "Cút ren trong",
+      "sizeLabel": "25xPT20"
+    },
+    {
+      "productName": "Tê ren trong",
+      "sizeLabel": "20xPT15"
+    },
+    {
+      "productName": "Tê ren trong",
+      "sizeLabel": "25xPT15"
+    },
+    {
+      "productName": "Tê ren trong",
+      "sizeLabel": "25xPT20"
+    },
+    {
+      "productName": "Tê ren trong",
+      "sizeLabel": "25xPT25"
+    },
+    {
+      "productName": "Tê giảm",
+      "sizeLabel": "50x40"
+    }
+  ]
+}

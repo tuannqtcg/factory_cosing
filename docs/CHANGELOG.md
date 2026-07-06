@@ -13,8 +13,23 @@ KHÁC BIỆT so với kit v1.3:
 **Cập nhật cùng ngày**: user cung cấp thêm — khuôn `purchaseYear = 2026` (giá để
 trống, tự nhập sau); ren kim loại mua VND trong nước (không ngoại tệ/DUTY), có
 tồn kho riêng, và có khóa giá riêng độc lập với compound (mở rộng ADR-004). Cả 2
-ADR nay đã CHẤP NHẬN đầy đủ về nguyên tắc — chỉ còn thiếu SỐ LIỆU cụ thể (giá
-từng khuôn; đơn giá + số lượng ren/SKU) trước khi vào schema Pha 2 chính thức.
+ADR nay đã CHẤP NHẬN đầy đủ về nguyên tắc.
+
+**Cập nhật lần 2 cùng ngày — nhận số liệu thật**: user upload 2 file hợp đồng/bảng
+giá thật:
+- `tests/fixtures/mold-assets.json` — giá 66/66 khuôn (từ
+  `contract_mold_price_from_David2506062.pdf`). Verify: Σ giá USD × 26.500 =
+  6.542.850.000đ, khớp tuyệt đối `moldSetCostTotal66` hiện có. Phát hiện: 66 khuôn
+  chỉ sản xuất được 83/91 SKU (nhiều khuôn dùng chung nhiều biến thể); 8 SKU
+  (Cút ren trong ×3, Tê ren trong ×4, Tê giảm 50x40 ×1) CHƯA có khuôn — user xác
+  nhận đúng (chưa sản xuất thật), khớp đúng kịch bản ADR-007.
+- `tests/fixtures/metal-insert.json` — đơn giá 11/11 SKU ren kim loại (từ
+  `Gia_phu_kien_ren.pdf`). Phạm vi thu hẹp đúng thực tế: CHỈ Nối ren trong (7) +
+  Nối ren ngoài (4) = 11 SKU cần ren kim loại — khớp chính xác với 11 SKU có khuôn
+  ở trên; Cút/Tê ren trong không có cả khuôn lẫn giá ren (nhất quán).
+- ADR-007/008 cập nhật trạng thái "ĐÃ CÓ SỐ LIỆU" — còn thiếu: giá khuôn mới khi
+  mua thêm cho 8 SKU kia; baseline/ngưỡng khóa giá ban đầu + tồn kho ban đầu cho
+  ren kim loại (ADR-008).
 
 ## v1.3 (2026-07) — phân tầng top-down theo đối tượng xem
 KHÁC BIỆT so với kit v1.2:

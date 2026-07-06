@@ -5,9 +5,15 @@
 - **Pha: 2 (Flow + Zod schema + API contract)** — Pha 1 (Prototype) đã được user
   **DUYỆT UI chính thức ngày 2026-07-06**. `prototype/blazemaster-costing-app.dc.html`
   là nguồn tham chiếu UI/UX đóng băng cho Pha 3 — KHÔNG được đổi thiết kế màn hình
-  ở Pha 2/3 mà không quay lại Pha 1 ghi ADR mới. Việc tiếp theo: dựng flow +
-  schema Zod (dùng skill `schema-design`) cho toàn bộ nghiệp vụ đã chốt (điểm 1-10
-  dưới đây), rồi ⛔ đóng băng schema trước khi viết code Pha 3.
+  ở Pha 2/3 mà không quay lại Pha 1 ghi ADR mới.
+  **Schema nháp ĐÃ VIẾT ĐẦY ĐỦ** (2026-07-06) tại `docs/contracts/{resource,
+  product,cost-pool,pricing-chain,scenario}.md` — 5 file khớp đúng cấu trúc
+  `src/schemas/` dự kiến ở AGENTS.md, kèm Firestore doc split + bảng phân quyền
+  4 vai × 6 vùng dữ liệu (`scenario.md` §5-6). **CHƯA ĐÓNG BĂNG** — đang chờ user
+  duyệt (cổng thứ 2, sau đó mới viết code Pha 3). 1 phát hiện cần xử lý trước khi
+  migrate: `thresholdPct` trong `metal-insert.json` dùng đơn vị SỐ NGUYÊN % (5)
+  khác với `assumptions.json` dùng THẬP PHÂN (0.03) — schema đã chốt dùng thập
+  phân, xem cảnh báo đầu `docs/contracts/pricing-chain.md`.
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

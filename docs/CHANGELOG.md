@@ -1,5 +1,23 @@
 # CHANGELOG — Costing App Kit
 
+## v1.7 (2026-07-06) — Schema nháp Pha 2 (5 file contract, CHƯA đóng băng)
+Hiện thực hóa ADR-001..008 thành Zod schema cụ thể. Chưa phải quyết định kiến
+trúc mới (không ADR), chỉ là bước chuyển ADR → schema đúng vai trò Pha 2.
+
+| File | Nội dung | Nguồn |
+|---|---|---|
+| docs/contracts/resource.md | `Resource` (continuous_kg \| machine_hour) + `MoldAsset` | ADR-001, ADR-003, ADR-007 |
+| docs/contracts/product.md | `Product` (pipe \| fitting) + BOM ren kim loại + `managementStatusOf()` tính ra | ADR-001, ADR-007, ADR-008 |
+| docs/contracts/cost-pool.md | SharedFixedCosts, NonProductionCosts, CurrencyParams, MarkupChain | assumptions.json |
+| docs/contracts/pricing-chain.md | PriceLockPolicy generic (input/output tách), CompoundInventory + MetalInsertCatalog, thang giá 5 bậc | ADR-002, ADR-004, ADR-008 |
+| docs/contracts/scenario.md | ScenarioInput/Output tổng hợp, Plan_SX (T1), solver contract (T2/T3), Firestore doc split + bảng phân quyền 4 vai × 6 vùng | ADR-005, ADR-006, PROJECT_SPEC §3/§5 |
+
+**Phát hiện cần xử lý trước Pha 3**: `thresholdPct` lệch đơn vị giữa
+`assumptions.json` (thập phân 0.03) và `metal-insert.json` (số nguyên 5) —
+schema chốt dùng thập phân, cần chuẩn hóa khi migrate fixture.
+
+**Trạng thái**: schema NHÁP, chưa đóng băng — chờ user duyệt cổng thứ 2.
+
 ## v1.6 (2026-07-06) — Pha 1 duyệt, mở cổng Pha 2
 User duyệt UI chính thức cho prototype (Pha 1). Không đổi nghiệp vụ, chỉ chuyển
 pha trong quy trình 4 pha có cổng.

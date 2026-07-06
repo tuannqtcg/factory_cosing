@@ -1,5 +1,14 @@
 # CHANGELOG — Costing App Kit
 
+## v1.24 (2026-07-06) — Merge PR #2 (M12.3-M12.4) vào nhánh mặc định
+PR #2 (`claude/firebase-emulator-security-rules-5eij5z` → `claude/project-
+knowledge-setup-2au4hr`), do hạ tầng phiên trước tự tạo, đã được user yêu cầu
+merge (commit `fc6d5fc`, giữ nguyên 3 commit gốc). Verify lại toàn bộ trên
+nhánh mặc định SAU merge: `npm test` 286/286, typecheck (root+`functions/`)
+sạch, `npm run build` thành công, `npm run test:rules` 33/33, `npm run
+test:functions` 2/2 — tất cả trên emulator thật, không có xung đột/lỗi ẩn nào
+so với trước merge.
+
 ## v1.23 (2026-07-06) — Đóng gói tri thức cho phiên mới (checkpoint sau M12.4)
 Không đổi nghiệp vụ/code — rà soát + chốt sổ theo yêu cầu user, cùng thông lệ
 "kit vX" đã thiết lập ở v1.5/v1.16/v1.20. Phát hiện + vá 2 chỗ tài liệu lỗi

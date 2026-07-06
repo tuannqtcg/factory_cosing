@@ -14,11 +14,17 @@
   2 test tích hợp thật qua `npm run test:functions`; ADR-010 tách M12.4b/c
   hoãn vì Plan_SX chưa orchestrate + T3 thiếu trường chọn SKU). Tiếp theo:
   **M12.4b** (Cloud Function `onPlanInputWrite` — ghi `outputs/plan`).
-  `npm test` 286/286 xanh, `npm run build` chạy được. Mọi commit push thẳng
-  vào branch làm việc do hạ tầng phiên chỉ định lúc bắt đầu (tên đổi theo
-  từng phiên — xem branch Git hiện tại, KHÔNG cố định 1 tên qua nhiều phiên;
-  repo KHÔNG có `main`; theo yêu cầu user 2026-07-06, KHÔNG qua PR). Chi tiết
-  đầy đủ bên dưới + `docs/PHASE3_PLAN.md` + `docs/M12_PLAN.md`.
+  `npm test` 286/286 xanh, `npm run build` chạy được. **PR #2 (M12.3-M12.4,
+  do hạ tầng phiên tự tạo) đã MERGE vào `claude/project-knowledge-setup-2au4hr`
+  (2026-07-06, merge commit `fc6d5fc`)** — đây là nhánh mặc định thật của repo
+  (repo KHÔNG có `main`). Mọi commit push thẳng vào branch làm việc do hạ tầng
+  phiên chỉ định lúc bắt đầu (tên đổi theo từng phiên — xem branch Git hiện
+  tại, KHÔNG cố định 1 tên qua nhiều phiên); quy trình mặc định vẫn KHÔNG tự
+  tạo PR (yêu cầu user 2026-07-06), nhưng nếu hạ tầng tự tạo PR và user yêu
+  cầu merge thì merge bình thường — sau merge, việc mới trên tên branch đã
+  merge phải khôi phục lại từ nhánh mặc định mới nhất, không lắp thêm commit
+  lên lịch sử đã merge. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md` +
+  `docs/M12_PLAN.md`.
 - **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
   `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng

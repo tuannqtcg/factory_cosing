@@ -2,11 +2,6 @@
 // Verify: tests/fixtures/fitting.json.{capacity,costAtNormalCapacity} (số vàng Excel v3.4).
 //
 // Còn treo (milestone sau, xem docs/PHASE3_PLAN.md):
-// - `moldDepreciationPerYear` cộng Σ(asset.costVnd/asset.usefulLifeYears) cho
-//   MỌI moldAsset, KHÔNG lọc theo asOfYear (asset hết khấu hao vẫn cộng đủ) —
-//   đúng số vàng hiện tại vì toàn bộ 66 khuôn `purchaseYear=2026` (năm đầu khấu
-//   hao). M4 sẽ thêm điều kiện lọc theo asOfYear (ADR-007), không đổi công thức
-//   này, chỉ thêm 1 filter trước khi Σ.
 // - `compoundPricingPriceUsdPerKg` nhận trực tiếp làm input — M5 sẽ thay bằng
 //   output price-lock (ADR-004): priceLock.fitting.pricingPrice.
 // - `otherLineNormalCapacityKgYear` là cross-ref sang Ống (sharedCostAllocationRatio
@@ -20,6 +15,7 @@
 import type { MachineHourResource } from '../schemas/resource.js';
 import type { CostPool } from '../schemas/cost-pool.js';
 import { sharedFixedCostsTotalPerYear } from './cost-pool.js';
+import { moldDepreciationPerYear as calculateMoldDepreciationPerYear } from './mold-depreciation.js';
 
 export interface FittingCapacity {
   batchesPerYear: number;
@@ -61,6 +57,8 @@ export interface FittingCostAtNormalCapacityInputs {
   otherLineNormalCapacityKgYear: number;
   /** ADR-004 pricingPrice (tạm nhận trực tiếp tới khi M5 nối dây price-lock). */
   compoundPricingPriceUsdPerKg: number;
+  /** ADR-007 — mốc thời gian đánh giá khấu hao khuôn động (src/engine/mold-depreciation.ts). */
+  asOfYear: number;
 }
 
 export interface FittingCostAtNormalCapacity {
@@ -84,7 +82,8 @@ export interface FittingCostAtNormalCapacity {
 export function calculateFittingCostAtNormalCapacity(
   inputs: FittingCostAtNormalCapacityInputs,
 ): FittingCostAtNormalCapacity {
-  const { resource, capacity, costPool, otherLineNormalCapacityKgYear, compoundPricingPriceUsdPerKg } = inputs;
+  const { resource, capacity, costPool, otherLineNormalCapacityKgYear, compoundPricingPriceUsdPerKg, asOfYear } =
+    inputs;
   const { currency, markup } = costPool;
 
   const compoundLandedPerKg =
@@ -95,10 +94,7 @@ export function calculateFittingCostAtNormalCapacity(
 
   const machineDepreciationPerYear =
     resource.machineTypes.reduce((sum, m) => sum + m.priceVnd * m.count, 0) / resource.depreciationYears;
-  const moldDepreciationPerYear = resource.moldAssets.reduce(
-    (sum, asset) => sum + asset.costVnd / asset.usefulLifeYears,
-    0,
-  );
+  const moldDepreciationPerYear = calculateMoldDepreciationPerYear(resource.moldAssets, asOfYear);
   const moldMaintenancePerYear = resource.annualMoldMaintenance;
 
   const laborPerYear =

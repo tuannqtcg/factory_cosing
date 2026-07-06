@@ -28,8 +28,12 @@
   (công suất ép phun + MHR, ADR-001), khớp tuyệt đối
   `mhrPerMachineHour=1.344.175,79` (`tests/parity/fitting.test.ts`, 4 test
   xanh). `moldDepreciationPerYear` đã tách riêng khỏi khấu hao máy — sẵn sàng
-  cho M4 chỉ cần thêm điều kiện lọc `asOfYear`. **M4 tiếp theo**: khấu hao
-  khuôn động theo `asOfYear` (ADR-007, trọng tâm).
+  cho M4 chỉ cần thêm điều kiện lọc `asOfYear`. **M4** — `src/engine/mold-depreciation.ts`
+  (khấu hao khuôn động theo `asOfYear`, ADR-007), nối vào `fitting.ts`; 10 test
+  mới gồm kịch bản tổng hợp chứng minh lọc chọn lọc đúng (không phải
+  tất-cả-hoặc-không). `npm test` 28/28 xanh. **M5 tiếp theo**: giá vốn kép
+  (ADR-002) + khóa bảng giá (ADR-004) — sẽ nối dây 2 tham số "tạm thời"
+  (`compoundPricingPriceUsdPerKg`) ở `pipe.ts`/`fitting.ts` vào output thật.
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

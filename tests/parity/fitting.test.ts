@@ -108,6 +108,7 @@ describe('fitting.ts — parity với tests/fixtures/fitting.json', () => {
     costPool,
     otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
     compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+    asOfYear: 2026, // toàn bộ 66 moldAsset purchaseYear=2026 (đợt mua gốc, ADR-007) — năm đầu khấu hao
   });
   const golden = fittingFixture.costAtNormalCapacity;
 

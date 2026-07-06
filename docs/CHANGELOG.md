@@ -1,5 +1,20 @@
 # CHANGELOG — Costing App Kit
 
+## v1.11 (2026-07-06) — Pha 3 M4: khấu hao khuôn động theo asOfYear (ADR-007)
+`src/engine/mold-depreciation.ts` — `isMoldAssetStillDepreciating()` +
+`moldDepreciationPerYear()`, nối vào `fitting.ts` (thêm `asOfYear` vào
+`FittingCostAtNormalCapacityInputs`, thay reduce inline bằng gọi hàm mới, không
+đổi công thức khác).
+
+`tests/unit/mold-depreciation.test.ts` (10 test): kịch bản TỔNG HỢP 3 khuôn mua
+3 năm/đời sống khác nhau chứng minh lọc CHỌN LỌC đúng (dữ liệu thật hiện tại
+mọi khuôn cùng `purchaseYear=2026` không đủ phân biệt tất-cả-hoặc-không); + test
+trên `mold-assets.json` thật tại `asOfYear` 2026 (năm gốc)/2030 (còn hạn)/2031
+(hết hạn cả 66 khuôn → khấu hao về 0).
+
+`npm test` 28/28 xanh, typecheck sạch. **M5 tiếp theo**: giá vốn kép (ADR-002)
++ khóa bảng giá (ADR-004) — xem `docs/PHASE3_PLAN.md`.
+
 ## v1.10 (2026-07-06) — Pha 3 M3: engine Phụ kiện (fitting.ts)
 `src/engine/fitting.ts` — `calculateFittingCapacity()` +
 `calculateFittingCostAtNormalCapacity()` (BUSINESS_MODEL §3.2-3.3), khớp tuyệt

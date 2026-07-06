@@ -1,5 +1,187 @@
 # CHANGELOG — Costing App Kit
 
+## v1.16 (2026-07-06) — Đóng gói tri thức cuối ngày cho phiên mới
+Không đổi nghiệp vụ — chỉ rà soát + chốt sổ cuối ngày (9/12 milestone Pha 3
+xong: M1-M9), theo đúng thông lệ "kit vX" đã thiết lập ở v1.5 (2026-07-05).
+
+| File | Kiểm tra | Kết quả |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Thêm dòng tóm tắt tiến độ ngay đầu khối trạng thái | Đã cập nhật |
+| docs/PHASE3_PLAN.md | Bảng M1-M9 `[x]`, con trỏ M10 chính xác | Đã đúng, không cần sửa |
+| docs/GLOSSARY.md | Rà soát thuật ngữ mới phát sinh ở M1-M9 | Không có thuật ngữ UI mới (các field mới như `periodMonths`, `moldSetCountBySizeDN` là nội bộ engine, chưa lên UI) |
+| AGENTS.md | Thứ tự đọc file đầu phiên còn đúng không (đã có PHASE3_PLAN.md) | Đúng — CONTEXT_PASTE.md tự trỏ sang PHASE3_PLAN.md, không cần sửa AGENTS.md |
+| git | `git status` sạch, đã push hết lên `claude/nifty-dirac-wuamy6` | Sạch |
+| test | `npm test` | 171/171 xanh |
+
+## v1.15 (2026-07-06) — Pha 3 M9: Plan_SX (T1, BUSINESS_MODEL §6)
+`src/engine/plan.ts` — `calculatePlan()` hiện thực đủ 6 quy tắc §6: quy đổi kế
+hoạch → giờ máy, đánh giá bậc ca, ràng buộc khuôn theo size (chỉ Phụ kiện),
+nguyên liệu+ngoại tệ cần (dùng giá RAW, không qua price-lock — khác mọi hàm
+trước), nhân công cần tuyển, chi phí/kg thực tế so công suất nhàn rỗi (chỉ Ống).
+
+Bổ sung 2 field bị sót vào `PlanInputSchema` (đã đóng băng Pha 2):
+`periodMonths`, `currentLaborHeadcount` — không phải đổi kiến trúc, chỉ sửa
+thiếu sót khi công thức yêu cầu dữ liệu chưa có chỗ chứa.
+
+**Khác biệt quan trọng với mọi milestone trước**: sheet `Plan_SX` gốc trong
+Excel là template (input=0) nên KHÔNG có số vàng thật để đối chiếu.
+`tests/parity/plan.test.ts` (9 test) dùng 2 kịch bản TỰ CHỌN, tính tay độc lập
+bằng script Python trước khi viết assertion — không phải parity Excel.
+
+`npm test` 171/171 xanh, typecheck sạch. **M10 tiếp theo**: inverse solver
+(T2/T3) — xem `docs/PHASE3_PLAN.md`.
+
+## v1.14 (2026-07-06) — Pha 3 M7+M8: thang giá 5 bậc + CVP (làm M8 trước M7)
+Kiểm tra lại công thức bậc 2/4 bằng tính tay đối chiếu `dashboard.json` TRƯỚC
+khi code (theo yêu cầu user, tránh lặp lại 2 lỗi công thức thật đã xảy ra ở
+prototype Pha 1 — xem `docs/sessions/SESSION_2026-07-05.md` Phiên 5). Phát hiện
+bậc 1 (`variableCostFloor`) CHÍNH LÀ `cvp.variableCostPerKg` → đảo thứ tự, làm
+CVP (M8) trước price-ladder (M7).
+
+`src/engine/cvp.ts` — `calculatePipeCvp()`/`calculateFittingCvp()`, tái dùng
+output đã có từ M2/M3. `src/engine/price-ladder.ts` —
+`calculate{Pipe,Fitting}PriceLadder5Tier()` (bậc 2 chỉ cộng compliance+rent qua
+`sharedCostAllocationRatio`, KHÔNG gồm khấu hao lab/UL; bậc 4 dùng
+`revenueShare` theo doanh thu VF, KHÔNG chia theo kg — cả 2 đúng ngược lại với
+2 lỗi cũ), `calculate{Pipe,Fitting}SkuPriceChain()` (bỏ hẳn tham số
+`brassInsertCost` cộng riêng — ADR-008 đã gập vào `materialCostPerUnit` từ M6).
+
+Test: `tests/parity/cvp.test.ts` (8 test) + `tests/parity/price-ladder.test.ts`
+(101 test: thang giá 5 bậc cả 2 dòng SP, 8 dòng bảng giá Ống, 91 dòng bảng giá
+SKU Phụ kiện — xử lý riêng 7 SKU `pending_mold` có `brassInsertCost` chưa xác
+nhận trong fixture).
+
+`npm test` 162/162 xanh, typecheck sạch. **M9 tiếp theo**: Plan_SX (T1) — xem
+`docs/PHASE3_PLAN.md`.
+
+## v1.13 (2026-07-06) — Pha 3 M6: dòng vật liệu ren kim loại (ADR-008)
+`src/engine/metal-insert.ts` — `materialCostPerUnitWithInsert()`,
+`weightedAvgInsertPriceVnd()`, `metalInsertHoldingGainLossVnd()` (bản KHÔNG quy
+đổi ngoại tệ, vì ren mua VND trong nước). `evaluatePriceLock()` (M5) dùng lại
+nguyên cho cả policy compound lẫn ren kim loại.
+
+**Phát hiện quan trọng (sửa nhận định sai trong BUSINESS_MODEL/ADR-008)**:
+`fitting.json.skus[].brassInsertCost` KHÔNG phải 0 cho toàn bộ 91 SKU như tài
+liệu cũ ghi — 18 SKU họ "ren" đã có giá trị thật khớp `metal-insert.json`. Dùng
+`materialCostPerUnit + brassInsertCost` (fixture) làm số vàng tự-đối-chiếu —
+khớp tuyệt đối 11/11 SKU ren có khuôn thật (`tests/parity/metal-insert.test.ts`,
+14 test). 7 SKU Cút/Tê ren trong (`pending_mold`) không dùng số này làm chính
+thức (ADR-008 "stillOpen"), nhưng vô hại vì đã bị ẩn khỏi danh mục vận hành.
+
+`npm test` 57/57 xanh, typecheck sạch. **M7 tiếp theo**: thang giá 5 bậc +
+chuỗi markup SKU — xem `docs/PHASE3_PLAN.md`.
+
+## v1.12 (2026-07-06) — Pha 3 M5: khóa bảng giá (ADR-004) + giá vốn kép (ADR-002)
+`src/engine/price-lock.ts` — `evaluatePriceLock()`, dùng CHUNG cho compound
+(USD) và ren kim loại (VND, sẽ dùng lại ở M6) vì công thức không phụ thuộc đơn
+vị tiền. `src/engine/dual-costing.ts` — `weightedAvgUsdPerKg()`,
+`holdingGainLossVnd()`, `provisionWarning()`.
+
+**Nối dây** (`tests/parity/price-lock-integration.test.ts`): với mỗi kịch bản
+ADR-004, gọi `evaluatePriceLock()` rồi feed `pricingPrice` vào
+`calculatePipeCostAtNormalCapacity()` (M2) — khớp `fullCostPerKg` cả 5 kịch bản
+kể cả 2 kịch bản MỞ KHÓA (121.012 và 98.958). KHÔNG sửa signature
+`pipe.ts`/`fitting.ts`, chỉ thay nguồn giá trị đầu vào ở tầng gọi.
+
+Test mới: `tests/unit/price-lock.test.ts` (5 kịch bản ADR-004),
+`tests/unit/dual-costing.test.ts` (kịch bản kho 2 đợt, lãi giữ kho =
+1.332.685.000đ, khớp skill excel-parity-testing), `tests/parity/price-lock-integration.test.ts`
+(5 test tích hợp). `npm test` 43/43 xanh, typecheck sạch.
+
+**M6 tiếp theo**: dòng vật liệu ren kim loại (ADR-008) — xem `docs/PHASE3_PLAN.md`.
+
+## v1.11 (2026-07-06) — Pha 3 M4: khấu hao khuôn động theo asOfYear (ADR-007)
+`src/engine/mold-depreciation.ts` — `isMoldAssetStillDepreciating()` +
+`moldDepreciationPerYear()`, nối vào `fitting.ts` (thêm `asOfYear` vào
+`FittingCostAtNormalCapacityInputs`, thay reduce inline bằng gọi hàm mới, không
+đổi công thức khác).
+
+`tests/unit/mold-depreciation.test.ts` (10 test): kịch bản TỔNG HỢP 3 khuôn mua
+3 năm/đời sống khác nhau chứng minh lọc CHỌN LỌC đúng (dữ liệu thật hiện tại
+mọi khuôn cùng `purchaseYear=2026` không đủ phân biệt tất-cả-hoặc-không); + test
+trên `mold-assets.json` thật tại `asOfYear` 2026 (năm gốc)/2030 (còn hạn)/2031
+(hết hạn cả 66 khuôn → khấu hao về 0).
+
+`npm test` 28/28 xanh, typecheck sạch. **M5 tiếp theo**: giá vốn kép (ADR-002)
++ khóa bảng giá (ADR-004) — xem `docs/PHASE3_PLAN.md`.
+
+## v1.10 (2026-07-06) — Pha 3 M3: engine Phụ kiện (fitting.ts)
+`src/engine/fitting.ts` — `calculateFittingCapacity()` +
+`calculateFittingCostAtNormalCapacity()` (BUSINESS_MODEL §3.2-3.3), khớp tuyệt
+đối `mhrPerMachineHour = 1344175.79463858` (trái tim ADR-001).
+
+**Sửa lỗi thiếu sót**: `MachineHourResourceSchema` (M1) thiếu `depreciationYears`
+(khấu hao MÁY ép — tách khỏi `MoldAsset.usefulLifeYears` là khấu hao KHUÔN) —
+bổ sung vào `src/schemas/resource.ts` + `docs/contracts/resource.md`.
+
+**Quyết định thiết kế**: tách `machineDepreciationPerYear` và
+`moldDepreciationPerYear` thành 2 field riêng (Excel gộp chung 1
+`machineMoldDepreciation`) — chuẩn bị sẵn cho M4 (khấu hao khuôn động theo
+`asOfYear`, ADR-007) chỉ cần sửa field mold, không đụng field máy. Verify: 2
+field cộng lại khớp tuyệt đối số Excel gốc.
+
+`npm test` 18/18 xanh. **M4 tiếp theo**: lọc `moldDepreciationPerYear` theo
+`asOfYear` — xem `docs/PHASE3_PLAN.md`.
+
+## v1.9 (2026-07-06) — Pha 3 M2: engine Ống (pipe.ts)
+`src/engine/pipe.ts` — `calculatePipeCapacity()` + `calculatePipeCostAtNormalCapacity()`
+(BUSINESS_MODEL §2.1-2.2), khớp tuyệt đối `tests/fixtures/pipe.json.costAtNormalCapacity`
+(`fullCostPerKg=106204.729733113`, `vfPricePerKg=132755.912166391`).
+
+**Sửa lỗi thiếu sót phát hiện khi viết engine** (không phải ADR — không đổi
+nghiệp vụ): `ContinuousKgResourceSchema`/`MachineHourResourceSchema` (M1) THIẾU
+12 field mà công thức §2.2/§3.3 luôn cần (`packagingCostPerKg`,
+`avgSalaryMonthly`, `monthsSalaryPerYear`, `electricityKw(PerMachineHour)`,
+`electricityPricePerKwh`, `waterM3Per(Machine)Hour`, `waterPricePerM3`,
+`avgProductivityKgPerMachineHour`) — bổ sung vào `src/schemas/resource.ts` +
+`docs/contracts/resource.md` + `tests/unit/schemas.test.ts`, vẫn 10/10 xanh.
+
+`npm run typecheck` sạch, `npm test` 14/14 xanh (10 schema + 4 parity pipe).
+**M3 tiếp theo**: `src/engine/fitting.ts` — xem `docs/PHASE3_PLAN.md`.
+
+## v1.8 (2026-07-06) — Schema ĐÓNG BĂNG, mở Pha 3 (M1: scaffold + src/schemas)
+User duyệt schema Pha 2 ("thực hiện theo đề xuất") → 5 file `docs/contracts/*.md`
+chính thức ĐÓNG BĂNG. Yêu cầu chia Pha 3 thành nhiều milestone nhỏ để tiết kiệm
+tool call/token — xem `docs/PHASE3_PLAN.md` (bảng trạng thái M1..M12).
+
+| File | Thay đổi |
+|---|---|
+| docs/PHASE3_PLAN.md | MỚI — lộ trình 12 milestone, mỗi milestone tự chứa (code + test xanh + commit) |
+| package.json, tsconfig.json | MỚI — scaffold TypeScript strict + Zod + Vitest |
+| src/schemas/{resource,product,cost-pool,pricing-chain,scenario}.ts | MỚI — code thật từ 5 file contract, không sửa cấu trúc so với `.md` |
+| tests/unit/schemas.test.ts | MỚI — 10 test parse toàn bộ fixture thật (mold-assets 66 dòng, fitting.skus 91 dòng, pipe 8 dòng) + test xác nhận Zod từ chối `thresholdPct` chưa chuẩn hóa đơn vị |
+| docs/CONTEXT_PASTE.md | Pha 2 → Pha 3, trỏ PHASE3_PLAN.md, ghi rõ M1 đã xong |
+
+**M1 hoàn tất**: `npm run typecheck` sạch, `npm test` 10/10 xanh. **M2 tiếp theo**:
+`src/engine/pipe.ts` (công suất + chi phí SX Ống tại CS bình thường).
+
+## v1.7 (2026-07-06) — Schema nháp Pha 2 (5 file contract, CHƯA đóng băng)
+Hiện thực hóa ADR-001..008 thành Zod schema cụ thể. Chưa phải quyết định kiến
+trúc mới (không ADR), chỉ là bước chuyển ADR → schema đúng vai trò Pha 2.
+
+| File | Nội dung | Nguồn |
+|---|---|---|
+| docs/contracts/resource.md | `Resource` (continuous_kg \| machine_hour) + `MoldAsset` | ADR-001, ADR-003, ADR-007 |
+| docs/contracts/product.md | `Product` (pipe \| fitting) + BOM ren kim loại + `managementStatusOf()` tính ra | ADR-001, ADR-007, ADR-008 |
+| docs/contracts/cost-pool.md | SharedFixedCosts, NonProductionCosts, CurrencyParams, MarkupChain | assumptions.json |
+| docs/contracts/pricing-chain.md | PriceLockPolicy generic (input/output tách), CompoundInventory + MetalInsertCatalog, thang giá 5 bậc | ADR-002, ADR-004, ADR-008 |
+| docs/contracts/scenario.md | ScenarioInput/Output tổng hợp, Plan_SX (T1), solver contract (T2/T3), Firestore doc split + bảng phân quyền 4 vai × 6 vùng | ADR-005, ADR-006, PROJECT_SPEC §3/§5 |
+
+**Phát hiện cần xử lý trước Pha 3**: `thresholdPct` lệch đơn vị giữa
+`assumptions.json` (thập phân 0.03) và `metal-insert.json` (số nguyên 5) —
+schema chốt dùng thập phân, cần chuẩn hóa khi migrate fixture.
+
+**Trạng thái**: schema NHÁP, chưa đóng băng — chờ user duyệt cổng thứ 2.
+
+## v1.6 (2026-07-06) — Pha 1 duyệt, mở cổng Pha 2
+User duyệt UI chính thức cho prototype (Pha 1). Không đổi nghiệp vụ, chỉ chuyển
+pha trong quy trình 4 pha có cổng.
+
+| File | Thay đổi | Lý do |
+|---|---|---|
+| docs/CONTEXT_PASTE.md | Đổi khối "TRẠNG THÁI HIỆN TẠI" Pha 1 → Pha 2 | Phản ánh đúng cổng vừa mở, việc tiếp theo là flow + schema Zod |
+| docs/sessions/SESSION_2026-07-06.md | MỚI — ghi lại quyết định duyệt Pha 1 | Luật bất biến #6 (AGENTS.md): mọi phiên phải ghi session log |
+
 ## v1.5 (2026-07) — đóng gói tri thức cho phiên mới (ADR-007/008 đã đủ dữ liệu)
 KHÁC BIỆT so với kit v1.4 (thuần đồng bộ tài liệu, không đổi nghiệp vụ so với các
 bản cập nhật cuối v1.4):

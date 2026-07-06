@@ -2,9 +2,37 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Pha: 1 (Prototype)** — đã có bản mock `prototype/blazemaster-costing-app.dc.html`,
-  đang tiếp tục tinh chỉnh theo dữ liệu thật. **CHƯA được duyệt UI chính thức** —
-  chưa được sang Pha 2 (schema đóng băng).
+- **Tiến độ Pha 3: 9/12 milestone xong (M1-M9), tiếp theo M10** — 171/171 test
+  xanh, mọi commit đã push lên `claude/nifty-dirac-wuamy6`, không có gì dở
+  dang. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md`.
+- **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
+  user **DUYỆT UI chính thức ngày 2026-07-06**;
+  `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng
+  băng — đổi thiết kế màn hình phải quay lại Pha 1 ghi ADR mới. Schema Pha 2
+  (`docs/contracts/{resource,product,cost-pool,pricing-chain,scenario}.md`) đã
+  được user duyệt **ĐÓNG BĂNG ngày 2026-07-06** ("thực hiện theo đề xuất") —
+  sửa cấu trúc field bắt buộc có ADR mới.
+  **QUAN TRỌNG — đọc `docs/PHASE3_PLAN.md` TRƯỚC KHI CODE TIẾP**: theo yêu cầu
+  user, Pha 3 chia thành nhiều milestone nhỏ (M1..M12), mỗi milestone tự chứa
+  (code + `npm test` xanh + commit) để không tốn tool call và dừng được khi gần
+  hết token — KHÔNG cố làm hết Pha 3 trong 1 phiên. File đó có bảng trạng thái
+  M1..M12 và "việc tiếp theo ngay" — đọc đúng dòng đầu tiên chưa `[x]`.
+  **Đã xong M1-M8** (chi tiết đầy đủ từng milestone → mục "Nhật ký milestone đã
+  xong" trong `docs/PHASE3_PLAN.md`, KHÔNG lặp lại ở đây): schema thật
+  (`src/schemas/`), engine Ống (`pipe.ts`), engine Phụ kiện + MHR (`fitting.ts`),
+  khấu hao khuôn động theo `asOfYear` (`mold-depreciation.ts`, ADR-007), khóa
+  bảng giá + giá vốn kép (`price-lock.ts`/`dual-costing.ts`, ADR-002/004, đã nối
+  dây vào `pipe.ts`), dòng vật liệu ren kim loại (`metal-insert.ts`, ADR-008),
+  CVP (`cvp.ts`, làm TRƯỚC price-ladder vì bậc 1 = `cvp.variableCostPerKg`),
+  thang giá 5 bậc + chuỗi markup 99 dòng (`price-ladder.ts`) — đã tính tay đối
+  chiếu `dashboard.json` trước khi code để tránh lặp lại đúng 2 lỗi công thức
+  cũ ở bậc 2 (loại khấu hao lab/UL khỏi cash cost) và bậc 4 (chia theo tỷ trọng
+  doanh thu VF, không theo kg). **M9** — Plan_SX (`plan.ts`, T1, BUSINESS_MODEL
+  §6) — KHÁC mọi milestone trước: KHÔNG có số vàng Excel (sheet gốc là
+  template), verify bằng 2 kịch bản tự chọn tính tay (script Python độc lập)
+  thay vì đối chiếu Excel. `npm test` 171/171 xanh. **M10 tiếp theo**: inverse
+  solver (T2/T3, ADR-005/006) — milestone cuối của engine lõi trước khi vào
+  M11 (parity suite tổng hợp).
 - ADR đã CHẤP NHẬN: 001, 002, 003, 004, 005, 006 (đầy đủ), **007 và 008 (đầy đủ dữ
   liệu cho phạm vi hiện có — xem chi tiết bên dưới điểm 8, 9, 10)**.
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →

@@ -1,0 +1,20 @@
+{
+  "name": "costing-app",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "echo 'UI thật Pha 3 chưa dựng — xem docs/CONTEXT_PASTE.md mục việc còn treo' && exit 1",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "extract-fixtures": "echo 'Script trích fixture từ Excel chưa viết (fixture hiện có đã trích tay Phiên 1-13) — xem CLAUDE.md' && exit 1"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}

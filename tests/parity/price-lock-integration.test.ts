@@ -54,12 +54,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -83,7 +79,13 @@ describe('Nối dây price-lock → pipe.ts — 5 kịch bản ADR-004 khớp br
         capacity,
         costPool,
         otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-        compoundPricingPriceUsdPerKg: lockEvaluation.pricingPrice,
+        material: {
+          materialId: 'bm-orange-pipe',
+          pricingPriceUsdPerKg: lockEvaluation.pricingPrice,
+          importTaxRate: assumptions.compoundImportTaxRate,
+          customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+          markupVf: assumptions.markupVfPipe,
+        },
       });
 
       // Kịch bản 5 không có expectedBreakEvenFullCostPerKg riêng trong fixture

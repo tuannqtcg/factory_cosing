@@ -50,12 +50,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -78,7 +74,13 @@ describe('pipe.ts — parity với tests/fixtures/pipe.json', () => {
     capacity,
     costPool,
     otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-    compoundPricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+    material: {
+      materialId: 'bm-orange-pipe',
+      pricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfPipe,
+    },
   });
   const golden = pipeFixture.costAtNormalCapacity;
 

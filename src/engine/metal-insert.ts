@@ -11,8 +11,7 @@
 //   input — ở tầng gọi thật (M-orchestration), 2 giá trị này đến từ
 //   `evaluatePriceLock()` (M5, DÙNG LẠI NGUYÊN — không viết price-lock riêng
 //   cho ren, chỉ khác policy/threshold, xem tests/parity/metal-insert.test.ts).
-import type { CurrencyParams } from '../schemas/cost-pool.js';
-import { landedCostPerKgVnd } from './cost-pool.js';
+import { landedCostPerKgVnd, type LandedCostRates } from './cost-pool.js';
 
 export interface MaterialCostPerUnitWithInsertInputs {
   unitWeightKg: number;
@@ -21,7 +20,8 @@ export interface MaterialCostPerUnitWithInsertInputs {
   packagingCostPerKg: number;
   insertQtyPerUnit: number;
   insertPricingPriceVnd: number;
-  currency: Pick<CurrencyParams, 'compoundImportTaxRate' | 'customsLogisticsFeeRate' | 'usdVndRate'>;
+  /** ADR-012 — thuế NK/phí HQ theo NGUYÊN LIỆU của SKU (trước đây lấy từ CurrencyParams chung). */
+  landedRates: LandedCostRates;
 }
 
 /**
@@ -30,7 +30,7 @@ export interface MaterialCostPerUnitWithInsertInputs {
  * hằng số tĩnh `brassInsertCost` cộng riêng ở `breakEvenPerUnit`.
  */
 export function materialCostPerUnitWithInsert(inputs: MaterialCostPerUnitWithInsertInputs): number {
-  const compoundLandedPerKg = landedCostPerKgVnd(inputs.compoundPricingPriceUsdPerKg, inputs.currency);
+  const compoundLandedPerKg = landedCostPerKgVnd(inputs.compoundPricingPriceUsdPerKg, inputs.landedRates);
   const plasticCostPerUnit = inputs.unitWeightKg * (compoundLandedPerKg / inputs.yieldRate + inputs.packagingCostPerKg);
   return plasticCostPerUnit + inputs.insertQtyPerUnit * inputs.insertPricingPriceVnd;
 }

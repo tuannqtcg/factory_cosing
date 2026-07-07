@@ -93,12 +93,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -111,7 +107,13 @@ const pipeCost = calculatePipeCostAtNormalCapacity({
   capacity: pipeCapacity,
   costPool,
   otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-  compoundPricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+  material: {
+    materialId: 'bm-orange-pipe',
+    pricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+    importTaxRate: assumptions.compoundImportTaxRate,
+    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+    markupVf: assumptions.markupVfPipe,
+  },
 });
 const pipeCvp = calculatePipeCvp(pipeResource, pipeCapacity, pipeCost);
 
@@ -132,7 +134,13 @@ const fittingCost = calculateFittingCostAtNormalCapacity({
   capacity: fittingCapacity,
   costPool,
   otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
-  compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+  material: {
+    materialId: 'bm-fitting',
+    pricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+    importTaxRate: assumptions.compoundImportTaxRate,
+    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+    markupVf: assumptions.markupVfFitting,
+  },
   asOfYear: 2026,
 });
 const fittingCvp = calculateFittingCvp(fittingResource, fittingCapacity, fittingCost);
@@ -178,7 +186,7 @@ describe('Thang giá 5 bậc — khớp tuyệt đối dashboard.json.priceLadde
 describe('Bảng giá Ống theo DN — khớp tuyệt đối 8/8 dòng pipe.json.priceLadderByDN', () => {
   for (const row of pipeFixture.priceLadderByDN) {
     it(`${row.dn}`, () => {
-      const chain = calculatePipeSkuPriceChain(pipeCost.fullCostPerKg, row.unitWeightKgPerM, costPool);
+      const chain = calculatePipeSkuPriceChain(pipeCost.fullCostPerKg, row.unitWeightKgPerM, assumptions.markupVfPipe, costPool);
       expect(chain.breakEvenPerUnit).toBeCloseTo(row.breakEvenPerM, 3);
       expect(chain.vfPricePerUnit).toBeCloseTo(row.vfPricePerM, 3);
       expect(chain.tcgPricePerUnit).toBeCloseTo(row.tcgPricePerM, 3);
@@ -208,11 +216,15 @@ describe('Bảng giá Phụ kiện theo SKU — khớp tuyệt đối 91/91 dòn
           packagingCostPerKg: fittingResource.packagingCostPerKg,
           insertQtyPerUnit: insertSku.insertQtyPerUnit,
           insertPricingPriceVnd: insertSku.insertPricingCostVndPerUnit,
-          currency: costPool.currency,
+          landedRates: {
+            importTaxRate: assumptions.compoundImportTaxRate,
+            customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+            usdVndRate: assumptions.usdVndRate,
+          },
         });
       }
 
-      const chain = calculateFittingSkuPriceChain(materialCostPerUnit, machineHoursPerUnit, fittingCost.mhrPerMachineHour, costPool);
+      const chain = calculateFittingSkuPriceChain(materialCostPerUnit, machineHoursPerUnit, fittingCost.mhrPerMachineHour, assumptions.markupVfFitting, costPool);
 
       // breakEvenPerUnit fixture = materialCostPerUnit + processingCostPerUnit + brassInsertCost (thiết kế CŨ, cộng riêng)
       // — TỔNG phải khớp dù ren được gập vào materialCostPerUnit (thiết kế MỚI, ADR-008).

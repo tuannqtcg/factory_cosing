@@ -11,6 +11,45 @@ function loadFixture<T = unknown>(name: string): T {
   return JSON.parse(readFileSync(path.join(fixturesDir, name), 'utf-8')) as T;
 }
 
+/**
+ * ADR-012 — 2 Material mặc định sinh từ dữ liệu BlazeMaster hiện hành
+ * (migration mục 1, contract material.md): landed cost 6%/1% (kịch bản EU) +
+ * markup VF 25%/40% lấy từ assumptions.json (giá trị MarkupChain cũ).
+ */
+export function buildBaselineMaterials(): unknown[] {
+  const assumptions = loadFixture<any>('assumptions.json');
+  return [
+    {
+      id: 'bm-orange-pipe',
+      name: 'BlazeMaster Orange (ống)',
+      code: 'BM-O-P',
+      originLabel: 'EU',
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfPipe,
+      inventory: {
+        lots: assumptions.inventory.pipeLots,
+        priceLock: { baseline: assumptions.priceLock.pipe.baselineUsd, thresholdPct: assumptions.priceLock.thresholdPct },
+        replacementPriceUsdPerKg: assumptions.priceLock.pipe.replacementUsd,
+      },
+    },
+    {
+      id: 'bm-fitting',
+      name: 'BlazeMaster compound (phụ kiện)',
+      code: 'BM-F',
+      originLabel: 'EU',
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfFitting,
+      inventory: {
+        lots: assumptions.inventory.fittingLots,
+        priceLock: { baseline: assumptions.priceLock.fitting.baselineUsd, thresholdPct: assumptions.priceLock.thresholdPct },
+        replacementPriceUsdPerKg: assumptions.priceLock.fitting.replacementUsd,
+      },
+    },
+  ];
+}
+
 /** Trả về object thô khớp `ScenarioInputSchema` — caller tự `.parse()` nếu cần validate. */
 export function buildBaselineScenarioInput(): unknown {
   const pipeFixture = loadFixture<any>('pipe.json');
@@ -34,6 +73,7 @@ export function buildBaselineScenarioInput(): unknown {
     odMm: row.odMm,
     minWallThicknessMm: row.minWallThicknessMm,
     unitWeightKgPerM: row.unitWeightKgPerM,
+    materialId: 'bm-orange-pipe', // ADR-012 migration mục 2
   }));
 
   const fittingProducts = fittingFixture.skus.map((sku: any) => {
@@ -49,6 +89,7 @@ export function buildBaselineScenarioInput(): unknown {
       cycleTimeSec: sku.cycleTimeSec,
       cavity: sku.cavity,
       unitWeightKg: sku.unitWeightKg,
+      materialId: 'bm-fitting', // ADR-012 migration mục 2
       ...(insertRef
         ? {
             metalInsert: {
@@ -116,6 +157,7 @@ export function buildBaselineScenarioInput(): unknown {
         waterPricePerM3: fittingFixture.params.waterPricePerM3,
       },
     },
+    materials: buildBaselineMaterials(), // ADR-012 — BlazeMaster đứng đầu = material tham chiếu từng line
     products: [...pipeProducts, ...fittingProducts],
     costPool: {
       sharedFixedCosts: assumptions.sharedFixedCosts,
@@ -124,28 +166,14 @@ export function buildBaselineScenarioInput(): unknown {
         usdVndRate: assumptions.usdVndRate,
         vatOutputRate: assumptions.vatOutputRate,
         mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-        compoundImportTaxRate: assumptions.compoundImportTaxRate,
-        customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
       },
       markup: {
-        markupVfPipe: assumptions.markupVfPipe,
-        markupVfFitting: assumptions.markupVfFitting,
         markupTcg: assumptions.markupTcg,
         listPriceMargin: assumptions.listPriceMargin,
       },
       solvent550PricePerBox: assumptions.solvent550PricePerBox,
     },
     inventory: {
-      pipe: {
-        lots: assumptions.inventory.pipeLots,
-        priceLock: { baseline: assumptions.priceLock.pipe.baselineUsd, thresholdPct: assumptions.priceLock.thresholdPct },
-        replacementPriceUsdPerKg: assumptions.priceLock.pipe.replacementUsd,
-      },
-      fitting: {
-        lots: assumptions.inventory.fittingLots,
-        priceLock: { baseline: assumptions.priceLock.fitting.baselineUsd, thresholdPct: assumptions.priceLock.thresholdPct },
-        replacementPriceUsdPerKg: assumptions.priceLock.fitting.replacementUsd,
-      },
       metalInsert: metalInsert.insertCatalog.map((entry: any) => ({
         renType: entry.renType,
         ptSize: entry.ptSize,

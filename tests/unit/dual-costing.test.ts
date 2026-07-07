@@ -10,7 +10,7 @@ import {
   weightedAvgUsdPerKg,
 } from '../../src/engine/dual-costing.js';
 
-const currency = { compoundImportTaxRate: 0.06, customsLogisticsFeeRate: 0.01, usdVndRate: 26500 };
+const currency = { importTaxRate: 0.06, customsLogisticsFeeRate: 0.01, usdVndRate: 26500 };
 
 describe('weightedAvgUsdPerKg + holdingGainLossVnd — kịch bản kho 2 đợt (skill excel-parity-testing)', () => {
   const lots = [

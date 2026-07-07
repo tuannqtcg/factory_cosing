@@ -78,12 +78,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -118,7 +114,13 @@ describe('fitting.ts — parity với tests/fixtures/fitting.json', () => {
     capacity,
     costPool,
     otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
-    compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+    material: {
+      materialId: 'bm-fitting',
+      pricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfFitting,
+    },
     asOfYear: 2026, // toàn bộ 66 moldAsset purchaseYear=2026 (đợt mua gốc, ADR-007) — năm đầu khấu hao
   });
   const golden = fittingFixture.costAtNormalCapacity;

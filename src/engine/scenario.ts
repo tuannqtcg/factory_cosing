@@ -9,10 +9,26 @@
 // file này KHÔNG lặp công thức, chỉ NỐI DÂY theo đúng thứ tự phụ thuộc chéo
 // giữa 2 dòng SP (Ống cần otherLine=Phụ kiện và ngược lại), xem ghi chú đầu
 // pipe.ts/fitting.ts/price-ladder.ts.
+//
+// ADR-012 (multi-material, 2026-07-07): mỗi dòng SX có thể chạy NHIỀU
+// nguyên liệu (BlazeMaster/Corzan) — giá/khóa giá/kho theo TỪNG Material,
+// chi phí gia công + MHR + phân bổ chi phí chung theo LINE (không đổi).
+// Quy ước "material THAM CHIẾU" của 1 line = material ĐẦU TIÊN trong
+// `input.materials[]` được ≥1 SP của line đó dùng — dùng cho: (a) doanh thu
+// chéo line ở bậc 4 thang giá (chưa có dữ liệu mix sản lượng theo nguyên
+// liệu — xấp xỉ CÓ CHỦ ĐÍCH, thay bằng mix thực khi có Plan/sales data cần
+// ADR mới); (b) mhrPerMachineHour xuất ra ở top-level (giá trị này
+// material-independent nên material nào cũng cho cùng số). Sau migration
+// (BlazeMaster đứng đầu materials[]) mọi số vàng v3.7 khớp tuyệt đối.
 import type { ScenarioInput, ScenarioOutput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
-import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
-import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from './fitting.js';
+import type { Material } from '../schemas/material.js';
+import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity, type PipeCostAtNormalCapacity } from './pipe.js';
+import {
+  calculateFittingCapacity,
+  calculateFittingCostAtNormalCapacity,
+  type FittingCostAtNormalCapacity,
+} from './fitting.js';
 import { calculatePipeCvp, calculateFittingCvp } from './cvp.js';
 import {
   calculatePipePriceLadder5Tier,
@@ -24,7 +40,7 @@ import {
 import { evaluatePriceLock } from './price-lock.js';
 import { weightedAvgUsdPerKg, totalInventoryKg, holdingGainLossVnd, provisionWarning } from './dual-costing.js';
 import { materialCostPerUnitWithInsert, weightedAvgInsertPriceVnd, metalInsertHoldingGainLossVnd } from './metal-insert.js';
-import { landedCostPerKgVnd } from './cost-pool.js';
+import { landedCostPerKgVnd, type MaterialPricingInput } from './cost-pool.js';
 import { managementStatusOf } from '../schemas/product.js';
 
 /**
@@ -42,68 +58,129 @@ function lastInsertLotPriceOf(lots: Array<{ unitPriceVnd: number }>): number | n
 }
 
 export function calculateScenario(input: ScenarioInput): ScenarioOutput {
-  const { asOfYear, resources, products, costPool, inventory } = input;
+  const { asOfYear, resources, materials, products, costPool, inventory } = input;
   const pipeResource = resources.pipe as ContinuousKgResource;
   const fittingResource = resources.fitting as MachineHourResource;
 
-  // ── 1. Khóa bảng giá compound (ADR-004) — Ống & Phụ kiện có tồn kho/policy riêng ──
-  const pipePriceLock = evaluatePriceLock({
-    baseline: inventory.pipe.priceLock.baseline,
-    thresholdPct: inventory.pipe.priceLock.thresholdPct,
-    replacement: inventory.pipe.replacementPriceUsdPerKg,
-    lastLotPrice: lastLotPriceOf(inventory.pipe.lots),
-  });
-  const fittingPriceLock = evaluatePriceLock({
-    baseline: inventory.fitting.priceLock.baseline,
-    thresholdPct: inventory.fitting.priceLock.thresholdPct,
-    replacement: inventory.fitting.replacementPriceUsdPerKg,
-    lastLotPrice: lastLotPriceOf(inventory.fitting.lots),
-  });
+  const materialById = new Map<string, Material>(materials.map((m) => [m.id, m]));
+  const requireMaterial = (id: string): Material => {
+    const m = materialById.get(id);
+    if (!m) throw new Error(`materialId "${id}" không có trong materials[] — ScenarioInputSchema.parse() phải chặn từ trước`);
+    return m;
+  };
 
-  // ── 2. Công suất (độc lập giá compound) ──────────────────────────────────
+  const pipeProducts = products.filter((p) => p.kind === 'pipe');
   const fittingProducts = products.filter((p) => p.kind === 'fitting');
+  // Material theo line, GIỮ THỨ TỰ materials[] (phần tử đầu = material tham chiếu — xem ghi chú đầu file)
+  const pipeMaterialIds = materials.filter((m) => pipeProducts.some((p) => p.materialId === m.id)).map((m) => m.id);
+  const fittingMaterialIds = materials
+    .filter((m) => fittingProducts.some((p) => p.materialId === m.id))
+    .map((m) => m.id);
+  if (pipeMaterialIds.length === 0 || fittingMaterialIds.length === 0) {
+    throw new Error('Mỗi dòng SX (pipe/fitting) phải có ≥1 sản phẩm gắn material — thiếu material tham chiếu cho thang giá');
+  }
 
+  // ── 1. Khóa bảng giá compound (ADR-004) — theo TỪNG material (ADR-012) ────
+  const priceLockByMaterial = new Map<string, ReturnType<typeof evaluatePriceLock>>();
+  for (const m of materials) {
+    priceLockByMaterial.set(
+      m.id,
+      evaluatePriceLock({
+        baseline: m.inventory.priceLock.baseline,
+        thresholdPct: m.inventory.priceLock.thresholdPct,
+        replacement: m.inventory.replacementPriceUsdPerKg,
+        lastLotPrice: lastLotPriceOf(m.inventory.lots),
+      }),
+    );
+  }
+  const pricingInputOf = (id: string): MaterialPricingInput => {
+    const m = requireMaterial(id);
+    const lock = priceLockByMaterial.get(id);
+    if (!lock) throw new Error(`chưa evaluate price lock cho material "${id}"`);
+    return {
+      materialId: id,
+      pricingPriceUsdPerKg: lock.pricingPrice,
+      importTaxRate: m.importTaxRate,
+      customsLogisticsFeeRate: m.customsLogisticsFeeRate,
+      markupVf: m.markupVf,
+    };
+  };
+
+  // ── 2. Công suất (độc lập giá compound; năng suất mix từ TOÀN BỘ SKU phụ kiện — ADR-011) ──
   const pipeCapacity = calculatePipeCapacity(pipeResource);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 
-  // ── 3. Chi phí SX tại CS bình thường (cross-ref công suất dòng kia + pricingPrice đã khóa) ──
-  const pipeCost = calculatePipeCostAtNormalCapacity({
-    resource: pipeResource,
-    capacity: pipeCapacity,
-    costPool,
-    otherLineEstimatedProductionKgYear: fittingCapacity.estimatedProductionKgYear,
-    compoundPricingPriceUsdPerKg: pipePriceLock.pricingPrice,
-  });
-  const fittingCost = calculateFittingCostAtNormalCapacity({
-    resource: fittingResource,
-    capacity: fittingCapacity,
-    costPool,
-    otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
-    compoundPricingPriceUsdPerKg: fittingPriceLock.pricingPrice,
-    asOfYear,
-  });
+  // ── 3. Chi phí SX tại CS bình thường — 1 lần cho MỖI (line, material) ──────
+  // Cross-ref công suất dòng kia là số kg (material-independent) nên tính 1 lần.
+  const pipeCostByMaterial = new Map<string, PipeCostAtNormalCapacity>();
+  for (const id of pipeMaterialIds) {
+    pipeCostByMaterial.set(
+      id,
+      calculatePipeCostAtNormalCapacity({
+        resource: pipeResource,
+        capacity: pipeCapacity,
+        costPool,
+        otherLineEstimatedProductionKgYear: fittingCapacity.estimatedProductionKgYear,
+        material: pricingInputOf(id),
+      }),
+    );
+  }
+  const fittingCostByMaterial = new Map<string, FittingCostAtNormalCapacity>();
+  for (const id of fittingMaterialIds) {
+    fittingCostByMaterial.set(
+      id,
+      calculateFittingCostAtNormalCapacity({
+        resource: fittingResource,
+        capacity: fittingCapacity,
+        costPool,
+        otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
+        material: pricingInputOf(id),
+        asOfYear,
+      }),
+    );
+  }
+  const pipeRefCost = pipeCostByMaterial.get(pipeMaterialIds[0]!)!;
+  const fittingRefCost = fittingCostByMaterial.get(fittingMaterialIds[0]!)!;
 
-  // ── 4. CVP ────────────────────────────────────────────────────────────────
-  const pipeCvp = calculatePipeCvp(pipeResource, pipeCapacity, pipeCost);
-  const fittingCvp = calculateFittingCvp(fittingResource, fittingCapacity, fittingCost);
+  // ── 4. CVP — theo (line, material) ─────────────────────────────────────────
+  const pipeCvpByMaterial = new Map(
+    pipeMaterialIds.map((id) => [id, calculatePipeCvp(pipeResource, pipeCapacity, pipeCostByMaterial.get(id)!)]),
+  );
+  const fittingCvpByMaterial = new Map(
+    fittingMaterialIds.map((id) => [
+      id,
+      calculateFittingCvp(fittingResource, fittingCapacity, fittingCostByMaterial.get(id)!),
+    ]),
+  );
 
-  // ── 5. Thang giá 5 bậc (cross-ref doanh thu VF chéo 2 dòng) ─────────────
-  const pipeOwnRevenueVnd = pipeCapacity.normalCapacityKgYear * pipeCost.vfPricePerKg;
-  const fittingOwnRevenueVnd = fittingCapacity.estimatedProductionKgYear * fittingCost.vfPricePerKgRef;
-  const pipeLadder = calculatePipePriceLadder5Tier({
-    capacity: pipeCapacity,
-    cost: pipeCost,
-    cvp: pipeCvp,
-    costPool,
-    otherLineRevenueVnd: fittingOwnRevenueVnd,
-  });
-  const fittingLadder = calculateFittingPriceLadder5Tier({
-    capacity: fittingCapacity,
-    cost: fittingCost,
-    cvp: fittingCvp,
-    costPool,
-    otherLineRevenueVnd: pipeOwnRevenueVnd,
-  });
+  // ── 5. Thang giá 5 bậc — theo (line, material); doanh thu chéo dùng material
+  //       THAM CHIẾU của dòng kia (xem ghi chú đầu file) ──────────────────────
+  const pipeRefRevenueVnd = pipeCapacity.normalCapacityKgYear * pipeRefCost.vfPricePerKg;
+  const fittingRefRevenueVnd = fittingCapacity.estimatedProductionKgYear * fittingRefCost.vfPricePerKgRef;
+  const priceLadderByLineMaterial: ScenarioOutput['priceLadder']['byLineMaterial'] = [
+    ...pipeMaterialIds.map((id) => ({
+      line: 'pipe' as const,
+      materialId: id,
+      ladder: calculatePipePriceLadder5Tier({
+        capacity: pipeCapacity,
+        cost: pipeCostByMaterial.get(id)!,
+        cvp: pipeCvpByMaterial.get(id)!,
+        costPool,
+        otherLineRevenueVnd: fittingRefRevenueVnd,
+      }),
+    })),
+    ...fittingMaterialIds.map((id) => ({
+      line: 'fitting' as const,
+      materialId: id,
+      ladder: calculateFittingPriceLadder5Tier({
+        capacity: fittingCapacity,
+        cost: fittingCostByMaterial.get(id)!,
+        cvp: fittingCvpByMaterial.get(id)!,
+        costPool,
+        otherLineRevenueVnd: pipeRefRevenueVnd,
+      }),
+    })),
+  ];
 
   // ── 6. Khóa giá ren kim loại (ADR-008) — theo (renType, ptSize), ĐỘC LẬP compound ──
   const metalInsertLockByKey = new Map<string, ReturnType<typeof evaluatePriceLock>>();
@@ -118,18 +195,28 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
     return { renType: entry.renType, ptSize: entry.ptSize, evaluation };
   });
 
-  // ── 7. Chuỗi giá theo SKU (Ống theo DN, Phụ kiện theo product) ──────────
+  // ── 7. Chuỗi giá theo SKU (Ống theo DN, Phụ kiện theo product) — giá vật
+  //       liệu theo material của TỪNG SP; MHR/chi phí gia công theo line ──────
   const skuPriceChains = products.map((product) => {
+    const material = requireMaterial(product.materialId);
+    const lock = priceLockByMaterial.get(product.materialId)!;
+
     if (product.kind === 'pipe') {
-      const chain = calculatePipeSkuPriceChain(pipeCost.fullCostPerKg, product.unitWeightKgPerM, costPool);
+      const cost = pipeCostByMaterial.get(product.materialId)!;
+      const chain = calculatePipeSkuPriceChain(cost.fullCostPerKg, product.unitWeightKgPerM, material.markupVf, costPool);
       return {
-        productKey: { dn: product.dn },
+        productKey: { dn: product.dn, materialId: product.materialId },
         managementStatus: 'active' as const,
         chain,
       };
     }
 
     const machineHoursPerUnit = calculateMachineHoursPerUnit(product.cycleTimeSec, product.cavity, fittingResource.yieldRate);
+    const landedRates = {
+      importTaxRate: material.importTaxRate,
+      customsLogisticsFeeRate: material.customsLogisticsFeeRate,
+      usdVndRate: costPool.currency.usdVndRate,
+    };
 
     // 80/91 SKU không ren: gọi materialCostPerUnitWithInsert() với insert=0 —
     // TÁI DÙNG nguyên công thức (verify khớp tuyệt đối 80/91 SKU, xem
@@ -145,68 +232,77 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
       }
       materialCostPerUnit = materialCostPerUnitWithInsert({
         unitWeightKg: product.unitWeightKg,
-        compoundPricingPriceUsdPerKg: fittingPriceLock.pricingPrice,
+        compoundPricingPriceUsdPerKg: lock.pricingPrice,
         yieldRate: fittingResource.yieldRate,
         packagingCostPerKg: fittingResource.packagingCostPerKg,
         insertQtyPerUnit: product.metalInsert.insertQtyPerUnit,
         insertPricingPriceVnd: insertLock.pricingPrice,
-        currency: costPool.currency,
+        landedRates,
       });
     } else {
       materialCostPerUnit = materialCostPerUnitWithInsert({
         unitWeightKg: product.unitWeightKg,
-        compoundPricingPriceUsdPerKg: fittingPriceLock.pricingPrice,
+        compoundPricingPriceUsdPerKg: lock.pricingPrice,
         yieldRate: fittingResource.yieldRate,
         packagingCostPerKg: fittingResource.packagingCostPerKg,
         insertQtyPerUnit: 0,
         insertPricingPriceVnd: 0,
-        currency: costPool.currency,
+        landedRates,
       });
     }
 
-    const chain = calculateFittingSkuPriceChain(materialCostPerUnit, machineHoursPerUnit, fittingCost.mhrPerMachineHour, costPool);
+    // MHR material-independent — dùng bản tính tại material tham chiếu của line.
+    const chain = calculateFittingSkuPriceChain(
+      materialCostPerUnit,
+      machineHoursPerUnit,
+      fittingRefCost.mhrPerMachineHour,
+      material.markupVf,
+      costPool,
+    );
     return {
-      productKey: { productName: product.productName, sizeLabel: product.sizeLabel },
+      productKey: { productName: product.productName, sizeLabel: product.sizeLabel, materialId: product.materialId },
       managementStatus: managementStatusOf(product, fittingResource.moldAssets),
       chain,
     };
   });
 
-  // ── 8. Giá vốn kép (ADR-002) — sổ sách (bình quân gia quyền) vs định giá (đã tính ở trên) ──
-  // CHƯA có số vàng Excel riêng cho trường hợp weightedAvg ≠ pricingPrice thật
-  // (kịch bản "kho 2 đợt" trong skill excel-parity-testing chỉ verify
-  // holdingGainLossVnd, không verify bookCostPerKg) — công thức tái dùng
-  // NGUYÊN landedCostPerKgVnd() giống hệt materialPerKgFinished/fullCostPerKg
-  // trong pipe.ts/fitting.ts, chỉ thay giá đầu vào bằng weightedAvg thay vì
-  // pricingPrice (đúng ADR-002 "sổ sách = bình quân gia quyền kho"). Khi
-  // weightedAvg trùng pricingPrice (kịch bản mặc định, chưa có biến động kho)
-  // bookCostPerKg PHẢI khớp tuyệt đối fullCostPerKg — test tự-đối-chiếu.
-  const pipeWeightedAvg = weightedAvgUsdPerKg(inventory.pipe.lots) ?? inventory.pipe.replacementPriceUsdPerKg;
-  const pipeInventoryKg = totalInventoryKg(inventory.pipe.lots);
-  const pipeBookMaterialPerKgFinished = landedCostPerKgVnd(pipeWeightedAvg, costPool.currency) / pipeResource.yieldRate;
-  const pipeBookCostPerKg = pipeBookMaterialPerKgFinished + pipeResource.packagingCostPerKg + pipeCost.unitProcessingCostPerKg;
-  const pipeHoldingGainLossVnd = holdingGainLossVnd({
-    replacementPriceUsdPerKg: inventory.pipe.replacementPriceUsdPerKg,
-    weightedAvgUsdPerKg: pipeWeightedAvg,
-    inventoryKg: pipeInventoryKg,
-    compoundImportTaxRate: costPool.currency.compoundImportTaxRate,
-    customsLogisticsFeeRate: costPool.currency.customsLogisticsFeeRate,
-    usdVndRate: costPool.currency.usdVndRate,
-  });
-
-  const fittingWeightedAvg = weightedAvgUsdPerKg(inventory.fitting.lots) ?? inventory.fitting.replacementPriceUsdPerKg;
-  const fittingInventoryKg = totalInventoryKg(inventory.fitting.lots);
-  const fittingBookMaterialPerKgFinishedRef = landedCostPerKgVnd(fittingWeightedAvg, costPool.currency) / fittingResource.yieldRate;
-  const fittingBookCostPerKg =
-    fittingBookMaterialPerKgFinishedRef + fittingResource.packagingCostPerKg + fittingCost.processingCostPerKgRef;
-  const fittingHoldingGainLossVnd = holdingGainLossVnd({
-    replacementPriceUsdPerKg: inventory.fitting.replacementPriceUsdPerKg,
-    weightedAvgUsdPerKg: fittingWeightedAvg,
-    inventoryKg: fittingInventoryKg,
-    compoundImportTaxRate: costPool.currency.compoundImportTaxRate,
-    customsLogisticsFeeRate: costPool.currency.customsLogisticsFeeRate,
-    usdVndRate: costPool.currency.usdVndRate,
-  });
+  // ── 8. Giá vốn kép (ADR-002) — theo (material, line): bookCostPerKg cần chi
+  //       phí gia công của line; holdingGainLoss thuộc material (xem schema) ──
+  const dualCostingByMaterial: ScenarioOutput['dualCosting']['byMaterial'] = [];
+  const pushDualCosting = (materialId: string, line: 'pipe' | 'fitting') => {
+    const m = requireMaterial(materialId);
+    const weightedAvg = weightedAvgUsdPerKg(m.inventory.lots) ?? m.inventory.replacementPriceUsdPerKg;
+    const inventoryKg = totalInventoryKg(m.inventory.lots);
+    const rates = {
+      importTaxRate: m.importTaxRate,
+      customsLogisticsFeeRate: m.customsLogisticsFeeRate,
+      usdVndRate: costPool.currency.usdVndRate,
+    };
+    const bookMaterialPerKgFinished = landedCostPerKgVnd(weightedAvg, rates) / (line === 'pipe' ? pipeResource : fittingResource).yieldRate;
+    const bookCostPerKg =
+      line === 'pipe'
+        ? bookMaterialPerKgFinished + pipeResource.packagingCostPerKg + pipeCostByMaterial.get(materialId)!.unitProcessingCostPerKg
+        : bookMaterialPerKgFinished +
+          fittingResource.packagingCostPerKg +
+          fittingCostByMaterial.get(materialId)!.processingCostPerKgRef;
+    const gainLoss = holdingGainLossVnd({
+      replacementPriceUsdPerKg: m.inventory.replacementPriceUsdPerKg,
+      weightedAvgUsdPerKg: weightedAvg,
+      inventoryKg,
+      importTaxRate: m.importTaxRate,
+      customsLogisticsFeeRate: m.customsLogisticsFeeRate,
+      usdVndRate: costPool.currency.usdVndRate,
+    });
+    dualCostingByMaterial.push({
+      materialId,
+      line,
+      bookCostPerKg,
+      holdingGainLossVnd: gainLoss,
+      provisionWarning: provisionWarning(gainLoss),
+    });
+  };
+  for (const id of pipeMaterialIds) pushDualCosting(id, 'pipe');
+  for (const id of fittingMaterialIds) pushDualCosting(id, 'fitting');
 
   const metalInsertDualCosting = inventory.metalInsert.map((entry) => {
     const weightedAvg = weightedAvgInsertPriceVnd(entry.lots) ?? entry.replacementPriceVnd;
@@ -231,42 +327,44 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         estimatedProductionKgYear: fittingCapacity.estimatedProductionKgYear,
       },
     },
-    mhrPerMachineHour: fittingCost.mhrPerMachineHour,
-    priceLadder: { pipe: pipeLadder, fitting: fittingLadder },
+    mhrPerMachineHour: fittingRefCost.mhrPerMachineHour,
+    priceLadder: { byLineMaterial: priceLadderByLineMaterial },
     skuPriceChains,
     priceLock: {
-      pipe: pipePriceLock,
-      fitting: fittingPriceLock,
+      byMaterial: materials.map((m) => ({ materialId: m.id, evaluation: priceLockByMaterial.get(m.id)! })),
       metalInsertByCatalogEntry,
     },
     cvp: {
-      pipe: {
-        variableCostPerKg: pipeCvp.variableCostPerKg,
-        contributionMarginPerKg: pipeCvp.contributionMarginPerKg,
-        fixedCostPerYear: pipeCvp.fixedCostPerYear,
-        breakEvenKgYear: pipeCvp.breakEvenKgYear,
-        pctOfNormalCapacity: pipeCvp.pctOfNormalCapacity,
-      },
-      fitting: {
-        variableCostPerKg: fittingCvp.variableCostPerKg,
-        contributionMarginPerKg: fittingCvp.contributionMarginPerKg,
-        fixedCostPerYear: fittingCvp.fixedCostPerYear,
-        breakEvenKgYear: fittingCvp.breakEvenKgYear,
-        breakEvenMachineHours: fittingCvp.breakEvenMachineHours,
-        pctOfUtilizedHours: fittingCvp.pctOfUtilizedHours,
-      },
+      byLineMaterial: [
+        ...pipeMaterialIds.map((id) => {
+          const cvp = pipeCvpByMaterial.get(id)!;
+          return {
+            line: 'pipe' as const,
+            materialId: id,
+            variableCostPerKg: cvp.variableCostPerKg,
+            contributionMarginPerKg: cvp.contributionMarginPerKg,
+            fixedCostPerYear: cvp.fixedCostPerYear,
+            breakEvenKgYear: cvp.breakEvenKgYear,
+            pctOfNormalCapacity: cvp.pctOfNormalCapacity,
+          };
+        }),
+        ...fittingMaterialIds.map((id) => {
+          const cvp = fittingCvpByMaterial.get(id)!;
+          return {
+            line: 'fitting' as const,
+            materialId: id,
+            variableCostPerKg: cvp.variableCostPerKg,
+            contributionMarginPerKg: cvp.contributionMarginPerKg,
+            fixedCostPerYear: cvp.fixedCostPerYear,
+            breakEvenKgYear: cvp.breakEvenKgYear,
+            breakEvenMachineHours: cvp.breakEvenMachineHours,
+            pctOfUtilizedHours: cvp.pctOfUtilizedHours,
+          };
+        }),
+      ],
     },
     dualCosting: {
-      pipe: {
-        bookCostPerKg: pipeBookCostPerKg,
-        holdingGainLossVnd: pipeHoldingGainLossVnd,
-        provisionWarning: provisionWarning(pipeHoldingGainLossVnd),
-      },
-      fitting: {
-        bookCostPerKg: fittingBookCostPerKg,
-        holdingGainLossVnd: fittingHoldingGainLossVnd,
-        provisionWarning: provisionWarning(fittingHoldingGainLossVnd),
-      },
+      byMaterial: dualCostingByMaterial,
       metalInsert: metalInsertDualCosting,
     },
   };

@@ -82,7 +82,14 @@ describe('Cloud Function onScenarioWrite (emulator thật)', () => {
     // Ranh giới sales-safe (scenario.md §5) — priceList KHÔNG được có giá vốn.
     expect(priceList?.skuPriceChains[0].chain.materialCostPerUnit).toBeUndefined();
     expect(priceList?.skuPriceChains[0].chain.breakEvenPerUnit).toBeUndefined();
-    expect(priceList?.priceLadder.pipe.targetPrice).toBeCloseTo(expectedOutput.priceLadder.pipe.targetPrice, 3);
+    // ADR-012 — thang giá theo (line, materialId)
+    const expectedPipeLadder = expectedOutput.priceLadder.byLineMaterial.find(
+      (e) => e.line === 'pipe' && e.materialId === 'bm-orange-pipe',
+    )!.ladder;
+    const actualPipeLadder = priceList?.priceLadder.byLineMaterial.find(
+      (e: any) => e.line === 'pipe' && e.materialId === 'bm-orange-pipe',
+    )?.ladder;
+    expect(actualPipeLadder.targetPrice).toBeCloseTo(expectedPipeLadder.targetPrice, 3);
   }, 20000);
 
   it('xóa scenarios/{id} → Cloud Function dọn outputs/internal + outputs/priceList', async () => {

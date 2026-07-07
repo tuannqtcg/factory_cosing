@@ -58,12 +58,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -80,9 +76,15 @@ function forwardPipeAtCompoundPrice(input: { compoundPricingPriceUsdPerKg: numbe
     capacity,
     costPool,
     otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-    compoundPricingPriceUsdPerKg: input.compoundPricingPriceUsdPerKg,
+    material: {
+      materialId: 'bm-orange-pipe',
+      pricingPriceUsdPerKg: input.compoundPricingPriceUsdPerKg, // biến DÒ của solver — freeVarPath trỏ vào đây
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfPipe,
+    },
   });
-  const dn50Chain = calculatePipeSkuPriceChain(cost.fullCostPerKg, DN50_UNIT_WEIGHT_KG_PER_M, costPool);
+  const dn50Chain = calculatePipeSkuPriceChain(cost.fullCostPerKg, DN50_UNIT_WEIGHT_KG_PER_M, assumptions.markupVfPipe, costPool);
   return { fullCostPerKg: cost.fullCostPerKg, dn50Chain };
 }
 

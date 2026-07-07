@@ -80,12 +80,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -99,7 +95,13 @@ describe('CVP Ống — khớp tuyệt đối pipe.json.cvp', () => {
     capacity,
     costPool,
     otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-    compoundPricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+    material: {
+      materialId: 'bm-orange-pipe',
+      pricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfPipe,
+    },
   });
   const cvp = calculatePipeCvp(pipeResource, capacity, cost);
   const golden = pipeFixture.cvp;
@@ -116,8 +118,10 @@ describe('CVP Ống — khớp tuyệt đối pipe.json.cvp', () => {
     expect(cvp.pctOfNormalCapacity).toBeCloseTo(golden.pctOfNormalCapacity, 6);
   });
 
-  it('khớp đúng ScenarioOutputSchema.cvp.pipe', () => {
-    expect(() => ScenarioOutputSchema.shape.cvp.shape.pipe.parse(cvp)).not.toThrow();
+  it('khớp đúng ScenarioOutputSchema.cvp.byLineMaterial (nhánh pipe)', () => {
+    expect(() =>
+      ScenarioOutputSchema.shape.cvp.shape.byLineMaterial.element.parse({ line: 'pipe', materialId: 'bm-orange-pipe', ...cvp }),
+    ).not.toThrow();
   });
 });
 
@@ -138,7 +142,13 @@ describe('CVP Phụ kiện — khớp tuyệt đối fitting.json.cvp', () => {
     capacity,
     costPool,
     otherLineNormalCapacityKgYear: pipeFixture.capacity.normalCapacityKgYear,
-    compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+    material: {
+      materialId: 'bm-fitting',
+      pricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfFitting,
+    },
     asOfYear: 2026,
   });
   const cvp = calculateFittingCvp(fittingResource, capacity, cost);
@@ -157,7 +167,9 @@ describe('CVP Phụ kiện — khớp tuyệt đối fitting.json.cvp', () => {
     expect(cvp.pctOfUtilizedHours).toBeCloseTo(golden.pctOfUtilizedHours, 6);
   });
 
-  it('khớp đúng ScenarioOutputSchema.cvp.fitting (code review PR #1: bắt lỗi lệch tên field pctUtilized/pctOfUtilizedHours)', () => {
-    expect(() => ScenarioOutputSchema.shape.cvp.shape.fitting.parse(cvp)).not.toThrow();
+  it('khớp đúng ScenarioOutputSchema.cvp.byLineMaterial nhánh fitting (code review PR #1: bắt lỗi lệch tên field pctUtilized/pctOfUtilizedHours)', () => {
+    expect(() =>
+      ScenarioOutputSchema.shape.cvp.shape.byLineMaterial.element.parse({ line: 'fitting', materialId: 'bm-fitting', ...cvp }),
+    ).not.toThrow();
   });
 });

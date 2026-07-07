@@ -51,34 +51,54 @@ function resolvedShiftCount(shiftsNeeded: ShiftsNeeded): number {
 export interface CalculatePipePlanInputs {
   resource: ContinuousKgResource;
   products: PipeProduct[];
+  /** Chi phí tại material THAM CHIẾU của dòng Ống (ADR-012) — chỉ dùng cho idleCapacityCostPipePerKg. */
   cost: PipeCostAtNormalCapacity;
   cvp: PipeCvp;
-  /** ADR-004 §1a — giá RAW cho kế hoạch mua ngoại tệ, KHÔNG qua khóa giá. */
-  replacementUsdPerKgRaw: number;
 }
 
 export interface CalculateFittingPlanInputs {
   resource: MachineHourResource;
   products: FittingProduct[];
-  cost: FittingCostAtNormalCapacity;
-  replacementUsdPerKgRaw: number;
   moldSetCountBySizeDN: Record<number, number>;
+}
+
+/**
+ * ADR-012 — tham số giá theo TỪNG nguyên liệu cho mục 4 (NVL + ngoại tệ cần):
+ * `compoundLandedPerKgVnd` = landed tại giá ĐÃ KHÓA (định giá trị kho VNĐ);
+ * `replacementUsdPerKgRaw` = giá RAW cho kế hoạch mua ngoại tệ/LC, KHÔNG qua
+ * khóa giá (ADR-004 §1a).
+ */
+export interface PlanMaterialPricing {
+  materialId: string;
+  compoundLandedPerKgVnd: number;
+  replacementUsdPerKgRaw: number;
 }
 
 export function calculatePlan(
   input: PlanInput,
   pipe: CalculatePipePlanInputs,
   fitting: CalculateFittingPlanInputs,
+  materials: PlanMaterialPricing[],
 ): PlanResult {
   const periodFactor = input.periodMonths / 12;
 
   // ── 1+2. Ống: quy đổi kế hoạch → giờ máy, đánh giá ca ──────────────────────
+  // ADR-012: kg nạp máy tách thêm theo materialId của từng SP (mục 4).
+  const kgLoadedByMaterial = new Map<string, number>();
+  const addKgLoaded = (materialId: string, kg: number) =>
+    kgLoadedByMaterial.set(materialId, (kgLoadedByMaterial.get(materialId) ?? 0) + kg);
+
   let pipeKgLoaded = 0;
   for (const entry of input.pipePlan) {
-    const product = pipe.products.find((p) => p.dn === entry.dn);
+    // materialId bỏ trống → khớp SP đầu tiên trùng dn (thứ tự products[] — xem PlanInputSchema)
+    const product = pipe.products.find(
+      (p) => p.dn === entry.dn && (entry.materialId === undefined || p.materialId === entry.materialId),
+    );
     if (!product) continue; // DN không có trong danh mục — bỏ qua, không throw (kế hoạch có thể nhập nhầm)
     const kgFinished = entry.meters * product.unitWeightKgPerM;
-    pipeKgLoaded += kgFinished / pipe.resource.yieldRate;
+    const kgLoaded = kgFinished / pipe.resource.yieldRate;
+    pipeKgLoaded += kgLoaded;
+    addKgLoaded(product.materialId, kgLoaded);
   }
   const pipeRequiredMachineHours = pipeKgLoaded / pipe.resource.actualCapacityKgPerHour;
 
@@ -93,12 +113,19 @@ export function calculatePlan(
   let fittingRequiredMachineHours = 0;
   const machineHoursBySizeDN = new Map<number, number>();
   for (const entry of input.fittingPlan) {
-    const product = fitting.products.find((p) => p.productName === entry.productName && p.sizeLabel === entry.sizeLabel);
+    const product = fitting.products.find(
+      (p) =>
+        p.productName === entry.productName &&
+        p.sizeLabel === entry.sizeLabel &&
+        (entry.materialId === undefined || p.materialId === entry.materialId),
+    );
     if (!product) continue;
     const machineHoursPerUnit = calculateMachineHoursPerUnit(product.cycleTimeSec, product.cavity, fitting.resource.yieldRate);
     const machineHours = entry.qty * machineHoursPerUnit;
     fittingRequiredMachineHours += machineHours;
-    fittingKgLoaded += (entry.qty * product.unitWeightKg) / fitting.resource.yieldRate;
+    const kgLoaded = (entry.qty * product.unitWeightKg) / fitting.resource.yieldRate;
+    fittingKgLoaded += kgLoaded;
+    addKgLoaded(product.materialId, kgLoaded);
     machineHoursBySizeDN.set(product.moldSizeDN, (machineHoursBySizeDN.get(product.moldSizeDN) ?? 0) + machineHours);
   }
 
@@ -134,21 +161,19 @@ export function calculatePlan(
     }
   }
 
-  // ── 4. Nguyên liệu + ngoại tệ cần ───────────────────────────────────────────
-  const pipeKgToBuy = pipeKgLoaded * (1 + input.materialSafetyStockFactor);
-  const fittingKgToBuy = fittingKgLoaded * (1 + input.materialSafetyStockFactor);
-  const materialRequirement: PlanResult['materialRequirement'] = {
-    pipe: {
-      kgToBuy: pipeKgToBuy,
-      vndValue: pipeKgToBuy * pipe.cost.compoundLandedPerKg,
-      usdValueAtRawReplacement: pipeKgToBuy * pipe.replacementUsdPerKgRaw,
-    },
-    fitting: {
-      kgToBuy: fittingKgToBuy,
-      vndValue: fittingKgToBuy * fitting.cost.compoundLandedPerKg,
-      usdValueAtRawReplacement: fittingKgToBuy * fitting.replacementUsdPerKgRaw,
-    },
-  };
+  // ── 4. Nguyên liệu + ngoại tệ cần — theo TỪNG materialId (ADR-012) ─────────
+  const materialRequirement: PlanResult['materialRequirement'] = [];
+  for (const [materialId, kgLoaded] of kgLoadedByMaterial) {
+    const pricing = materials.find((m) => m.materialId === materialId);
+    if (!pricing) continue; // material không được cấp bảng giá — orchestration phải cấp đủ, bỏ qua thay vì throw (đối xứng SP không có trong danh mục)
+    const kgToBuy = kgLoaded * (1 + input.materialSafetyStockFactor);
+    materialRequirement.push({
+      materialId,
+      kgToBuy,
+      vndValue: kgToBuy * pricing.compoundLandedPerKgVnd,
+      usdValueAtRawReplacement: kgToBuy * pricing.replacementUsdPerKgRaw,
+    });
+  }
 
   // ── 5. Nhân công cần tuyển ──────────────────────────────────────────────────
   const laborToHire: PlanResult['laborToHire'] = {

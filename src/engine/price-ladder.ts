@@ -130,10 +130,15 @@ function chainFromBreakEven(inputs: ChainFromBreakEvenInputs): SkuPriceChain {
   return { materialCostPerUnit, processingCostPerUnit, breakEvenPerUnit, vfPricePerUnit, tcgPricePerUnit, listPriceBeforeVat, listPriceWithVat };
 }
 
-/** Ống (§2.3) — không tách material/processing riêng, breakEvenPerM = fullCostPerKg × unitWeightKgPerM. */
+/**
+ * Ống (§2.3) — không tách material/processing riêng, breakEvenPerM =
+ * fullCostPerKg × unitWeightKgPerM. `markupVf` truyền RIÊNG theo material của
+ * SP (ADR-012 — không còn markupVfPipe toàn cục trong MarkupChain).
+ */
 export function calculatePipeSkuPriceChain(
   fullCostPerKg: number,
   unitWeightKgPerM: number,
+  markupVf: number,
   costPool: Pick<CostPool, 'markup' | 'currency'>,
 ): SkuPriceChain {
   const breakEvenPerUnit = fullCostPerKg * unitWeightKgPerM;
@@ -141,7 +146,7 @@ export function calculatePipeSkuPriceChain(
     breakEvenPerUnit,
     materialCostPerUnit: breakEvenPerUnit,
     processingCostPerUnit: 0,
-    markupVf: costPool.markup.markupVfPipe,
+    markupVf,
     markup: costPool.markup,
     vatOutputRate: costPool.currency.vatOutputRate,
   });
@@ -161,6 +166,7 @@ export function calculateFittingSkuPriceChain(
   materialCostPerUnit: number,
   machineHoursPerUnit: number,
   mhrPerMachineHour: number,
+  markupVf: number, // ADR-012 — theo material của SKU (không còn markupVfFitting toàn cục)
   costPool: Pick<CostPool, 'markup' | 'currency'>,
 ): SkuPriceChain {
   const processingCostPerUnit = machineHoursPerUnit * mhrPerMachineHour;
@@ -169,7 +175,7 @@ export function calculateFittingSkuPriceChain(
     breakEvenPerUnit,
     materialCostPerUnit,
     processingCostPerUnit,
-    markupVf: costPool.markup.markupVfFitting,
+    markupVf,
     markup: costPool.markup,
     vatOutputRate: costPool.currency.vatOutputRate,
   });

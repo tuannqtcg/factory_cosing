@@ -21,7 +21,7 @@
 import type { MachineHourResource } from '../schemas/resource.js';
 import type { FittingProduct } from '../schemas/product.js';
 import type { CostPool } from '../schemas/cost-pool.js';
-import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear } from './cost-pool.js';
+import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear, type MaterialPricingInput } from './cost-pool.js';
 import { moldDepreciationPerYear as calculateMoldDepreciationPerYear } from './mold-depreciation.js';
 
 export interface FittingCapacity {
@@ -90,8 +90,8 @@ export interface FittingCostAtNormalCapacityInputs {
   costPool: CostPool;
   /** Cross-ref sang Ống cho sharedCostAllocationRatio — xem ghi chú đầu file. */
   otherLineNormalCapacityKgYear: number;
-  /** ADR-004 pricingPrice (tạm nhận trực tiếp tới khi M5 nối dây price-lock). */
-  compoundPricingPriceUsdPerKg: number;
+  /** ADR-012 — giá/thuế/markup THEO NGUYÊN LIỆU. Gọi 1 lần/material; MHR + toàn bộ chi phí gia công KHÔNG phụ thuộc material (chỉ các field *Ref vật liệu quy kg đổi theo). */
+  material: MaterialPricingInput;
   /** ADR-007 — mốc thời gian đánh giá khấu hao khuôn động (src/engine/mold-depreciation.ts). */
   asOfYear: number;
 }
@@ -117,11 +117,14 @@ export interface FittingCostAtNormalCapacity {
 export function calculateFittingCostAtNormalCapacity(
   inputs: FittingCostAtNormalCapacityInputs,
 ): FittingCostAtNormalCapacity {
-  const { resource, capacity, costPool, otherLineNormalCapacityKgYear, compoundPricingPriceUsdPerKg, asOfYear } =
-    inputs;
-  const { currency, markup } = costPool;
+  const { resource, capacity, costPool, otherLineNormalCapacityKgYear, material, asOfYear } = inputs;
+  const { currency } = costPool;
 
-  const compoundLandedPerKg = landedCostPerKgVnd(compoundPricingPriceUsdPerKg, currency);
+  const compoundLandedPerKg = landedCostPerKgVnd(material.pricingPriceUsdPerKg, {
+    importTaxRate: material.importTaxRate,
+    customsLogisticsFeeRate: material.customsLogisticsFeeRate,
+    usdVndRate: currency.usdVndRate,
+  });
   const materialPerKgFinishedRef = compoundLandedPerKg / resource.yieldRate;
 
   const machineDepreciationPerYear =
@@ -156,7 +159,7 @@ export function calculateFittingCostAtNormalCapacity(
 
   const processingCostPerKgRef = totalProcessingCostPerYear / capacity.estimatedProductionKgYear;
   const fullCostPerKgRef = materialPerKgFinishedRef + resource.packagingCostPerKg + processingCostPerKgRef;
-  const vfPricePerKgRef = fullCostPerKgRef * (1 + markup.markupVfFitting);
+  const vfPricePerKgRef = fullCostPerKgRef * (1 + material.markupVf); // ADR-012 — markup VF theo material
 
   return {
     compoundLandedPerKg,

@@ -115,7 +115,18 @@ const pipeCost = calculatePipeCostAtNormalCapacity({
 });
 const pipeCvp = calculatePipeCvp(pipeResource, pipeCapacity, pipeCost);
 
-const fittingCapacity = calculateFittingCapacity(fittingResource);
+const fittingProducts = fittingFixture.skus.map((sku: any) => ({
+  kind: 'fitting' as const,
+  productName: sku.productName,
+  sizeLabel: sku.sizeLabel,
+  unit: sku.unit,
+  moldSizeDN: sku.moldSizeDN,
+  cycleTimeSec: sku.cycleTimeSec,
+  cavity: sku.cavity,
+  unitWeightKg: sku.unitWeightKg,
+}));
+
+const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 const fittingCost = calculateFittingCostAtNormalCapacity({
   resource: fittingResource,
   capacity: fittingCapacity,

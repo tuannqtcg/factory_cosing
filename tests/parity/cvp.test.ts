@@ -122,7 +122,17 @@ describe('CVP Ống — khớp tuyệt đối pipe.json.cvp', () => {
 });
 
 describe('CVP Phụ kiện — khớp tuyệt đối fitting.json.cvp', () => {
-  const capacity = calculateFittingCapacity(fittingResource);
+  const fittingProducts = fittingFixture.skus.map((sku: any) => ({
+    kind: 'fitting' as const,
+    productName: sku.productName,
+    sizeLabel: sku.sizeLabel,
+    unit: sku.unit,
+    moldSizeDN: sku.moldSizeDN,
+    cycleTimeSec: sku.cycleTimeSec,
+    cavity: sku.cavity,
+    unitWeightKg: sku.unitWeightKg,
+  }));
+  const capacity = calculateFittingCapacity(fittingResource, fittingProducts);
   const cost = calculateFittingCostAtNormalCapacity({
     resource: fittingResource,
     capacity,
@@ -136,7 +146,7 @@ describe('CVP Phụ kiện — khớp tuyệt đối fitting.json.cvp', () => {
 
   it('variableCostPerKg (bậc 1 thang giá — variableCostFloor)', () => {
     expect(cvp.variableCostPerKg).toBeCloseTo(golden.variableCostPerKg, 6);
-    expect(cvp.variableCostPerKg).toBeCloseTo(125673.070503239, 3);
+    expect(cvp.variableCostPerKg).toBeCloseTo(127939.81975261813, 3); // ADR-011 (v3.7)
   });
 
   it('contributionMarginPerKg, fixedCostPerYear, breakEvenKgYear, breakEvenMachineHours, pctOfUtilizedHours', () => {

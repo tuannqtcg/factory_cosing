@@ -42,7 +42,7 @@ describe('calculateScenario() — khớp tuyệt đối số vàng đã biết (
   it('capacity + mhrPerMachineHour', () => {
     expect(output.capacity.pipe.normalCapacityKgYear).toBeCloseTo(pipeFixture.capacity.normalCapacityKgYear, 6);
     expect(output.capacity.fitting.estimatedProductionKgYear).toBeCloseTo(fittingFixture.capacity.estimatedProductionKgYear, 6);
-    expect(output.mhrPerMachineHour).toBeCloseTo(1344175.79463858, 3);
+    expect(output.mhrPerMachineHour).toBeCloseTo(1308217.9298677056, 3); // ADR-011 (v3.7)
   });
 
   it('thang giá 5 bậc — khớp dashboard.json', () => {

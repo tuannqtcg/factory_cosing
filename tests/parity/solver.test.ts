@@ -88,7 +88,7 @@ function forwardPipeAtCompoundPrice(input: { compoundPricingPriceUsdPerKg: numbe
 
 describe('solve() round-trip trên forward function thật (pipe.ts) — fixture v3.4', () => {
   it('|forward(solve(target)) − target| < tol, hội tụ về đúng compoundReplacementPriceUsdPerKg gốc', () => {
-    const target = pipeFixture.costAtNormalCapacity.fullCostPerKg; // 106204.729733113
+    const target = pipeFixture.costAtNormalCapacity.fullCostPerKg; // 106318.88168476634 (ADR-011, v3.7)
     const result = solve({
       baseInput: { compoundPricingPriceUsdPerKg: 0 }, // cố tình bắt đầu XA giá gốc để chứng minh hội tụ
       forwardFn: forwardPipeAtCompoundPrice,
@@ -123,7 +123,7 @@ describe('T3 — case chuẩn skill inverse-solver: DN50 mục tiêu 260.000đ/m
     if (!result.feasible) throw new Error('unreachable');
     // Forward-verify (luật #4 skill): nghiệm phải tái tạo ĐÚNG mục tiêu qua forward, không chỉ gần đúng.
     expect(result.forwardOutput.dn50Chain.listPriceBeforeVat).toBe(260000);
-    // Giá compound tối đa được phép phải THẤP hơn giá hiện tại (3.03 USD/kg) vì mục tiêu 260.000 < giá niêm yết hiện tại 310.700.
+    // Giá compound tối đa được phép phải THẤP hơn giá hiện tại (3.03 USD/kg) vì mục tiêu 260.000 < giá niêm yết hiện tại 311.000 (ADR-011, v3.7).
     expect(result.value).toBeLessThan(pipeFixture.params.compoundReplacementPriceUsdPerKg);
     expect(result.value).toBeGreaterThan(0);
   });

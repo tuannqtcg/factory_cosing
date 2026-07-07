@@ -61,8 +61,10 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   });
 
   // ── 2. Công suất (độc lập giá compound) ──────────────────────────────────
+  const fittingProducts = products.filter((p) => p.kind === 'fitting');
+
   const pipeCapacity = calculatePipeCapacity(pipeResource);
-  const fittingCapacity = calculateFittingCapacity(fittingResource);
+  const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 
   // ── 3. Chi phí SX tại CS bình thường (cross-ref công suất dòng kia + pricingPrice đã khóa) ──
   const pipeCost = calculatePipeCostAtNormalCapacity({

@@ -1,5 +1,23 @@
 # CHANGELOG — Costing App Kit
 
+## v1.25 (2026-07-07) — ADR-011: năng suất mix phụ kiện tính bottom-up (nguồn v3.7)
+User upload `BlazeMaster_Model_v3_7.xlsx`, yêu cầu rà soát logic thay đổi so
+với kiến trúc hiện tại. Đối chiếu toàn bộ 6 sheet: chỉ 1 thay đổi thật —
+Phụ kiện `avgProductivityKgPerMachineHour` đổi từ nhập tay cố định (44,6
+kg/giờ máy) sang tính bottom-up từ bảng khuôn (xem ADR-011), kéo theo MHR
+(1.344.176 → 1.308.217,93), giá thành đầy đủ Ống (106.204,73 → 106.318,88 —
+qua phân bổ chi phí chung tham chiếu chéo 2 dòng SP), toàn bộ 99 giá SKU/ống
+và mọi số phái sinh (thang giá, CVP, đầu tư). Đã cập nhật engine
+(`resource.ts`, `fitting.ts`, `cvp.ts`, `scenario.ts`) + toàn bộ fixture vàng
+liên quan bằng script trích thẳng từ Excel (không gõ tay) + tài liệu
+(`BUSINESS_MODEL.md`, `docs/contracts/resource.md`, skill
+`excel-parity-testing`). `npm test` 286/286 xanh, typecheck + build sạch.
+
+Cũng ghi nhận yêu cầu mới (chưa code): quản lý NHIỀU nguyên liệu theo sản
+phẩm (BlazeMaster Orange vs Corzan 3710) — ca dùng thứ 2 mà ADR-003 đặt làm
+điều kiện tổng quát hóa Phase 1→2; user chọn viết design brief + prototype
+trước khi đụng schema/code, xem `docs/sessions/SESSION_2026-07-07.md`.
+
 ## v1.24 (2026-07-06) — Merge PR #2 (M12.3-M12.4) vào nhánh mặc định
 PR #2 (`claude/firebase-emulator-security-rules-5eij5z` → `claude/project-
 knowledge-setup-2au4hr`), do hạ tầng phiên trước tự tạo, đã được user yêu cầu

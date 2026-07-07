@@ -127,7 +127,7 @@ const pipeCost = calculatePipeCostAtNormalCapacity({
 });
 const pipeCvp = calculatePipeCvp(pipeResource, pipeCapacity, pipeCost);
 
-const fittingCapacity = calculateFittingCapacity(fittingResource);
+const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 const fittingCost = calculateFittingCostAtNormalCapacity({
   resource: fittingResource,
   capacity: fittingCapacity,
@@ -190,8 +190,8 @@ describe('Plan_SX — kịch bản A: kế hoạch vừa công suất (1 ca đ�
     expect(result.laborToHire.pipe).toBe(0);
   });
 
-  it('chi phí/kg thực tế Ống dương (đang gánh công suất nhàn rỗi) — khớp tính tay 8.090,31', () => {
-    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(8090.311283360701, 3);
+  it('chi phí/kg thực tế Ống dương (đang gánh công suất nhàn rỗi) — khớp tính tay 8.256,97 (ADR-011, v3.7)', () => {
+    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(8256.973132775121, 3);
   });
 });
 

@@ -50,18 +50,23 @@ export function calculateFittingCvp(
   capacity: FittingCapacity,
   cost: FittingCostAtNormalCapacity,
 ): FittingCvp {
+  // ADR-011: avgProductivityKgPerMachineHour có thể là GHI ĐÈ (resource) hoặc
+  // tự tính bottom-up (fitting.ts) — đọc lại từ capacity đã tính thay vì tự
+  // giải quyết override 1 lần nữa ở đây (capacity.estimatedProductionKgYear =
+  // normalMachineHoursUtilized × avgProductivityKgPerMachineHour đã dùng).
+  const avgProductivityKgPerMachineHour = capacity.estimatedProductionKgYear / capacity.normalMachineHoursUtilized;
   const variableCostPerKg =
     cost.compoundLandedPerKg / resource.yieldRate +
     resource.packagingCostPerKg +
     (resource.electricityKwPerMachineHour * resource.electricityPricePerKwh +
       resource.waterM3PerMachineHour * resource.waterPricePerM3) /
-      resource.avgProductivityKgPerMachineHour;
+      avgProductivityKgPerMachineHour;
   const contributionMarginPerKg = cost.vfPricePerKgRef - variableCostPerKg;
   // KHÔNG gồm điện/nước — đã nằm trong biến phí (đúng BUSINESS_MODEL §3.6).
   const fixedCostPerYear =
     cost.machineDepreciationPerYear + cost.moldDepreciationPerYear + cost.moldMaintenancePerYear + cost.laborPerYear + cost.sharedCostAllocated;
   const breakEvenKgYear = fixedCostPerYear / contributionMarginPerKg;
-  const breakEvenMachineHours = breakEvenKgYear / resource.avgProductivityKgPerMachineHour;
+  const breakEvenMachineHours = breakEvenKgYear / avgProductivityKgPerMachineHour;
   const pctOfUtilizedHours = breakEvenMachineHours / capacity.normalMachineHoursUtilized;
 
   return {

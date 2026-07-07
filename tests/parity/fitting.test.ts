@@ -90,8 +90,19 @@ const costPool = CostPoolSchema.parse({
   solvent550PricePerBox: assumptions.solvent550PricePerBox,
 });
 
+const fittingProducts = fittingFixture.skus.map((sku: any) => ({
+  kind: 'fitting' as const,
+  productName: sku.productName,
+  sizeLabel: sku.sizeLabel,
+  unit: sku.unit,
+  moldSizeDN: sku.moldSizeDN,
+  cycleTimeSec: sku.cycleTimeSec,
+  cavity: sku.cavity,
+  unitWeightKg: sku.unitWeightKg,
+}));
+
 describe('fitting.ts — parity với tests/fixtures/fitting.json', () => {
-  const capacity = calculateFittingCapacity(resource);
+  const capacity = calculateFittingCapacity(resource, fittingProducts);
 
   it('§3.2 công suất ép phun — khớp tuyệt đối fitting.json.capacity', () => {
     expect(capacity.batchesPerYear).toBeCloseTo(fittingFixture.capacity.batchesPerYear, 6);
@@ -126,9 +137,9 @@ describe('fitting.ts — parity với tests/fixtures/fitting.json', () => {
     expect(cost.totalProcessingCostPerYear).toBeCloseTo(golden.totalProcessingCostPerYear, 3);
   });
 
-  it('mhrPerMachineHour khớp số vàng 1.344.175,79 (trái tim ADR-001)', () => {
+  it('mhrPerMachineHour khớp số vàng 1.308.217,93 (trái tim ADR-001, ADR-011 v3.7)', () => {
     expect(cost.mhrPerMachineHour).toBeCloseTo(golden.mhrPerMachineHour, 6);
-    expect(cost.mhrPerMachineHour).toBeCloseTo(1344175.79463858, 3);
+    expect(cost.mhrPerMachineHour).toBeCloseTo(1308217.9298677056, 3);
   });
 
   it('processingCostPerKgRef/fullCostPerKgRef/vfPricePerKgRef khớp số quy-kg tham chiếu', () => {

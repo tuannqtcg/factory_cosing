@@ -19,6 +19,7 @@
 //   THÊM hay THAY THẾ phần của khuôn có override — xem
 //   docs/contracts/resource.md để biết lý do chưa tự suy đoán công thức.
 import type { MachineHourResource } from '../schemas/resource.js';
+import type { FittingProduct } from '../schemas/product.js';
 import type { CostPool } from '../schemas/cost-pool.js';
 import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear } from './cost-pool.js';
 import { moldDepreciationPerYear as calculateMoldDepreciationPerYear } from './mold-depreciation.js';
@@ -31,7 +32,33 @@ export interface FittingCapacity {
   estimatedProductionKgYear: number;
 }
 
-export function calculateFittingCapacity(resource: MachineHourResource): FittingCapacity {
+// ADR-011 — thay "năng suất mix" nhập tay cố định bằng tính bottom-up từ bảng
+// khuôn: nhóm SKU theo moldSizeDN, mỗi nhóm = unitsPerHour × unitWeightKg bình
+// quân nhóm, rồi lấy TRUNG BÌNH KHÔNG TRỌNG SỐ qua các nhóm (đúng giả định
+// %mix đều 1/8 hiện có trong Excel — chưa có dữ liệu mix sản lượng thực).
+export function computeMixAvgProductivityKgPerMachineHour(products: FittingProduct[]): number {
+  const bySize = new Map<number, FittingProduct[]>();
+  for (const product of products) {
+    const group = bySize.get(product.moldSizeDN) ?? [];
+    group.push(product);
+    bySize.set(product.moldSizeDN, group);
+  }
+
+  const kgPerMachineHourBySize = Array.from(bySize.values()).map((group) => {
+    const [first] = group;
+    if (!first) throw new Error('unreachable: nhóm moldSizeDN rỗng');
+    const unitsPerHour = (3600 / first.cycleTimeSec) * first.cavity;
+    const avgUnitWeightKg = group.reduce((sum, p) => sum + p.unitWeightKg, 0) / group.length;
+    return unitsPerHour * avgUnitWeightKg;
+  });
+
+  return kgPerMachineHourBySize.reduce((sum, v) => sum + v, 0) / kgPerMachineHourBySize.length;
+}
+
+export function calculateFittingCapacity(
+  resource: MachineHourResource,
+  fittingProducts: FittingProduct[],
+): FittingCapacity {
   const batchesPerYear =
     resource.operatingDaysPerYear / (resource.continuousRunDaysPerBatch + resource.maintenanceDaysPerBatch);
   const totalMachines = resource.machineTypes.reduce((sum, m) => sum + m.count, 0);
@@ -44,7 +71,9 @@ export function calculateFittingCapacity(resource: MachineHourResource): Fitting
     resource.hoursPerShift *
     totalMachines *
     resource.normalUtilizationFactor;
-  const estimatedProductionKgYear = normalMachineHoursUtilized * resource.avgProductivityKgPerMachineHour;
+  const avgProductivityKgPerMachineHour =
+    resource.avgProductivityKgPerMachineHour ?? computeMixAvgProductivityKgPerMachineHour(fittingProducts);
+  const estimatedProductionKgYear = normalMachineHoursUtilized * avgProductivityKgPerMachineHour;
 
   return {
     batchesPerYear,

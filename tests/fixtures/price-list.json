@@ -5,8 +5,8 @@
     "sizeDN": "DN20",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 71500,
-    "priceWithVat": 77220
+    "priceBeforeVat": 71600,
+    "priceWithVat": 77328
   },
   {
     "stt": 2,
@@ -14,8 +14,8 @@
     "sizeDN": "DN25",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 101100,
-    "priceWithVat": 109188
+    "priceBeforeVat": 101200,
+    "priceWithVat": 109296
   },
   {
     "stt": 3,
@@ -23,8 +23,8 @@
     "sizeDN": "DN32",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 152900,
-    "priceWithVat": 165132
+    "priceBeforeVat": 153100,
+    "priceWithVat": 165348
   },
   {
     "stt": 4,
@@ -32,8 +32,8 @@
     "sizeDN": "DN40",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 202200,
-    "priceWithVat": 218376
+    "priceBeforeVat": 202400,
+    "priceWithVat": 218592
   },
   {
     "stt": 5,
@@ -41,8 +41,8 @@
     "sizeDN": "DN50",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 310700,
-    "priceWithVat": 335556
+    "priceBeforeVat": 311000,
+    "priceWithVat": 335880
   },
   {
     "stt": 6,
@@ -50,8 +50,8 @@
     "sizeDN": "DN65",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 453700,
-    "priceWithVat": 489996
+    "priceBeforeVat": 454200,
+    "priceWithVat": 490536.00000000006
   },
   {
     "stt": 7,
@@ -59,8 +59,8 @@
     "sizeDN": "DN80",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 668200,
-    "priceWithVat": 721656
+    "priceBeforeVat": 668900,
+    "priceWithVat": 722412
   },
   {
     "stt": 8,
@@ -68,8 +68,8 @@
     "sizeDN": "DN100",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 1061200,
-    "priceWithVat": 1146096
+    "priceBeforeVat": 1062300,
+    "priceWithVat": 1147284
   },
   {
     "stt": 9,
@@ -77,8 +77,8 @@
     "sizeDN": "20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 27100,
-    "priceWithVat": 29268
+    "priceBeforeVat": 26900,
+    "priceWithVat": 29052.000000000004
   },
   {
     "stt": 10,
@@ -86,8 +86,8 @@
     "sizeDN": "25",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 39700,
-    "priceWithVat": 42876
+    "priceBeforeVat": 39400,
+    "priceWithVat": 42552
   },
   {
     "stt": 11,
@@ -95,8 +95,8 @@
     "sizeDN": "32",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 69200,
-    "priceWithVat": 74736
+    "priceBeforeVat": 68600,
+    "priceWithVat": 74088
   },
   {
     "stt": 12,
@@ -104,8 +104,8 @@
     "sizeDN": "40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 105600,
-    "priceWithVat": 114048
+    "priceBeforeVat": 104800,
+    "priceWithVat": 113184.00000000001
   },
   {
     "stt": 13,
@@ -113,8 +113,8 @@
     "sizeDN": "50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 163300,
-    "priceWithVat": 176364
+    "priceBeforeVat": 162400,
+    "priceWithVat": 175392
   },
   {
     "stt": 14,
@@ -122,8 +122,8 @@
     "sizeDN": "65",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 337600,
-    "priceWithVat": 364608
+    "priceBeforeVat": 335000,
+    "priceWithVat": 361800
   },
   {
     "stt": 15,
@@ -131,8 +131,8 @@
     "sizeDN": "80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 488500,
-    "priceWithVat": 527580
+    "priceBeforeVat": 485100,
+    "priceWithVat": 523908.00000000006
   },
   {
     "stt": 16,
@@ -140,8 +140,8 @@
     "sizeDN": "100",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 974100,
-    "priceWithVat": 1052028
+    "priceBeforeVat": 969400,
+    "priceWithVat": 1046952.0000000001
   },
   {
     "stt": 17,
@@ -149,8 +149,8 @@
     "sizeDN": "25x20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 36500,
-    "priceWithVat": 39420
+    "priceBeforeVat": 36200,
+    "priceWithVat": 39096
   },
   {
     "stt": 18,
@@ -158,8 +158,8 @@
     "sizeDN": "32x20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 61200,
-    "priceWithVat": 66096
+    "priceBeforeVat": 60500,
+    "priceWithVat": 65340.00000000001
   },
   {
     "stt": 19,
@@ -167,8 +167,8 @@
     "sizeDN": "32x25",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 62800,
-    "priceWithVat": 67824
+    "priceBeforeVat": 62100,
+    "priceWithVat": 67068
   },
   {
     "stt": 20,
@@ -176,8 +176,8 @@
     "sizeDN": "40x20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 94300,
-    "priceWithVat": 101844
+    "priceBeforeVat": 93600,
+    "priceWithVat": 101088
   },
   {
     "stt": 21,
@@ -185,8 +185,8 @@
     "sizeDN": "40x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 97500,
-    "priceWithVat": 105300
+    "priceBeforeVat": 96800,
+    "priceWithVat": 104544
   },
   {
     "stt": 22,
@@ -194,8 +194,8 @@
     "sizeDN": "40x32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 108800,
-    "priceWithVat": 117504
+    "priceBeforeVat": 108000,
+    "priceWithVat": 116640.00000000001
   },
   {
     "stt": 23,
@@ -203,8 +203,8 @@
     "sizeDN": "50x20",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 128100,
-    "priceWithVat": 138348
+    "priceBeforeVat": 127100,
+    "priceWithVat": 137268
   },
   {
     "stt": 24,
@@ -212,8 +212,8 @@
     "sizeDN": "50x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 134500,
-    "priceWithVat": 145260
+    "priceBeforeVat": 133500,
+    "priceWithVat": 144180
   },
   {
     "stt": 25,
@@ -221,8 +221,8 @@
     "sizeDN": "50x32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 144100,
-    "priceWithVat": 155628
+    "priceBeforeVat": 143200,
+    "priceWithVat": 154656
   },
   {
     "stt": 26,
@@ -230,8 +230,8 @@
     "sizeDN": "50x40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 152100,
-    "priceWithVat": 164268
+    "priceBeforeVat": 151200,
+    "priceWithVat": 163296
   },
   {
     "stt": 27,
@@ -239,8 +239,8 @@
     "sizeDN": "65x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 246200,
-    "priceWithVat": 265896
+    "priceBeforeVat": 243600,
+    "priceWithVat": 263088
   },
   {
     "stt": 28,
@@ -248,8 +248,8 @@
     "sizeDN": "65x32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 270200,
-    "priceWithVat": 291816
+    "priceBeforeVat": 267600,
+    "priceWithVat": 289008
   },
   {
     "stt": 29,
@@ -257,8 +257,8 @@
     "sizeDN": "65x40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 279900,
-    "priceWithVat": 302292
+    "priceBeforeVat": 277300,
+    "priceWithVat": 299484
   },
   {
     "stt": 30,
@@ -266,8 +266,8 @@
     "sizeDN": "65x50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 300400,
-    "priceWithVat": 324432
+    "priceBeforeVat": 297800,
+    "priceWithVat": 321624
   },
   {
     "stt": 31,
@@ -275,8 +275,8 @@
     "sizeDN": "80x50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 398800,
-    "priceWithVat": 430704
+    "priceBeforeVat": 395300,
+    "priceWithVat": 426924
   },
   {
     "stt": 32,
@@ -284,8 +284,8 @@
     "sizeDN": "80x65",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 450100,
-    "priceWithVat": 486108
+    "priceBeforeVat": 446600,
+    "priceWithVat": 482328.00000000006
   },
   {
     "stt": 33,
@@ -293,8 +293,8 @@
     "sizeDN": "100x80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 595800,
-    "priceWithVat": 643464
+    "priceBeforeVat": 591200,
+    "priceWithVat": 638496
   },
   {
     "stt": 34,
@@ -302,8 +302,8 @@
     "sizeDN": "100x65",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 570100,
-    "priceWithVat": 615708
+    "priceBeforeVat": 565500,
+    "priceWithVat": 610740
   },
   {
     "stt": 35,
@@ -311,8 +311,8 @@
     "sizeDN": "100x50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 550900,
-    "priceWithVat": 594972
+    "priceBeforeVat": 546300,
+    "priceWithVat": 590004
   },
   {
     "stt": 36,
@@ -320,8 +320,8 @@
     "sizeDN": "20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 23900,
-    "priceWithVat": 25812
+    "priceBeforeVat": 23700,
+    "priceWithVat": 25596
   },
   {
     "stt": 37,
@@ -329,8 +329,8 @@
     "sizeDN": "25",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 31700,
-    "priceWithVat": 34236
+    "priceBeforeVat": 31400,
+    "priceWithVat": 33912
   },
   {
     "stt": 38,
@@ -338,8 +338,8 @@
     "sizeDN": "32",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 61200,
-    "priceWithVat": 66096
+    "priceBeforeVat": 60500,
+    "priceWithVat": 65340.00000000001
   },
   {
     "stt": 39,
@@ -347,8 +347,8 @@
     "sizeDN": "40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 92700,
-    "priceWithVat": 100116
+    "priceBeforeVat": 92000,
+    "priceWithVat": 99360
   },
   {
     "stt": 40,
@@ -356,8 +356,8 @@
     "sizeDN": "50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 132900,
-    "priceWithVat": 143532
+    "priceBeforeVat": 131900,
+    "priceWithVat": 142452
   },
   {
     "stt": 41,
@@ -365,8 +365,8 @@
     "sizeDN": "65",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 284700,
-    "priceWithVat": 307476
+    "priceBeforeVat": 282100,
+    "priceWithVat": 304668
   },
   {
     "stt": 42,
@@ -374,8 +374,8 @@
     "sizeDN": "80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 421200,
-    "priceWithVat": 454896
+    "priceBeforeVat": 417700,
+    "priceWithVat": 451116.00000000006
   },
   {
     "stt": 43,
@@ -383,8 +383,8 @@
     "sizeDN": "100",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 717600,
-    "priceWithVat": 775008
+    "priceBeforeVat": 713000,
+    "priceWithVat": 770040
   },
   {
     "stt": 44,
@@ -392,8 +392,8 @@
     "sizeDN": "65",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 225400,
-    "priceWithVat": 243432
+    "priceBeforeVat": 222800,
+    "priceWithVat": 240624.00000000003
   },
   {
     "stt": 45,
@@ -401,8 +401,8 @@
     "sizeDN": "80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 315400,
-    "priceWithVat": 340632
+    "priceBeforeVat": 312000,
+    "priceWithVat": 336960
   },
   {
     "stt": 46,
@@ -410,8 +410,8 @@
     "sizeDN": "100",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 461100,
-    "priceWithVat": 497988
+    "priceBeforeVat": 456500,
+    "priceWithVat": 493020.00000000006
   },
   {
     "stt": 47,
@@ -419,8 +419,8 @@
     "sizeDN": "20",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 19100,
-    "priceWithVat": 20628
+    "priceBeforeVat": 18900,
+    "priceWithVat": 20412
   },
   {
     "stt": 48,
@@ -428,8 +428,8 @@
     "sizeDN": "25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 33300,
-    "priceWithVat": 35964
+    "priceBeforeVat": 33000,
+    "priceWithVat": 35640
   },
   {
     "stt": 49,
@@ -437,8 +437,8 @@
     "sizeDN": "32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 56400,
-    "priceWithVat": 60912
+    "priceBeforeVat": 55700,
+    "priceWithVat": 60156.00000000001
   },
   {
     "stt": 50,
@@ -446,8 +446,8 @@
     "sizeDN": "40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 67100,
-    "priceWithVat": 72468
+    "priceBeforeVat": 66400,
+    "priceWithVat": 71712
   },
   {
     "stt": 51,
@@ -455,8 +455,8 @@
     "sizeDN": "50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 96000,
-    "priceWithVat": 103680
+    "priceBeforeVat": 95100,
+    "priceWithVat": 102708
   },
   {
     "stt": 52,
@@ -464,8 +464,8 @@
     "sizeDN": "65",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 201300,
-    "priceWithVat": 217404
+    "priceBeforeVat": 198700,
+    "priceWithVat": 214596
   },
   {
     "stt": 53,
@@ -473,8 +473,8 @@
     "sizeDN": "80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 273700,
-    "priceWithVat": 295596
+    "priceBeforeVat": 270300,
+    "priceWithVat": 291924
   },
   {
     "stt": 54,
@@ -482,8 +482,8 @@
     "sizeDN": "100",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 384200,
-    "priceWithVat": 414936
+    "priceBeforeVat": 379600,
+    "priceWithVat": 409968
   },
   {
     "stt": 55,
@@ -491,8 +491,8 @@
     "sizeDN": "25x20",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 22100,
-    "priceWithVat": 23868
+    "priceBeforeVat": 21800,
+    "priceWithVat": 23544
   },
   {
     "stt": 56,
@@ -500,8 +500,8 @@
     "sizeDN": "32x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 50000,
-    "priceWithVat": 54000
+    "priceBeforeVat": 49300,
+    "priceWithVat": 53244
   },
   {
     "stt": 57,
@@ -509,8 +509,8 @@
     "sizeDN": "40x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 60700,
-    "priceWithVat": 65556
+    "priceBeforeVat": 60000,
+    "priceWithVat": 64800.00000000001
   },
   {
     "stt": 58,
@@ -518,8 +518,8 @@
     "sizeDN": "40x32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 63900,
-    "priceWithVat": 69012
+    "priceBeforeVat": 63200,
+    "priceWithVat": 68256
   },
   {
     "stt": 59,
@@ -527,8 +527,8 @@
     "sizeDN": "50x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 90200,
-    "priceWithVat": 97416
+    "priceBeforeVat": 89300,
+    "priceWithVat": 96444
   },
   {
     "stt": 60,
@@ -536,8 +536,8 @@
     "sizeDN": "50x32",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 88000,
-    "priceWithVat": 95040
+    "priceBeforeVat": 87100,
+    "priceWithVat": 94068
   },
   {
     "stt": 61,
@@ -545,8 +545,8 @@
     "sizeDN": "50x40",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 88000,
-    "priceWithVat": 95040
+    "priceBeforeVat": 87100,
+    "priceWithVat": 94068
   },
   {
     "stt": 62,
@@ -554,8 +554,8 @@
     "sizeDN": "65x50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 190100,
-    "priceWithVat": 205308
+    "priceBeforeVat": 187500,
+    "priceWithVat": 202500
   },
   {
     "stt": 63,
@@ -563,8 +563,8 @@
     "sizeDN": "80x50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 254500,
-    "priceWithVat": 274860
+    "priceBeforeVat": 251000,
+    "priceWithVat": 271080
   },
   {
     "stt": 64,
@@ -572,8 +572,8 @@
     "sizeDN": "80x65",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 278600,
-    "priceWithVat": 300888
+    "priceBeforeVat": 275100,
+    "priceWithVat": 297108
   },
   {
     "stt": 65,
@@ -581,8 +581,8 @@
     "sizeDN": "100x65",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 409900,
-    "priceWithVat": 442692
+    "priceBeforeVat": 405200,
+    "priceWithVat": 437616
   },
   {
     "stt": 66,
@@ -590,8 +590,8 @@
     "sizeDN": "100x80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 451500,
-    "priceWithVat": 487620
+    "priceBeforeVat": 446900,
+    "priceWithVat": 482652.00000000006
   },
   {
     "stt": 67,
@@ -599,8 +599,8 @@
     "sizeDN": "25x20",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 18200,
-    "priceWithVat": 19656
+    "priceBeforeVat": 17900,
+    "priceWithVat": 19332
   },
   {
     "stt": 68,
@@ -608,8 +608,8 @@
     "sizeDN": "32x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 37500,
-    "priceWithVat": 40500
+    "priceBeforeVat": 36800,
+    "priceWithVat": 39744
   },
   {
     "stt": 69,
@@ -617,8 +617,8 @@
     "sizeDN": "40x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 49800,
-    "priceWithVat": 53784
+    "priceBeforeVat": 49100,
+    "priceWithVat": 53028
   },
   {
     "stt": 70,
@@ -626,8 +626,8 @@
     "sizeDN": "40x32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 40800,
-    "priceWithVat": 44064
+    "priceBeforeVat": 40100,
+    "priceWithVat": 43308
   },
   {
     "stt": 71,
@@ -635,8 +635,8 @@
     "sizeDN": "50x25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 86400,
-    "priceWithVat": 93312
+    "priceBeforeVat": 85500,
+    "priceWithVat": 92340
   },
   {
     "stt": 72,
@@ -644,8 +644,8 @@
     "sizeDN": "50x32",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 76800,
-    "priceWithVat": 82944
+    "priceBeforeVat": 75800,
+    "priceWithVat": 81864
   },
   {
     "stt": 73,
@@ -653,8 +653,8 @@
     "sizeDN": "50x40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 67200,
-    "priceWithVat": 72576
+    "priceBeforeVat": 66200,
+    "priceWithVat": 71496
   },
   {
     "stt": 74,
@@ -662,8 +662,8 @@
     "sizeDN": "20xPT15",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 66000,
-    "priceWithVat": 71280
+    "priceBeforeVat": 65800,
+    "priceWithVat": 71064
   },
   {
     "stt": 75,
@@ -671,8 +671,8 @@
     "sizeDN": "25xPT15",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 72200,
-    "priceWithVat": 77976
+    "priceBeforeVat": 71900,
+    "priceWithVat": 77652
   },
   {
     "stt": 76,
@@ -680,8 +680,8 @@
     "sizeDN": "25xPT20",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 88100,
-    "priceWithVat": 95148
+    "priceBeforeVat": 87800,
+    "priceWithVat": 94824
   },
   {
     "stt": 77,
@@ -689,8 +689,8 @@
     "sizeDN": "25xPT25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 111400,
-    "priceWithVat": 120312
+    "priceBeforeVat": 111100,
+    "priceWithVat": 119988.00000000001
   },
   {
     "stt": 78,
@@ -698,8 +698,8 @@
     "sizeDN": "32xPT32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 207400,
-    "priceWithVat": 223992
+    "priceBeforeVat": 206800,
+    "priceWithVat": 223344.00000000003
   },
   {
     "stt": 79,
@@ -707,8 +707,8 @@
     "sizeDN": "40xPT40",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 233000,
-    "priceWithVat": 251640
+    "priceBeforeVat": 232200,
+    "priceWithVat": 250776.00000000003
   },
   {
     "stt": 80,
@@ -716,8 +716,8 @@
     "sizeDN": "50xPT50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 382000,
-    "priceWithVat": 412560
+    "priceBeforeVat": 381100,
+    "priceWithVat": 411588
   },
   {
     "stt": 81,
@@ -725,8 +725,8 @@
     "sizeDN": "25xPT25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 174700,
-    "priceWithVat": 188676
+    "priceBeforeVat": 174400,
+    "priceWithVat": 188352
   },
   {
     "stt": 82,
@@ -734,8 +734,8 @@
     "sizeDN": "32xPT32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 269800,
-    "priceWithVat": 291384
+    "priceBeforeVat": 269200,
+    "priceWithVat": 290736
   },
   {
     "stt": 83,
@@ -743,8 +743,8 @@
     "sizeDN": "40xPT40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 294100,
-    "priceWithVat": 317628
+    "priceBeforeVat": 293300,
+    "priceWithVat": 316764
   },
   {
     "stt": 84,
@@ -752,8 +752,8 @@
     "sizeDN": "50xPT50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 466800,
-    "priceWithVat": 504144
+    "priceBeforeVat": 465800,
+    "priceWithVat": 503064.00000000006
   },
   {
     "stt": 85,
@@ -761,8 +761,8 @@
     "sizeDN": "20",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 15900,
-    "priceWithVat": 17172
+    "priceBeforeVat": 15600,
+    "priceWithVat": 16848
   },
   {
     "stt": 86,
@@ -770,8 +770,8 @@
     "sizeDN": "25",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 25300,
-    "priceWithVat": 27324
+    "priceBeforeVat": 25000,
+    "priceWithVat": 27000
   },
   {
     "stt": 87,
@@ -779,8 +779,8 @@
     "sizeDN": "32",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 48400,
-    "priceWithVat": 52272
+    "priceBeforeVat": 47700,
+    "priceWithVat": 51516
   },
   {
     "stt": 88,
@@ -788,8 +788,8 @@
     "sizeDN": "40",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 59100,
-    "priceWithVat": 63828
+    "priceBeforeVat": 58400,
+    "priceWithVat": 63072.00000000001
   },
   {
     "stt": 89,
@@ -797,8 +797,8 @@
     "sizeDN": "50",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 84800,
-    "priceWithVat": 91584
+    "priceBeforeVat": 83900,
+    "priceWithVat": 90612
   },
   {
     "stt": 90,
@@ -806,8 +806,8 @@
     "sizeDN": "65",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 385600,
-    "priceWithVat": 416448
+    "priceBeforeVat": 383000,
+    "priceWithVat": 413640
   },
   {
     "stt": 91,
@@ -815,8 +815,8 @@
     "sizeDN": "80",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 491700,
-    "priceWithVat": 531036
+    "priceBeforeVat": 488300,
+    "priceWithVat": 527364
   },
   {
     "stt": 92,
@@ -824,8 +824,8 @@
     "sizeDN": "100",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 685500,
-    "priceWithVat": 740340
+    "priceBeforeVat": 680900,
+    "priceWithVat": 735372
   },
   {
     "stt": 93,
@@ -833,8 +833,8 @@
     "sizeDN": "20xPT15",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 65300,
-    "priceWithVat": 70524
+    "priceBeforeVat": 65100,
+    "priceWithVat": 70308
   },
   {
     "stt": 94,
@@ -842,8 +842,8 @@
     "sizeDN": "25xPT15",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 72800,
-    "priceWithVat": 78624
+    "priceBeforeVat": 72500,
+    "priceWithVat": 78300
   },
   {
     "stt": 95,
@@ -851,8 +851,8 @@
     "sizeDN": "25xPT20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 83300,
-    "priceWithVat": 89964
+    "priceBeforeVat": 83000,
+    "priceWithVat": 89640
   },
   {
     "stt": 96,
@@ -860,8 +860,8 @@
     "sizeDN": "20xPT15",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 80500,
-    "priceWithVat": 86940
+    "priceBeforeVat": 80200,
+    "priceWithVat": 86616
   },
   {
     "stt": 97,
@@ -869,8 +869,8 @@
     "sizeDN": "25xPT15",
     "spec": "SCH80",
     "unit": "Cái",
-    "priceBeforeVat": 97800,
-    "priceWithVat": 105624
+    "priceBeforeVat": 97500,
+    "priceWithVat": 105300
   },
   {
     "stt": 98,
@@ -878,8 +878,8 @@
     "sizeDN": "25xPT20",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 97800,
-    "priceWithVat": 105624
+    "priceBeforeVat": 97500,
+    "priceWithVat": 105300
   },
   {
     "stt": 99,
@@ -887,7 +887,7 @@
     "sizeDN": "25xPT25",
     "spec": "SCH40",
     "unit": "Cái",
-    "priceBeforeVat": 130600,
-    "priceWithVat": 141048
+    "priceBeforeVat": 130300,
+    "priceWithVat": 140724
   }
 ]

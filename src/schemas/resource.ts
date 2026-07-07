@@ -79,7 +79,10 @@ export const MachineHourResourceSchema = z.object({
   normalUtilizationFactor: z.number().min(0).max(1),
   yieldRate: YieldRate,
   packagingCostPerKg: z.number().int().nonnegative(),
-  avgProductivityKgPerMachineHour: z.number().positive(),
+  // ADR-011: optional = GHI ĐÈ thủ công (đổi chính sách công suất, cần ADR nếu
+  // đổi). undefined (mặc định) = tự tính bottom-up từ FittingProduct[] qua
+  // computeMixAvgProductivityKgPerMachineHour() (src/engine/fitting.ts).
+  avgProductivityKgPerMachineHour: z.number().positive().optional(),
   depreciationYears: z.number().int().positive(), // khấu hao MÁY ép — tách khỏi MoldAsset.usefulLifeYears (khấu hao KHUÔN, ADR-007)
   annualMoldMaintenance: z.number().int().nonnegative(),
   peoplePerShift: z.number().int().nonnegative(),

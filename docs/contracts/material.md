@@ -105,8 +105,11 @@ line — không tách theo material.
 1. ✅ % markup VF Corzan: "như đề xuất" = ống 25% / phụ kiện 40% (field riêng
    theo Material).
 2. ✅ `markupTcg` 30% + `listPriceMargin` 30% dùng CHUNG (nằm lại MarkupChain).
-3. ⚠ Thuế NK 0% theo AIFTA (tra cứu NĐ 122/2022) — CÒN PHẢI xác nhận với
-   forwarder đúng mã HS con Corzan 3710 + C/O form AI khi nhập lô đầu.
+3. ✅ Thuế NK 0% — user XÁC NHẬN 2026-07-07 (AIFTA, C/O form AI, NĐ 122/2022).
+   Vận hành: mỗi lô nhập vẫn cần C/O form AI hợp lệ để hưởng 0%.
 4. ✅ Danh mục SKU Corzan: cùng tên/kích cỡ/thông số BlazeMaster; ỐNG đơn trọng
    × 1,1 theo size; PHỤ KIỆN giống hệt (chung khuôn) — rule sinh chương trình,
    xem `tests/fixtures/corzan.json._meta`. Tồn kho ban đầu = 0.
+5. ✅ Nguồn chân lý Corzan: user xác nhận 2026-07-07 KHÔNG cần Excel riêng —
+   logic BlazeMaster (BUSINESS_MODEL.md) áp nguyên, engine forward + rule
+   corzan.json là chuẩn; đối chiếu độc lập bằng số tính tay ở corzan.test.ts.

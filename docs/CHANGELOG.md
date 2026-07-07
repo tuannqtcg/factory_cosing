@@ -9,8 +9,9 @@ CostPool vào từng Material, ScenarioInput.materials[], output theo (line,
 materialId), plan theo materialId; migration giữ parity BM v3.7 tuyệt đối
 286/286) → M13.2 (danh mục Corzan: giá thật 3,47/3,97 USD/kg, thuế 0% AIFTA,
 SKU sinh theo rule ống ×1,1/phụ kiện giống hệt; 11 test mới = số tính tay độc
-lập + test cách ly BM; 297/297 xanh). Còn treo: xác nhận thuế NK với forwarder;
-đối chiếu lại khi có Excel/bảng giá Corzan chính thức.
+lập + test cách ly BM; 297/297 xanh). Chốt sổ cùng ngày (user xác nhận): thuế
+NK 0% chính thức; KHÔNG cần Excel Corzan riêng — logic BlazeMaster áp nguyên,
+engine forward + rule corzan.json là nguồn chân lý. Không còn việc treo.
 
 ## v1.25 (2026-07-07) — ADR-011: năng suất mix phụ kiện tính bottom-up (nguồn v3.7)
 User upload `BlazeMaster_Model_v3_7.xlsx`, yêu cầu rà soát logic thay đổi so

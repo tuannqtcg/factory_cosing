@@ -83,14 +83,15 @@
   ScenarioInput có `materials[]` (bỏ `inventory.pipe|fitting`), ScenarioOutput
   theo (line, materialId), thuế NK + markup VF chuyển từ CostPool vào
   Material. Corzan: giá thật ống 3,47 / phụ kiện 3,97 USD/kg (Ấn Độ, thuế 0%
-  AIFTA — ⚠ còn phải xác nhận forwarder mã HS con), markup 25%/40% (field
+  AIFTA — user XÁC NHẬN 0%), markup 25%/40% (field
   riêng), SKU = BlazeMaster cùng tên/size (ống đơn trọng ×1,1, phụ kiện giống
   hệt, CHUNG khuôn) — rule sinh chương trình ở `tests/fixtures/corzan.json` +
   `buildCorzanScenarioInput()`. Verify: 297/297 test xanh = parity BM v3.7
-  nguyên vẹn + 11 test Corzan (số tính tay độc lập + test cách ly). Corzan
-  KHÔNG có trong Excel — chờ bảng giá/Excel Corzan chính thức để đối chiếu
-  lại. Chi tiết: `docs/contracts/material.md` (có mục "Bổ sung khi code Pha 3
-  M13") + `docs/sessions/SESSION_2026-07-07.md`.)
+  nguyên vẹn + 11 test Corzan (số tính tay độc lập + test cách ly). User xác
+  nhận KHÔNG cần Excel Corzan riêng — logic BlazeMaster áp nguyên, engine
+  forward + rule corzan.json LÀ nguồn chân lý. KHÔNG còn việc treo cho
+  ADR-012. Chi tiết: `docs/contracts/material.md` (có mục "Bổ sung khi code
+  Pha 3 M13") + `docs/sessions/SESSION_2026-07-07.md`.)
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).
@@ -103,8 +104,10 @@ NGHIỆP VỤ LÕI (không được phát minh khác đi):
 3. Khóa bảng giá (ADR-004): pricingPrice = |repl/baseline−1| > ngưỡng% ? repl : baseline.
    Trong ngưỡng bảng giá đứng yên; vượt ngưỡng → chuyển + nhắc chốt lại baseline.
    Ngoại tệ mua NVL luôn theo replacement. Cảnh báo staleness so đợt nhập gần nhất.
-4. Thang giá 5 bậc (ống, đ/kg): sàn biến phí 100.663 / hòa vốn tiền mặt 104.298 /
-   giá thành đầy đủ 106.205 / hòa vốn toàn DN 110.604 / giá mục tiêu 132.756.
+4. Thang giá 5 bậc (ống BlazeMaster, đ/kg, sau ADR-011 v3.7): sàn biến phí
+   100.663,42 / hòa vốn tiền mặt 104.369,04 / giá thành đầy đủ 106.318,88 /
+   hòa vốn toàn DN 111.070,84 / giá mục tiêu 132.898,60. Từ ADR-012 thang giá
+   tính theo TỪNG (dòng SX, nguyên liệu) — số trên là cặp (pipe, bm-orange-pipe).
    Thẩm quyền giảm giá phân tầng theo bậc; bậc 1 không ai được thủng.
 5. Số vàng để kiểm tra (sau ADR-011, nguồn v3.7): MHR = 1.308.217,93 đ/giờ máy
    (1 ca × 60%); BE ống đầy đủ = 106.318,88; BE@3,50 = 121.126,49; BE@2,80 =

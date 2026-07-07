@@ -19,8 +19,8 @@ Ba quyết định phạm vi đã chốt với user (2026-07-07, qua AskUserQues
    chương 39 (HS 3904) nhập Ấn Độ có C/O form AI theo AIFTA (NĐ 122/2022/NĐ-CP,
    hiệu lực 2022-2027) → **thuế NK 0%**; không C/O thì MFN ~5-10% tùy mã con.
    BlazeMaster giữ 6% (kịch bản EU). → `importTaxRate` chuyển từ số chung sang
-   thuộc tính của Material. GHI CHÚ: 0% dựa trên nguồn logistics công khai, cần
-   forwarder xác nhận đúng mã HS con của Corzan 3710 khi nhập lô đầu.
+   thuộc tính của Material. **User XÁC NHẬN 0% (2026-07-07)** — vận hành: mỗi
+   lô nhập vẫn cần C/O form AI hợp lệ để hưởng 0%.
 2. **Markup Corzan RIÊNG** — không dùng chung 25%/40% của BlazeMaster. → markup
    VF chuyển từ cặp số chung (`markupVfPipe`/`markupVfFitting`) sang thuộc tính
    của Material. Giá trị % cho Corzan CHƯA có — user sẽ cung cấp; tạm dùng
@@ -65,8 +65,11 @@ Ba quyết định phạm vi đã chốt với user (2026-07-07, qua AskUserQues
 - Fixture vàng hiện tại KHÔNG đổi giá trị (BlazeMaster giữ nguyên số v3.7);
   cần fixture MỚI cho Corzan khi có danh mục SKU thật (đơn trọng, chu kỳ,
   cavity, khuôn — ADR-007 áp dụng cho khuôn Corzan y hệt).
-- Còn thiếu từ user trước khi nghiệm thu Pha 3/4: (a) % markup VF cho Corzan
-  ống + phụ kiện; (b) danh mục SKU Corzan + khuôn; (c) xác nhận thuế NK 0% với
-  forwarder (mã HS con); (d) tồn kho Corzan ban đầu (hiện 0).
-- Excel v3.7 KHÔNG có Corzan — nguồn chân lý cho Corzan sẽ là bản Excel mới
-  hoặc dữ liệu user cung cấp trực tiếp (ghi rõ nguồn vào fixture như ADR-007/008).
+- ĐÃ CHỐT đủ từ user (2026-07-07, cùng ngày): (a) markup VF Corzan = 25%/40%
+  ("như đề xuất", field riêng theo Material); (b) danh mục SKU Corzan = rule
+  từ BlazeMaster (ống đơn trọng ×1,1, phụ kiện giống hệt, chung khuôn); (c)
+  thuế NK 0% XÁC NHẬN; (d) tồn kho Corzan ban đầu = 0.
+- Excel v3.7 KHÔNG có Corzan và user xác nhận KHÔNG cần Excel riêng — logic
+  BlazeMaster (BUSINESS_MODEL.md) áp nguyên cho Corzan; nguồn chân lý = engine
+  forward + rule `tests/fixtures/corzan.json`; đối chiếu độc lập bằng số tính
+  tay ở `tests/parity/corzan.test.ts` (pattern M9).

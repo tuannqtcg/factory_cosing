@@ -1,8 +1,9 @@
 # ADR-012: Nguyên liệu là entity độc lập, gán theo sản phẩm (multi-material — Corzan)
 
-Ngày: 2026-07-07 | Trạng thái: CHẤP NHẬN (kiến trúc; schema chi tiết chờ ĐÓNG BĂNG
-ở `docs/contracts/material.md`) | Nguồn: yêu cầu user 2026-07-07 + duyệt layout
-prototype `prototype/multi-material-catalog.html` cùng ngày.
+Ngày: 2026-07-07 | Trạng thái: CHẤP NHẬN — schema ĐÃ ĐÓNG BĂNG
+(`docs/contracts/material.md`) + ĐÃ CODE XONG Pha 3 M13 cùng ngày (297/297
+test xanh) | Nguồn: yêu cầu user 2026-07-07 + duyệt layout prototype
+`prototype/multi-material-catalog.html` cùng ngày.
 
 ## Bối cảnh
 

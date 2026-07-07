@@ -150,7 +150,13 @@ export function buildBaselineScenarioInput(): unknown {
         normalUtilizationFactor: fittingFixture.params.normalUtilizationFactor,
         yieldRate: fittingFixture.params.yieldRate,
         packagingCostPerKg: fittingFixture.params.packagingCostPerKg,
-        avgProductivityKgPerMachineHour: fittingFixture.params.avgProductivityKgPerMachineHour,
+        // ADR-011: fitting.json không còn avgProductivityKgPerMachineHour (mặc
+        // định bottom-up) — BỎ HẲN key thay vì ghi undefined: Zod optional chấp
+        // nhận cả 2, nhưng Firestore từ chối document chứa undefined (phát hiện
+        // ở test emulator M12.4 khi verify merge 2026-07-07).
+        ...(fittingFixture.params.avgProductivityKgPerMachineHour !== undefined
+          ? { avgProductivityKgPerMachineHour: fittingFixture.params.avgProductivityKgPerMachineHour }
+          : {}),
         depreciationYears: fittingFixture.params.depreciationYears,
         annualMoldMaintenance: fittingFixture.params.annualMoldMaintenance,
         peoplePerShift: fittingFixture.params.peoplePerShift,

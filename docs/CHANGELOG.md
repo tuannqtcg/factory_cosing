@@ -1,5 +1,18 @@
 # CHANGELOG — Costing App Kit
 
+## v1.27 (2026-07-07) — Merge ADR-011 + ADR-012 vào nhánh mặc định + chốt sổ tri thức cho phiên mới
+Merge `claude/material-product-mapping-0ea68t` (7 commit: ADR-011 v3.7 → brief/
+prototype → ADR-012 + material.md → M13.1 → M13.2 → chốt sổ → cập nhật tri
+thức) vào nhánh mặc định `claude/project-knowledge-setup-2au4hr` (merge commit
+`a4badf1`, --no-ff). Verify TRÊN nhánh mặc định SAU merge: `npm test` 297/297,
+typecheck (root + functions) sạch, `npm run build` OK, `npm run test:rules`
+33/33, `npm run test:functions` 2/2 — phát hiện + vá 1 bug thật nhờ test
+emulator: fixture builder ghi `avgProductivityKgPerMachineHour: undefined`
+(field đã bỏ khỏi fitting.json ở ADR-011) mà Firestore từ chối document chứa
+undefined — sửa bỏ hẳn key khi không có (tests/helpers/scenario-fixture.ts).
+Con trỏ việc tiếp theo cho phiên mới: **M12.4b** (`docs/M12_PLAN.md`, đã kèm
+cảnh báo ⚠ API engine đổi sau M13).
+
 ## v1.26 (2026-07-07) — ADR-012: multi-material (Corzan) — Pha 0→3 trọn vòng trong ngày
 Yêu cầu user: quản lý nguyên liệu theo sản phẩm (BlazeMaster Orange vs Corzan
 3710 nhập Ấn Độ). Đi đủ 4 pha có cổng: brief + prototype (user DUYỆT layout) →

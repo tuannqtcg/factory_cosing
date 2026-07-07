@@ -14,10 +14,12 @@
   2 test tích hợp thật qua `npm run test:functions`; ADR-010 tách M12.4b/c
   hoãn vì Plan_SX chưa orchestrate + T3 thiếu trường chọn SKU). Tiếp theo:
   **M12.4b** (Cloud Function `onPlanInputWrite` — ghi `outputs/plan`).
-  `npm test` 286/286 xanh, `npm run build` chạy được. **PR #2 (M12.3-M12.4,
-  do hạ tầng phiên tự tạo) đã MERGE vào `claude/project-knowledge-setup-2au4hr`
-  (2026-07-06, merge commit `fc6d5fc`)** — đây là nhánh mặc định thật của repo
-  (repo KHÔNG có `main`). Mọi commit push thẳng vào branch làm việc do hạ tầng
+  `npm test` 297/297 xanh (286 + 11 test Corzan M13), `npm run build` chạy
+  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
+  (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
+  2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây
+  là nhánh mặc định thật của repo (repo KHÔNG có `main`). Mọi commit push thẳng vào branch làm việc do hạ tầng
   phiên chỉ định lúc bắt đầu (tên đổi theo từng phiên — xem branch Git hiện
   tại, KHÔNG cố định 1 tên qua nhiều phiên); quy trình mặc định vẫn KHÔNG tự
   tạo PR (yêu cầu user 2026-07-06), nhưng nếu hạ tầng tự tạo PR và user yêu

@@ -1,5 +1,9 @@
 // Nguồn nghiệp vụ: docs/contracts/product.md — ADR-001, ADR-007, ADR-008.
 // ĐÓNG BĂNG cùng docs/contracts/*.md — sửa cấu trúc field phải có ADR mới.
+// Sửa 2026-07-07 (ADR-012, contract material.md đóng băng cùng ngày): thêm
+// `materialId` bắt buộc — mỗi SP trỏ về đúng 1 Material (compound). Validate
+// materialId tồn tại ở tầng parse ScenarioInput (không refine tại đây vì
+// Product không thấy danh sách materials).
 import { z } from 'zod';
 import type { MoldAsset } from './resource.js';
 
@@ -10,6 +14,7 @@ export const PipeProductSchema = z.object({
   odMm: z.number().positive(),
   minWallThicknessMm: z.number().positive(),
   unitWeightKgPerM: z.number().positive(),
+  materialId: z.string(), // ADR-012
 });
 export type PipeProduct = z.infer<typeof PipeProductSchema>;
 
@@ -32,6 +37,7 @@ export const FittingProductSchema = z.object({
   cavity: z.number().int().positive(),
   unitWeightKg: z.number().positive(),
   metalInsert: MetalInsertBomSchema.optional(),
+  materialId: z.string(), // ADR-012
 });
 export type FittingProduct = z.infer<typeof FittingProductSchema>;
 

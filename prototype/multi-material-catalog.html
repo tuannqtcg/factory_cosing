@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototype — Quản lý nguyên liệu theo sản phẩm (Pha 1, mock)</title>
+<style>
+  /* Design tokens theo prototype đã duyệt (blazemaster-costing-app.dc.html):
+     nền #ebe6d4, sidebar #1a1a1a, accent #a8003b, đỏ cảnh báo #DC2626, xanh OK #16A34A */
+  * { box-sizing: border-box; margin: 0; }
+  body { background:#ebe6d4; font-family:Roboto,'Helvetica Neue',Arial,sans-serif; color:#1a1a1a; }
+  .num { font-variant-numeric: tabular-nums; text-align: right; }
+  .unit { color:#8a8a8a; font-size:10px; margin-left:3px; }
+  table { border-collapse: collapse; width:100%; background:#fff; }
+  th { font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#8a8a8a; font-weight:700;
+       padding:8px 10px; border-bottom:2px solid #1a1a1a; text-align:left; background:#faf8f2; }
+  th.num { text-align:right; }
+  td { font-size:12px; padding:8px 10px; border-bottom:1px solid #eee; vertical-align:middle; }
+  .badge { display:inline-block; font-size:9px; font-weight:700; letter-spacing:.06em; padding:2px 7px; border-radius:2px; }
+  .badge.lock   { background:#e8f5e9; color:#16A34A; border:1px solid #16A34A44; }
+  .badge.unlock { background:#fdecea; color:#DC2626; border:1px solid #DC262644; }
+  .badge.mock   { background:#fff8e1; color:#8a6d00; border:1px solid #d4b10044; }
+  .card { background:#fff; border:1px solid #d9d4c2; border-radius:8px; overflow:hidden; }
+  .card h3 { font-size:11px; letter-spacing:.1em; text-transform:uppercase; padding:10px 14px;
+             border-bottom:1px solid #eee; background:#faf8f2; color:#555; }
+  button { font-family:inherit; cursor:pointer; border-radius:4px; border:1px solid #1a1a1a;
+           background:#1a1a1a; color:#fff; font-size:11px; font-weight:700; padding:7px 14px; }
+  button.ghost { background:#fff; color:#1a1a1a; }
+  button:disabled { opacity:.4; cursor:default; }
+  input, select { font-family:inherit; font-size:12px; padding:6px 8px; border:1px solid #c9c4b2;
+                  border-radius:4px; background:#fff; }
+  input:focus, select:focus { outline:2px solid #a8003b33; border-color:#a8003b; }
+  label { font-size:10px; font-weight:700; color:#555; display:block; margin-bottom:3px; }
+  .navitem { padding:9px 16px; cursor:pointer; display:flex; align-items:center; gap:8px; border-left:3px solid transparent; }
+  .navitem.active { background:#2a2a2a; border-left-color:#a8003b; }
+  .navitem span { color:#b5b5b5; font-size:12px; }
+  .navitem.active span { color:#fff; font-weight:700; }
+  .skeleton { background:linear-gradient(90deg,#eee 25%,#f7f7f7 50%,#eee 75%); background-size:200% 100%;
+              animation: sk 1.1s infinite; border-radius:4px; height:14px; }
+  @keyframes sk { from { background-position:200% 0 } to { background-position:-200% 0 } }
+  @media (max-width: 900px) { .layout { flex-direction:column } aside { width:100%!important; height:auto!important; position:static!important } .grid2 { grid-template-columns:1fr!important } }
+</style>
+</head>
+<body>
+<div class="layout" style="display:flex;min-height:100vh">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside style="width:216px;background:#1a1a1a;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;flex-shrink:0">
+    <div style="padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="color:#a8003b;font-size:9px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:4px">BlazeMaster CPVC</div>
+      <div style="color:#fff;font-size:14px;font-weight:700;letter-spacing:-.2px">Costing Engine</div>
+      <div style="color:#555;font-size:10px;margin-top:2px">PROTOTYPE Pha 1 · multi-material</div>
+    </div>
+    <nav style="flex:1;padding-top:8px">
+      <div style="padding:10px 16px 4px;font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#555;font-weight:700">ADMIN · NGUYÊN LIỆU</div>
+      <div class="navitem" id="nav-materials" onclick="setView('materials')"><span>Danh mục nguyên liệu</span></div>
+      <div class="navitem" id="nav-mapping" onclick="setView('mapping')"><span>Gán sản phẩm ↔ nguyên liệu</span></div>
+    </nav>
+    <div style="padding:12px 16px;border-top:1px solid rgba(255,255,255,.08)">
+      <div style="font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:#555;font-weight:700;margin-bottom:6px">Trạng thái demo</div>
+      <select id="demoState" onchange="render()" style="width:100%;background:#2a2a2a;color:#ddd;border-color:#444">
+        <option value="data">Có dữ liệu</option>
+        <option value="loading">Đang tải (giả)</option>
+        <option value="empty">Danh mục rỗng</option>
+        <option value="error">Lỗi tải (giả)</option>
+      </select>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <main style="flex:1;padding:22px 26px;max-width:1200px">
+    <div style="background:#fff8e1;border:1px solid #d4b10066;border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:11px;line-height:1.6">
+      <b>PROTOTYPE — MOCK, không backend, không lưu.</b> Số BlazeMaster đúng fixture v3.7 (ADR-011).
+      Giá Corzan THẬT (user 2026-07-07): ống 3,47 / phụ kiện 3,97 USD/kg, nhập Ấn Độ — thuế NK 0% theo AIFTA
+      (user XÁC NHẬN 2026-07-07 — C/O form AI, NĐ 122/2022/NĐ-CP; mỗi lô cần C/O hợp lệ). Danh mục SKU Corzan
+      (đơn trọng/chu kỳ) vẫn <span class="badge mock">GIẢ</span>. Công thức what-if nhúng thuần để demo —
+      <b>sẽ thay bằng engine</b> (BUSINESS_MODEL §1a/§2.2/§3.4).
+    </div>
+    <div id="app"></div>
+  </main>
+</div>
+
+<script>
+'use strict';
+// ══════════════════════════════ MOCK DATA ══════════════════════════════
+// Tham số chung — đúng tests/fixtures/assumptions.json
+// LƯU Ý: thuế NK KHÔNG còn là số chung — chuyển vào từng nguyên liệu (m.importTax)
+const FX = { usdVnd: 26500, logistics: 0.01, vat: 0.08,
+             markupVfPipe: 0.25, markupVfFitting: 0.40, markupTcg: 0.30, listMargin: 0.30 };
+// Số vàng v3.7 (ADR-011) — dùng chung line, KHÔNG đổi theo nguyên liệu (xem brief: ngoài phạm vi)
+const PIPE_UNIT_PROCESSING = 9357.048351433015; // đ/kg (Ống!B46)
+const PIPE_PACKAGING = 1500, PIPE_YIELD = 0.9;
+const MHR = 1308217.9298677056; // đ/giờ máy (Phụ kiện!B60)
+const FIT_PACKAGING = 2000, FIT_YIELD = 0.9;
+
+// Danh mục nguyên liệu — giá user cung cấp 2026-07-07: Corzan ống 3,47 / phụ kiện
+// 3,97 USD/kg, nhập Ấn Độ. Thuế NK RIÊNG từng nguyên liệu: BlazeMaster 6% (kịch
+// bản EU), Corzan 0% theo AIFTA (C/O form AI, NĐ 122/2022/NĐ-CP) — cần C/O hợp lệ.
+let materials = [
+  { id:'bm-orange-pipe', name:'BlazeMaster Orange (ống)', code:'BM-O-P', currency:'USD', origin:'EU',
+    importTax:0.06, replacement:3.03, baseline:3.03, thresholdPct:0.03, lots:[{tons:10, price:3.03}], mock:false },
+  { id:'bm-fitting', name:'BlazeMaster compound (phụ kiện)', code:'BM-F', currency:'USD', origin:'EU',
+    importTax:0.06, replacement:3.85, baseline:3.85, thresholdPct:0.03, lots:[{tons:10, price:3.85}], mock:false },
+  { id:'corzan-pipe', name:'Corzan 3710 (ống)', code:'CZ-3710-P', currency:'USD', origin:'Ấn Độ (AIFTA)',
+    importTax:0, replacement:3.47, baseline:3.47, thresholdPct:0.03, lots:[], mock:false },
+  { id:'corzan-fitting', name:'Corzan compound (phụ kiện)', code:'CZ-3710-F', currency:'USD', origin:'Ấn Độ (AIFTA)',
+    importTax:0, replacement:3.97, baseline:3.97, thresholdPct:0.03, lots:[], mock:false },
+];
+
+// Nhóm sản phẩm (rút gọn để duyệt UI — bản thật là 8 DN + 91 SKU + SKU Corzan;
+// đơn trọng/chu kỳ SKU Corzan vẫn là SỐ GIẢ chờ danh mục thật)
+let productGroups = [
+  { id:'p1', kind:'pipe',    label:'Ống CPVC BlazeMaster DN20–DN100 (SDR 13.5)', rep:'DN50 · 1,26 kg/m', unitWeight:1.26, materialId:'bm-orange-pipe', mock:false },
+  { id:'p2', kind:'fitting', label:'Phụ kiện BlazeMaster (91 SKU)', rep:'Tê đều 20 · 0,055 kg · 0,0027 giờ máy', unitWeight:0.055, machineHours:0.00270061728395062, materialId:'bm-fitting', mock:false },
+  { id:'p3', kind:'pipe',    label:'Ống Corzan DN50 SCH80', rep:'DN50 · 1,45 kg/m', unitWeight:1.45, materialId:'corzan-pipe', mock:true },
+  { id:'p4', kind:'fitting', label:'Phụ kiện Corzan (Cút 90º 50...)', rep:'Cút 90º 50 · 0,21 kg · 0,0104 giờ máy', unitWeight:0.21, machineHours:0.0104, materialId:'corzan-fitting', mock:true },
+];
+
+// ══════════════════════════════ CÔNG THỨC (demo — sẽ thay bằng engine) ══════════════════════════════
+const vn = (x, d=0) => x==null ? '—' : x.toLocaleString('vi-VN', {minimumFractionDigits:d, maximumFractionDigits:d});
+function priceLock(m) { // ADR-004, chạy RIÊNG từng nguyên liệu
+  const dev = m.replacement / m.baseline - 1;
+  const unlocked = Math.abs(dev) > m.thresholdPct;
+  return { dev, unlocked, pricingUsd: unlocked ? m.replacement : m.baseline };
+}
+function weightedAvg(m) { // ADR-002
+  const t = m.lots.reduce((s,l)=>s+l.tons,0);
+  return t===0 ? m.replacement : m.lots.reduce((s,l)=>s+l.tons*l.price,0)/t;
+}
+function inventoryKg(m){ return m.lots.reduce((s,l)=>s+l.tons,0)*1000; }
+function holdingGainLoss(m){ // §5 BUSINESS_MODEL — thuế NK riêng từng nguyên liệu
+  return (m.replacement - weightedAvg(m)) * inventoryKg(m) * (1+m.importTax+FX.logistics) * FX.usdVnd;
+}
+function landed(usd, m){ return usd*(1+m.importTax+FX.logistics)*FX.usdVnd; }
+function groupPrices(g){ // giá thành + niêm yết của nhóm — CÙNG công thức Excel, chỉ đổi GIÁ NGUYÊN LIỆU theo gán
+  const m = materials.find(x=>x.id===g.materialId);
+  if(!m) return null;
+  const L = landed(priceLock(m).pricingUsd, m);
+  if(g.kind==='pipe'){
+    const fullKg = L/PIPE_YIELD + PIPE_PACKAGING + PIPE_UNIT_PROCESSING;
+    const be = fullKg*g.unitWeight, vf = be*(1+FX.markupVfPipe), tcg = vf*(1+FX.markupTcg);
+    return { be, list: Math.ceil(tcg/(1-FX.listMargin)/100)*100 };
+  }
+  const mat = g.unitWeight*(L/FIT_YIELD + FIT_PACKAGING);
+  const be = mat + g.machineHours*MHR, vf = be*(1+FX.markupVfFitting), tcg = vf*(1+FX.markupTcg);
+  return { be, list: Math.ceil(tcg/(1-FX.listMargin)/100)*100 };
+}
+
+// ══════════════════════════════ VIEWS ══════════════════════════════
+let view = 'materials';
+function setView(v){ view=v; render(); }
+
+function renderMaterials(){
+  const rows = materials.map(m=>{
+    const pl = priceLock(m), avg = weightedAvg(m), hg = holdingGainLoss(m);
+    const usedBy = productGroups.filter(g=>g.materialId===m.id).length;
+    return `<tr>
+      <td><b>${m.name}</b> ${m.mock?'<span class="badge mock">GIẢ</span>':''}<div style="font-size:10px;color:#8a8a8a">${m.code} · ${m.currency} · dùng bởi ${usedBy} nhóm SP</div></td>
+      <td>${m.origin}<div style="font-size:9px;color:#8a8a8a">thuế NK ${vn(m.importTax*100,0)}% + phí HQ 1%</div></td>
+      <td class="num">${vn(m.replacement,2)}<span class="unit">USD/kg</span></td>
+      <td class="num">${vn(m.baseline,2)}<span class="unit">USD/kg</span></td>
+      <td class="num">${vn(pl.dev*100,1)}<span class="unit">%</span></td>
+      <td>${pl.unlocked
+          ? `<span class="badge unlock">MỞ KHÓA</span><div style="font-size:9px;color:#DC2626;margin-top:2px">chốt lại baseline = ${vn(m.replacement,2)}</div>`
+          : `<span class="badge lock">KHÓA</span><div style="font-size:9px;color:#8a8a8a;margin-top:2px">trong ngưỡng ${vn(m.thresholdPct*100,0)}%</div>`}</td>
+      <td class="num">${vn(inventoryKg(m))}<span class="unit">kg</span><div style="font-size:9px;color:#8a8a8a">BQ ${vn(avg,2)} USD/kg</div></td>
+      <td class="num" style="color:${hg<0?'#DC2626':hg>0?'#16A34A':'#1a1a1a'}">${vn(hg)}<span class="unit">đ</span>
+        ${hg<0?'<div style="font-size:9px;color:#DC2626">⚠ dự phòng VAS 02</div>':''}</td>
+      <td><input type="number" step="0.01" min="0.5" value="${m.replacement}" style="width:76px"
+           onchange="updRepl('${m.id}', this.value)"><div style="font-size:9px;color:#8a8a8a;margin-top:2px">what-if giá tái tạo</div></td>
+    </tr>`;
+  }).join('');
+  return `
+  <h2 style="font-size:17px;margin-bottom:4px">Danh mục nguyên liệu</h2>
+  <p style="font-size:11px;color:#555;margin-bottom:14px">Mỗi nguyên liệu là 1 thực thể độc lập: giá tái tạo + khóa bảng giá (ADR-004) + tồn kho/bình quân gia quyền (ADR-002) chạy RIÊNG. Đổi ô "what-if" để thấy khóa giá cách ly từng nguyên liệu.</p>
+  <div class="card"><h3>Nguyên liệu compound (${materials.length})</h3>
+  <div style="overflow-x:auto"><table>
+    <tr><th>Nguyên liệu</th><th>Xuất xứ · thuế NK</th><th class="num">Giá tái tạo</th><th class="num">Baseline</th><th class="num">Lệch</th><th>Khóa bảng giá</th><th class="num">Tồn kho</th><th class="num">Lãi/(lỗ) giữ kho</th><th>What-if</th></tr>
+    ${rows}
+  </table></div></div>
+
+  <div class="card" style="margin-top:16px"><h3>Thêm nguyên liệu mới (mock — không lưu)</h3>
+    <div class="grid2" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:14px">
+      <div><label>Tên nguyên liệu</label><input id="nm-name" placeholder="vd: Corzan 4910" style="width:100%"></div>
+      <div><label>Mã</label><input id="nm-code" placeholder="CZ-4910" style="width:100%"></div>
+      <div><label>Giá tái tạo (USD/kg)</label><input id="nm-price" type="number" step="0.01" placeholder="3.60" style="width:100%"></div>
+      <div><label>Thuế NK (%)</label><input id="nm-tax" type="number" step="1" min="0" max="30" placeholder="0" style="width:100%"></div>
+      <div style="align-self:end"><button onclick="addMaterial()">+ Thêm nguyên liệu</button></div>
+    </div>
+    <div style="padding:0 14px 12px;font-size:10px;color:#8a8a8a">Baseline khởi tạo = giá tái tạo (lần chốt đầu, lệch 0% → KHÓA), ngưỡng 3%, tồn kho 0 — đúng quy ước ADR-004.</div>
+  </div>`;
+}
+
+function renderMapping(){
+  const opts = id => materials.map(m=>`<option value="${m.id}" ${m.id===id?'selected':''}>${m.name}</option>`).join('');
+  const rows = productGroups.map(g=>{
+    const p = groupPrices(g); const m = materials.find(x=>x.id===g.materialId); const pl = m?priceLock(m):null;
+    return `<tr>
+      <td><b>${g.label}</b> ${g.mock?'<span class="badge mock">GIẢ</span>':''}<div style="font-size:10px;color:#8a8a8a">${g.kind==='pipe'?'Ống (đ/kg → đ/m)':'Phụ kiện (MHR)'} · SKU đại diện: ${g.rep}</div></td>
+      <td><select onchange="remap('${g.id}', this.value)" style="min-width:190px">${opts(g.materialId)}</select>
+        ${pl ? `<div style="font-size:9px;margin-top:3px">${pl.unlocked?'<span class="badge unlock">MỞ KHÓA</span>':'<span class="badge lock">KHÓA</span>'}<span style="color:#8a8a8a"> giá định giá ${vn(pl.pricingUsd,2)} USD/kg</span></div>`:''}</td>
+      <td class="num">${vn(p.be)}<span class="unit">đ/${g.kind==='pipe'?'m':'cái'}</span></td>
+      <td class="num"><b>${vn(p.list)}</b><span class="unit">đ/${g.kind==='pipe'?'m':'cái'}</span></td>
+    </tr>`;
+  }).join('');
+  return `
+  <h2 style="font-size:17px;margin-bottom:4px">Gán sản phẩm ↔ nguyên liệu</h2>
+  <p style="font-size:11px;color:#555;margin-bottom:14px">Mỗi nhóm sản phẩm trỏ về đúng 1 nguyên liệu. Đổi gán hoặc đổi giá ở tab Danh mục → giá thành/niêm yết CHỈ của nhóm đó đổi theo (baseline khóa giá của nguyên liệu khác không bị ảnh hưởng). Giá hòa vốn/niêm yết tính bằng công thức Excel thật (v3.7) — <b>sẽ thay bằng engine</b>.</p>
+  <div class="card"><h3>Nhóm sản phẩm (${productGroups.length} — rút gọn để duyệt layout; bản thật là 8 DN + 91 SKU + SKU Corzan)</h3>
+  <div style="overflow-x:auto"><table>
+    <tr><th>Nhóm sản phẩm</th><th>Nguyên liệu</th><th class="num">Hòa vốn (SKU đại diện)</th><th class="num">Niêm yết trước VAT</th></tr>
+    ${rows}
+  </table></div></div>
+  <div style="font-size:10px;color:#8a8a8a;margin-top:10px;line-height:1.7">
+    Kiểm chứng nhanh: Ống BlazeMaster DN50 với giá khóa 3,03 → hòa vốn ${vn(106318.88168476634*1.26)} đ/m, niêm yết 311.000 đ/m — khớp fixture v3.7.<br>
+    Đã chốt với user 2026-07-07: Corzan chạy CHUNG line (MHR/chi phí gia công dùng chung); thuế NK theo TỪNG nguyên liệu (Corzan 0% AIFTA);
+    markup Corzan RIÊNG — prototype tạm dùng markup BlazeMaster (25%/40%) cho tới khi user cho số %, xem contract material.md.
+  </div>`;
+}
+
+// ══════════════════════════════ STATE HANDLERS ══════════════════════════════
+function updRepl(id, v){ const m=materials.find(x=>x.id===id); const n=parseFloat(v); if(m && n>0){ m.replacement=n; } render(); }
+function remap(gid, mid){ const g=productGroups.find(x=>x.id===gid); if(g){ g.materialId=mid; } render(); }
+function addMaterial(){
+  const name=document.getElementById('nm-name').value.trim();
+  const code=document.getElementById('nm-code').value.trim();
+  const price=parseFloat(document.getElementById('nm-price').value);
+  if(!name||!code||!(price>0)){ alert('Nhập đủ tên, mã và giá > 0'); return; }
+  const taxPct = parseFloat(document.getElementById('nm-tax').value);
+  materials.push({ id:'m'+Date.now(), name, code, currency:'USD', origin:'—',
+    importTax: (taxPct>=0 ? taxPct/100 : 0.06), replacement:price, baseline:price, thresholdPct:0.03, lots:[], mock:true });
+  render();
+}
+
+// ══════════════════════════════ RENDER ══════════════════════════════
+function render(){
+  document.getElementById('nav-materials').classList.toggle('active', view==='materials');
+  document.getElementById('nav-mapping').classList.toggle('active', view==='mapping');
+  const st = document.getElementById('demoState').value;
+  const app = document.getElementById('app');
+  if(st==='loading'){ app.innerHTML = `<div class="card" style="padding:18px"><div class="skeleton" style="width:40%;margin-bottom:12px"></div>${'<div class="skeleton" style="margin-bottom:8px"></div>'.repeat(5)}</div>`; return; }
+  if(st==='error'){ app.innerHTML = `<div class="card" style="padding:22px;text-align:center"><div style="color:#DC2626;font-weight:700;font-size:13px;margin-bottom:6px">Không tải được danh mục nguyên liệu</div><div style="font-size:11px;color:#555;margin-bottom:12px">Lỗi kết nối (giả lập). Dữ liệu giá không khả dụng — các màn hình định giá sẽ bị chặn để tránh chào giá trên số cũ.</div><button class="ghost" onclick="document.getElementById('demoState').value='data';render()">Thử lại</button></div>`; return; }
+  if(st==='empty'){ app.innerHTML = `<div class="card" style="padding:26px;text-align:center"><div style="font-size:13px;font-weight:700;margin-bottom:6px">Chưa có nguyên liệu nào</div><div style="font-size:11px;color:#555;margin-bottom:12px">Thêm nguyên liệu đầu tiên để bắt đầu gán cho sản phẩm. Mỗi nguyên liệu sẽ có giá tái tạo, khóa bảng giá và tồn kho riêng.</div><button onclick="document.getElementById('demoState').value='data';render()">+ Thêm nguyên liệu</button></div>`; return; }
+  app.innerHTML = view==='materials' ? renderMaterials() : renderMapping();
+}
+render();
+</script>
+</body>
+</html>

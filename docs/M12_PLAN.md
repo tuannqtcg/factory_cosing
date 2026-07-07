@@ -44,7 +44,17 @@
 ## Việc tiếp theo ngay khi phiên sau vào
 → **M12.4b: Cloud Function `onPlanInputWrite`.** Đọc ADR-010 (lý do tách khỏi
 M12.4 xong) + `docs/contracts/scenario.md` §5 (dòng `outputs/plan`) trước khi
-viết.
+viết. **⚠ CẬP NHẬT SAU M13 (ADR-012, 2026-07-07 — multi-material):** engine đã
+đổi theo `docs/contracts/material.md` — đọc contract đó TRƯỚC. Ảnh hưởng trực
+tiếp các bước dưới: `calculatePlan()` giờ nhận thêm tham số thứ 4
+`PlanMaterialPricing[]` ({materialId, compoundLandedPerKgVnd,
+replacementUsdPerKgRaw} cho mọi material trong `ScenarioInput.materials[]`);
+`calculatePipeCostAtNormalCapacity`/`calculateFittingCostAtNormalCapacity`
+nhận `material: MaterialPricingInput` (giá ĐÃ QUA khóa ADR-004 — evaluate từng
+material giống `src/engine/scenario.ts`) thay `compoundPricingPriceUsdPerKg`;
+`calculateFittingCapacity` nhận thêm `fittingProducts` (ADR-011);
+`PlanResult.materialRequirement` giờ là MẢNG theo materialId; UI các màn
+M12.5+ dựng theo ScenarioOutput MỚI (byLineMaterial/byMaterial).
 1. Viết `deriveMoldSetCountBySizeDN(moldAssets: MoldAsset[], products:
    FittingProduct[]): Record<number, number>` (file mới, gợi ý
    `src/engine/plan-support.ts`) — với mỗi `MoldAsset`, tra `producesSkus` →

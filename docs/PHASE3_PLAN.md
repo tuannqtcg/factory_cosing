@@ -33,6 +33,7 @@
 | M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | **[x] 2026-07-06** |
 | M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | **[x] 2026-07-06** |
 | M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 — **user đã xác nhận 2026-07-06, chia nhỏ tiếp ở `docs/M12_PLAN.md` (M12.1-M12.10)** | `prototype/blazemaster-costing-app.dc.html`, `scenario.md`, `docs/M12_PLAN.md` | `src/features/` | **ĐANG LÀM** — xem `docs/M12_PLAN.md` cho trạng thái chi tiết từng milestone con |
+| M13 | Multi-material (ADR-012, chen ngang theo yêu cầu user 2026-07-07, đi đủ 4 pha trong ngày): M13.1 Material entity + engine theo (line, materialId), migration parity BM v3.7 tuyệt đối; M13.2 danh mục Corzan (giá thật 3,47/3,97, thuế 0% AIFTA xác nhận, SKU sinh theo rule ống ×1,1/phụ kiện giống hệt) + 11 test số-tính-tay + test cách ly. LƯU Ý cho M12 tiếp theo: UI phải dựng theo output MỚI (byLineMaterial/byMaterial), xem `docs/contracts/material.md` | ADR-012, `docs/contracts/material.md`, `tests/fixtures/corzan.json` | `src/schemas/material.ts`, `src/engine/scenario.ts`, `tests/parity/corzan.test.ts` | **[x] 2026-07-07** |
 
 ## Ghi chú kỹ thuật xuyên suốt (áp dụng mọi milestone)
 - Mọi hàm engine PURE — không I/O, không side-effect (PROJECT_SPEC §3).
@@ -56,10 +57,13 @@ thật + Firestore"). M12 tự chia nhỏ thành M12.1-M12.10, xem
 **`docs/M12_PLAN.md`** cho bảng trạng thái + nhật ký chi tiết + "cách phiên
 mới bắt đầu" — đọc file đó TRƯỚC, KHÔNG lặp lại chi tiết ở đây (giống cách
 `PHASE3_PLAN.md` này tách khỏi `CONTEXT_PASTE.md`).
-Đã xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`).
-Tiếp theo: **M12.2** — scaffold frontend thật (Vite + React 18 + TS strict +
-Tailwind + Recharts). Quyết định hạ tầng đã chốt: CHƯA có Firebase project
-thật → dùng Emulator Suite (xem đầu `docs/M12_PLAN.md`).
+Đã xong M12.1-M12.4 (xem `docs/M12_PLAN.md`). Con trỏ hiện tại của M12:
+**M12.4b** (Cloud Function `onPlanInputWrite`). LƯU Ý sau M13 (ADR-012): mọi
+màn hình M12 còn lại phải dựng theo ScenarioOutput MỚI (thang giá/CVP/khóa
+giá/kho theo (line, materialId) — xem `docs/contracts/material.md`), và
+`onPlanInputWrite` phải cấp `PlanMaterialPricing[]` cho `calculatePlan()`.
+Quyết định hạ tầng đã chốt: CHƯA có Firebase project thật → dùng Emulator
+Suite (xem đầu `docs/M12_PLAN.md`).
 
 ## Nhật ký milestone đã xong (chi tiết, tránh phải đọc lại session log)
 - **M11 (2026-07-06)**: Gom parity suite hiện có (M2-M9, đã tự-đủ theo từng

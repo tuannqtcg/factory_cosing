@@ -15,6 +15,12 @@
 > đầy đủ ở ADR-009 (docs/decisions/) — theo code review PR #1, MỌI lần sửa cấu
 > trúc field ở đây đều cần ghi vào ADR-009 (hoặc ADR riêng nếu đủ lớn), kể cả
 > khi được đánh giá là "chỉ sửa thiếu sót".
+>
+> **Sửa 2026-07-07 (ADR-011, nguồn `BlazeMaster_Model_v3_7.xlsx`)**:
+> `avgProductivityKgPerMachineHour` đổi từ bắt buộc sang `.optional()` —
+> `undefined` (mặc định mới) = tự tính bottom-up từ `FittingProduct[]` qua
+> `computeMixAvgProductivityKgPerMachineHour()` (`src/engine/fitting.ts`); có
+> giá trị = GHI ĐÈ thủ công (đổi chính sách công suất, cần ADR nếu đổi tiếp).
 
 ## Nguyên tắc
 
@@ -111,7 +117,7 @@ export const MachineHourResourceSchema = z.object({
   normalUtilizationFactor: z.number().min(0).max(1), // hệ số huy động, vd 0.6
   yieldRate: YieldRate,
   packagingCostPerKg: z.number().int().nonnegative(),
-  avgProductivityKgPerMachineHour: z.number().positive(), // quy đổi giờ máy → kg tại công suất tham chiếu
+  avgProductivityKgPerMachineHour: z.number().positive().optional(), // GHI ĐÈ; undefined = tự tính bottom-up từ FittingProduct[] (ADR-011)
   depreciationYears: z.number().int().positive(), // khấu hao MÁY ép — tách khỏi MoldAsset.usefulLifeYears (khấu hao KHUÔN, ADR-007)
   annualMoldMaintenance: z.number().int().nonnegative(), // mức chung — MoldAsset.maintenancePerYearVnd ghi đè nếu có
   peoplePerShift: z.number().int().nonnegative(),

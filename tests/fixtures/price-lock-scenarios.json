@@ -11,7 +11,7 @@
       "deviationPct": 0,
       "expectedLockStatus": "KHÓA",
       "expectedPricingPriceUsd": 3.03,
-      "expectedBreakEvenFullCostPerKg": 106204.729733113
+      "expectedBreakEvenFullCostPerKg": 106318.88168476634
     },
     {
       "id": 2,
@@ -20,7 +20,7 @@
       "deviationPct": 0.0231023102310231,
       "expectedLockStatus": "KHÓA",
       "expectedPricingPriceUsd": 3.03,
-      "expectedBreakEvenFullCostPerKg": 106204.729733113,
+      "expectedBreakEvenFullCostPerKg": 106318.88168476634,
       "note": "Bảng giá đứng yên tại baseline dù giá tái tạo đã tăng 2,3%; kế hoạch mua NVL/ngoại tệ vẫn dùng replacementUsd=3,10 (không dùng giá khóa)"
     },
     {
@@ -30,7 +30,7 @@
       "deviationPct": 0.155115511551155,
       "expectedLockStatus": "MỞ KHÓA",
       "expectedPricingPriceUsd": 3.5,
-      "expectedBreakEvenFullCostPerKg": 121012,
+      "expectedBreakEvenFullCostPerKg": 121126.49279587745,
       "note": "Sau khi duyệt phải CHỐT baseline = 3,50 (reset thủ công, có audit)"
     },
     {
@@ -40,7 +40,7 @@
       "deviationPct": -0.0759075907590759,
       "expectedLockStatus": "MỞ KHÓA",
       "expectedPricingPriceUsd": 2.8,
-      "expectedBreakEvenFullCostPerKg": 98958
+      "expectedBreakEvenFullCostPerKg": 99072.60390698856
     },
     {
       "id": 5,

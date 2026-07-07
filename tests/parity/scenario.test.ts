@@ -32,6 +32,15 @@ const scenarioInput = ScenarioInputSchema.parse(buildBaselineScenarioInput());
 
 const output = calculateScenario(scenarioInput);
 
+// ADR-012 — helper tra output theo (line, materialId); baseline chỉ có 2 material BlazeMaster
+const ladderOf = (line: 'pipe' | 'fitting', materialId: string) =>
+  output.priceLadder.byLineMaterial.find((e) => e.line === line && e.materialId === materialId)!.ladder;
+const cvpOf = (line: 'pipe' | 'fitting', materialId: string) =>
+  output.cvp.byLineMaterial.find((e) => e.line === line && e.materialId === materialId)!;
+const dualOf = (line: 'pipe' | 'fitting', materialId: string) =>
+  output.dualCosting.byMaterial.find((e) => e.line === line && e.materialId === materialId)!;
+const lockOf = (materialId: string) => output.priceLock.byMaterial.find((e) => e.materialId === materialId)!.evaluation;
+
 describe('calculateScenario() — khớp ScenarioOutputSchema', () => {
   it('parse không lỗi', () => {
     expect(() => ScenarioOutputSchema.parse(output)).not.toThrow();
@@ -42,23 +51,31 @@ describe('calculateScenario() — khớp tuyệt đối số vàng đã biết (
   it('capacity + mhrPerMachineHour', () => {
     expect(output.capacity.pipe.normalCapacityKgYear).toBeCloseTo(pipeFixture.capacity.normalCapacityKgYear, 6);
     expect(output.capacity.fitting.estimatedProductionKgYear).toBeCloseTo(fittingFixture.capacity.estimatedProductionKgYear, 6);
-    expect(output.mhrPerMachineHour).toBeCloseTo(1344175.79463858, 3);
+    expect(output.mhrPerMachineHour).toBeCloseTo(1308217.9298677056, 3); // ADR-011 (v3.7)
   });
 
   it('thang giá 5 bậc — khớp dashboard.json', () => {
     const dashboard = loadFixture<any>('dashboard.json');
     const golden = dashboard.priceLadder5Tier;
-    expect(output.priceLadder.pipe.variableCostFloor).toBeCloseTo(golden.tier1_variableCostFloor.pipe, 3);
-    expect(output.priceLadder.pipe.breakEvenFullCost).toBeCloseTo(golden.tier3_breakEvenFullCost.pipe, 3);
-    expect(output.priceLadder.pipe.targetPrice).toBeCloseTo(golden.tier5_targetPrice.pipe, 3);
-    expect(output.priceLadder.fitting.variableCostFloor).toBeCloseTo(golden.tier1_variableCostFloor.fitting, 3);
-    expect(output.priceLadder.fitting.breakEvenFullCost).toBeCloseTo(golden.tier3_breakEvenFullCost.fitting, 3);
-    expect(output.priceLadder.fitting.targetPrice).toBeCloseTo(golden.tier5_targetPrice.fitting, 3);
+    const pipeLadder = ladderOf('pipe', 'bm-orange-pipe');
+    const fittingLadder = ladderOf('fitting', 'bm-fitting');
+    expect(pipeLadder.variableCostFloor).toBeCloseTo(golden.tier1_variableCostFloor.pipe, 3);
+    expect(pipeLadder.breakEvenFullCost).toBeCloseTo(golden.tier3_breakEvenFullCost.pipe, 3);
+    expect(pipeLadder.targetPrice).toBeCloseTo(golden.tier5_targetPrice.pipe, 3);
+    expect(fittingLadder.variableCostFloor).toBeCloseTo(golden.tier1_variableCostFloor.fitting, 3);
+    expect(fittingLadder.breakEvenFullCost).toBeCloseTo(golden.tier3_breakEvenFullCost.fitting, 3);
+    expect(fittingLadder.targetPrice).toBeCloseTo(golden.tier5_targetPrice.fitting, 3);
+    // bậc 2/4 (tham chiếu chéo) cũng phải khớp — trước ADR-012 do cùng 1 đường tính, nay qua material tham chiếu
+    expect(pipeLadder.cashBreakEven).toBeCloseTo(golden.tier2_cashBreakEven.pipe, 3);
+    expect(pipeLadder.enterpriseBreakEven).toBeCloseTo(golden.tier4_enterpriseBreakEven.pipe, 3);
+    expect(fittingLadder.cashBreakEven).toBeCloseTo(golden.tier2_cashBreakEven.fitting, 3);
+    expect(fittingLadder.enterpriseBreakEven).toBeCloseTo(golden.tier4_enterpriseBreakEven.fitting, 3);
   });
 
   it('CVP — khớp pipe.json/fitting.json.cvp', () => {
-    expect(output.cvp.pipe.breakEvenKgYear).toBeCloseTo(pipeFixture.cvp.breakEvenKgYear, 6);
-    expect(output.cvp.fitting.breakEvenMachineHours).toBeCloseTo(fittingFixture.cvp.breakEvenMachineHours, 6);
+    expect(cvpOf('pipe', 'bm-orange-pipe').breakEvenKgYear).toBeCloseTo(pipeFixture.cvp.breakEvenKgYear, 6);
+    const fittingCvp = cvpOf('fitting', 'bm-fitting');
+    expect(fittingCvp.line === 'fitting' && fittingCvp.breakEvenMachineHours).toBeCloseTo(fittingFixture.cvp.breakEvenMachineHours, 6);
   });
 
   it('8/8 SKU Ống — listPriceBeforeVat khớp price-list.json', () => {
@@ -91,19 +108,19 @@ describe('calculateScenario() — khớp tuyệt đối số vàng đã biết (
   });
 
   it('bookCostPerKg tự-đối-chiếu fullCostPerKg khi weightedAvg trùng pricingPrice (chưa có kịch bản kho lệch giá thật)', () => {
-    expect(output.dualCosting.pipe.bookCostPerKg).toBeCloseTo(pipeFixture.costAtNormalCapacity.fullCostPerKg, 3);
+    expect(dualOf('pipe', 'bm-orange-pipe').bookCostPerKg).toBeCloseTo(pipeFixture.costAtNormalCapacity.fullCostPerKg, 3);
     // fitting.json chỉ có `bookFullCostPerKgRef` (không có field `fullCostPerKgRef`
     // riêng) — do kịch bản mặc định replacement=baseline=weightedAvg nên Excel
     // export ra 1 giá trị duy nhất, khác pipe.json (có cả 2 field, cùng giá trị).
-    expect(output.dualCosting.fitting.bookCostPerKg).toBeCloseTo(fittingFixture.costAtNormalCapacity.bookFullCostPerKgRef, 3);
-    expect(output.dualCosting.pipe.holdingGainLossVnd).toBeCloseTo(0, 3);
-    expect(output.dualCosting.pipe.provisionWarning).toBe('Giá tái tạo ≥ bình quân kho — không cần dự phòng');
+    expect(dualOf('fitting', 'bm-fitting').bookCostPerKg).toBeCloseTo(fittingFixture.costAtNormalCapacity.bookFullCostPerKgRef, 3);
+    expect(dualOf('pipe', 'bm-orange-pipe').holdingGainLossVnd).toBeCloseTo(0, 3);
+    expect(dualOf('pipe', 'bm-orange-pipe').provisionWarning).toBe('Giá tái tạo ≥ bình quân kho — không cần dự phòng');
   });
 
   it('priceLock — Ống/Phụ kiện KHÓA (lệch 0%, đúng ADR-004 kịch bản mặc định)', () => {
-    expect(output.priceLock.pipe.isLocked).toBe(true);
-    expect(output.priceLock.pipe.pricingPrice).toBeCloseTo(3.03, 6);
-    expect(output.priceLock.fitting.isLocked).toBe(true);
+    expect(lockOf('bm-orange-pipe').isLocked).toBe(true);
+    expect(lockOf('bm-orange-pipe').pricingPrice).toBeCloseTo(3.03, 6);
+    expect(lockOf('bm-fitting').isLocked).toBe(true);
     expect(output.priceLock.metalInsertByCatalogEntry).toHaveLength(10);
     expect(output.priceLock.metalInsertByCatalogEntry.every((e) => e.evaluation.isLocked)).toBe(true);
   });

@@ -66,7 +66,32 @@
   thật + Firestore), CHỜ user xác nhận mở rộng phạm vi trước khi bắt đầu.
 - ADR đã CHẤP NHẬN: 001-008 (đầy đủ, xem chi tiết bên dưới điểm 8, 9, 10),
   **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3),
-  **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4).
+  **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4),
+  **011** (2026-07-07 — đối chiếu Excel `BlazeMaster_Model_v3_7.xlsx`: Phụ kiện
+  `avgProductivityKgPerMachineHour` đổi từ nhập tay 44,6 sang tính bottom-up từ
+  bảng khuôn, có ghi đè tùy chọn; kéo theo MHR/giá thành 2 dòng/99 giá SKU/thang
+  giá/CVP đổi số — đã cập nhật engine (`resource.ts` field optional,
+  `fitting.ts` thêm `computeMixAvgProductivityKgPerMachineHour()`, `cvp.ts` đọc
+  lại từ capacity thay vì resource trực tiếp) + toàn bộ fixture liên quan
+  (`pipe.json`, `fitting.json`, `dashboard.json`, `price-list.json`,
+  `price-lock-scenarios.json`), `npm test` 286/286 xanh, `npm run build` OK).
+  **012** (2026-07-07 — multi-material/Corzan: `Material` entity độc lập
+  (landed cost + markup VF + tồn kho/khóa giá theo TỪNG nguyên liệu, tái dùng
+  ADR-002/004), `materialId` trên Product, chung line/chung MHR. UI DUYỆT +
+  schema ĐÓNG BĂNG + **Pha 3 M13 ĐÃ XONG cùng ngày** (M13.1 engine
+  multi-material, M13.2 danh mục Corzan): `src/schemas/material.ts`,
+  ScenarioInput có `materials[]` (bỏ `inventory.pipe|fitting`), ScenarioOutput
+  theo (line, materialId), thuế NK + markup VF chuyển từ CostPool vào
+  Material. Corzan: giá thật ống 3,47 / phụ kiện 3,97 USD/kg (Ấn Độ, thuế 0%
+  AIFTA — user XÁC NHẬN 0%), markup 25%/40% (field
+  riêng), SKU = BlazeMaster cùng tên/size (ống đơn trọng ×1,1, phụ kiện giống
+  hệt, CHUNG khuôn) — rule sinh chương trình ở `tests/fixtures/corzan.json` +
+  `buildCorzanScenarioInput()`. Verify: 297/297 test xanh = parity BM v3.7
+  nguyên vẹn + 11 test Corzan (số tính tay độc lập + test cách ly). User xác
+  nhận KHÔNG cần Excel Corzan riêng — logic BlazeMaster áp nguyên, engine
+  forward + rule corzan.json LÀ nguồn chân lý. KHÔNG còn việc treo cho
+  ADR-012. Chi tiết: `docs/contracts/material.md` (có mục "Bổ sung khi code
+  Pha 3 M13") + `docs/sessions/SESSION_2026-07-07.md`.)
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).
@@ -79,11 +104,17 @@ NGHIỆP VỤ LÕI (không được phát minh khác đi):
 3. Khóa bảng giá (ADR-004): pricingPrice = |repl/baseline−1| > ngưỡng% ? repl : baseline.
    Trong ngưỡng bảng giá đứng yên; vượt ngưỡng → chuyển + nhắc chốt lại baseline.
    Ngoại tệ mua NVL luôn theo replacement. Cảnh báo staleness so đợt nhập gần nhất.
-4. Thang giá 5 bậc (ống, đ/kg): sàn biến phí 100.663 / hòa vốn tiền mặt 104.298 /
-   giá thành đầy đủ 106.205 / hòa vốn toàn DN 110.604 / giá mục tiêu 132.756.
+4. Thang giá 5 bậc (ống BlazeMaster, đ/kg, sau ADR-011 v3.7): sàn biến phí
+   100.663,42 / hòa vốn tiền mặt 104.369,04 / giá thành đầy đủ 106.318,88 /
+   hòa vốn toàn DN 111.070,84 / giá mục tiêu 132.898,60. Từ ADR-012 thang giá
+   tính theo TỪNG (dòng SX, nguyên liệu) — số trên là cặp (pipe, bm-orange-pipe).
    Thẩm quyền giảm giá phân tầng theo bậc; bậc 1 không ai được thủng.
-5. Số vàng để kiểm tra: MHR = 1.344.176 đ/giờ máy (1 ca × 60%); BE@3,50 = 121.012;
-   BE@2,80 = 98.958; 8 giá ống + 91 SKU trong tests/fixtures/prices.json.
+5. Số vàng để kiểm tra (sau ADR-011, nguồn v3.7): MHR = 1.308.217,93 đ/giờ máy
+   (1 ca × 60%); BE ống đầy đủ = 106.318,88; BE@3,50 = 121.126,49; BE@2,80 =
+   99.072,60; 8 giá ống + 91 SKU trong tests/fixtures/price-list.json. (Số cũ
+   v3.4, KHÔNG còn vàng: MHR 1.344.176; BE 106.204,73; BE@3,50 121.012; BE@2,80
+   98.958 — đổi vì Phụ kiện §3.2 avgProductivityKgPerMachineHour chuyển từ nhập
+   tay 44,6 sang tính bottom-up từ bảng khuôn, xem ADR-011.)
 6. HAI CHIỀU HOẠCH ĐỊNH (ADR-005): bottom-up = nguồn lực → công suất → giá
    (forward, đã có). Top-down = mục tiêu → yêu cầu vận hành: (T1) kế hoạch vs
    nguồn lực; (T2) lợi nhuận mục tiêu → sản lượng + số ca; (T3) giá thị trường

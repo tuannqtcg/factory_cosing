@@ -105,6 +105,7 @@ describe('ProductSchema', () => {
         odMm: row.odMm,
         minWallThicknessMm: row.minWallThicknessMm,
         unitWeightKgPerM: row.unitWeightKgPerM,
+        materialId: 'bm-orange-pipe', // ADR-012
       });
       expect(parsed.dn).toBe(row.dn);
     }
@@ -125,6 +126,7 @@ describe('ProductSchema', () => {
           cycleTimeSec: sku.cycleTimeSec,
           cavity: sku.cavity,
           unitWeightKg: sku.unitWeightKg,
+          materialId: 'bm-fitting', // ADR-012
         }),
       ).not.toThrow();
     }
@@ -141,6 +143,7 @@ describe('ProductSchema', () => {
       cycleTimeSec: 35,
       cavity: 4,
       unitWeightKg: 0.05,
+      materialId: 'bm-fitting',
     });
     expect(managementStatusOf(cutRenTrong20, moldAssets)).toBe('pending_mold');
   });
@@ -156,6 +159,7 @@ describe('ProductSchema', () => {
       cycleTimeSec: 35,
       cavity: 4,
       unitWeightKg: 0.055,
+      materialId: 'bm-fitting',
     });
     expect(managementStatusOf(teDeu20, moldAssets)).toBe('active');
   });
@@ -174,16 +178,13 @@ describe('CostPoolSchema', () => {
         annualLandRent: a.sharedFixedCosts.annualLandRent,
       },
       nonProductionCosts: a.nonProductionCosts,
+      // ADR-012: thuế NK/phí HQ + markup VF chuyển sang Material — không còn trong CostPool
       currency: {
         usdVndRate: a.usdVndRate,
         vatOutputRate: a.vatOutputRate,
         mandatoryInsuranceRate: a.mandatoryInsuranceRate,
-        compoundImportTaxRate: a.compoundImportTaxRate,
-        customsLogisticsFeeRate: a.customsLogisticsFeeRate,
       },
       markup: {
-        markupVfPipe: a.markupVfPipe,
-        markupVfFitting: a.markupVfFitting,
         markupTcg: a.markupTcg,
         listPriceMargin: a.listPriceMargin,
       },

@@ -50,12 +50,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -78,7 +74,13 @@ describe('pipe.ts — parity với tests/fixtures/pipe.json', () => {
     capacity,
     costPool,
     otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-    compoundPricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+    material: {
+      materialId: 'bm-orange-pipe',
+      pricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+      importTaxRate: assumptions.compoundImportTaxRate,
+      customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+      markupVf: assumptions.markupVfPipe,
+    },
   });
   const golden = pipeFixture.costAtNormalCapacity;
 
@@ -96,13 +98,13 @@ describe('pipe.ts — parity với tests/fixtures/pipe.json', () => {
     expect(cost.unitProcessingCostPerKg).toBeCloseTo(golden.unitProcessingCostPerKg, 6);
   });
 
-  it('fullCostPerKg (bậc 3 thang giá — breakEvenFullCost) khớp số vàng 106.204,73', () => {
+  it('fullCostPerKg (bậc 3 thang giá — breakEvenFullCost) khớp số vàng 106.318,88 (ADR-011, v3.7)', () => {
     expect(cost.fullCostPerKg).toBeCloseTo(golden.fullCostPerKg, 6);
-    expect(cost.fullCostPerKg).toBeCloseTo(106204.729733113, 3);
+    expect(cost.fullCostPerKg).toBeCloseTo(106318.88168476634, 3);
   });
 
-  it('vfPricePerKg (bậc 5 thang giá — targetPrice) khớp số vàng 132.755,91', () => {
+  it('vfPricePerKg (bậc 5 thang giá — targetPrice) khớp số vàng 132.898,60 (ADR-011, v3.7)', () => {
     expect(cost.vfPricePerKg).toBeCloseTo(golden.vfPricePerKg, 6);
-    expect(cost.vfPricePerKg).toBeCloseTo(132755.912166391, 3);
+    expect(cost.vfPricePerKg).toBeCloseTo(132898.60210595792, 3);
   });
 });

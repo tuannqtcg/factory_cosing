@@ -24,7 +24,8 @@ export interface HoldingGainLossInputs {
   replacementPriceUsdPerKg: number;
   weightedAvgUsdPerKg: number;
   inventoryKg: number;
-  compoundImportTaxRate: number;
+  // ADR-012: thuế NK/phí HQ theo TỪNG nguyên liệu (tên field đổi khớp LandedCostRates)
+  importTaxRate: number;
   customsLogisticsFeeRate: number;
   usdVndRate: number;
 }

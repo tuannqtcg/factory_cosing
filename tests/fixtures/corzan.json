@@ -1,0 +1,42 @@
+{
+  "_meta": {
+    "adr": "ADR-012",
+    "source": "User cung cấp trực tiếp trong chat 2026-07-07 — Corzan KHÔNG có trong Excel nào (kể cả v3.7) và user XÁC NHẬN (cùng ngày) KHÔNG cần Excel riêng: logic BlazeMaster áp nguyên cho Corzan, engine forward + rule trong file này LÀ nguồn chân lý; test đối chiếu độc lập bằng số tính tay (tests/parity/corzan.test.ts).",
+    "priceSource": "Giá compound: ống 3,47 USD/kg, phụ kiện 3,97 USD/kg — nhập Ấn Độ",
+    "importTaxNote": "0% — user XÁC NHẬN 2026-07-07 (AIFTA, C/O form AI, NĐ 122/2022/NĐ-CP giai đoạn 2022-2027). Vận hành: mỗi lô nhập vẫn phải có C/O form AI hợp lệ để hưởng 0%.",
+    "markupNote": "User duyệt 'markup như đề xuất' 2026-07-07: markupVf ống 0,25 / phụ kiện 0,40 (cùng giá trị BlazeMaster nhưng là field RIÊNG theo Material — đổi độc lập được); markupTcg 30% + listPriceMargin 30% dùng CHUNG.",
+    "skuDerivationRule": "User 2026-07-07: danh mục SKU Corzan = danh mục BlazeMaster cùng tên/kích cỡ/thông số — ỐNG: đơn trọng từng size NẶNG HƠN 10% (unitWeightKgPerM × 1,1); PHỤ KIỆN: giống hệt (đơn trọng/chu kỳ/cavity/khuôn dùng chung — cùng bộ khuôn vật lý, chỉ khác compound). Sinh chương trình từ pipe.json/fitting.json qua rule này (tests/helpers/scenario-fixture.ts), KHÔNG chép tay 99 dòng.",
+    "inventoryNote": "Tồn kho Corzan ban đầu = 0 (chưa nhập lô nào) — baseline khóa giá = giá tái tạo (lần chốt đầu, lệch 0%, KHÓA), đúng quy ước ADR-004.",
+    "pipeUnitWeightFactor": 1.1
+  },
+  "materials": [
+    {
+      "id": "corzan-pipe",
+      "name": "Corzan 3710 (ống)",
+      "code": "CZ-3710-P",
+      "originLabel": "Ấn Độ (AIFTA)",
+      "importTaxRate": 0,
+      "customsLogisticsFeeRate": 0.01,
+      "markupVf": 0.25,
+      "inventory": {
+        "lots": [],
+        "priceLock": { "baseline": 3.47, "thresholdPct": 0.03 },
+        "replacementPriceUsdPerKg": 3.47
+      }
+    },
+    {
+      "id": "corzan-fitting",
+      "name": "Corzan compound (phụ kiện)",
+      "code": "CZ-3710-F",
+      "originLabel": "Ấn Độ (AIFTA)",
+      "importTaxRate": 0,
+      "customsLogisticsFeeRate": 0.01,
+      "markupVf": 0.4,
+      "inventory": {
+        "lots": [],
+        "priceLock": { "baseline": 3.97, "thresholdPct": 0.03 },
+        "replacementPriceUsdPerKg": 3.97
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# BUSINESS_MODEL.md — Thuật toán & quy định nghiệp vụ (nguồn: BlazeMaster_Model_v3_4.xlsx)
+# BUSINESS_MODEL.md — Thuật toán & quy định nghiệp vụ (nguồn: BlazeMaster_Model_v3_4.xlsx, cập nhật v3.7)
 
 > File Excel gốc KHÔNG nằm trong repo (dữ liệu chi phí/giá thành/margin nhạy cảm kinh
 > doanh — xem `.gitignore`). Tài liệu này + `tests/fixtures/*.json` là bản dịch đầy đủ
@@ -12,6 +12,16 @@
 > thay đổi duy nhất là Ống!B5 / Phụ kiện!B5 đổi tham chiếu từ giá tái tạo thô sang
 > giá đã qua cơ chế khóa (§1a) — mọi công thức downstream (giá thành, thang giá,
 > bảng giá) giữ nguyên 100%. Xem `docs/CHANGELOG.md` cho lịch sử đầy đủ.
+>
+> **v3.7 (2026-07-07, upload `BlazeMaster_Model_v3_7.xlsx`):** đối chiếu toàn bộ
+> 6 sheet với v3.4 — Assumptions/Ống/Plan_SX/PriceList giống hệt (công thức + số
+> liệu). CHỈ 1 thay đổi thật: Phụ kiện §3.2 `avgProductivityKgPerMachineHour` đổi
+> từ số nhập tay cố định (44,6 kg/giờ máy) sang tính bottom-up từ bảng khuôn (xem
+> ADR-011) — kéo theo MHR, giá thành 2 dòng SP (do phân bổ chi phí chung tham
+> chiếu chéo), 99 giá SKU/ống, mọi bậc thang giá, CVP, đầu tư/hoàn vốn đổi số.
+> Không đổi ý nghĩa/công thức của ADR-001..010 nào khác. Cột "Ren đồng" (Phụ
+> kiện!G) nay có số thật thay vì 0 — đã đối chiếu khớp 100% với
+> `tests/fixtures/metal-insert.json` (ADR-008), không cần hành động gì.
 
 ## 0. Cấu trúc nguồn Excel (6 sheet)
 `Assumptions` (tham số chung) → `Ống` + `Phụ kiện` (2 dòng sản phẩm, tính độc lập,
@@ -90,13 +100,17 @@ pricingPriceUsd = |deviationPct| > thresholdPct ? replacementUsd : baselineUsd  
   KHÔNG đi qua khóa — kế hoạch phải phản ánh giá thị trường thật để mua đúng giá,
   bảng giá bán mới là thứ cần ổn định.
 
-| # | Kịch bản (ống, baseline 3,03, ngưỡng 3%) | `pricingPriceUsd` | `lockStatus` | BE đầy đủ |
+| # | Kịch bản (ống, baseline 3,03, ngưỡng 3%) | `pricingPriceUsd` | `lockStatus` | BE đầy đủ (v3.7, ADR-011) |
 |---|---|---|---|---|
-| 1 | replacement 3,03 (= baseline) | 3,03 | KHÓA | 106.205 |
-| 2 | replacement 3,10 (+2,3%, trong ngưỡng) | 3,03 | KHÓA | 106.205 |
-| 3 | replacement 3,50 (+15,5%, vượt ngưỡng) | 3,50 | MỞ KHÓA | 121.012 |
-| 4 | replacement 2,80 (−7,6%, vượt ngưỡng) | 2,80 | MỞ KHÓA | 98.958 |
-| 5 | lô mới 3,50 nhưng quên cập nhật replacement (vẫn 3,03) | 3,03 | KHÓA + cảnh báo staleness | 106.205 |
+| 1 | replacement 3,03 (= baseline) | 3,03 | KHÓA | 106.319 |
+| 2 | replacement 3,10 (+2,3%, trong ngưỡng) | 3,03 | KHÓA | 106.319 |
+| 3 | replacement 3,50 (+15,5%, vượt ngưỡng) | 3,50 | MỞ KHÓA | 121.126 |
+| 4 | replacement 2,80 (−7,6%, vượt ngưỡng) | 2,80 | MỞ KHÓA | 99.073 |
+| 5 | lô mới 3,50 nhưng quên cập nhật replacement (vẫn 3,03) | 3,03 | KHÓA + cảnh báo staleness | 106.319 |
+
+> Số cột cuối trước ADR-011 (v3.4, override năng suất mix phụ kiện = 44,6):
+> 106.205 / 106.205 / 121.012 / 98.958 / 106.205 — giữ lại để đối chiếu lịch sử,
+> KHÔNG còn là số vàng.
 
 ---
 
@@ -181,6 +195,19 @@ estimatedProductionKgYear   = normalMachineHoursUtilized × avgProductivityKgPer
 Mặc định `normalShifts = 1`, `normalUtilizationFactor = 60%` — đổi 2 ô này = đổi
 chính sách công suất chuẩn (khác hẳn Ống dùng cố định 3 ca), phải có ADR nếu đổi.
 `hệ số huy động` gánh: đổi khuôn, chờ liệu, sự cố — KHÔNG phải hiệu suất máy.
+
+**`avgProductivityKgPerMachineHour` (ADR-011, nguồn v3.7):** mặc định KHÔNG còn
+là số nhập tay — tính bottom-up từ bảng khuôn:
+```
+kgPerMachineHour(size) = unitsPerHour(size) × unitWeightKg bình quân mọi SKU thuộc size đó
+avgProductivityKgPerMachineHour = trung bình KHÔNG trọng số qua 8 nhóm moldSizeDN
+                                  // %mix hiện hardcode đều 1/8/size — chưa có
+                                  // dữ liệu mix sản lượng thực (xem ADR-011)
+```
+Vẫn giữ khả năng GHI ĐÈ thủ công (`resource.avgProductivityKgPerMachineHour` có
+giá trị) — đổi chính sách công suất phải có ADR mới, cùng nguyên tắc `normalShifts`/
+`normalUtilizationFactor` ở trên. Giá trị mặc định v3.7 = **22,83 kg/giờ máy**
+(trước đó v3.4/v3.5 dùng ghi đè cố định 44,6 kg/giờ máy).
 
 ### 3.3 MHR — đơn giá giờ máy (trái tim ADR-001)
 > `compoundReplacementPriceUsdPerKg` ở đây từ v3.4 = `priceLock.fitting.pricingPriceUsd`

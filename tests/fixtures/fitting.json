@@ -14,7 +14,6 @@
     "normalUtilizationFactor": 0.6,
     "yieldRate": 0.9,
     "packagingCostPerKg": 2000,
-    "avgProductivityKgPerMachineHour": 44.6,
     "depreciationYears": 5,
     "annualMoldMaintenance": 100000000,
     "peoplePerShift": 1,
@@ -112,7 +111,8 @@
     "totalMachines": 2,
     "designMachineHours3Shift": 9840,
     "normalMachineHoursUtilized": 1968,
-    "estimatedProductionKgYear": 87772.8
+    "estimatedProductionKgYear": 44925.402385007845,
+    "avgProductivityKgPerMachineHourComputed": 22.827948366365774
   },
   "costAtNormalCapacity": {
     "compoundLandedPerKg": 109166.75,
@@ -121,14 +121,14 @@
     "laborPerYear": 229092500,
     "electricityPerYear": 125164800,
     "waterPerYear": 83443200,
-    "sharedCostAllocationRatio": 0.124026696329255,
-    "sharedCostAllocated": 155467463.848721,
-    "totalProcessingCostPerYear": 2645337963.84872,
-    "mhrPerMachineHour": 1344175.79463858,
-    "processingCostPerKgRef": 30138.4707318067,
-    "vfPricePerKgRef": 214808.803468974,
+    "sharedCostAllocationRatio": 0.06757270520913045,
+    "sharedCostAllocated": 84702385.97964501,
+    "totalProcessingCostPerYear": 2574572885.979645,
+    "mhrPerMachineHour": 1308217.9298677056,
+    "processingCostPerKgRef": 57307.7312455817,
+    "vfPricePerKgRef": 252845.76818825884,
     "bookCompoundLandedPerKg": 109166.75,
-    "bookFullCostPerKgRef": 153434.859620696
+    "bookFullCostPerKgRef": 180604.1201344706
   },
   "skus": [
     {
@@ -143,12 +143,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 6781.30138888889,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 10411.4057725579,
-      "vfPricePerUnit": 14575.968081581,
-      "tcgPricePerUnit": 18948.7585060554,
-      "listPriceBeforeVat": 27100,
-      "listPriceWithVat": 29268
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 10314.297341463713,
+      "vfPricePerUnit": 14440.016278049197,
+      "tcgPricePerUnit": 18772.021161463956,
+      "listPriceBeforeVat": 26900,
+      "listPriceWithVat": 29052.000000000004
     },
     {
       "productName": "Tê đều",
@@ -162,12 +162,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 11096.675,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 15245.3657241931,
-      "vfPricePerUnit": 21343.5120138704,
-      "tcgPricePerUnit": 27746.5656180315,
-      "listPriceBeforeVat": 39700,
-      "listPriceWithVat": 42876
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 15134.384660085512,
+      "vfPricePerUnit": 21188.138524119717,
+      "tcgPricePerUnit": 27544.580081355634,
+      "listPriceBeforeVat": 39400,
+      "listPriceWithVat": 42552
     },
     {
       "productName": "Tê đều",
@@ -181,12 +181,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 17261.4944444444,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 26596.048573879,
-      "vfPricePerUnit": 37234.4680034306,
-      "tcgPricePerUnit": 48404.8084044598,
-      "listPriceBeforeVat": 69200,
-      "listPriceWithVat": 74736
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 26346.341179636845,
+      "vfPricePerUnit": 36884.87765149158,
+      "tcgPricePerUnit": 47950.34094693905,
+      "listPriceBeforeVat": 68600,
+      "listPriceWithVat": 74088
     },
     {
       "productName": "Tê đều",
@@ -200,12 +200,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 30207.6152777778,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 40579.3420882606,
-      "vfPricePerUnit": 56811.0789235649,
-      "tcgPricePerUnit": 73854.4026006344,
-      "listPriceBeforeVat": 105600,
-      "listPriceWithVat": 114048
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 40301.88942799156,
+      "vfPricePerUnit": 56422.645199188184,
+      "tcgPricePerUnit": 73349.43875894464,
+      "listPriceBeforeVat": 104800,
+      "listPriceWithVat": 113184.00000000001
     },
     {
       "productName": "Tê đều",
@@ -219,12 +219,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 49318.5555555556,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 62801.8004091833,
-      "vfPricePerUnit": 87922.5205728566,
-      "tcgPricePerUnit": 114299.276744714,
-      "listPriceBeforeVat": 163300,
-      "listPriceWithVat": 176364
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 62441.111950833474,
+      "vfPricePerUnit": 87417.55673116686,
+      "tcgPricePerUnit": 113642.82375051692,
+      "listPriceBeforeVat": 162400,
+      "listPriceWithVat": 175392
     },
     {
       "productName": "Tê đều",
@@ -238,12 +238,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 92472.2916666667,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 129810.508184405,
-      "vfPricePerUnit": 181734.711458167,
-      "tcgPricePerUnit": 236255.124895617,
-      "listPriceBeforeVat": 337600,
-      "listPriceWithVat": 364608
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 128811.67860743628,
+      "vfPricePerUnit": 180336.35005041078,
+      "tcgPricePerUnit": 234437.25506553403,
+      "listPriceBeforeVat": 335000,
+      "listPriceWithVat": 361800
     },
     {
       "productName": "Tê đều",
@@ -257,12 +257,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 138091.955555556,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 187876.244245873,
-      "vfPricePerUnit": 263026.741944223,
-      "tcgPricePerUnit": 341934.764527489,
-      "listPriceBeforeVat": 488500,
-      "listPriceWithVat": 527580
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 186544.4714765817,
+      "vfPricePerUnit": 261162.26006721437,
+      "tcgPricePerUnit": 339510.9380873787,
+      "listPriceBeforeVat": 485100,
+      "listPriceWithVat": 523908.00000000006
     },
     {
       "productName": "Tê đều",
@@ -276,12 +276,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 308240.972222222,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 374620.023809313,
-      "vfPricePerUnit": 524468.033333038,
-      "tcgPricePerUnit": 681808.443332949,
-      "listPriceBeforeVat": 974100,
-      "listPriceWithVat": 1052028
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 372844.3267835904,
+      "vfPricePerUnit": 521982.0574970266,
+      "tcgPricePerUnit": 678576.6747461346,
+      "listPriceBeforeVat": 969400,
+      "listPriceWithVat": 1046952.0000000001
     },
     {
       "productName": "Tê giảm",
@@ -295,12 +295,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 9863.71111111111,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 14012.4018353043,
-      "vfPricePerUnit": 19617.362569426,
-      "tcgPricePerUnit": 25502.5713402537,
-      "listPriceBeforeVat": 36500,
-      "listPriceWithVat": 39420
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 13901.420771196625,
+      "vfPricePerUnit": 19461.989079675273,
+      "tcgPricePerUnit": 25300.585803577855,
+      "listPriceBeforeVat": 36200,
+      "listPriceWithVat": 39096
     },
     {
       "productName": "Tê giảm",
@@ -314,12 +314,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 14179.0847222222,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 23513.6388516568,
-      "vfPricePerUnit": 32919.0943923195,
-      "tcgPricePerUnit": 42794.8227100154,
-      "listPriceBeforeVat": 61200,
-      "listPriceWithVat": 66096
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 23263.931457414626,
+      "vfPricePerUnit": 32569.504040380474,
+      "tcgPricePerUnit": 42340.35525249462,
+      "listPriceBeforeVat": 60500,
+      "listPriceWithVat": 65340.00000000001
     },
     {
       "productName": "Tê giảm",
@@ -333,12 +333,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 14795.5666666667,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 24130.1207961012,
-      "vfPricePerUnit": 33782.1691145417,
-      "tcgPricePerUnit": 43916.8198489043,
-      "listPriceBeforeVat": 62800,
-      "listPriceWithVat": 67824
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 23880.413401859067,
+      "vfPricePerUnit": 33432.578762602694,
+      "tcgPricePerUnit": 43462.3523913835,
+      "listPriceBeforeVat": 62100,
+      "listPriceWithVat": 67068
     },
     {
       "productName": "Tê giảm",
@@ -352,12 +352,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 25892.2416666667,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 36263.9684771495,
-      "vfPricePerUnit": 50769.5558680093,
-      "tcgPricePerUnit": 66000.4226284121,
-      "listPriceBeforeVat": 94300,
-      "listPriceWithVat": 101844
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 35986.51581688045,
+      "vfPricePerUnit": 50381.12214363262,
+      "tcgPricePerUnit": 65495.45878672241,
+      "listPriceBeforeVat": 93600,
+      "listPriceWithVat": 101088
     },
     {
       "productName": "Tê giảm",
@@ -371,12 +371,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 27125.2055555556,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 37496.9323660384,
-      "vfPricePerUnit": 52495.7053124538,
-      "tcgPricePerUnit": 68244.4169061899,
-      "listPriceBeforeVat": 97500,
-      "listPriceWithVat": 105300
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 37219.479705769336,
+      "vfPricePerUnit": 52107.27158807707,
+      "tcgPricePerUnit": 67739.4530645002,
+      "listPriceBeforeVat": 96800,
+      "listPriceWithVat": 104544
     },
     {
       "productName": "Tê giảm",
@@ -390,12 +390,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 31440.5791666667,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 41812.3059771495,
-      "vfPricePerUnit": 58537.2283680093,
-      "tcgPricePerUnit": 76098.3968784121,
-      "listPriceBeforeVat": 108800,
-      "listPriceWithVat": 117504
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 41534.85331688045,
+      "vfPricePerUnit": 58148.794643632624,
+      "tcgPricePerUnit": 75593.43303672242,
+      "listPriceBeforeVat": 108000,
+      "listPriceWithVat": 116640.00000000001
     },
     {
       "productName": "Tê giảm",
@@ -409,12 +409,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 35755.9527777778,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 49239.1976314055,
-      "vfPricePerUnit": 68934.8766839677,
-      "tcgPricePerUnit": 89615.339689158,
-      "listPriceBeforeVat": 128100,
-      "listPriceWithVat": 138348
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 48878.50917305569,
+      "vfPricePerUnit": 68429.91284227796,
+      "tcgPricePerUnit": 88958.88669496136,
+      "listPriceBeforeVat": 127100,
+      "listPriceWithVat": 137268
     },
     {
       "productName": "Tê giảm",
@@ -428,12 +428,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 38221.8805555556,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 51705.1254091833,
-      "vfPricePerUnit": 72387.1755728566,
-      "tcgPricePerUnit": 94103.3282447135,
-      "listPriceBeforeVat": 134500,
-      "listPriceWithVat": 145260
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 51344.43695083347,
+      "vfPricePerUnit": 71882.21173116686,
+      "tcgPricePerUnit": 93446.87525051691,
+      "listPriceBeforeVat": 133500,
+      "listPriceWithVat": 144180
     },
     {
       "productName": "Tê giảm",
@@ -447,12 +447,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 41920.7722222222,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 55404.0170758499,
-      "vfPricePerUnit": 77565.6239061899,
-      "tcgPricePerUnit": 100835.311078047,
-      "listPriceBeforeVat": 144100,
-      "listPriceWithVat": 155628
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 55043.32861750014,
+      "vfPricePerUnit": 77060.66006450019,
+      "tcgPricePerUnit": 100178.85808385025,
+      "listPriceBeforeVat": 143200,
+      "listPriceWithVat": 154656
     },
     {
       "productName": "Tê giảm",
@@ -466,12 +466,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 45003.1819444445,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 58486.4267980722,
-      "vfPricePerUnit": 81880.997517301,
-      "tcgPricePerUnit": 106445.296772491,
-      "listPriceBeforeVat": 152100,
-      "listPriceWithVat": 164268
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 58125.73833972236,
+      "vfPricePerUnit": 81376.0336756113,
+      "tcgPricePerUnit": 105788.84377829469,
+      "listPriceBeforeVat": 151200,
+      "listPriceWithVat": 163296
     },
     {
       "productName": "Tê giảm",
@@ -485,12 +485,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 57332.8208333333,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 94671.0373510716,
-      "vfPricePerUnit": 132539.4522915,
-      "tcgPricePerUnit": 172301.28797895,
-      "listPriceBeforeVat": 246200,
-      "listPriceWithVat": 265896
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 93672.20777410295,
+      "vfPricePerUnit": 131141.09088374412,
+      "tcgPricePerUnit": 170483.41814886738,
+      "listPriceBeforeVat": 243600,
+      "listPriceWithVat": 263088
     },
     {
       "productName": "Tê giảm",
@@ -504,12 +504,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 66580.05,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 103918.266517738,
-      "vfPricePerUnit": 145485.573124834,
-      "tcgPricePerUnit": 189131.245062284,
-      "listPriceBeforeVat": 270200,
-      "listPriceWithVat": 291816
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 102919.4369407696,
+      "vfPricePerUnit": 144087.21171707744,
+      "tcgPricePerUnit": 187313.3752322007,
+      "listPriceBeforeVat": 267600,
+      "listPriceWithVat": 289008
     },
     {
       "productName": "Tê giảm",
@@ -523,12 +523,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 70278.9416666667,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 107617.158184405,
-      "vfPricePerUnit": 150664.021458167,
-      "tcgPricePerUnit": 195863.227895617,
-      "listPriceBeforeVat": 279900,
-      "listPriceWithVat": 302292
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 106618.32860743627,
+      "vfPricePerUnit": 149265.66005041078,
+      "tcgPricePerUnit": 194045.358065534,
+      "listPriceBeforeVat": 277300,
+      "listPriceWithVat": 299484
     },
     {
       "productName": "Tê giảm",
@@ -542,12 +542,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 78169.9105555556,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 115508.127073294,
-      "vfPricePerUnit": 161711.377902611,
-      "tcgPricePerUnit": 210224.791273395,
-      "listPriceBeforeVat": 300400,
-      "listPriceWithVat": 324432
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 114509.29749632516,
+      "vfPricePerUnit": 160313.01649485523,
+      "tcgPricePerUnit": 208406.9214433118,
+      "listPriceBeforeVat": 297800,
+      "listPriceWithVat": 321624
     },
     {
       "productName": "Tê giảm",
@@ -561,12 +561,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 103568.966666667,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 153353.255356984,
-      "vfPricePerUnit": 214694.557499778,
-      "tcgPricePerUnit": 279102.924749712,
-      "listPriceBeforeVat": 398800,
-      "listPriceWithVat": 430704
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 152021.4825876928,
+      "vfPricePerUnit": 212830.0756227699,
+      "tcgPricePerUnit": 276679.09830960084,
+      "listPriceBeforeVat": 395300,
+      "listPriceWithVat": 426924
     },
     {
       "productName": "Tê giảm",
@@ -580,12 +580,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 123296.388888889,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 173080.677579207,
-      "vfPricePerUnit": 242312.948610889,
-      "tcgPricePerUnit": 315006.833194156,
-      "listPriceBeforeVat": 450100,
-      "listPriceWithVat": 486108
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 171748.90480991502,
+      "vfPricePerUnit": 240448.466733881,
+      "tcgPricePerUnit": 312583.0067540453,
+      "listPriceBeforeVat": 446600,
+      "listPriceWithVat": 482328.00000000006
     },
     {
       "productName": "Tê giảm",
@@ -599,12 +599,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 162751.233333333,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 229130.284920424,
-      "vfPricePerUnit": 320782.398888593,
-      "tcgPricePerUnit": 417017.118555171,
-      "listPriceBeforeVat": 595800,
-      "listPriceWithVat": 643464
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 227354.58789470154,
+      "vfPricePerUnit": 318296.42305258213,
+      "tcgPricePerUnit": 413785.3499683568,
+      "listPriceBeforeVat": 591200,
+      "listPriceWithVat": 638496
     },
     {
       "productName": "Tê giảm",
@@ -618,12 +618,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 152887.522222222,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 219266.573809312,
-      "vfPricePerUnit": 306973.203333037,
-      "tcgPricePerUnit": 399065.164332949,
-      "listPriceBeforeVat": 570100,
-      "listPriceWithVat": 615708
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 217490.87678359041,
+      "vfPricePerUnit": 304487.22749702656,
+      "tcgPricePerUnit": 395833.3957461345,
+      "listPriceBeforeVat": 565500,
+      "listPriceWithVat": 610740
     },
     {
       "productName": "Tê giảm",
@@ -637,12 +637,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 145489.738888889,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 211868.790475979,
-      "vfPricePerUnit": 296616.306666371,
-      "tcgPricePerUnit": 385601.198666282,
-      "listPriceBeforeVat": 550900,
-      "listPriceWithVat": 594972
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 210093.0934502571,
+      "vfPricePerUnit": 294130.3308303599,
+      "tcgPricePerUnit": 382369.4300794679,
+      "listPriceBeforeVat": 546300,
+      "listPriceWithVat": 590004
     },
     {
       "productName": "Cút 90º",
@@ -656,12 +656,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 5548.3375,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 9178.441883669,
-      "vfPricePerUnit": 12849.8186371366,
-      "tcgPricePerUnit": 16704.7642282776,
-      "listPriceBeforeVat": 23900,
-      "listPriceWithVat": 25812
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 9081.333452574821,
+      "vfPricePerUnit": 12713.866833604749,
+      "tcgPricePerUnit": 16528.026883686172,
+      "listPriceBeforeVat": 23700,
+      "listPriceWithVat": 25596
     },
     {
       "productName": "Cút 90º",
@@ -675,12 +675,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 8014.26527777778,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 12162.9560019709,
-      "vfPricePerUnit": 17028.1384027593,
-      "tcgPricePerUnit": 22136.5799235871,
-      "listPriceBeforeVat": 31700,
-      "listPriceWithVat": 34236
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 12051.97493786329,
+      "vfPricePerUnit": 16872.764913008603,
+      "tcgPricePerUnit": 21934.594386911183,
+      "listPriceBeforeVat": 31400,
+      "listPriceWithVat": 33912
     },
     {
       "productName": "Cút 90º",
@@ -694,12 +694,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 14179.0847222222,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 23513.6388516568,
-      "vfPricePerUnit": 32919.0943923195,
-      "tcgPricePerUnit": 42794.8227100154,
-      "listPriceBeforeVat": 61200,
-      "listPriceWithVat": 66096
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 23263.931457414626,
+      "vfPricePerUnit": 32569.504040380474,
+      "tcgPricePerUnit": 42340.35525249462,
+      "listPriceBeforeVat": 60500,
+      "listPriceWithVat": 65340.00000000001
     },
     {
       "productName": "Cút 90º",
@@ -713,12 +713,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 25275.7597222222,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 35647.4865327051,
-      "vfPricePerUnit": 49906.4811457871,
-      "tcgPricePerUnit": 64878.4254895232,
-      "listPriceBeforeVat": 92700,
-      "listPriceWithVat": 100116
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 35370.033872436004,
+      "vfPricePerUnit": 49518.0474214104,
+      "tcgPricePerUnit": 64373.46164783353,
+      "listPriceBeforeVat": 92000,
+      "listPriceWithVat": 99360
     },
     {
       "productName": "Cút 90º",
@@ -732,12 +732,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 37605.3986111111,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 51088.6434647388,
-      "vfPricePerUnit": 71524.1008506344,
-      "tcgPricePerUnit": 92981.3311058247,
-      "listPriceBeforeVat": 132900,
-      "listPriceWithVat": 143532
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 50727.95500638903,
+      "vfPricePerUnit": 71019.13700894463,
+      "tcgPricePerUnit": 92324.87811162802,
+      "listPriceBeforeVat": 131900,
+      "listPriceWithVat": 142452
     },
     {
       "productName": "Cút 90º",
@@ -751,12 +751,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 72128.3875,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 109466.604017738,
-      "vfPricePerUnit": 153253.245624834,
-      "tcgPricePerUnit": 199229.219312284,
-      "listPriceBeforeVat": 284700,
-      "listPriceWithVat": 307476
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 108467.7744407696,
+      "vfPricePerUnit": 151854.88421707743,
+      "tcgPricePerUnit": 197411.34948220066,
+      "listPriceBeforeVat": 282100,
+      "listPriceWithVat": 304668
     },
     {
       "productName": "Cút 90º",
@@ -770,12 +770,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 112199.713888889,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 161984.002579207,
-      "vfPricePerUnit": 226777.603610889,
-      "tcgPricePerUnit": 294810.884694156,
-      "listPriceBeforeVat": 421200,
-      "listPriceWithVat": 454896
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 160652.22980991504,
+      "vfPricePerUnit": 224913.12173388104,
+      "tcgPricePerUnit": 292387.0582540454,
+      "listPriceBeforeVat": 417700,
+      "listPriceWithVat": 451116.00000000006
     },
     {
       "productName": "Cút 90º",
@@ -789,12 +789,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 209603.861111111,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 275982.912698201,
-      "vfPricePerUnit": 386376.077777482,
-      "tcgPricePerUnit": 502288.901110726,
-      "listPriceBeforeVat": 717600,
-      "listPriceWithVat": 775008
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 274207.2156724793,
+      "vfPricePerUnit": 383890.101941471,
+      "tcgPricePerUnit": 499057.1325239123,
+      "listPriceBeforeVat": 713000,
+      "listPriceWithVat": 770040
     },
     {
       "productName": "Cút 45º",
@@ -808,12 +808,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 49318.5555555556,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 86656.7720732938,
-      "vfPricePerUnit": 121319.480902611,
-      "tcgPricePerUnit": 157715.325173395,
-      "listPriceBeforeVat": 225400,
-      "listPriceWithVat": 243432
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 85657.94249632515,
+      "vfPricePerUnit": 119921.1194948552,
+      "tcgPricePerUnit": 155897.45534331177,
+      "listPriceBeforeVat": 222800,
+      "listPriceWithVat": 240624.00000000003
     },
     {
       "productName": "Cút 45º",
@@ -827,12 +827,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 71511.9055555556,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 121296.194245873,
-      "vfPricePerUnit": 169814.671944223,
-      "tcgPricePerUnit": 220759.073527489,
-      "listPriceBeforeVat": 315400,
-      "listPriceWithVat": 340632
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 119964.42147658169,
+      "vfPricePerUnit": 167950.19006721434,
+      "tcgPricePerUnit": 218335.24708737864,
+      "listPriceBeforeVat": 312000,
+      "listPriceWithVat": 336960
     },
     {
       "productName": "Cút 45º",
@@ -846,12 +846,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 110966.75,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 177345.80158709,
-      "vfPricePerUnit": 248284.122221926,
-      "tcgPricePerUnit": 322769.358888504,
-      "listPriceBeforeVat": 461100,
-      "listPriceWithVat": 497988
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 175570.10456136818,
+      "vfPricePerUnit": 245798.14638591543,
+      "tcgPricePerUnit": 319537.5903016901,
+      "listPriceBeforeVat": 456500,
+      "listPriceWithVat": 493020.00000000006
     },
     {
       "productName": "Nối thẳng",
@@ -865,12 +865,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 3698.89166666667,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 7328.99605033567,
-      "vfPricePerUnit": 10260.5944704699,
-      "tcgPricePerUnit": 13338.7728116109,
-      "listPriceBeforeVat": 19100,
-      "listPriceWithVat": 20628
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 7231.887619241488,
+      "vfPricePerUnit": 10124.642666938083,
+      "tcgPricePerUnit": 13162.035467019508,
+      "listPriceBeforeVat": 18900,
+      "listPriceWithVat": 20412
     },
     {
       "productName": "Nối thẳng",
@@ -884,12 +884,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 8630.74722222222,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 12779.4379464154,
-      "vfPricePerUnit": 17891.2131249815,
-      "tcgPricePerUnit": 23258.577062476,
-      "listPriceBeforeVat": 33300,
-      "listPriceWithVat": 35964
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 12668.456882307735,
+      "vfPricePerUnit": 17735.839635230826,
+      "tcgPricePerUnit": 23056.591525800075,
+      "listPriceBeforeVat": 33000,
+      "listPriceWithVat": 35640
     },
     {
       "productName": "Nối thẳng",
@@ -903,12 +903,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 12329.6388888889,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 21664.1930183235,
-      "vfPricePerUnit": 30329.8702256528,
-      "tcgPricePerUnit": 39428.8312933487,
-      "listPriceBeforeVat": 56400,
-      "listPriceWithVat": 60912
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 21414.485624081288,
+      "vfPricePerUnit": 29980.2798737138,
+      "tcgPricePerUnit": 38974.36383582794,
+      "listPriceBeforeVat": 55700,
+      "listPriceWithVat": 60156.00000000001
     },
     {
       "productName": "Nối thẳng",
@@ -922,12 +922,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 15412.0486111111,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 25783.775421594,
-      "vfPricePerUnit": 36097.2855902316,
-      "tcgPricePerUnit": 46926.471267301,
-      "listPriceBeforeVat": 67100,
-      "listPriceWithVat": 72468
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 25506.32276132489,
+      "vfPricePerUnit": 35708.85186585484,
+      "tcgPricePerUnit": 46421.50742561129,
+      "listPriceBeforeVat": 66400,
+      "listPriceWithVat": 71712
     },
     {
       "productName": "Nối thẳng",
@@ -941,12 +941,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 23426.3138888889,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 36909.5587425166,
-      "vfPricePerUnit": 51673.3822395232,
-      "tcgPricePerUnit": 67175.3969113802,
-      "listPriceBeforeVat": 96000,
-      "listPriceWithVat": 103680
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 36548.870284166806,
+      "vfPricePerUnit": 51168.41839783353,
+      "tcgPricePerUnit": 66518.94391718358,
+      "listPriceBeforeVat": 95100,
+      "listPriceWithVat": 102708
     },
     {
       "productName": "Nối thẳng",
@@ -960,12 +960,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 40071.3263888889,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 77409.5429066272,
-      "vfPricePerUnit": 108373.360069278,
-      "tcgPricePerUnit": 140885.368090061,
-      "listPriceBeforeVat": 201300,
-      "listPriceWithVat": 217404
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 76410.7133296585,
+      "vfPricePerUnit": 106974.99866152188,
+      "tcgPricePerUnit": 139067.49825997846,
+      "listPriceBeforeVat": 198700,
+      "listPriceWithVat": 214596
     },
     {
       "productName": "Nối thẳng",
@@ -979,12 +979,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 55483.375,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 105267.663690318,
-      "vfPricePerUnit": 147374.729166445,
-      "tcgPricePerUnit": 191587.147916378,
-      "listPriceBeforeVat": 273700,
-      "listPriceWithVat": 295596
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 103935.89092102613,
+      "vfPricePerUnit": 145510.24728943658,
+      "tcgPricePerUnit": 189163.32147626756,
+      "listPriceBeforeVat": 270300,
+      "listPriceWithVat": 291924
     },
     {
       "productName": "Nối thẳng",
@@ -998,12 +998,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 81375.6166666667,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 147754.668253757,
-      "vfPricePerUnit": 206856.53555526,
-      "tcgPricePerUnit": 268913.496221838,
-      "listPriceBeforeVat": 384200,
-      "listPriceWithVat": 414936
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 145978.97122803485,
+      "vfPricePerUnit": 204370.55971924876,
+      "tcgPricePerUnit": 265681.7276350234,
+      "listPriceBeforeVat": 379600,
+      "listPriceWithVat": 409968
     },
     {
       "productName": "Nối giảm",
@@ -1017,12 +1017,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 4315.37361111111,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 8464.06433530425,
-      "vfPricePerUnit": 11849.690069426,
-      "tcgPricePerUnit": 15404.5970902537,
-      "listPriceBeforeVat": 22100,
-      "listPriceWithVat": 23868
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 8353.083271196623,
+      "vfPricePerUnit": 11694.316579675271,
+      "tcgPricePerUnit": 15202.611553577854,
+      "listPriceBeforeVat": 21800,
+      "listPriceWithVat": 23544
     },
     {
       "productName": "Nối giảm",
@@ -1036,12 +1036,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 9863.71111111111,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 19198.2652405457,
-      "vfPricePerUnit": 26877.571336764,
-      "tcgPricePerUnit": 34940.8427377931,
-      "listPriceBeforeVat": 50000,
-      "listPriceWithVat": 54000
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 18948.557846303513,
+      "vfPricePerUnit": 26527.980984824917,
+      "tcgPricePerUnit": 34486.37528027239,
+      "listPriceBeforeVat": 49300,
+      "listPriceWithVat": 53244
     },
     {
       "productName": "Nối giảm",
@@ -1055,12 +1055,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 12946.1208333333,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 23317.8476438162,
-      "vfPricePerUnit": 32644.9867013427,
-      "tcgPricePerUnit": 42438.4827117455,
-      "listPriceBeforeVat": 60700,
-      "listPriceWithVat": 65556
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 23040.394983547114,
+      "vfPricePerUnit": 32256.55297696596,
+      "tcgPricePerUnit": 41933.51887005575,
+      "listPriceBeforeVat": 60000,
+      "listPriceWithVat": 64800.00000000001
     },
     {
       "productName": "Nối giảm",
@@ -1074,12 +1074,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 14179.0847222222,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 24550.8115327051,
-      "vfPricePerUnit": 34371.1361457871,
-      "tcgPricePerUnit": 44682.4769895232,
-      "listPriceBeforeVat": 63900,
-      "listPriceWithVat": 69012
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 24273.358872436,
+      "vfPricePerUnit": 33982.7024214104,
+      "tcgPricePerUnit": 44177.513147833524,
+      "listPriceBeforeVat": 63200,
+      "listPriceWithVat": 68256
     },
     {
       "productName": "Nối giảm",
@@ -1093,12 +1093,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 21206.9788888889,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 34690.2237425166,
-      "vfPricePerUnit": 48566.3132395232,
-      "tcgPricePerUnit": 63136.2072113802,
-      "listPriceBeforeVat": 90200,
-      "listPriceWithVat": 97416
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 34329.5352841668,
+      "vfPricePerUnit": 48061.34939783352,
+      "tcgPricePerUnit": 62479.754217183574,
+      "listPriceBeforeVat": 89300,
+      "listPriceWithVat": 96444
     },
     {
       "productName": "Nối giảm",
@@ -1112,12 +1112,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 20343.9041666667,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 33827.1490202944,
-      "vfPricePerUnit": 47358.0086284121,
-      "tcgPricePerUnit": 61565.4112169358,
-      "listPriceBeforeVat": 88000,
-      "listPriceWithVat": 95040
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 33466.46056194458,
+      "vfPricePerUnit": 46853.04478672241,
+      "tcgPricePerUnit": 60908.95822273913,
+      "listPriceBeforeVat": 87100,
+      "listPriceWithVat": 94068
     },
     {
       "productName": "Nối giảm",
@@ -1131,12 +1131,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 20343.9041666667,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 33827.1490202944,
-      "vfPricePerUnit": 47358.0086284121,
-      "tcgPricePerUnit": 61565.4112169358,
-      "listPriceBeforeVat": 88000,
-      "listPriceWithVat": 95040
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 33466.46056194458,
+      "vfPricePerUnit": 46853.04478672241,
+      "tcgPricePerUnit": 60908.95822273913,
+      "listPriceBeforeVat": 87100,
+      "listPriceWithVat": 94068
     },
     {
       "productName": "Nối giảm",
@@ -1150,12 +1150,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 35755.9527777778,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 73094.169295516,
-      "vfPricePerUnit": 102331.837013722,
-      "tcgPricePerUnit": 133031.388117839,
-      "listPriceBeforeVat": 190100,
-      "listPriceWithVat": 205308
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 72095.33971854737,
+      "vfPricePerUnit": 100933.47560596632,
+      "tcgPricePerUnit": 131213.51828775622,
+      "listPriceBeforeVat": 187500,
+      "listPriceWithVat": 202500
     },
     {
       "productName": "Nối giảm",
@@ -1169,12 +1169,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 48085.5916666667,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 97869.8803569844,
-      "vfPricePerUnit": 137017.832499778,
-      "tcgPricePerUnit": 178123.182249712,
-      "listPriceBeforeVat": 254500,
-      "listPriceWithVat": 274860
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 96538.1075876928,
+      "vfPricePerUnit": 135153.3506227699,
+      "tcgPricePerUnit": 175699.35580960088,
+      "listPriceBeforeVat": 251000,
+      "listPriceWithVat": 271080
     },
     {
       "productName": "Nối giảm",
@@ -1188,12 +1188,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 57332.8208333333,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 107117.109523651,
-      "vfPricePerUnit": 149963.953333111,
-      "tcgPricePerUnit": 194953.139333045,
-      "listPriceBeforeVat": 278600,
-      "listPriceWithVat": 300888
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 105785.33675435948,
+      "vfPricePerUnit": 148099.47145610326,
+      "tcgPricePerUnit": 192529.31289293425,
+      "listPriceBeforeVat": 275100,
+      "listPriceWithVat": 297108
     },
     {
       "productName": "Nối giảm",
@@ -1207,12 +1207,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 91239.3277777778,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 157618.379364868,
-      "vfPricePerUnit": 220665.731110815,
-      "tcgPricePerUnit": 286865.45044406,
-      "listPriceBeforeVat": 409900,
-      "listPriceWithVat": 442692
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 155842.68233914595,
+      "vfPricePerUnit": 218179.7552748043,
+      "tcgPricePerUnit": 283633.6818572456,
+      "listPriceBeforeVat": 405200,
+      "listPriceWithVat": 437616
     },
     {
       "productName": "Nối giảm",
@@ -1226,12 +1226,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 107267.858333333,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 173646.909920424,
-      "vfPricePerUnit": 243105.673888593,
-      "tcgPricePerUnit": 316037.376055171,
-      "listPriceBeforeVat": 451500,
-      "listPriceWithVat": 487620
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 171871.21289470152,
+      "vfPricePerUnit": 240619.6980525821,
+      "tcgPricePerUnit": 312805.6074683567,
+      "listPriceBeforeVat": 446900,
+      "listPriceWithVat": 482652.00000000006
     },
     {
       "productName": "Lơ thu",
@@ -1245,12 +1245,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 2835.81694444444,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 6984.50766863759,
-      "vfPricePerUnit": 9778.31073609262,
-      "tcgPricePerUnit": 12711.8039569204,
-      "listPriceBeforeVat": 18200,
-      "listPriceWithVat": 19656
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 6873.526604529956,
+      "vfPricePerUnit": 9622.937246341937,
+      "tcgPricePerUnit": 12509.818420244519,
+      "listPriceBeforeVat": 17900,
+      "listPriceWithVat": 19332
     },
     {
       "productName": "Lơ thu",
@@ -1264,12 +1264,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 5055.15194444445,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 14389.706073879,
-      "vfPricePerUnit": 20145.5885034306,
-      "tcgPricePerUnit": 26189.2650544598,
-      "listPriceBeforeVat": 37500,
-      "listPriceWithVat": 40500
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 14139.998679636845,
+      "vfPricePerUnit": 19795.99815149158,
+      "tcgPricePerUnit": 25734.797596939057,
+      "listPriceBeforeVat": 36800,
+      "listPriceWithVat": 39744
     },
     {
       "productName": "Lơ thu",
@@ -1283,12 +1283,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 8754.04361111111,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 19125.770421594,
-      "vfPricePerUnit": 26776.0785902315,
-      "tcgPricePerUnit": 34808.902167301,
-      "listPriceBeforeVat": 49800,
-      "listPriceWithVat": 53784
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 18848.31776132489,
+      "vfPricePerUnit": 26387.644865854847,
+      "tcgPricePerUnit": 34303.9383256113,
+      "listPriceBeforeVat": 49100,
+      "listPriceWithVat": 53028
     },
     {
       "productName": "Lơ thu",
@@ -1302,12 +1302,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 5301.74472222222,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 15673.4715327051,
-      "vfPricePerUnit": 21942.8601457871,
-      "tcgPricePerUnit": 28525.7181895232,
-      "listPriceBeforeVat": 40800,
-      "listPriceWithVat": 44064
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 15396.018872436001,
+      "vfPricePerUnit": 21554.4264214104,
+      "tcgPricePerUnit": 28020.75434783352,
+      "listPriceBeforeVat": 40100,
+      "listPriceWithVat": 43308
     },
     {
       "productName": "Lơ thu",
@@ -1321,12 +1321,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 19727.4222222222,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 33210.6670758499,
-      "vfPricePerUnit": 46494.9339061899,
-      "tcgPricePerUnit": 60443.4140780469,
-      "listPriceBeforeVat": 86400,
-      "listPriceWithVat": 93312
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 32849.978617500135,
+      "vfPricePerUnit": 45989.97006450019,
+      "tcgPricePerUnit": 59786.96108385024,
+      "listPriceBeforeVat": 85500,
+      "listPriceWithVat": 92340
     },
     {
       "productName": "Lơ thu",
@@ -1340,12 +1340,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 16028.5305555556,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 29511.7754091833,
-      "vfPricePerUnit": 41316.4855728566,
-      "tcgPricePerUnit": 53711.4312447135,
-      "listPriceBeforeVat": 76800,
-      "listPriceWithVat": 82944
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 29151.08695083347,
+      "vfPricePerUnit": 40811.52173116685,
+      "tcgPricePerUnit": 53054.97825051691,
+      "listPriceBeforeVat": 75800,
+      "listPriceWithVat": 81864
     },
     {
       "productName": "Lơ thu",
@@ -1359,12 +1359,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 12329.6388888889,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 25812.8837425166,
-      "vfPricePerUnit": 36138.0372395232,
-      "tcgPricePerUnit": 46979.4484113802,
-      "listPriceBeforeVat": 67200,
-      "listPriceWithVat": 72576
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 25452.195284166803,
+      "vfPricePerUnit": 35633.07339783352,
+      "tcgPricePerUnit": 46322.99541718358,
+      "listPriceBeforeVat": 66200,
+      "listPriceWithVat": 71496
     },
     {
       "productName": "Nối ren trong",
@@ -1378,12 +1378,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 5548.3375,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 25378.441883669,
-      "vfPricePerUnit": 35529.8186371366,
-      "tcgPricePerUnit": 46188.7642282776,
-      "listPriceBeforeVat": 66000,
-      "listPriceWithVat": 71280
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 25281.33345257482,
+      "vfPricePerUnit": 35393.86683360475,
+      "tcgPricePerUnit": 46012.02688368617,
+      "listPriceBeforeVat": 65800,
+      "listPriceWithVat": 71064
     },
     {
       "productName": "Nối ren trong",
@@ -1397,12 +1397,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 7397.78333333333,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 27746.4740575265,
-      "vfPricePerUnit": 38845.0636805371,
-      "tcgPricePerUnit": 50498.5827846982,
-      "listPriceBeforeVat": 72200,
-      "listPriceWithVat": 77976
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 27635.492993418844,
+      "vfPricePerUnit": 38689.69019078638,
+      "tcgPricePerUnit": 50296.59724802229,
+      "listPriceBeforeVat": 71900,
+      "listPriceWithVat": 77652
     },
     {
       "productName": "Nối ren trong",
@@ -1416,12 +1416,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 8630.74722222222,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 33879.4379464154,
-      "vfPricePerUnit": 47431.2131249815,
-      "tcgPricePerUnit": 61660.577062476,
-      "listPriceBeforeVat": 88100,
-      "listPriceWithVat": 95148
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 33768.456882307735,
+      "vfPricePerUnit": 47275.83963523083,
+      "tcgPricePerUnit": 61458.591525800075,
+      "listPriceBeforeVat": 87800,
+      "listPriceWithVat": 94824
     },
     {
       "productName": "Nối ren trong",
@@ -1435,12 +1435,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 9863.71111111111,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 42812.4018353043,
-      "vfPricePerUnit": 59937.362569426,
-      "tcgPricePerUnit": 77918.5713402537,
-      "listPriceBeforeVat": 111400,
-      "listPriceWithVat": 120312
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 42701.42077119662,
+      "vfPricePerUnit": 59781.989079675266,
+      "tcgPricePerUnit": 77716.58580357785,
+      "listPriceBeforeVat": 111100,
+      "listPriceWithVat": 119988.00000000001
     },
     {
       "productName": "Nối ren trong",
@@ -1454,12 +1454,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 12329.6388888889,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 79764.1930183235,
-      "vfPricePerUnit": 111669.870225653,
-      "tcgPricePerUnit": 145170.831293349,
-      "listPriceBeforeVat": 207400,
-      "listPriceWithVat": 223992
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 79514.48562408128,
+      "vfPricePerUnit": 111320.2798737138,
+      "tcgPricePerUnit": 144716.36383582794,
+      "listPriceBeforeVat": 206800,
+      "listPriceWithVat": 223344.00000000003
     },
     {
       "productName": "Nối ren trong",
@@ -1473,12 +1473,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 15412.0486111111,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 89583.775421594,
-      "vfPricePerUnit": 125417.285590232,
-      "tcgPricePerUnit": 163042.471267301,
-      "listPriceBeforeVat": 233000,
-      "listPriceWithVat": 251640
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 89306.32276132489,
+      "vfPricePerUnit": 125028.85186585484,
+      "tcgPricePerUnit": 162537.5074256113,
+      "listPriceBeforeVat": 232200,
+      "listPriceWithVat": 250776.00000000003
     },
     {
       "productName": "Nối ren trong",
@@ -1492,12 +1492,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 23426.3138888889,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 146909.558742517,
-      "vfPricePerUnit": 205673.382239523,
-      "tcgPricePerUnit": 267375.39691138,
-      "listPriceBeforeVat": 382000,
-      "listPriceWithVat": 412560
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 146548.8702841668,
+      "vfPricePerUnit": 205168.4183978335,
+      "tcgPricePerUnit": 266718.94391718355,
+      "listPriceBeforeVat": 381100,
+      "listPriceWithVat": 411588
     },
     {
       "productName": "Nối ren ngoài",
@@ -1511,12 +1511,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 8630.74722222222,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 67179.4379464154,
-      "vfPricePerUnit": 94051.2131249815,
-      "tcgPricePerUnit": 122266.577062476,
-      "listPriceBeforeVat": 174700,
-      "listPriceWithVat": 188676
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 67068.45688230774,
+      "vfPricePerUnit": 93895.83963523083,
+      "tcgPricePerUnit": 122064.59152580009,
+      "listPriceBeforeVat": 174400,
+      "listPriceWithVat": 188352
     },
     {
       "productName": "Nối ren ngoài",
@@ -1530,12 +1530,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 12329.6388888889,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 103764.193018323,
-      "vfPricePerUnit": 145269.870225653,
-      "tcgPricePerUnit": 188850.831293349,
-      "listPriceBeforeVat": 269800,
-      "listPriceWithVat": 291384
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 103514.48562408128,
+      "vfPricePerUnit": 144920.2798737138,
+      "tcgPricePerUnit": 188396.36383582794,
+      "listPriceBeforeVat": 269200,
+      "listPriceWithVat": 290736
     },
     {
       "productName": "Nối ren ngoài",
@@ -1549,12 +1549,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 15412.0486111111,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 113083.775421594,
-      "vfPricePerUnit": 158317.285590232,
-      "tcgPricePerUnit": 205812.471267301,
-      "listPriceBeforeVat": 294100,
-      "listPriceWithVat": 317628
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 112806.32276132489,
+      "vfPricePerUnit": 157928.85186585484,
+      "tcgPricePerUnit": 205307.50742561131,
+      "listPriceBeforeVat": 293300,
+      "listPriceWithVat": 316764
     },
     {
       "productName": "Nối ren ngoài",
@@ -1568,12 +1568,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 23426.3138888889,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 179509.558742517,
-      "vfPricePerUnit": 251313.382239523,
-      "tcgPricePerUnit": 326707.39691138,
-      "listPriceBeforeVat": 466800,
-      "listPriceWithVat": 504144
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 179148.8702841668,
+      "vfPricePerUnit": 250808.4183978335,
+      "tcgPricePerUnit": 326050.94391718355,
+      "listPriceBeforeVat": 465800,
+      "listPriceWithVat": 503064.00000000006
     },
     {
       "productName": "Nắp bịt",
@@ -1587,12 +1587,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 2465.92777777778,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 6096.03216144678,
-      "vfPricePerUnit": 8534.44502602549,
-      "tcgPricePerUnit": 11094.7785338331,
-      "listPriceBeforeVat": 15900,
-      "listPriceWithVat": 17172
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 5998.923730352601,
+      "vfPricePerUnit": 8398.49322249364,
+      "tcgPricePerUnit": 10918.041189241732,
+      "listPriceBeforeVat": 15600,
+      "listPriceWithVat": 16848
     },
     {
       "productName": "Nắp bịt",
@@ -1606,12 +1606,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 5548.3375,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 9697.02822419314,
-      "vfPricePerUnit": 13575.8395138704,
-      "tcgPricePerUnit": 17648.5913680315,
-      "listPriceBeforeVat": 25300,
-      "listPriceWithVat": 27324
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 9586.04716008551,
+      "vfPricePerUnit": 13420.466024119714,
+      "tcgPricePerUnit": 17446.605831355628,
+      "listPriceBeforeVat": 25000,
+      "listPriceWithVat": 27000
     },
     {
       "productName": "Nắp bịt",
@@ -1625,12 +1625,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00694444444444444,
       "materialCostPerUnit": 9247.22916666667,
-      "processingCostPerUnit": 9334.55412943457,
-      "breakEvenPerUnit": 18581.7832961012,
-      "vfPricePerUnit": 26014.4966145417,
-      "tcgPricePerUnit": 33818.8455989042,
-      "listPriceBeforeVat": 48400,
-      "listPriceWithVat": 52272
+      "processingCostPerUnit": 9084.8467351924,
+      "breakEvenPerUnit": 18332.07590185907,
+      "vfPricePerUnit": 25664.906262602693,
+      "tcgPricePerUnit": 33364.3781413835,
+      "listPriceBeforeVat": 47700,
+      "listPriceWithVat": 51516
     },
     {
       "productName": "Nắp bịt",
@@ -1644,12 +1644,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.00771604938271605,
       "materialCostPerUnit": 12329.6388888889,
-      "processingCostPerUnit": 10371.7268104829,
-      "breakEvenPerUnit": 22701.3656993717,
-      "vfPricePerUnit": 31781.9119791204,
-      "tcgPricePerUnit": 41316.4855728566,
-      "listPriceBeforeVat": 59100,
-      "listPriceWithVat": 63828
+      "processingCostPerUnit": 10094.274150213778,
+      "breakEvenPerUnit": 22423.91303910267,
+      "vfPricePerUnit": 31393.478254743735,
+      "tcgPricePerUnit": 40811.52173116686,
+      "listPriceBeforeVat": 58400,
+      "listPriceWithVat": 63072.00000000001
     },
     {
       "productName": "Nắp bịt",
@@ -1663,12 +1663,12 @@
       "cavity": 2,
       "machineHoursPerUnit": 0.0100308641975309,
       "materialCostPerUnit": 19110.9402777778,
-      "processingCostPerUnit": 13483.2448536277,
-      "breakEvenPerUnit": 32594.1851314055,
-      "vfPricePerUnit": 45631.8591839677,
-      "tcgPricePerUnit": 59321.416939158,
-      "listPriceBeforeVat": 84800,
-      "listPriceWithVat": 91584
+      "processingCostPerUnit": 13122.55639527791,
+      "breakEvenPerUnit": 32233.49667305569,
+      "vfPricePerUnit": 45126.89534227797,
+      "tcgPricePerUnit": 58664.96394496136,
+      "listPriceBeforeVat": 83900,
+      "listPriceWithVat": 90612
     },
     {
       "productName": "Mặt bích",
@@ -1682,12 +1682,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0277777777777778,
       "materialCostPerUnit": 110966.75,
-      "processingCostPerUnit": 37338.2165177383,
-      "breakEvenPerUnit": 148304.966517738,
-      "vfPricePerUnit": 207626.953124834,
-      "tcgPricePerUnit": 269915.039062284,
-      "listPriceBeforeVat": 385600,
-      "listPriceWithVat": 416448
+      "processingCostPerUnit": 36339.3869407696,
+      "breakEvenPerUnit": 147306.13694076962,
+      "vfPricePerUnit": 206228.59171707745,
+      "tcgPricePerUnit": 268097.1692322007,
+      "listPriceBeforeVat": 383000,
+      "listPriceWithVat": 413640
     },
     {
       "productName": "Mặt bích",
@@ -1701,12 +1701,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.037037037037037,
       "materialCostPerUnit": 139324.919444444,
-      "processingCostPerUnit": 49784.2886903177,
-      "breakEvenPerUnit": 189109.208134762,
-      "vfPricePerUnit": 264752.891388667,
-      "tcgPricePerUnit": 344178.758805267,
-      "listPriceBeforeVat": 491700,
-      "listPriceWithVat": 531036
+      "processingCostPerUnit": 48452.515921026126,
+      "breakEvenPerUnit": 187777.43536547056,
+      "vfPricePerUnit": 262888.40951165877,
+      "tcgPricePerUnit": 341754.9323651564,
+      "listPriceBeforeVat": 488300,
+      "listPriceWithVat": 527364
     },
     {
       "productName": "Mặt bích",
@@ -1720,12 +1720,12 @@
       "cavity": 1,
       "machineHoursPerUnit": 0.0493827160493827,
       "materialCostPerUnit": 197274.222222222,
-      "processingCostPerUnit": 66379.0515870903,
-      "breakEvenPerUnit": 263653.273809313,
-      "vfPricePerUnit": 369114.583333037,
-      "tcgPricePerUnit": 479848.958332949,
-      "listPriceBeforeVat": 685500,
-      "listPriceWithVat": 740340
+      "processingCostPerUnit": 64603.35456136817,
+      "breakEvenPerUnit": 261877.57678359043,
+      "vfPricePerUnit": 366628.60749702656,
+      "tcgPricePerUnit": 476617.18974613457,
+      "listPriceBeforeVat": 680900,
+      "listPriceWithVat": 735372
     },
     {
       "productName": "Cút ren trong",
@@ -1739,12 +1739,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 5270.920625,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 25101.025008669,
-      "vfPricePerUnit": 35141.4350121366,
-      "tcgPricePerUnit": 45683.8655157776,
-      "listPriceBeforeVat": 65300,
-      "listPriceWithVat": 70524
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 25003.916577574822,
+      "vfPricePerUnit": 35005.483208604746,
+      "tcgPricePerUnit": 45507.128171186174,
+      "listPriceBeforeVat": 65100,
+      "listPriceWithVat": 70308
     },
     {
       "productName": "Cút ren trong",
@@ -1758,12 +1758,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 7613.55201388889,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 27962.242738082,
-      "vfPricePerUnit": 39147.1398333148,
-      "tcgPricePerUnit": 50891.2817833093,
-      "listPriceBeforeVat": 72800,
-      "listPriceWithVat": 78624
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 27851.2616739744,
+      "vfPricePerUnit": 38991.76634356416,
+      "tcgPricePerUnit": 50689.29624663341,
+      "listPriceBeforeVat": 72500,
+      "listPriceWithVat": 78300
     },
     {
       "productName": "Cút ren trong",
@@ -1777,12 +1777,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 6781.30138888889,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 32029.992113082,
-      "vfPricePerUnit": 44841.9889583148,
-      "tcgPricePerUnit": 58294.5856458093,
-      "listPriceBeforeVat": 83300,
-      "listPriceWithVat": 89964
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 31919.0110489744,
+      "vfPricePerUnit": 44686.61546856416,
+      "tcgPricePerUnit": 58092.60010913341,
+      "listPriceBeforeVat": 83000,
+      "listPriceWithVat": 89640
     },
     {
       "productName": "Tê ren trong",
@@ -1796,12 +1796,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00270061728395062,
       "materialCostPerUnit": 11096.675,
-      "processingCostPerUnit": 3630.104383669,
-      "breakEvenPerUnit": 30926.779383669,
-      "vfPricePerUnit": 43297.4911371366,
-      "tcgPricePerUnit": 56286.7384782776,
-      "listPriceBeforeVat": 80500,
-      "listPriceWithVat": 86940
+      "processingCostPerUnit": 3532.995952574822,
+      "breakEvenPerUnit": 30829.670952574823,
+      "vfPricePerUnit": 43161.53933360475,
+      "tcgPricePerUnit": 56110.00113368618,
+      "listPriceBeforeVat": 80200,
+      "listPriceWithVat": 86616
     },
     {
       "productName": "Tê ren trong",
@@ -1815,12 +1815,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 17261.4944444444,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 37610.1851686376,
-      "vfPricePerUnit": 52654.2592360926,
-      "tcgPricePerUnit": 68450.5370069204,
-      "listPriceBeforeVat": 97800,
-      "listPriceWithVat": 105624
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 37499.204104529956,
+      "vfPricePerUnit": 52498.88574634193,
+      "tcgPricePerUnit": 68248.55147024452,
+      "listPriceBeforeVat": 97500,
+      "listPriceWithVat": 105300
     },
     {
       "productName": "Tê ren trong",
@@ -1834,12 +1834,12 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 17261.4944444444,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 37610.1851686376,
-      "vfPricePerUnit": 52654.2592360926,
-      "tcgPricePerUnit": 68450.5370069204,
-      "listPriceBeforeVat": 97800,
-      "listPriceWithVat": 105624
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 37499.204104529956,
+      "vfPricePerUnit": 52498.88574634193,
+      "tcgPricePerUnit": 68248.55147024452,
+      "listPriceBeforeVat": 97500,
+      "listPriceWithVat": 105300
     },
     {
       "productName": "Tê ren trong",
@@ -1853,58 +1853,58 @@
       "cavity": 4,
       "machineHoursPerUnit": 0.00308641975308642,
       "materialCostPerUnit": 17261.4944444444,
-      "processingCostPerUnit": 4148.69072419314,
-      "breakEvenPerUnit": 50210.1851686376,
-      "vfPricePerUnit": 70294.2592360926,
-      "tcgPricePerUnit": 91382.5370069204,
-      "listPriceBeforeVat": 130600,
-      "listPriceWithVat": 141048
+      "processingCostPerUnit": 4037.7096600855107,
+      "breakEvenPerUnit": 50099.204104529956,
+      "vfPricePerUnit": 70138.88574634193,
+      "tcgPricePerUnit": 91180.5514702445,
+      "listPriceBeforeVat": 130300,
+      "listPriceWithVat": 140724
     }
   ],
   "mhrByCapacityTier": [
     {
       "scenario": "1 ca × huy động 60%",
       "machineHoursUtilized": 1968,
-      "mhrPerMachineHour": 1344175.79463858,
+      "mhrPerMachineHour": 1308217.9298677056,
       "deltaVsStandard": 0
     },
     {
       "scenario": "1 ca × huy động 85%",
       "machineHoursUtilized": 2788,
-      "mhrPerMachineHour": 980006.44327429,
-      "deltaVsStandard": -0.270923902079494
+      "mhrPerMachineHour": 954624.4210830864,
+      "deltaVsStandard": -0.27028639549404165
     },
     {
       "scenario": "2 ca × huy động 60%",
       "machineHoursUtilized": 3936,
-      "mhrPerMachineHour": 783292.292644492,
-      "deltaVsStandard": -0.417269455551308
+      "mhrPerMachineHour": 765313.3602590561,
+      "deltaVsStandard": -0.41499551199665263
     },
     {
       "scenario": "2 ca × huy động 85%",
       "machineHoursUtilized": 5576,
-      "mhrPerMachineHour": 584088.677160818,
-      "deltaVsStandard": -0.565467047174534
+      "mhrPerMachineHour": 571397.6660652161,
+      "deltaVsStandard": -0.5632244039622671
     },
     {
       "scenario": "3 ca × huy động 60%",
       "machineHoursUtilized": 5904,
-      "mhrPerMachineHour": 596331.12531313,
-      "deltaVsStandard": -0.55635927406841
+      "mhrPerMachineHour": 584345.1703895063,
+      "deltaVsStandard": -0.5533273493288702
     },
     {
       "scenario": "3 ca × huy động 85%",
       "machineHoursUtilized": 8364,
-      "mhrPerMachineHour": 452116.088456327,
-      "deltaVsStandard": -0.663648095539548
+      "mhrPerMachineHour": 443655.4143925926,
+      "deltaVsStandard": -0.660870406785009
     }
   ],
   "cvp": {
-    "variableCostPerKg": 125673.070503239,
-    "contributionMarginPerKg": 89135.7329657351,
-    "fixedCostPerYear": 2436729963.84872,
-    "breakEvenKgYear": 27337.2965338764,
-    "breakEvenMachineHours": 612.943868472564,
-    "pctOfUtilizedHours": 0.311455217719799
+    "variableCostPerKg": 127939.81975261813,
+    "contributionMarginPerKg": 124905.9484356407,
+    "fixedCostPerYear": 2365964885.979645,
+    "breakEvenKgYear": 18941.971264072636,
+    "breakEvenMachineHours": 829.771075353462,
+    "pctOfUtilizedHours": 0.4216316439804177
   }
 }

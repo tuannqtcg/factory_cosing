@@ -19,8 +19,9 @@
 //   THÊM hay THAY THẾ phần của khuôn có override — xem
 //   docs/contracts/resource.md để biết lý do chưa tự suy đoán công thức.
 import type { MachineHourResource } from '../schemas/resource.js';
+import type { FittingProduct } from '../schemas/product.js';
 import type { CostPool } from '../schemas/cost-pool.js';
-import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear } from './cost-pool.js';
+import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear, type MaterialPricingInput } from './cost-pool.js';
 import { moldDepreciationPerYear as calculateMoldDepreciationPerYear } from './mold-depreciation.js';
 
 export interface FittingCapacity {
@@ -31,7 +32,33 @@ export interface FittingCapacity {
   estimatedProductionKgYear: number;
 }
 
-export function calculateFittingCapacity(resource: MachineHourResource): FittingCapacity {
+// ADR-011 — thay "năng suất mix" nhập tay cố định bằng tính bottom-up từ bảng
+// khuôn: nhóm SKU theo moldSizeDN, mỗi nhóm = unitsPerHour × unitWeightKg bình
+// quân nhóm, rồi lấy TRUNG BÌNH KHÔNG TRỌNG SỐ qua các nhóm (đúng giả định
+// %mix đều 1/8 hiện có trong Excel — chưa có dữ liệu mix sản lượng thực).
+export function computeMixAvgProductivityKgPerMachineHour(products: FittingProduct[]): number {
+  const bySize = new Map<number, FittingProduct[]>();
+  for (const product of products) {
+    const group = bySize.get(product.moldSizeDN) ?? [];
+    group.push(product);
+    bySize.set(product.moldSizeDN, group);
+  }
+
+  const kgPerMachineHourBySize = Array.from(bySize.values()).map((group) => {
+    const [first] = group;
+    if (!first) throw new Error('unreachable: nhóm moldSizeDN rỗng');
+    const unitsPerHour = (3600 / first.cycleTimeSec) * first.cavity;
+    const avgUnitWeightKg = group.reduce((sum, p) => sum + p.unitWeightKg, 0) / group.length;
+    return unitsPerHour * avgUnitWeightKg;
+  });
+
+  return kgPerMachineHourBySize.reduce((sum, v) => sum + v, 0) / kgPerMachineHourBySize.length;
+}
+
+export function calculateFittingCapacity(
+  resource: MachineHourResource,
+  fittingProducts: FittingProduct[],
+): FittingCapacity {
   const batchesPerYear =
     resource.operatingDaysPerYear / (resource.continuousRunDaysPerBatch + resource.maintenanceDaysPerBatch);
   const totalMachines = resource.machineTypes.reduce((sum, m) => sum + m.count, 0);
@@ -44,7 +71,9 @@ export function calculateFittingCapacity(resource: MachineHourResource): Fitting
     resource.hoursPerShift *
     totalMachines *
     resource.normalUtilizationFactor;
-  const estimatedProductionKgYear = normalMachineHoursUtilized * resource.avgProductivityKgPerMachineHour;
+  const avgProductivityKgPerMachineHour =
+    resource.avgProductivityKgPerMachineHour ?? computeMixAvgProductivityKgPerMachineHour(fittingProducts);
+  const estimatedProductionKgYear = normalMachineHoursUtilized * avgProductivityKgPerMachineHour;
 
   return {
     batchesPerYear,
@@ -61,8 +90,8 @@ export interface FittingCostAtNormalCapacityInputs {
   costPool: CostPool;
   /** Cross-ref sang Ống cho sharedCostAllocationRatio — xem ghi chú đầu file. */
   otherLineNormalCapacityKgYear: number;
-  /** ADR-004 pricingPrice (tạm nhận trực tiếp tới khi M5 nối dây price-lock). */
-  compoundPricingPriceUsdPerKg: number;
+  /** ADR-012 — giá/thuế/markup THEO NGUYÊN LIỆU. Gọi 1 lần/material; MHR + toàn bộ chi phí gia công KHÔNG phụ thuộc material (chỉ các field *Ref vật liệu quy kg đổi theo). */
+  material: MaterialPricingInput;
   /** ADR-007 — mốc thời gian đánh giá khấu hao khuôn động (src/engine/mold-depreciation.ts). */
   asOfYear: number;
 }
@@ -88,11 +117,14 @@ export interface FittingCostAtNormalCapacity {
 export function calculateFittingCostAtNormalCapacity(
   inputs: FittingCostAtNormalCapacityInputs,
 ): FittingCostAtNormalCapacity {
-  const { resource, capacity, costPool, otherLineNormalCapacityKgYear, compoundPricingPriceUsdPerKg, asOfYear } =
-    inputs;
-  const { currency, markup } = costPool;
+  const { resource, capacity, costPool, otherLineNormalCapacityKgYear, material, asOfYear } = inputs;
+  const { currency } = costPool;
 
-  const compoundLandedPerKg = landedCostPerKgVnd(compoundPricingPriceUsdPerKg, currency);
+  const compoundLandedPerKg = landedCostPerKgVnd(material.pricingPriceUsdPerKg, {
+    importTaxRate: material.importTaxRate,
+    customsLogisticsFeeRate: material.customsLogisticsFeeRate,
+    usdVndRate: currency.usdVndRate,
+  });
   const materialPerKgFinishedRef = compoundLandedPerKg / resource.yieldRate;
 
   const machineDepreciationPerYear =
@@ -127,7 +159,7 @@ export function calculateFittingCostAtNormalCapacity(
 
   const processingCostPerKgRef = totalProcessingCostPerYear / capacity.estimatedProductionKgYear;
   const fullCostPerKgRef = materialPerKgFinishedRef + resource.packagingCostPerKg + processingCostPerKgRef;
-  const vfPricePerKgRef = fullCostPerKgRef * (1 + markup.markupVfFitting);
+  const vfPricePerKgRef = fullCostPerKgRef * (1 + material.markupVf); // ADR-012 — markup VF theo material
 
   return {
     compoundLandedPerKg,

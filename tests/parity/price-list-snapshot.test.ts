@@ -99,12 +99,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -117,16 +113,39 @@ const pipeCost = calculatePipeCostAtNormalCapacity({
   capacity: pipeCapacity,
   costPool,
   otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-  compoundPricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+  material: {
+    materialId: 'bm-orange-pipe',
+    pricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+    importTaxRate: assumptions.compoundImportTaxRate,
+    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+    markupVf: assumptions.markupVfPipe,
+  },
 });
 
-const fittingCapacity = calculateFittingCapacity(fittingResource);
+const fittingProducts = fittingFixture.skus.map((sku: any) => ({
+  kind: 'fitting' as const,
+  productName: sku.productName,
+  sizeLabel: sku.sizeLabel,
+  unit: sku.unit,
+  moldSizeDN: sku.moldSizeDN,
+  cycleTimeSec: sku.cycleTimeSec,
+  cavity: sku.cavity,
+  unitWeightKg: sku.unitWeightKg,
+}));
+
+const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 const fittingCost = calculateFittingCostAtNormalCapacity({
   resource: fittingResource,
   capacity: fittingCapacity,
   costPool,
   otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
-  compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+  material: {
+    materialId: 'bm-fitting',
+    pricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+    importTaxRate: assumptions.compoundImportTaxRate,
+    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+    markupVf: assumptions.markupVfFitting,
+  },
   asOfYear: 2026,
 });
 
@@ -141,7 +160,7 @@ describe('price-list.json — 8 dòng Ống (stt 1-8), khớp tuyệt đối b�
   for (let i = 0; i < 8; i += 1) {
     const dnRow = pipeFixture.priceLadderByDN[i];
     it(`${dnRow.dn}: listPrice trước/có VAT khớp price-list.json`, () => {
-      const chain = calculatePipeSkuPriceChain(pipeCost.fullCostPerKg, dnRow.unitWeightKgPerM, costPool);
+      const chain = calculatePipeSkuPriceChain(pipeCost.fullCostPerKg, dnRow.unitWeightKgPerM, assumptions.markupVfPipe, costPool);
       const row = pipeRows[i];
       expect(chain.listPriceBeforeVat).toBe(row.priceBeforeVat);
       expect(chain.listPriceWithVat).toBeCloseTo(row.priceWithVat, 6);
@@ -184,10 +203,14 @@ describe('price-list.json — 91 dòng Phụ kiện (stt 9-99), khớp tuyệt �
           packagingCostPerKg: fittingResource.packagingCostPerKg,
           insertQtyPerUnit: insertSku.insertQtyPerUnit,
           insertPricingPriceVnd: insertSku.insertPricingCostVndPerUnit,
-          currency: costPool.currency,
+          landedRates: {
+            importTaxRate: assumptions.compoundImportTaxRate,
+            customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+            usdVndRate: assumptions.usdVndRate,
+          },
         });
       }
-      const chain = calculateFittingSkuPriceChain(materialCostPerUnit, machineHoursPerUnit, fittingCost.mhrPerMachineHour, costPool);
+      const chain = calculateFittingSkuPriceChain(materialCostPerUnit, machineHoursPerUnit, fittingCost.mhrPerMachineHour, assumptions.markupVfFitting, costPool);
 
       const row = priceList[8 + i];
       expect(chain.listPriceBeforeVat).toBe(row.priceBeforeVat);

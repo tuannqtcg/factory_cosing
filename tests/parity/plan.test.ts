@@ -85,12 +85,8 @@ const costPool = CostPoolSchema.parse({
     usdVndRate: assumptions.usdVndRate,
     vatOutputRate: assumptions.vatOutputRate,
     mandatoryInsuranceRate: assumptions.mandatoryInsuranceRate,
-    compoundImportTaxRate: assumptions.compoundImportTaxRate,
-    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   },
   markup: {
-    markupVfPipe: assumptions.markupVfPipe,
-    markupVfFitting: assumptions.markupVfFitting,
     markupTcg: assumptions.markupTcg,
     listPriceMargin: assumptions.listPriceMargin,
   },
@@ -104,6 +100,7 @@ const pipeProducts: PipeProduct[] = pipeFixture.priceLadderByDN.map((row: any) =
   odMm: row.odMm,
   minWallThicknessMm: row.minWallThicknessMm,
   unitWeightKgPerM: row.unitWeightKgPerM,
+  materialId: 'bm-orange-pipe',
 }));
 
 const fittingProducts: FittingProduct[] = fittingFixture.skus.map((sku: any) => ({
@@ -115,6 +112,7 @@ const fittingProducts: FittingProduct[] = fittingFixture.skus.map((sku: any) => 
   cycleTimeSec: sku.cycleTimeSec,
   cavity: sku.cavity,
   unitWeightKg: sku.unitWeightKg,
+  materialId: 'bm-fitting',
 }));
 
 const pipeCapacity = calculatePipeCapacity(pipeResource);
@@ -123,19 +121,44 @@ const pipeCost = calculatePipeCostAtNormalCapacity({
   capacity: pipeCapacity,
   costPool,
   otherLineEstimatedProductionKgYear: fittingFixture.capacity.estimatedProductionKgYear,
-  compoundPricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+  material: {
+    materialId: 'bm-orange-pipe',
+    pricingPriceUsdPerKg: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+    importTaxRate: assumptions.compoundImportTaxRate,
+    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+    markupVf: assumptions.markupVfPipe,
+  },
 });
 const pipeCvp = calculatePipeCvp(pipeResource, pipeCapacity, pipeCost);
 
-const fittingCapacity = calculateFittingCapacity(fittingResource);
+const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 const fittingCost = calculateFittingCostAtNormalCapacity({
   resource: fittingResource,
   capacity: fittingCapacity,
   costPool,
   otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
-  compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+  material: {
+    materialId: 'bm-fitting',
+    pricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+    importTaxRate: assumptions.compoundImportTaxRate,
+    customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
+    markupVf: assumptions.markupVfFitting,
+  },
   asOfYear: 2026,
 });
+
+const planMaterials = [
+  {
+    materialId: 'bm-orange-pipe',
+    compoundLandedPerKgVnd: pipeCost.compoundLandedPerKg,
+    replacementUsdPerKgRaw: pipeFixture.params.compoundReplacementPriceUsdPerKg,
+  },
+  {
+    materialId: 'bm-fitting',
+    compoundLandedPerKgVnd: fittingCost.compoundLandedPerKg,
+    replacementUsdPerKgRaw: fittingFixture.params.compoundReplacementPriceUsdPerKg,
+  },
+];
 
 function makeInput(overrides: Partial<PlanInput>): PlanInput {
   return {
@@ -158,14 +181,9 @@ describe('Plan_SX — kịch bản A: kế hoạch vừa công suất (1 ca đ�
 
   const result = calculatePlan(
     input,
-    { resource: pipeResource, products: pipeProducts, cost: pipeCost, cvp: pipeCvp, replacementUsdPerKgRaw: pipeFixture.params.compoundReplacementPriceUsdPerKg },
-    {
-      resource: fittingResource,
-      products: fittingProducts,
-      cost: fittingCost,
-      replacementUsdPerKgRaw: fittingFixture.params.compoundReplacementPriceUsdPerKg,
-      moldSetCountBySizeDN: { 20: 1 },
-    },
+    { resource: pipeResource, products: pipeProducts, cost: pipeCost, cvp: pipeCvp },
+    { resource: fittingResource, products: fittingProducts, moldSetCountBySizeDN: { 20: 1 } },
+    planMaterials,
   );
 
   it('Ống cần đúng 2 ca (500 giờ máy > 410 giờ khả dụng 1 ca, ≤ 820 giờ khả dụng 2 ca)', () => {
@@ -180,18 +198,19 @@ describe('Plan_SX — kịch bản A: kế hoạch vừa công suất (1 ca đ�
     expect(result.moldConstraintWarnings).toHaveLength(0);
   });
 
-  it('nguyên liệu Ống: kgToBuy=73.500, vndValue và usdValueAtRawReplacement khớp tính tay', () => {
-    expect(result.materialRequirement.pipe.kgToBuy).toBeCloseTo(73500, 6);
-    expect(result.materialRequirement.pipe.vndValue).toBeCloseTo(73500 * pipeCost.compoundLandedPerKg, 3);
-    expect(result.materialRequirement.pipe.usdValueAtRawReplacement).toBeCloseTo(222705, 3);
+  it('nguyên liệu Ống (bm-orange-pipe): kgToBuy=73.500, vndValue và usdValueAtRawReplacement khớp tính tay', () => {
+    const pipeReq = result.materialRequirement.find((r) => r.materialId === 'bm-orange-pipe')!;
+    expect(pipeReq.kgToBuy).toBeCloseTo(73500, 6);
+    expect(pipeReq.vndValue).toBeCloseTo(73500 * pipeCost.compoundLandedPerKg, 3);
+    expect(pipeReq.usdValueAtRawReplacement).toBeCloseTo(222705, 3);
   });
 
   it('nhân công Ống: cần 2 ca × 2 người = 4, đã có 4 → không cần tuyển thêm', () => {
     expect(result.laborToHire.pipe).toBe(0);
   });
 
-  it('chi phí/kg thực tế Ống dương (đang gánh công suất nhàn rỗi) — khớp tính tay 8.090,31', () => {
-    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(8090.311283360701, 3);
+  it('chi phí/kg thực tế Ống dương (đang gánh công suất nhàn rỗi) — khớp tính tay 8.256,97 (ADR-011, v3.7)', () => {
+    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(8256.973132775121, 3);
   });
 });
 
@@ -202,14 +221,9 @@ describe('Plan_SX — kịch bản B: kế hoạch Phụ kiện VƯỢT công su
 
   const result = calculatePlan(
     input,
-    { resource: pipeResource, products: pipeProducts, cost: pipeCost, cvp: pipeCvp, replacementUsdPerKgRaw: pipeFixture.params.compoundReplacementPriceUsdPerKg },
-    {
-      resource: fittingResource,
-      products: fittingProducts,
-      cost: fittingCost,
-      replacementUsdPerKgRaw: fittingFixture.params.compoundReplacementPriceUsdPerKg,
-      moldSetCountBySizeDN: { 20: 1 },
-    },
+    { resource: pipeResource, products: pipeProducts, cost: pipeCost, cvp: pipeCvp },
+    { resource: fittingResource, products: fittingProducts, moldSetCountBySizeDN: { 20: 1 } },
+    planMaterials,
   );
 
   it('thiếu cả 3 ca → insufficient, cần thêm đúng 1 máy (2700,6 giờ cần, 1476 giờ khả dụng 3 ca)', () => {

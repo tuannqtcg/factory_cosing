@@ -12,7 +12,7 @@
 //   replacement — ADR-002) CHƯA làm ở đây, thuộc M5 (giá vốn kép).
 import type { ContinuousKgResource } from '../schemas/resource.js';
 import type { CostPool } from '../schemas/cost-pool.js';
-import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear } from './cost-pool.js';
+import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear, type MaterialPricingInput } from './cost-pool.js';
 
 export interface PipeCapacity {
   batchesPerYear: number;
@@ -46,8 +46,8 @@ export interface PipeCostAtNormalCapacityInputs {
   costPool: CostPool;
   /** Cross-ref sang Phụ kiện cho sharedCostAllocationRatio — xem ghi chú đầu file. */
   otherLineEstimatedProductionKgYear: number;
-  /** ADR-004 pricingPrice (tạm nhận trực tiếp tới khi M5 nối dây price-lock). */
-  compoundPricingPriceUsdPerKg: number;
+  /** ADR-012 — giá/thuế/markup THEO NGUYÊN LIỆU (thay compoundPricingPriceUsdPerKg + tax/markup toàn cục cũ). Gọi hàm này 1 lần cho MỖI material dùng bởi SP dòng Ống — phần chi phí gia công (unitProcessingCostPerKg...) không phụ thuộc material nên trùng nhau giữa các lần gọi. */
+  material: MaterialPricingInput;
 }
 
 export interface PipeCostAtNormalCapacity {
@@ -69,10 +69,14 @@ export interface PipeCostAtNormalCapacity {
 export function calculatePipeCostAtNormalCapacity(
   inputs: PipeCostAtNormalCapacityInputs,
 ): PipeCostAtNormalCapacity {
-  const { resource, capacity, costPool, otherLineEstimatedProductionKgYear, compoundPricingPriceUsdPerKg } = inputs;
-  const { currency, markup } = costPool;
+  const { resource, capacity, costPool, otherLineEstimatedProductionKgYear, material } = inputs;
+  const { currency } = costPool;
 
-  const compoundLandedPerKg = landedCostPerKgVnd(compoundPricingPriceUsdPerKg, currency);
+  const compoundLandedPerKg = landedCostPerKgVnd(material.pricingPriceUsdPerKg, {
+    importTaxRate: material.importTaxRate,
+    customsLogisticsFeeRate: material.customsLogisticsFeeRate,
+    usdVndRate: currency.usdVndRate,
+  });
   const materialPerKgFinished = compoundLandedPerKg / resource.yieldRate;
 
   const extruderDepreciationPerYear =
@@ -96,7 +100,7 @@ export function calculatePipeCostAtNormalCapacity(
   const unitProcessingCostPerKg = totalProcessingCostPerYear / capacity.normalCapacityKgYear;
 
   const fullCostPerKg = materialPerKgFinished + resource.packagingCostPerKg + unitProcessingCostPerKg;
-  const vfPricePerKg = fullCostPerKg * (1 + markup.markupVfPipe);
+  const vfPricePerKg = fullCostPerKg * (1 + material.markupVf); // ADR-012 — markup VF theo material
 
   return {
     compoundLandedPerKg,

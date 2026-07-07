@@ -18,18 +18,20 @@ export const NonProductionCostsSchema = z.object({
 });
 export type NonProductionCosts = z.infer<typeof NonProductionCostsSchema>;
 
+// Sửa 2026-07-07 (ADR-012, contract material.md): BỎ compoundImportTaxRate +
+// customsLogisticsFeeRate — thuế NK/phí HQ chuyển vào TỪNG Material (BlazeMaster
+// 6% EU, Corzan 0% AIFTA). CurrencyParams chỉ còn tham số thật sự toàn cục.
 export const CurrencyParamsSchema = z.object({
   usdVndRate: z.number().positive(),
   vatOutputRate: z.number().min(0).max(1),
   mandatoryInsuranceRate: z.number().min(0).max(1),
-  compoundImportTaxRate: z.number().min(0).max(1),
-  customsLogisticsFeeRate: z.number().min(0).max(1),
 });
 export type CurrencyParams = z.infer<typeof CurrencyParamsSchema>;
 
+// Sửa 2026-07-07 (ADR-012): BỎ markupVfPipe/markupVfFitting — markup VF chuyển
+// vào TỪNG Material (Material.markupVf). GIỮ markupTcg + listPriceMargin là
+// chính sách kênh phân phối CHUNG mọi nguyên liệu (user xác nhận 2026-07-07).
 export const MarkupChainSchema = z.object({
-  markupVfPipe: z.number().min(0),
-  markupVfFitting: z.number().min(0),
   markupTcg: z.number().min(0),
   listPriceMargin: z.number().min(0).max(1),
 });

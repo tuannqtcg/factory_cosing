@@ -26,8 +26,9 @@ const fittingFixture = loadFixture<any>('fitting.json');
 const assumptions = loadFixture<any>('assumptions.json');
 const metalInsert = loadFixture<any>('metal-insert.json');
 
-const currency = {
-  compoundImportTaxRate: assumptions.compoundImportTaxRate,
+// ADR-012 — thuế NK/phí HQ giờ theo NGUYÊN LIỆU; SKU ren thuộc bm-fitting (6% EU)
+const landedRates = {
+  importTaxRate: assumptions.compoundImportTaxRate,
   customsLogisticsFeeRate: assumptions.customsLogisticsFeeRate,
   usdVndRate: assumptions.usdVndRate,
 };
@@ -71,7 +72,7 @@ describe('materialCostPerUnitWithInsert — 11 SKU họ ren (khớp fitting.json
         packagingCostPerKg: fittingFixture.params.packagingCostPerKg,
         insertQtyPerUnit: insertSku.insertQtyPerUnit,
         insertPricingPriceVnd: insertLock.pricingPrice,
-        currency,
+        landedRates,
       });
 
       const expected = goldenSku.materialCostPerUnit + goldenSku.brassInsertCost;

@@ -1,11 +1,28 @@
-# Contract: Material (src/schemas/material.ts — CHƯA TỒN TẠI, viết ở Pha 3 sau đóng băng)
+# Contract: Material (src/schemas/material.ts)
 
-> Pha 2 — **CHỜ ĐÓNG BĂNG** (user duyệt layout prototype 2026-07-07; contract
-> này cần user xác nhận "đóng băng" trước khi code Pha 3). Sửa cấu trúc field
-> sau đóng băng bắt buộc có ADR mới (AGENTS.md luật #5).
+> Pha 2 — **ĐÓNG BĂNG 2026-07-07** (user: "duyệt đóng băng, markup như đề
+> xuất"). Sửa cấu trúc field bắt buộc có ADR mới (AGENTS.md luật #5).
 > Nguồn nghiệp vụ: ADR-012 (multi-material), tái dùng ADR-002 (giá vốn kép),
 > ADR-004 (khóa bảng giá). Prototype tham chiếu:
 > `prototype/multi-material-catalog.html`.
+>
+> **Bổ sung khi code Pha 3 M13 (cùng ngày, kỷ luật ADR-009 — ghi tại chỗ thay
+> vì ADR mới vì cùng phạm vi ADR-012):**
+> 1. `PlanInputSchema.pipePlan[]/fittingPlan[]` thêm `materialId` optional —
+>    khóa `(dn)` và `(productName, sizeLabel)` KHÔNG còn duy nhất khi
+>    BlazeMaster/Corzan trùng tên/size (cùng khuôn); bỏ trống = khớp SP đầu
+>    tiên theo thứ tự `products[]` (= BlazeMaster sau migration).
+> 2. `ScenarioOutput` chốt hình dạng cuối: `cvp.byLineMaterial` là
+>    discriminatedUnion theo `line` (2 bộ field pipe/fitting khác nhau — giữ
+>    nguyên field cũ); `dualCosting.byMaterial` entry theo CẶP (materialId,
+>    line) vì `bookCostPerKg` cần chi phí gia công line — `holdingGainLossVnd`
+>    thuộc material, lặp nếu 1 material dùng 2 line (đọc theo materialId,
+>    không cộng dồn qua line).
+> 3. Quy ước "material THAM CHIẾU" của 1 line = material ĐẦU TIÊN trong
+>    `materials[]` được ≥1 SP line đó dùng — dùng cho doanh thu chéo bậc 4
+>    thang giá + `mhrPerMachineHour` top-level (giá trị material-independent).
+>    Xấp xỉ CÓ CHỦ ĐÍCH khi chưa có mix sản lượng theo nguyên liệu — thay bằng
+>    mix thực cần ADR mới.
 
 ## Nguyên tắc
 
@@ -33,7 +50,7 @@ export const MaterialSchema = z.object({
   importTaxRate: z.number().min(0).max(1),          // BlazeMaster 0.06 (EU); Corzan 0 (AIFTA C/O form AI)
   customsLogisticsFeeRate: z.number().min(0).max(1),// hiện cùng 0.01 cho mọi nguyên liệu, vẫn để theo material vì phí thực tế theo tuyến vận chuyển
   // Markup VF RIÊNG (ADR-012 quyết định #2 — trước đây là MarkupChain.markupVfPipe/markupVfFitting):
-  markupVf: z.number().min(0), // BlazeMaster ống 0.25, phụ kiện 0.40; Corzan: CHỜ SỐ TỪ USER (tạm placeholder = BlazeMaster)
+  markupVf: z.number().min(0), // BlazeMaster ống 0.25, phụ kiện 0.40; Corzan: user duyệt "như đề xuất" 2026-07-07 = 0.25/0.40 (field riêng — đổi độc lập được)
   // Tồn kho + khóa giá — TÁI DÙNG NGUYÊN schema ADR-002/004, không thêm field:
   inventory: CompoundInventorySchema, // { lots[], priceLock{baseline,thresholdPct}, replacementPriceUsdPerKg }
 });
@@ -83,9 +100,13 @@ line — không tách theo material.
 - Đổi gán `Product.materialId`: `admin` only (đổi bản chất giá thành sản phẩm,
   không phải thao tác định giá hàng ngày).
 
-## Còn chờ user trước khi đóng băng
+## Trạng thái các câu hỏi (đã chốt 2026-07-07)
 
-1. % markup VF Corzan (ống + phụ kiện) — hiện placeholder 25%/40%.
-2. Xác nhận `markupTcg` 30% + `listPriceMargin` 30% dùng CHUNG cho Corzan.
-3. Xác nhận thuế NK 0% với forwarder (mã HS con Corzan 3710, C/O form AI).
-4. Danh mục SKU Corzan (đơn trọng/chu kỳ/cavity/khuôn) + tồn kho ban đầu.
+1. ✅ % markup VF Corzan: "như đề xuất" = ống 25% / phụ kiện 40% (field riêng
+   theo Material).
+2. ✅ `markupTcg` 30% + `listPriceMargin` 30% dùng CHUNG (nằm lại MarkupChain).
+3. ⚠ Thuế NK 0% theo AIFTA (tra cứu NĐ 122/2022) — CÒN PHẢI xác nhận với
+   forwarder đúng mã HS con Corzan 3710 + C/O form AI khi nhập lô đầu.
+4. ✅ Danh mục SKU Corzan: cùng tên/kích cỡ/thông số BlazeMaster; ỐNG đơn trọng
+   × 1,1 theo size; PHỤ KIỆN giống hệt (chung khuôn) — rule sinh chương trình,
+   xem `tests/fixtures/corzan.json._meta`. Tồn kho ban đầu = 0.

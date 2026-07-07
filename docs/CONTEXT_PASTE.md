@@ -77,15 +77,20 @@
   `price-lock-scenarios.json`), `npm test` 286/286 xanh, `npm run build` OK).
   **012** (2026-07-07 — multi-material/Corzan: `Material` entity độc lập
   (landed cost + markup VF + tồn kho/khóa giá theo TỪNG nguyên liệu, tái dùng
-  ADR-002/004), `materialId` trên Product, chung line/chung MHR. UI đã DUYỆT
-  (`prototype/multi-material-catalog.html` + brief
-  `docs/briefs/BRIEF-2026-07-07-multi-material.md`). Giá thật user cấp: Corzan
-  ống 3,47 / phụ kiện 3,97 USD/kg, nhập Ấn Độ, thuế NK 0% theo AIFTA (C/O form
-  AI, NĐ 122/2022 — cần forwarder xác nhận mã HS con). **Schema chi tiết ở
-  `docs/contracts/material.md` — TRẠNG THÁI: CHỜ USER ĐÓNG BĂNG, chưa được
-  code Pha 3.** Còn chờ user: % markup VF Corzan (đã chốt là markup RIÊNG,
-  chưa có số — tạm placeholder 25%/40%); xác nhận TCG 30% + margin niêm yết
-  30% dùng chung; danh mục SKU Corzan + tồn kho ban đầu.)
+  ADR-002/004), `materialId` trên Product, chung line/chung MHR. UI DUYỆT +
+  schema ĐÓNG BĂNG + **Pha 3 M13 ĐÃ XONG cùng ngày** (M13.1 engine
+  multi-material, M13.2 danh mục Corzan): `src/schemas/material.ts`,
+  ScenarioInput có `materials[]` (bỏ `inventory.pipe|fitting`), ScenarioOutput
+  theo (line, materialId), thuế NK + markup VF chuyển từ CostPool vào
+  Material. Corzan: giá thật ống 3,47 / phụ kiện 3,97 USD/kg (Ấn Độ, thuế 0%
+  AIFTA — ⚠ còn phải xác nhận forwarder mã HS con), markup 25%/40% (field
+  riêng), SKU = BlazeMaster cùng tên/size (ống đơn trọng ×1,1, phụ kiện giống
+  hệt, CHUNG khuôn) — rule sinh chương trình ở `tests/fixtures/corzan.json` +
+  `buildCorzanScenarioInput()`. Verify: 297/297 test xanh = parity BM v3.7
+  nguyên vẹn + 11 test Corzan (số tính tay độc lập + test cách ly). Corzan
+  KHÔNG có trong Excel — chờ bảng giá/Excel Corzan chính thức để đối chiếu
+  lại. Chi tiết: `docs/contracts/material.md` (có mục "Bổ sung khi code Pha 3
+  M13") + `docs/sessions/SESSION_2026-07-07.md`.)
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

@@ -1,6 +1,11 @@
 // Dựng `ScenarioInput` thật từ tests/fixtures/*.json (baseline v3.4) — TÁCH ra
 // từ tests/parity/scenario.test.ts (M12.1) để dùng lại ở test tích hợp Cloud
 // Function (M12.4, tests/functions/) mà không lặp lại logic ráp fixture.
+//
+// ADR-012 (M13.2): thêm buildCorzanScenarioInput() = baseline + 2 Material
+// Corzan (corzan.json) + danh mục SKU Corzan SINH THEO RULE user cấp
+// 2026-07-07 (ống = BM × 1,1 đơn trọng; phụ kiện giống hệt — xem
+// corzan.json._meta.skuDerivationRule), KHÔNG chép tay 99 dòng.
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -182,5 +187,36 @@ export function buildBaselineScenarioInput(): unknown {
         replacementPriceVnd: entry.priceLock.replacementPriceVnd,
       })),
     },
+  };
+}
+
+/**
+ * ADR-012 M13.2 — baseline + Corzan: materials từ corzan.json; SKU Corzan sinh
+ * theo rule (ống ×1,1 đơn trọng, phụ kiện giống hệt — kể cả metalInsert BOM,
+ * cùng khuôn vật lý nên managementStatus tự khớp 83 active / 8 pending_mold).
+ * BlazeMaster đứng TRƯỚC trong cả materials[] lẫn products[] — giữ nguyên
+ * material tham chiếu từng line (parity BM không đổi).
+ */
+export function buildCorzanScenarioInput(): unknown {
+  const base = buildBaselineScenarioInput() as any;
+  const corzan = loadFixture<any>('corzan.json');
+  const factor = corzan._meta.pipeUnitWeightFactor as number;
+
+  const corzanPipeProducts = base.products
+    .filter((p: any) => p.kind === 'pipe')
+    .map((p: any) => ({
+      ...p,
+      unitWeightKgPerM: p.unitWeightKgPerM * factor, // ống Corzan nặng hơn 10%/size (user 2026-07-07)
+      materialId: 'corzan-pipe',
+    }));
+  const corzanFittingProducts = base.products
+    .filter((p: any) => p.kind === 'fitting')
+    .map((p: any) => ({ ...p, materialId: 'corzan-fitting' })); // giống hệt, chỉ đổi compound
+
+  return {
+    ...base,
+    id: 'baseline-v3.7-corzan',
+    materials: [...base.materials, ...corzan.materials],
+    products: [...base.products, ...corzanPipeProducts, ...corzanFittingProducts],
   };
 }

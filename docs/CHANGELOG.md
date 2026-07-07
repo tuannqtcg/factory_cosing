@@ -1,5 +1,17 @@
 # CHANGELOG — Costing App Kit
 
+## v1.26 (2026-07-07) — ADR-012: multi-material (Corzan) — Pha 0→3 trọn vòng trong ngày
+Yêu cầu user: quản lý nguyên liệu theo sản phẩm (BlazeMaster Orange vs Corzan
+3710 nhập Ấn Độ). Đi đủ 4 pha có cổng: brief + prototype (user DUYỆT layout) →
+ADR-012 + contract `material.md` (user ĐÓNG BĂNG, "markup như đề xuất") → Pha 3
+M13.1 (Material entity + engine multi-material: thuế NK + markup VF chuyển từ
+CostPool vào từng Material, ScenarioInput.materials[], output theo (line,
+materialId), plan theo materialId; migration giữ parity BM v3.7 tuyệt đối
+286/286) → M13.2 (danh mục Corzan: giá thật 3,47/3,97 USD/kg, thuế 0% AIFTA,
+SKU sinh theo rule ống ×1,1/phụ kiện giống hệt; 11 test mới = số tính tay độc
+lập + test cách ly BM; 297/297 xanh). Còn treo: xác nhận thuế NK với forwarder;
+đối chiếu lại khi có Excel/bảng giá Corzan chính thức.
+
 ## v1.25 (2026-07-07) — ADR-011: năng suất mix phụ kiện tính bottom-up (nguồn v3.7)
 User upload `BlazeMaster_Model_v3_7.xlsx`, yêu cầu rà soát logic thay đổi so
 với kiến trúc hiện tại. Đối chiếu toàn bộ 6 sheet: chỉ 1 thay đổi thật —

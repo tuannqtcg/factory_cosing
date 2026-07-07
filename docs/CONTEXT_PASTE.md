@@ -75,18 +75,17 @@
   lại từ capacity thay vì resource trực tiếp) + toàn bộ fixture liên quan
   (`pipe.json`, `fitting.json`, `dashboard.json`, `price-list.json`,
   `price-lock-scenarios.json`), `npm test` 286/286 xanh, `npm run build` OK).
-  **Đang treo (chờ user quyết định phạm vi trước khi code):** yêu cầu quản lý
-  NHIỀU nguyên liệu theo sản phẩm (vd BlazeMaster Orange cho ống/phụ kiện
-  BlazeMaster, Corzan 3710 cho sản phẩm dòng Corzan — Corzan KHÔNG có trong bất
-  kỳ bản Excel nào đã thấy, kể cả v3.7) — đây đúng là ca dùng thứ 2 mà ADR-003
-  đặt làm điều kiện chuyển "Phase 1: hardcode 2 driver" sang "Phase 2:
-  generalization" (tách `Material` thành entity độc lập khỏi `Resource`, thêm
-  `materialId` vào `Product`, tổng quát hóa phân bổ chi phí chung từ code cứng
-  "2 dòng" sang N dòng/N nguyên liệu). User đã chọn hướng "viết design brief +
-  prototype trước" (Pha 0/1) — CHƯA đụng schema/code production. Việc tiếp
-  theo: viết design brief 1 trang cho tính năng multi-material rồi dựng
-  prototype (artifact, mock data) theo skill `prototype`, KHÔNG tự ý nhảy vào
-  sửa `src/schemas/product.ts`/`resource.ts` khi chưa qua cổng duyệt UI.
+  **012** (2026-07-07 — multi-material/Corzan: `Material` entity độc lập
+  (landed cost + markup VF + tồn kho/khóa giá theo TỪNG nguyên liệu, tái dùng
+  ADR-002/004), `materialId` trên Product, chung line/chung MHR. UI đã DUYỆT
+  (`prototype/multi-material-catalog.html` + brief
+  `docs/briefs/BRIEF-2026-07-07-multi-material.md`). Giá thật user cấp: Corzan
+  ống 3,47 / phụ kiện 3,97 USD/kg, nhập Ấn Độ, thuế NK 0% theo AIFTA (C/O form
+  AI, NĐ 122/2022 — cần forwarder xác nhận mã HS con). **Schema chi tiết ở
+  `docs/contracts/material.md` — TRẠNG THÁI: CHỜ USER ĐÓNG BĂNG, chưa được
+  code Pha 3.** Còn chờ user: % markup VF Corzan (đã chốt là markup RIÊNG,
+  chưa có số — tạm placeholder 25%/40%); xác nhận TCG 30% + margin niêm yết
+  30% dùng chung; danh mục SKU Corzan + tồn kho ban đầu.)
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

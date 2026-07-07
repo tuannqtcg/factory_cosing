@@ -70,9 +70,11 @@
   <!-- ═══ MAIN ═══ -->
   <main style="flex:1;padding:22px 26px;max-width:1200px">
     <div style="background:#fff8e1;border:1px solid #d4b10066;border-radius:6px;padding:10px 14px;margin-bottom:18px;font-size:11px;line-height:1.6">
-      <b>PROTOTYPE — toàn bộ là MOCK.</b> Không backend, không lưu (refresh là mất). Số BlazeMaster lấy đúng
-      fixture v3.7 (ADR-011); mọi số <span class="badge mock">GIẢ</span> của Corzan 3710 chờ user cung cấp thật.
-      Công thức what-if nhúng thuần để demo — <b>sẽ thay bằng engine</b> (BUSINESS_MODEL §1a/§2.2/§3.4).
+      <b>PROTOTYPE — MOCK, không backend, không lưu.</b> Số BlazeMaster đúng fixture v3.7 (ADR-011).
+      Giá Corzan THẬT (user 2026-07-07): ống 3,47 / phụ kiện 3,97 USD/kg, nhập Ấn Độ — thuế NK 0% theo AIFTA
+      (C/O form AI, NĐ 122/2022/NĐ-CP; không C/O thì MFN 5–10%, xác nhận với forwarder). Danh mục SKU Corzan
+      (đơn trọng/chu kỳ) vẫn <span class="badge mock">GIẢ</span>. Công thức what-if nhúng thuần để demo —
+      <b>sẽ thay bằng engine</b> (BUSINESS_MODEL §1a/§2.2/§3.4).
     </div>
     <div id="app"></div>
   </main>
@@ -82,7 +84,8 @@
 'use strict';
 // ══════════════════════════════ MOCK DATA ══════════════════════════════
 // Tham số chung — đúng tests/fixtures/assumptions.json
-const FX = { usdVnd: 26500, importTax: 0.06, logistics: 0.01, vat: 0.08,
+// LƯU Ý: thuế NK KHÔNG còn là số chung — chuyển vào từng nguyên liệu (m.importTax)
+const FX = { usdVnd: 26500, logistics: 0.01, vat: 0.08,
              markupVfPipe: 0.25, markupVfFitting: 0.40, markupTcg: 0.30, listMargin: 0.30 };
 // Số vàng v3.7 (ADR-011) — dùng chung line, KHÔNG đổi theo nguyên liệu (xem brief: ngoài phạm vi)
 const PIPE_UNIT_PROCESSING = 9357.048351433015; // đ/kg (Ống!B46)
@@ -90,22 +93,27 @@ const PIPE_PACKAGING = 1500, PIPE_YIELD = 0.9;
 const MHR = 1308217.9298677056; // đ/giờ máy (Phụ kiện!B60)
 const FIT_PACKAGING = 2000, FIT_YIELD = 0.9;
 
-// Danh mục nguyên liệu — 2 dòng đầu đúng fixture; Corzan là MOCK
+// Danh mục nguyên liệu — giá user cung cấp 2026-07-07: Corzan ống 3,47 / phụ kiện
+// 3,97 USD/kg, nhập Ấn Độ. Thuế NK RIÊNG từng nguyên liệu: BlazeMaster 6% (kịch
+// bản EU), Corzan 0% theo AIFTA (C/O form AI, NĐ 122/2022/NĐ-CP) — cần C/O hợp lệ.
 let materials = [
-  { id:'bm-orange-pipe', name:'BlazeMaster Orange (ống)', code:'BM-O-P', currency:'USD',
-    replacement:3.03, baseline:3.03, thresholdPct:0.03, lots:[{tons:10, price:3.03}], mock:false },
-  { id:'bm-fitting', name:'BlazeMaster compound (phụ kiện)', code:'BM-F', currency:'USD',
-    replacement:3.85, baseline:3.85, thresholdPct:0.03, lots:[{tons:10, price:3.85}], mock:false },
-  { id:'corzan-3710', name:'Corzan 3710', code:'CZ-3710', currency:'USD',
-    replacement:3.45, baseline:3.45, thresholdPct:0.03, lots:[{tons:5, price:3.45}], mock:true },
+  { id:'bm-orange-pipe', name:'BlazeMaster Orange (ống)', code:'BM-O-P', currency:'USD', origin:'EU',
+    importTax:0.06, replacement:3.03, baseline:3.03, thresholdPct:0.03, lots:[{tons:10, price:3.03}], mock:false },
+  { id:'bm-fitting', name:'BlazeMaster compound (phụ kiện)', code:'BM-F', currency:'USD', origin:'EU',
+    importTax:0.06, replacement:3.85, baseline:3.85, thresholdPct:0.03, lots:[{tons:10, price:3.85}], mock:false },
+  { id:'corzan-pipe', name:'Corzan 3710 (ống)', code:'CZ-3710-P', currency:'USD', origin:'Ấn Độ (AIFTA)',
+    importTax:0, replacement:3.47, baseline:3.47, thresholdPct:0.03, lots:[], mock:false },
+  { id:'corzan-fitting', name:'Corzan compound (phụ kiện)', code:'CZ-3710-F', currency:'USD', origin:'Ấn Độ (AIFTA)',
+    importTax:0, replacement:3.97, baseline:3.97, thresholdPct:0.03, lots:[], mock:false },
 ];
 
-// Nhóm sản phẩm (rút gọn để duyệt UI — bản thật là 8 DN + 91 SKU + SKU Corzan)
+// Nhóm sản phẩm (rút gọn để duyệt UI — bản thật là 8 DN + 91 SKU + SKU Corzan;
+// đơn trọng/chu kỳ SKU Corzan vẫn là SỐ GIẢ chờ danh mục thật)
 let productGroups = [
   { id:'p1', kind:'pipe',    label:'Ống CPVC BlazeMaster DN20–DN100 (SDR 13.5)', rep:'DN50 · 1,26 kg/m', unitWeight:1.26, materialId:'bm-orange-pipe', mock:false },
   { id:'p2', kind:'fitting', label:'Phụ kiện BlazeMaster (91 SKU)', rep:'Tê đều 20 · 0,055 kg · 0,0027 giờ máy', unitWeight:0.055, machineHours:0.00270061728395062, materialId:'bm-fitting', mock:false },
-  { id:'p3', kind:'pipe',    label:'Ống Corzan DN50 SCH80', rep:'DN50 · 1,45 kg/m', unitWeight:1.45, materialId:'corzan-3710', mock:true },
-  { id:'p4', kind:'fitting', label:'Phụ kiện Corzan (Cút 90º 50...)', rep:'Cút 90º 50 · 0,21 kg · 0,0104 giờ máy', unitWeight:0.21, machineHours:0.0104, materialId:'corzan-3710', mock:true },
+  { id:'p3', kind:'pipe',    label:'Ống Corzan DN50 SCH80', rep:'DN50 · 1,45 kg/m', unitWeight:1.45, materialId:'corzan-pipe', mock:true },
+  { id:'p4', kind:'fitting', label:'Phụ kiện Corzan (Cút 90º 50...)', rep:'Cút 90º 50 · 0,21 kg · 0,0104 giờ máy', unitWeight:0.21, machineHours:0.0104, materialId:'corzan-fitting', mock:true },
 ];
 
 // ══════════════════════════════ CÔNG THỨC (demo — sẽ thay bằng engine) ══════════════════════════════
@@ -120,14 +128,14 @@ function weightedAvg(m) { // ADR-002
   return t===0 ? m.replacement : m.lots.reduce((s,l)=>s+l.tons*l.price,0)/t;
 }
 function inventoryKg(m){ return m.lots.reduce((s,l)=>s+l.tons,0)*1000; }
-function holdingGainLoss(m){ // §5 BUSINESS_MODEL
-  return (m.replacement - weightedAvg(m)) * inventoryKg(m) * (1+FX.importTax+FX.logistics) * FX.usdVnd;
+function holdingGainLoss(m){ // §5 BUSINESS_MODEL — thuế NK riêng từng nguyên liệu
+  return (m.replacement - weightedAvg(m)) * inventoryKg(m) * (1+m.importTax+FX.logistics) * FX.usdVnd;
 }
-function landed(usd){ return usd*(1+FX.importTax+FX.logistics)*FX.usdVnd; }
+function landed(usd, m){ return usd*(1+m.importTax+FX.logistics)*FX.usdVnd; }
 function groupPrices(g){ // giá thành + niêm yết của nhóm — CÙNG công thức Excel, chỉ đổi GIÁ NGUYÊN LIỆU theo gán
   const m = materials.find(x=>x.id===g.materialId);
   if(!m) return null;
-  const L = landed(priceLock(m).pricingUsd);
+  const L = landed(priceLock(m).pricingUsd, m);
   if(g.kind==='pipe'){
     const fullKg = L/PIPE_YIELD + PIPE_PACKAGING + PIPE_UNIT_PROCESSING;
     const be = fullKg*g.unitWeight, vf = be*(1+FX.markupVfPipe), tcg = vf*(1+FX.markupTcg);
@@ -148,6 +156,7 @@ function renderMaterials(){
     const usedBy = productGroups.filter(g=>g.materialId===m.id).length;
     return `<tr>
       <td><b>${m.name}</b> ${m.mock?'<span class="badge mock">GIẢ</span>':''}<div style="font-size:10px;color:#8a8a8a">${m.code} · ${m.currency} · dùng bởi ${usedBy} nhóm SP</div></td>
+      <td>${m.origin}<div style="font-size:9px;color:#8a8a8a">thuế NK ${vn(m.importTax*100,0)}% + phí HQ 1%</div></td>
       <td class="num">${vn(m.replacement,2)}<span class="unit">USD/kg</span></td>
       <td class="num">${vn(m.baseline,2)}<span class="unit">USD/kg</span></td>
       <td class="num">${vn(pl.dev*100,1)}<span class="unit">%</span></td>
@@ -166,15 +175,16 @@ function renderMaterials(){
   <p style="font-size:11px;color:#555;margin-bottom:14px">Mỗi nguyên liệu là 1 thực thể độc lập: giá tái tạo + khóa bảng giá (ADR-004) + tồn kho/bình quân gia quyền (ADR-002) chạy RIÊNG. Đổi ô "what-if" để thấy khóa giá cách ly từng nguyên liệu.</p>
   <div class="card"><h3>Nguyên liệu compound (${materials.length})</h3>
   <div style="overflow-x:auto"><table>
-    <tr><th>Nguyên liệu</th><th class="num">Giá tái tạo</th><th class="num">Baseline</th><th class="num">Lệch</th><th>Khóa bảng giá</th><th class="num">Tồn kho</th><th class="num">Lãi/(lỗ) giữ kho</th><th>What-if</th></tr>
+    <tr><th>Nguyên liệu</th><th>Xuất xứ · thuế NK</th><th class="num">Giá tái tạo</th><th class="num">Baseline</th><th class="num">Lệch</th><th>Khóa bảng giá</th><th class="num">Tồn kho</th><th class="num">Lãi/(lỗ) giữ kho</th><th>What-if</th></tr>
     ${rows}
   </table></div></div>
 
   <div class="card" style="margin-top:16px"><h3>Thêm nguyên liệu mới (mock — không lưu)</h3>
-    <div class="grid2" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:14px">
+    <div class="grid2" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:14px">
       <div><label>Tên nguyên liệu</label><input id="nm-name" placeholder="vd: Corzan 4910" style="width:100%"></div>
       <div><label>Mã</label><input id="nm-code" placeholder="CZ-4910" style="width:100%"></div>
       <div><label>Giá tái tạo (USD/kg)</label><input id="nm-price" type="number" step="0.01" placeholder="3.60" style="width:100%"></div>
+      <div><label>Thuế NK (%)</label><input id="nm-tax" type="number" step="1" min="0" max="30" placeholder="0" style="width:100%"></div>
       <div style="align-self:end"><button onclick="addMaterial()">+ Thêm nguyên liệu</button></div>
     </div>
     <div style="padding:0 14px 12px;font-size:10px;color:#8a8a8a">Baseline khởi tạo = giá tái tạo (lần chốt đầu, lệch 0% → KHÓA), ngưỡng 3%, tồn kho 0 — đúng quy ước ADR-004.</div>
@@ -203,7 +213,8 @@ function renderMapping(){
   </table></div></div>
   <div style="font-size:10px;color:#8a8a8a;margin-top:10px;line-height:1.7">
     Kiểm chứng nhanh: Ống BlazeMaster DN50 với giá khóa 3,03 → hòa vốn ${vn(106318.88168476634*1.26)} đ/m, niêm yết 311.000 đ/m — khớp fixture v3.7.<br>
-    Giả định phạm vi (xem brief): Corzan chạy CHUNG line (chi phí gia công/MHR dùng chung); markup dùng chung; thuế NK 6% — 3 câu hỏi này phải chốt ở Pha 2.
+    Đã chốt với user 2026-07-07: Corzan chạy CHUNG line (MHR/chi phí gia công dùng chung); thuế NK theo TỪNG nguyên liệu (Corzan 0% AIFTA);
+    markup Corzan RIÊNG — prototype tạm dùng markup BlazeMaster (25%/40%) cho tới khi user cho số %, xem contract material.md.
   </div>`;
 }
 
@@ -215,7 +226,9 @@ function addMaterial(){
   const code=document.getElementById('nm-code').value.trim();
   const price=parseFloat(document.getElementById('nm-price').value);
   if(!name||!code||!(price>0)){ alert('Nhập đủ tên, mã và giá > 0'); return; }
-  materials.push({ id:'m'+Date.now(), name, code, currency:'USD', replacement:price, baseline:price, thresholdPct:0.03, lots:[], mock:true });
+  const taxPct = parseFloat(document.getElementById('nm-tax').value);
+  materials.push({ id:'m'+Date.now(), name, code, currency:'USD', origin:'—',
+    importTax: (taxPct>=0 ? taxPct/100 : 0.06), replacement:price, baseline:price, thresholdPct:0.03, lots:[], mock:true });
   render();
 }
 

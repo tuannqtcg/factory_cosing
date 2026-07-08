@@ -231,6 +231,9 @@ export const TargetProfitRequestSchema = z.object({
   scenarioId: z.string(),
   productLine: z.enum(['pipe', 'fitting']),
   targetProfitVnd: z.number().int(),
+  // Bổ sung 2026-07-08 (Pha 3 M12.4c): CVP theo (line, material) sau ADR-012 —
+  // bỏ trống = material tham chiếu của line. ADR-013 mục 2 + bảng ADR-009 #6.
+  materialId: z.string().optional(),
 });
 export type TargetProfitRequest = z.infer<typeof TargetProfitRequestSchema>;
 
@@ -249,6 +252,15 @@ export const TargetPriceRequestSchema = z.object({
   targetListPriceVnd: z.number().int(),
   freeVarPath: z.string(),
   isPenetrationPrice: z.boolean(),
+  // Bổ sung 2026-07-08 (Pha 3 M12.4c): chọn SKU cho solver — khoảng trống #2
+  // của ADR-010. `targetListPriceVnd` đối chiếu `chain.listPriceBeforeVat` của
+  // SKU này. ADR-013 mục 1 + bảng ADR-009 #7.
+  productKey: z.object({
+    dn: z.string().optional(), // Ống — bắt buộc khi productLine='pipe'
+    productName: z.string().optional(), // Phụ kiện — bắt buộc khi productLine='fitting'
+    sizeLabel: z.string().optional(),
+    materialId: z.string().optional(), // ADR-012 — bỏ trống = SKU đầu tiên trùng khóa
+  }),
 });
 export type TargetPriceRequest = z.infer<typeof TargetPriceRequestSchema>;
 

@@ -23,8 +23,8 @@
 | M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | **[x] 2026-07-06** |
 | M12.4 | Cloud Function `onScenarioWrite` (Firestore trigger `scenarios/{id}`) — chạy `calculateScenario()` server-side, ghi `outputs/internal` + `outputs/priceList` | `scenario.md` §5, ADR-010 | `functions/src/index.ts` | **[x] 2026-07-06** |
 | M12.4b | Cloud Function `onPlanInputWrite` (trigger `planInputs/{period}`) — ghi `outputs/plan` (T1) + engine `deriveMoldSetCountBySizeDN()`/`calculatePlanForScenario()` | ADR-010, `plan.ts` (M9) | `functions/src/index.ts`, `src/engine/plan-support.ts` | **[x] 2026-07-08** |
-| M12.4c | HTTPS Callable `computeTargetCosting` — T2 (`solveTargetProfit`, dạng đóng, làm được ngay) + T3 (`solve()`, CẦN sửa `TargetPriceRequestSchema` thêm trường chọn SKU trước — đóng băng Pha 2, cần ADR riêng) | ADR-010, `solver.ts` (M10) | `functions/src/index.ts` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] |
+| M12.4c | HTTPS Callable `computeTargetCosting` — T2 + T3 (ADR-013: field chọn SKU, allowlist biến dò) + engine `target-costing.ts` | ADR-010, ADR-013, `solver.ts` (M10) | `functions/src/index.ts`, `src/engine/target-costing.ts` | **[x] 2026-07-08** |
+| M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] |
 | M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] |
@@ -42,26 +42,65 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.4c: HTTPS Callable `computeTargetCosting`.** Đọc ADR-010 mục 3 (lý do
-chọn `onCall` thay trigger) + `docs/contracts/scenario.md` §4
-(`TargetPriceRequestSchema`/`TargetProfitRequestSchema`) + ADR-005/006 trước
-khi viết. Phạm vi 2 nấc, làm T2 TRƯỚC:
-1. **T2 (làm được ngay)**: callable nhận `TargetProfitRequestSchema`, đọc
-   `scenarios/{id}`, gọi `solveTargetProfit()` (M10, dạng đóng, tái dùng
-   cvp.ts) → trả kết quả (hoặc ghi `outputs/targetCosting` theo `scenario.md`
-   §5 — đọc kỹ contract để chọn đúng, request rời rạc có thể chỉ cần trả về).
-   Nhớ kiểm tra vai `pricing`/`admin` từ auth context (custom claims — xem
-   tests/rules/ M12.3 cách đặt claim).
-2. **T3 (BỊ CHẶN — cần ADR trước)**: `solve()` cần trường chọn SKU trong
-   `TargetPriceRequestSchema` (đóng băng Pha 2). Ghi ADR mới (hoặc bổ sung
-   ADR-010) quyết định cấu trúc field chọn SKU (Ống: `dn`+`materialId`;
-   Phụ kiện: `productName`+`sizeLabel`+`materialId` — ADR-012 làm khóa cũ
-   không còn duy nhất), cập nhật bảng ADR-009, RỒI mới code. KHÔNG tự thêm
-   field ngầm. Nếu hết thời gian phiên: làm T2 xong commit được ngay, T3 để
-   phiên sau.
+→ **M12.5: Màn hình Dashboard** — bắt đầu chuỗi UI (M12.5-M12.9). Trước khi
+code:
+1. Mở `prototype/blazemaster-costing-app.dc.html` tab `dashboard` — UI/UX
+   ĐÓNG BĂNG (user duyệt 2026-07-06), code React thật phải đúng prototype,
+   KHÔNG phát minh layout mới (muốn đổi → quay lại Pha 1 + ADR).
+2. Dữ liệu đọc từ Firestore qua emulator: `scenarios/{id}` +
+   `outputs/internal` (vai admin/pricing — Dashboard là màn nội bộ). Client
+   KHÔNG tự tính — mọi số từ `outputs/*` do Cloud Function ghi (scenario.md
+   §5). Scaffold M12.2 đã có sẵn Vite+React+Tailwind+Recharts ở
+   `src/features/`.
+3. LƯU Ý ADR-012: ScenarioOutput theo (line, materialId) —
+   thang giá/CVP/khóa giá đọc từ `byLineMaterial`/`byMaterial`, UI cần chọn/
+   hiển thị theo nguyên liệu (xem prototype multi-material đã duyệt
+   `prototype/multi-material-catalog.html` cho pattern chọn material).
+4. Auth emulator: user + custom claim `role` (xem cách tests/functions/
+   compute-target-costing.test.ts tạo user/claim/idToken).
+
+Sau M12.5: M12.6 (Bảng Giá — sales-safe, đọc `outputs/priceList`), M12.7 (Kế
+Hoạch SX — tái dùng `calculatePlanForScenario` + `onPlanInputWrite` M12.4b),
+M12.8 (Target Costing — gọi callable `computeTargetCosting` M12.4c; nếu cần
+biến `shifts` thì bổ sung ADR-013 + allowlist), M12.9, M12.10 theo bảng.
 
 ## Nhật ký milestone đã xong
 
+- **M12.4c (2026-07-08, cùng phiên M12.4b)**: HTTPS Callable
+  `computeTargetCosting` + engine `src/engine/target-costing.ts` + **ADR-013**
+  (đóng khoảng trống #2 của ADR-010 và 3 khoảng trống lộ thêm khi bắt tay
+  code): (1) `TargetPriceRequestSchema` thêm `productKey`
+  {dn?/productName?/sizeLabel?/materialId?} chọn SKU — cùng ngữ nghĩa
+  materialId-bỏ-trống với PlanInput ADR-012; (2) `TargetProfitRequestSchema`
+  thêm `materialId` optional (CVP theo (line, material) sau ADR-012) — 2 dòng
+  #6/#7 bảng ADR-009 + comment trong contract scenario.md §4; (3)
+  `bounds`/`tol` KHÔNG do client cấp — allowlist `TARGET_PRICE_FREE_VARS`
+  server-side (5 biến LIÊN TỤC v1 đúng skill inverse-solver mục 5; biến
+  nguyên `shifts` HOÃN sang M12.8, chỉ cần thêm entry + solveDiscrete, không
+  cần ADR mới); goal-seek giá compound đi qua path
+  `materials.{i}.inventory.replacementPriceUsdPerKg` → QUA khóa giá ADR-004
+  khi forward (f bậc thang đơn điệu — bisection vẫn đúng, nghiệm trong dải
+  khóa không duy nhất, forwardOutput là chân lý); (4) doc
+  `outputs/targetCosting` = GHI ĐÈ 1 doc {kind, request, result} (request gần
+  nhất, đối xứng outputs/plan) + callable TRẢ kết quả trực tiếp; phân biệt
+  T2/T3 bằng field đặc thù request, không phát minh envelope. Engine:
+  `computeTargetProfitForScenario` (T2 — solveTargetProfit trên CVP từ
+  calculateScenario) + `computeTargetPriceForScenario` (T3 — solve() bisection
+  với forwardFn = `calculateScenario` NGUYÊN CON, lần đầu solver chạy trên
+  forward function đầy đủ của app; target = `chain.listPriceBeforeVat`, tol
+  0,5đ < bước làm tròn 100đ); helper `referenceMaterialOf` export từ
+  scenario.ts dùng chung plan-support/target-costing. Callable: check
+  `request.auth.token.role` ∈ {pricing, admin} → unauthenticated/
+  permission-denied/invalid-argument/not-found chuẩn HttpsError. Test: 10 unit
+  (`tests/unit/target-costing.test.ts` — T2 khớp breakEvenKgYear vàng v3.7 cả
+  2 line, case Corzan materialId, case chuẩn T3 DN50 260.000đ/m forward-verify
+  đúng 260.000 + round-trip, infeasible 10.000đ, allowlist chặn, productKey
+  sai) + 4 tích hợp emulator (`tests/functions/compute-target-costing.test.ts`
+  — Auth Emulator THẬT: user + custom claim + đổi custom token lấy idToken,
+  gọi qua giao thức HTTP onCall; T2 pricing, T3 admin + ghi đè doc, sales bị
+  403 PERMISSION_DENIED + anonymous 401, freeVarPath lạ 400 INVALID_ARGUMENT).
+  Verify: `npm test` 319/319, `test:functions` 9/9, `test:rules` 33/33,
+  typecheck root+functions, build OK.
 - **M12.4b (2026-07-08)**: Cloud Function `onPlanInputWrite` + engine
   `src/engine/plan-support.ts`. 2 hàm engine mới (KHÔNG sửa schema nào → theo
   ADR-010 không cần dòng ADR-009): `deriveMoldSetCountBySizeDN(moldAssets,

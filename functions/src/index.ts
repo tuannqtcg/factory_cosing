@@ -1,5 +1,5 @@
-// M12.4 + M12.4b — Cloud Function `onScenarioWrite`/`onPlanInputWrite`
-// (docs/contracts/scenario.md §5, ADR-010).
+// M12.4 + M12.4b + M12.4c — Cloud Function `onScenarioWrite`/`onPlanInputWrite`
+// /`computeTargetCosting` (docs/contracts/scenario.md §5, ADR-010, ADR-013).
 // Trigger onWrite scenarios/{id}: chạy calculateScenario() (M12.1,
 // src/engine/scenario.ts — TÁI DÙNG nguyên, KHÔNG lặp lại công thức) bằng
 // Admin SDK (đọc được ScenarioInput đầy đủ kể cả giá vốn), ghi tách
@@ -8,13 +8,11 @@
 // client ghi trực tiếp 2 doc này (`allow write: if false`) — Admin SDK ở đây
 // bỏ qua rules, đúng thiết kế.
 //
-// PHẠM VI (xem ADR-010): outputs/targetCosting HOÃN sang M12.4c —
-// TargetPriceRequestSchema (T3) chưa có trường chọn SKU cụ thể cho solver,
-// không tự phát minh cấu trúc mới. outputs/plan đã có `onPlanInputWrite`
-// (M12.4b) — orchestration nằm ở engine pure
-// `calculatePlanForScenario()` (src/engine/plan-support.ts), function này chỉ
-// làm I/O Firestore.
+// Orchestration KHÔNG nằm ở đây — engine pure đảm nhận
+// (`calculateScenario`/`calculatePlanForScenario`/`computeTarget*ForScenario`),
+// các function này chỉ làm auth + I/O Firestore + parse Zod 2 đầu.
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import {
@@ -22,10 +20,21 @@ import {
   ScenarioOutputSchema,
   PlanInputSchema,
   PlanResultSchema,
+  TargetProfitRequestSchema,
+  TargetProfitResultSchema,
+  TargetPriceRequestSchema,
+  TargetPriceResultSchema,
+  type ScenarioInput,
   type ScenarioOutput,
+  type TargetProfitRequest,
+  type TargetPriceRequest,
 } from '../../src/schemas/scenario.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
+import {
+  computeTargetProfitForScenario,
+  computeTargetPriceForScenario,
+} from '../../src/engine/target-costing.js';
 
 initializeApp();
 
@@ -103,4 +112,56 @@ export const onPlanInputWrite = onDocumentWritten('scenarios/{scenarioId}/planIn
   const planResult = PlanResultSchema.parse(calculatePlanForScenario(scenarioInput, planInput));
 
   await planOutputRef.set(planResult);
+});
+
+// M12.4c (ADR-010 mục 3, ADR-013) — Target Costing T2/T3: HTTPS Callable
+// (request/response rời rạc, KHÔNG phải trigger). Vai `pricing`/`admin` (custom
+// claim `role`, bảng scenario.md §6). Phân biệt T2/T3 bằng field đặc thù của
+// request (`targetProfitVnd` ⇔ T2, `targetListPriceVnd` ⇔ T3 — ADR-013 mục 4).
+// Kết quả: TRẢ trực tiếp + GHI ĐÈ `outputs/targetCosting` (1 doc duy nhất,
+// {kind, request, result} — request GẦN NHẤT, đối xứng outputs/plan).
+export const computeTargetCosting = onCall(async (request) => {
+  const role = request.auth?.token?.role;
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Cần đăng nhập để chạy Target Costing.');
+  }
+  if (role !== 'pricing' && role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Chỉ vai pricing/admin được chạy Target Costing (scenario.md §6, ADR-006).');
+  }
+
+  const data = request.data as Record<string, unknown> | null;
+  const isT2 = data !== null && typeof data === 'object' && 'targetProfitVnd' in data;
+  let parsed;
+  try {
+    parsed = isT2 ? TargetProfitRequestSchema.parse(data) : TargetPriceRequestSchema.parse(data);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', `Request không khớp TargetProfitRequest/TargetPriceRequest: ${String(err)}`);
+  }
+
+  const db = getFirestore();
+  const scenarioSnap = await db.doc(`scenarios/${parsed.scenarioId}`).get();
+  if (!scenarioSnap.exists) {
+    throw new HttpsError('not-found', `scenarios/${parsed.scenarioId} không tồn tại.`);
+  }
+  const scenarioInput = ScenarioInputSchema.parse(scenarioSnap.data()) as ScenarioInput;
+
+  let kind: 'targetProfit' | 'targetPrice';
+  let result;
+  try {
+    if (isT2) {
+      kind = 'targetProfit';
+      result = TargetProfitResultSchema.parse(computeTargetProfitForScenario(scenarioInput, parsed as TargetProfitRequest));
+    } else {
+      kind = 'targetPrice';
+      result = TargetPriceResultSchema.parse(computeTargetPriceForScenario(scenarioInput, parsed as TargetPriceRequest));
+    }
+  } catch (err) {
+    // Lỗi engine ném ra ở tầng validate request (freeVarPath ngoài allowlist,
+    // productKey sai/không có SKU, materialId không thuộc line) — lỗi CỦA
+    // REQUEST, không phải lỗi hệ thống.
+    throw new HttpsError('invalid-argument', err instanceof Error ? err.message : String(err));
+  }
+
+  await db.doc(`scenarios/${parsed.scenarioId}/outputs/targetCosting`).set({ kind, request: parsed, result });
+  return { kind, result };
 });

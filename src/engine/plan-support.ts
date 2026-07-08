@@ -24,7 +24,7 @@ import { calculatePipeCvp } from './cvp.js';
 import { calculatePlan, type PlanMaterialPricing } from './plan.js';
 import { evaluatePriceLock } from './price-lock.js';
 import { landedCostPerKgVnd, type MaterialPricingInput } from './cost-pool.js';
-import { lastLotPriceOf } from './scenario.js';
+import { lastLotPriceOf, referenceMaterialOf } from './scenario.js';
 
 /**
  * Số BỘ khuôn theo size DN — input `moldSetCountBySizeDN` của calculatePlan()
@@ -69,9 +69,8 @@ export function calculatePlanForScenario(scenario: ScenarioInput, planInput: Pla
   const pipeProducts = products.filter((p) => p.kind === 'pipe');
   const fittingProducts = products.filter((p) => p.kind === 'fitting');
 
-  // Material tham chiếu dòng Ống = material ĐẦU TIÊN trong materials[] được
-  // ≥1 SP Ống dùng (quy ước ADR-012, giống calculateScenario()).
-  const pipeRefMaterial = materials.find((m) => pipeProducts.some((p) => p.materialId === m.id));
+  // Material tham chiếu dòng Ống (quy ước ADR-012, cùng helper với calculateScenario).
+  const pipeRefMaterial = referenceMaterialOf(materials, products, 'pipe');
   if (!pipeRefMaterial) {
     throw new Error('Dòng Ống phải có ≥1 sản phẩm gắn material — thiếu material tham chiếu cho cost/cvp Plan_SX');
   }

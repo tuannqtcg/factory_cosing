@@ -23,6 +23,7 @@
 import type { ScenarioInput, ScenarioOutput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
 import type { Material } from '../schemas/material.js';
+import type { Product } from '../schemas/product.js';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity, type PipeCostAtNormalCapacity } from './pipe.js';
 import {
   calculateFittingCapacity,
@@ -56,6 +57,20 @@ export function lastLotPriceOf(lots: Array<{ priceUsdPerKg: number }>): number |
 }
 function lastInsertLotPriceOf(lots: Array<{ unitPriceVnd: number }>): number | null {
   return lots[0]?.unitPriceVnd ?? null;
+}
+
+/**
+ * Material THAM CHIẾU của 1 line (quy ước ADR-012 — xem ghi chú đầu file):
+ * material ĐẦU TIÊN trong `materials[]` được ≥1 SP của line đó dùng. Export
+ * dùng chung: `calculateScenario()` bên dưới (qua pipeMaterialIds[0]... — cùng
+ * thứ tự), `plan-support.ts` (M12.4b), `target-costing.ts` (M12.4c/ADR-013).
+ */
+export function referenceMaterialOf(
+  materials: Material[],
+  products: Product[],
+  line: 'pipe' | 'fitting',
+): Material | undefined {
+  return materials.find((m) => products.some((p) => p.kind === line && p.materialId === m.id));
 }
 
 export function calculateScenario(input: ScenarioInput): ScenarioOutput {

@@ -57,11 +57,12 @@ thật + Firestore"). M12 tự chia nhỏ thành M12.1-M12.10, xem
 **`docs/M12_PLAN.md`** cho bảng trạng thái + nhật ký chi tiết + "cách phiên
 mới bắt đầu" — đọc file đó TRƯỚC, KHÔNG lặp lại chi tiết ở đây (giống cách
 `PHASE3_PLAN.md` này tách khỏi `CONTEXT_PASTE.md`).
-Đã xong M12.1-M12.4 (xem `docs/M12_PLAN.md`). Con trỏ hiện tại của M12:
-**M12.4b** (Cloud Function `onPlanInputWrite`). LƯU Ý sau M13 (ADR-012): mọi
-màn hình M12 còn lại phải dựng theo ScenarioOutput MỚI (thang giá/CVP/khóa
-giá/kho theo (line, materialId) — xem `docs/contracts/material.md`), và
-`onPlanInputWrite` phải cấp `PlanMaterialPricing[]` cho `calculatePlan()`.
+Đã xong M12.1-M12.4c (2026-07-08: M12.4b `onPlanInputWrite` +
+`plan-support.ts`; M12.4c `computeTargetCosting` + `target-costing.ts`,
+ADR-013 — xem `docs/M12_PLAN.md`). Con trỏ hiện tại của M12: **M12.5** (màn
+hình Dashboard — bắt đầu chuỗi UI). LƯU Ý sau M13 (ADR-012): mọi màn hình M12
+còn lại phải dựng theo ScenarioOutput MỚI (thang giá/CVP/khóa giá/kho theo
+(line, materialId) — xem `docs/contracts/material.md`).
 Quyết định hạ tầng đã chốt: CHƯA có Firebase project thật → dùng Emulator
 Suite (xem đầu `docs/M12_PLAN.md`).
 

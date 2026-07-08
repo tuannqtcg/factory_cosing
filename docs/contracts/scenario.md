@@ -155,18 +155,32 @@ CHÍNH LÀ forward CVP, không phải ngoại lệ của luật cấm.
 
 ```ts
 // T2 — dạng đóng, KHÔNG qua solver (đúng skill inverse-solver mục 2)
+// Bổ sung `materialId` 2026-07-08 (Pha 3 M12.4c) — CVP theo (line, material)
+// sau ADR-012; bỏ trống = material tham chiếu của line. Xem ADR-013 mục 2 +
+// bảng ADR-009 dòng #6.
 export const TargetProfitRequestSchema = z.object({
   scenarioId: z.string(), productLine: z.enum(['pipe', 'fitting']), targetProfitVnd: z.number().int(),
+  materialId: z.string().optional(),
 });
 export const TargetProfitResultSchema = z.object({
   requiredQtyKgOrMachineHours: z.number(), requiredShifts: z.number(), feasibleWithinNormalCapacity: z.boolean(),
 });
 
 // T3 — qua solver, kèm giá thâm nhập (penetration price) như 1 trường hợp con
+// Bổ sung `productKey` 2026-07-08 (Pha 3 M12.4c) — chọn SKU cho solver, khoảng
+// trống #2 của ADR-010. `targetListPriceVnd` đối chiếu `chain.listPriceBeforeVat`
+// của SKU đó; `freeVarPath` phải nằm trong allowlist server-side (bounds/tol
+// KHÔNG do client cấp). Xem ADR-013 mục 1+3 + bảng ADR-009 dòng #7.
 export const TargetPriceRequestSchema = z.object({
   scenarioId: z.string(), productLine: z.enum(['pipe', 'fitting']),
   targetListPriceVnd: z.number().int(), freeVarPath: z.string(),
   isPenetrationPrice: z.boolean(), // true = giá bị ép từ thị trường/đấu thầu (ADR-006), chỉ khác NGUỒN GỐC mục tiêu, dùng chung cơ chế
+  productKey: z.object({
+    dn: z.string().optional(),          // Ống — bắt buộc khi productLine='pipe'
+    productName: z.string().optional(), // Phụ kiện — bắt buộc khi productLine='fitting'
+    sizeLabel: z.string().optional(),
+    materialId: z.string().optional(),  // ADR-012 — bỏ trống = SKU đầu tiên trùng khóa
+  }),
 });
 export const TargetPriceResultSchema = z.union([
   z.object({ feasible: z.literal(true), value: z.number(), forwardOutput: ScenarioOutputSchema }),

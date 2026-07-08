@@ -14,12 +14,17 @@
   ADR-010 tách M12.4b/c hoãn có lý do), M12.4b (2026-07-08 — Cloud Function
   `onPlanInputWrite` ghi `outputs/plan` + engine mới
   `src/engine/plan-support.ts`: `deriveMoldSetCountBySizeDN()` và
-  orchestrator pure `calculatePlanForScenario()` — M12.7 tái dùng được;
-  5 test tích hợp thật qua `npm run test:functions`). Tiếp theo:
-  **M12.4c** (HTTPS Callable `computeTargetCosting` — T2 làm ngay, T3 cần ADR
-  chọn SKU trước, xem "Việc tiếp theo" trong `docs/M12_PLAN.md`).
-  `npm test` 309/309 xanh (286 + 11 Corzan M13 + 12 plan-support M12.4b),
-  `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  orchestrator pure `calculatePlanForScenario()` — M12.7 tái dùng được),
+  M12.4c (2026-07-08 — HTTPS Callable `computeTargetCosting` T2+T3 + engine
+  `src/engine/target-costing.ts` + **ADR-013**: `productKey` chọn SKU cho T3,
+  `materialId` optional cho T2 (bảng ADR-009 #6/#7), allowlist biến dò
+  server-side, doc `outputs/targetCosting` ghi đè {kind, request, result};
+  9 test tích hợp thật qua `npm run test:functions` gồm test quyền trên Auth
+  Emulator). **Cả 3 Cloud Function của scenario.md §5 đã xong** — tiếp theo:
+  **M12.5** (màn hình Dashboard — bắt đầu chuỗi UI, xem "Việc tiếp theo"
+  trong `docs/M12_PLAN.md`). `npm test` 319/319 xanh (286 + 11 Corzan M13 +
+  12 plan-support M12.4b + 10 target-costing M12.4c), `npm run build` chạy
+  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
   ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
   (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
   2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây
@@ -71,8 +76,13 @@
   chiếu. **Engine lõi Pha 3 (M1-M11) coi như HOÀN THÀNH** — chỉ còn M12 (UI
   thật + Firestore), CHỜ user xác nhận mở rộng phạm vi trước khi bắt đầu.
 - ADR đã CHẤP NHẬN: 001-008 (đầy đủ, xem chi tiết bên dưới điểm 8, 9, 10),
-  **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3),
+  **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3;
+  dòng #6/#7 thêm 2026-07-08 theo ADR-013),
   **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4),
+  **013** (2026-07-08 — M12.4c `computeTargetCosting`: `productKey` chọn SKU
+  T3 + `materialId` T2, allowlist biến dò server-side [5 biến liên tục v1,
+  `shifts` hoãn M12.8], doc `outputs/targetCosting` ghi đè
+  {kind, request, result}, quyền pricing/admin qua custom claim),
   **011** (2026-07-07 — đối chiếu Excel `BlazeMaster_Model_v3_7.xlsx`: Phụ kiện
   `avgProductivityKgPerMachineHour` đổi từ nhập tay 44,6 sang tính bottom-up từ
   bảng khuôn, có ghi đè tùy chọn; kéo theo MHR/giá thành 2 dòng/99 giá SKU/thang

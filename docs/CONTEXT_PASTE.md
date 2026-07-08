@@ -98,14 +98,6 @@
   **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3;
   dòng #6/#7 thêm 2026-07-08 theo ADR-013),
   **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4),
-  **013** (2026-07-08 — M12.4c `computeTargetCosting`: `productKey` chọn SKU
-  T3 + `materialId` T2, allowlist biến dò server-side [5 biến liên tục v1,
-  `shifts` hoãn M12.8], doc `outputs/targetCosting` ghi đè
-  {kind, request, result}, quyền pricing/admin qua custom claim),
-  **014** (2026-07-08 — M12.7, user chốt "phương án a": doc
-  `outputs/productCatalog` danh mục SP + tham số vận hành cho vai production
-  dựng form Kế Hoạch SX — TUYỆT ĐỐI không field giá; production/admin/pricing
-  đọc, sales ✗, Cloud Function ghi),
   **011** (2026-07-07 — đối chiếu Excel `BlazeMaster_Model_v3_7.xlsx`: Phụ kiện
   `avgProductivityKgPerMachineHour` đổi từ nhập tay 44,6 sang tính bottom-up từ
   bảng khuôn, có ghi đè tùy chọn; kéo theo MHR/giá thành 2 dòng/99 giá SKU/thang
@@ -131,6 +123,14 @@
   forward + rule corzan.json LÀ nguồn chân lý. KHÔNG còn việc treo cho
   ADR-012. Chi tiết: `docs/contracts/material.md` (có mục "Bổ sung khi code
   Pha 3 M13") + `docs/sessions/SESSION_2026-07-07.md`.)
+  **013** (2026-07-08 — M12.4c `computeTargetCosting`: `productKey` chọn SKU
+  T3 + `materialId` T2, allowlist biến dò server-side [5 biến liên tục v1,
+  `shifts` hoãn M12.8], doc `outputs/targetCosting` ghi đè
+  {kind, request, result}, quyền pricing/admin qua custom claim),
+  **014** (2026-07-08 — M12.7, user chốt "phương án a": doc
+  `outputs/productCatalog` danh mục SP + tham số vận hành cho vai production
+  dựng form Kế Hoạch SX — TUYỆT ĐỐI không field giá; production/admin/pricing
+  đọc, sales ✗, Cloud Function ghi),
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

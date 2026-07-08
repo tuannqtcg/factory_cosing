@@ -43,12 +43,15 @@
 
 ## Việc tiếp theo ngay khi phiên sau vào
 → **M12.8: Màn hình Target Costing (vai `pricing`/`admin`).** Trước khi code:
-1. Prototype đóng băng: KHÔNG có tab target-costing riêng — T2/T3 nằm ở panel
-   "III. Phân tích ngược" của Dashboard (đã dựng M12.5 cho biến compound) +
-   thiết kế ADR-005/006. Xem lại prototype + ADR trước: nếu cần MÀN RIÊNG
-   (chọn SKU, chọn biến dò, T2 lợi nhuận mục tiêu) thì đó là bổ sung UI ngoài
-   prototype đóng băng → cần quay lại Pha 1 hỏi user duyệt layout (1 mockup
-   nhanh là đủ) TRƯỚC khi code, đúng quy trình.
+1. Prototype đóng băng KHÔNG có tab target-costing riêng — T2/T3 mới chỉ có
+   panel "III. Phân tích ngược" của Dashboard (đã dựng M12.5 cho biến
+   compound). NHƯNG `PROJECT_SPEC.md` §2 đã dự kiến từ Pha 0: "màn hình
+   Target Costing riêng, dùng inverse solver; production KHÔNG thấy màn hình
+   này" → làm màn riêng là HOÀN THIỆN prototype còn thiếu so với spec, không
+   phải phát minh phạm vi. Quy trình đúng: mockup nhanh (chọn SKU, chọn biến
+   dò trong allowlist ADR-013, T2 lợi nhuận mục tiêu, hiển thị
+   forward-verify) → hỏi user duyệt layout → mới code. MỞ ĐẦU PHIÊN bằng
+   việc dựng mockup này.
 2. Backend đã XONG HẾT: callable `computeTargetCosting` (M12.4c, ADR-013) —
    T2 (`TargetProfitRequest`: productLine + targetProfitVnd + materialId?) và
    T3 (`TargetPriceRequest`: productKey chọn SKU + targetListPriceVnd +

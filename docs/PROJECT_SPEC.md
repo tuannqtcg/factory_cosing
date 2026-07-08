@@ -36,9 +36,14 @@ NGOÀI phạm vi v1: routing đa công đoạn, MRP lịch tuần, multi-tenant 
   công thức ngược viết tay. Dùng cho tầng chiến lược (ADR-006).
 - `src/schemas/` Zod duy nhất, dùng chung 2 đầu.
 - Firestore: mỗi collection 1 loại doc; TÁCH doc giá bán khỏi doc giá vốn (rules không lọc field).
-- `functions/` (ADR-010): Cloud Function chạy `calculateScenario()` server-side (Admin SDK,
-  bỏ qua rules) khi `scenarios/{id}` đổi, ghi tách doc `outputs/*` theo vai — client
-  KHÔNG BAO GIỜ tính `ScenarioOutput` phía trình duyệt (tránh tải giá vốn xuống client `sales`).
+- `functions/` (ADR-010, đủ từ M12.4c 2026-07-08): 2 trigger + 1 callable —
+  `onScenarioWrite` (ghi `outputs/internal`+`priceList`+`productCatalog` [ADR-014]),
+  `onPlanInputWrite` (ghi `outputs/plan`), callable `computeTargetCosting`
+  (T2/T3, ghi đè `outputs/targetCosting` — ADR-013). Client KHÔNG tính
+  `ScenarioOutput` để hiển thị/lưu (mọi số chính thức từ `outputs/*`; tránh
+  tải giá vốn xuống client `sales`); riêng vai admin/pricing — vốn được đọc
+  trọn `scenarios/{id}` — UI được gọi engine PURE tại chỗ cho view dẫn xuất
+  (KPI Dashboard, preview solve — M12.5), không xuyên ranh giới dữ liệu nào.
 - Cost driver là plugin: continuous_kg | machine_hour (mở rộng: labor_hour, batch — ADR-003).
 
 ## §4. Design tokens (điền từ bộ BlazeMaster Brand Guidelines hiện có — placeholder [])

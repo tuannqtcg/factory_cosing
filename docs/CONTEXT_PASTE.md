@@ -29,10 +29,16 @@
   Dashboard đủ I-IV đúng prototype [top-down "Compound tối đa" dùng solve()
   trên calculateScenario client-side — không công thức ngược tay]; verify
   chạy thật bằng emulator + dev server + screenshot 2 vai, số vàng v3.7 hiện
-  đúng trên màn hình). Tiếp theo: **M12.6** (màn Bảng Giá sales-safe — xem
-  "Việc tiếp theo" trong `docs/M12_PLAN.md`). `npm test` 328/328 xanh (286 +
-  11 Corzan + 12 plan-support + 10 target-costing + 9 dashboard-kpis),
-  `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  đúng trên màn hình). M12.6 (2026-07-08 cùng phiên — màn Bảng Giá sales-safe:
+  thêm `unit`/`spec` vào doc priceList + `PriceListDocSchema` [bảng ADR-009
+  #8], UI search/lọc loại/toggle VAT/bảng 6 cột từ outputs/priceList cho mọi
+  vai, ẩn 8 SKU pending_mold bằng managementStatus, KHÔNG dòng Dung môi 550
+  [Excel 99 dòng là chân lý]; verify chạy thật vai sales 91 SKU giá v3.7
+  đúng). Tiếp theo: **M12.7** (màn Kế Hoạch SX vai production — xem "Việc
+  tiếp theo" trong `docs/M12_PLAN.md`, CÓ quyết định phân quyền danh mục SP
+  cần ADR trước khi code). `npm test` 328/328 xanh (286 + 11 Corzan + 12
+  plan-support + 10 target-costing + 9 dashboard-kpis), `npm run build` chạy
+  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
   ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
   (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
   2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây

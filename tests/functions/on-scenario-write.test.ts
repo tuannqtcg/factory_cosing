@@ -82,6 +82,10 @@ describe('Cloud Function onScenarioWrite (emulator thật)', () => {
     // Ranh giới sales-safe (scenario.md §5) — priceList KHÔNG được có giá vốn.
     expect(priceList?.skuPriceChains[0].chain.materialCostPerUnit).toBeUndefined();
     expect(priceList?.skuPriceChains[0].chain.breakEvenPerUnit).toBeUndefined();
+    // M12.6 (bảng ADR-009 #8): unit/spec hiển thị phải nằm ngay trong doc
+    // (sales không đọc được scenarios/{id}) — SKU đầu = Ống DN20.
+    expect(priceList?.skuPriceChains[0].unit).toBe('mét');
+    expect(priceList?.skuPriceChains[0].spec).toBe('SDR 13.5');
     // ADR-012 — thang giá theo (line, materialId)
     const expectedPipeLadder = expectedOutput.priceLadder.byLineMaterial.find(
       (e) => e.line === 'pipe' && e.materialId === 'bm-orange-pipe',

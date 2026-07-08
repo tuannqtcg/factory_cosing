@@ -163,6 +163,7 @@ export default function Dashboard({
   scenarioId: string;
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
+  /** priceLadder từ outputs/priceList — nguồn duy nhất của vai sales (M12.6: PriceListDoc.priceLadder). */
   salesPriceLadder: ScenarioOutput['priceLadder'] | null;
 }) {
   const canSeeCostDetail = role === 'admin' || role === 'pricing';

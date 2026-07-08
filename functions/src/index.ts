@@ -18,6 +18,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import {
   ScenarioInputSchema,
   ScenarioOutputSchema,
+  PriceListDocSchema,
   PlanInputSchema,
   PlanResultSchema,
   TargetProfitRequestSchema,
@@ -38,20 +39,38 @@ import {
 
 initializeApp();
 
-function toPriceListDoc(output: ScenarioOutput) {
-  return {
+// M12.6 (bảng ADR-009 #8): thêm unit/spec hiển thị — sales không đọc được
+// scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
+// calculateScenario() dựng bằng products.map() CÙNG THỨ TỰ → zip theo index,
+// nhưng vẫn đối chiếu khóa để không bao giờ ghi nhầm hàng khi engine đổi.
+function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['products']) {
+  return PriceListDocSchema.parse({
     priceLadder: output.priceLadder,
-    skuPriceChains: output.skuPriceChains.map((sku) => ({
-      productKey: sku.productKey,
-      managementStatus: sku.managementStatus,
-      chain: {
-        vfPricePerUnit: sku.chain.vfPricePerUnit,
-        tcgPricePerUnit: sku.chain.tcgPricePerUnit,
-        listPriceBeforeVat: sku.chain.listPriceBeforeVat,
-        listPriceWithVat: sku.chain.listPriceWithVat,
-      },
-    })),
-  };
+    skuPriceChains: output.skuPriceChains.map((sku, i) => {
+      const product = products[i];
+      const matches =
+        product !== undefined &&
+        product.materialId === sku.productKey.materialId &&
+        (product.kind === 'pipe'
+          ? product.dn === sku.productKey.dn
+          : product.productName === sku.productKey.productName && product.sizeLabel === sku.productKey.sizeLabel);
+      if (!matches) {
+        throw new Error(`skuPriceChains[${i}] không khớp products[${i}] — thứ tự engine đổi? Không ghi priceList sai hàng.`);
+      }
+      return {
+        productKey: sku.productKey,
+        managementStatus: sku.managementStatus,
+        unit: product.kind === 'pipe' ? 'mét' : product.unit,
+        spec: (product.kind === 'pipe' ? product.spec : product.schedule) ?? '',
+        chain: {
+          vfPricePerUnit: sku.chain.vfPricePerUnit,
+          tcgPricePerUnit: sku.chain.tcgPricePerUnit,
+          listPriceBeforeVat: sku.chain.listPriceBeforeVat,
+          listPriceWithVat: sku.chain.listPriceWithVat,
+        },
+      };
+    }),
+  });
 }
 
 export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async (event) => {
@@ -76,7 +95,7 @@ export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async
 
   await Promise.all([
     db.doc(`scenarios/${scenarioId}/outputs/internal`).set(scenarioOutput),
-    db.doc(`scenarios/${scenarioId}/outputs/priceList`).set(toPriceListDoc(scenarioOutput)),
+    db.doc(`scenarios/${scenarioId}/outputs/priceList`).set(toPriceListDoc(scenarioOutput, scenarioInput.products)),
   ]);
 });
 

@@ -141,6 +141,37 @@ export const ScenarioOutputSchema = z.object({
 });
 export type ScenarioOutput = z.infer<typeof ScenarioOutputSchema>;
 
+// ── Doc `outputs/priceList` (sales-safe, scenario.md §5) ────────────────────
+// Thêm 2026-07-08 (Pha 3 M12.6, bảng ADR-009 dòng #8): trước giờ doc này do
+// Cloud Function dựng ad-hoc (toPriceListDoc M12.4) không có schema riêng —
+// định nghĩa rõ để validate CẢ 2 đầu (function ghi + client đọc, luật #2).
+// `unit`/`spec` là 2 field HIỂN THỊ bổ sung cùng lúc (bảng giá chào khách cần
+// ĐVT + quy cách; vai sales không đọc được `scenarios/{id}` nên phải nằm ngay
+// trong doc). TUYỆT ĐỐI không thêm field giá vốn/tồn kho vào đây.
+export const PriceListDocSchema = z.object({
+  priceLadder: ScenarioOutputSchema.shape.priceLadder,
+  skuPriceChains: z.array(
+    z.object({
+      productKey: z.object({
+        productName: z.string().optional(),
+        sizeLabel: z.string().optional(),
+        dn: z.string().optional(),
+        materialId: z.string(),
+      }),
+      managementStatus: z.enum(['active', 'pending_mold']),
+      unit: z.string(), // Ống luôn 'mét'; Phụ kiện theo FittingProduct.unit
+      spec: z.string(), // Ống: PipeProduct.spec (SDR); Phụ kiện: schedule (SCH40/80), '' nếu thiếu
+      chain: z.object({
+        vfPricePerUnit: z.number(),
+        tcgPricePerUnit: z.number(),
+        listPriceBeforeVat: z.number().int(),
+        listPriceWithVat: z.number().int(),
+      }),
+    }),
+  ),
+});
+export type PriceListDoc = z.infer<typeof PriceListDocSchema>;
+
 // ── Plan_SX (T1 — tầng VẬN HÀNH, ADR-005/006) ───────────────────────────────
 const InsufficientCapacity = z.object({
   status: z.literal('insufficient'),

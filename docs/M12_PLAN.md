@@ -25,8 +25,8 @@
 | M12.4b | Cloud Function `onPlanInputWrite` (trigger `planInputs/{period}`) — ghi `outputs/plan` (T1) + engine `deriveMoldSetCountBySizeDN()`/`calculatePlanForScenario()` | ADR-010, `plan.ts` (M9) | `functions/src/index.ts`, `src/engine/plan-support.ts` | **[x] 2026-07-08** |
 | M12.4c | HTTPS Callable `computeTargetCosting` — T2 + T3 (ADR-013: field chọn SKU, allowlist biến dò) + engine `target-costing.ts` | ADR-010, ADR-013, `solver.ts` (M10) | `functions/src/index.ts`, `src/engine/target-costing.ts` | **[x] 2026-07-08** |
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) + engine `dashboard-support.ts` (KPI có số vàng) + shell/auth/seed | prototype tab `dashboard` | `src/features/dashboard/`, `src/features/shell/`, `src/engine/dashboard-support.ts`, `src/lib/`, `scripts/seed-emulator.ts` | **[x] 2026-07-08** |
-| M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] |
+| M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) + `unit`/`spec` vào doc priceList (ADR-009 #8) | prototype tab `pricelist` | `src/features/price-list/`, `PriceListDocSchema` | **[x] 2026-07-08** |
+| M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] |
 | M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] |
 | M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] |
@@ -42,31 +42,55 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.6: Màn hình Bảng Giá (sales-safe).** Trước khi code:
-1. Prototype đóng băng tab `pricelist` (search + filter loại SP + toggle
-   trước/sau VAT + bảng 6 cột STT/Sản phẩm/Kích cỡ/Quy cách/ĐVT/Giá) —
-   KHÔNG phát minh layout mới.
-2. Nguồn dữ liệu: `outputs/priceList` (đủ cho MỌI vai kể cả sales — đã có
-   productKey/managementStatus/4 giá cuối + priceLadder; 8 SKU `pending_mold`
-   ẨN khỏi bảng theo ADR-007/008 — lọc bằng `managementStatus`, KHÔNG
-   hard-code danh sách như prototype EXCLUDED_SKUS).
-3. Hạ tầng M12.5 TÁI DÙNG NGUYÊN: `AppShell` đã có tab `pricelist` +
-   placeholder (thay bằng component thật ở `src/features/price-list/`),
-   `useScenarioData` mở rộng đọc trọn `outputs/priceList` (hiện chỉ lấy
-   priceLadder cho sales), auth/seed/emulator đã sẵn (`npm run emulators` +
-   `npm run seed:emulator` + `npm run dev`).
-4. ADR-012: SKU trùng tên/size giữa BlazeMaster/Corzan — hiển thị/nhóm theo
-   materialId (baseline seed chỉ có BlazeMaster nên chưa lộ, nhưng code phải
-   dùng productKey.materialId làm khóa React key).
-5. Verify chạy thật giống M12.5: emulator + seed + dev server + screenshot
-   (script mẫu xem session log 2026-07-08 phần 3).
+→ **M12.7: Màn hình Kế Hoạch SX (vai `production`).** Trước khi code:
+1. Prototype đóng băng tab `plan`: 2 bảng nhập (Ống theo DN mét; Phụ kiện
+   theo loại×size cái) + summary giờ máy/huy động/NVL cần mua. Vai production
+   là vai DUY NHẤT thấy tab này (ROLE_TAB_ACCESS đã đúng trong AppShell).
+2. Dữ liệu: production KHÔNG đọc được `scenarios/{id}`/`outputs/internal`/
+   `outputs/priceList` (rules M12.3) — chỉ Đọc+Ghi `planInputs/{period}` và
+   Đọc `outputs/plan`. `useScenarioData` hiện SKIP vai production — viết hook
+   riêng (vd `usePlanData`) đọc/ghi 2 doc đó. Danh mục SP để dựng form nhập
+   (DN list, loại phụ kiện×size): production không đọc được products[] từ
+   scenario doc → CÂN NHẮC: (a) thêm danh mục tối thiểu (khóa SP, không giá)
+   vào outputs/plan hoặc doc riêng — cần dòng ADR-009 mới; hay (b) cho
+   production đọc outputs/priceList (có productKey+unit/spec, KHÔNG giá vốn
+   nhưng CÓ giá bán — bảng §6 hiện nói production ✗ priceList). Phương án (a)
+   sạch hơn về phân quyền — quyết + ghi ADR trước khi code, KHÔNG tự chọn ngầm.
+3. Ghi `planInputs/{period}` → `onPlanInputWrite` (M12.4b) tự tính
+   `outputs/plan` — UI chỉ hiển thị PlanResult (shiftsNeeded, cảnh báo khuôn,
+   NVL cần mua theo material ADR-012, nhân công cần tuyển, idle cost).
+4. Verify chạy thật như M12.5/M12.6 (emulator + seed + screenshot vai
+   production; seed đã tạo sẵn production@demo.local).
 
-Sau M12.6: M12.7 (Kế Hoạch SX — tái dùng `calculatePlanForScenario`/`onPlanInputWrite`
-M12.4b, vai production), M12.8 (Target Costing — callable M12.4c), M12.9,
-M12.10 theo bảng.
+Sau M12.7: M12.8 (Target Costing — callable M12.4c; biến `shifts` nếu cần →
+bổ sung ADR-013 + allowlist), M12.9, M12.10 theo bảng.
 
 ## Nhật ký milestone đã xong
 
+- **M12.6 (2026-07-08, cùng phiên M12.4b/c/M12.5)**: Màn hình Bảng Giá
+  (sales-safe). Phát hiện khi khảo sát: doc `outputs/priceList` THIẾU
+  ĐVT/Quy cách mà bảng giá prototype (UI đóng băng) cần, và vai sales không
+  đọc được `scenarios/{id}` để tự tra → bổ sung `unit`/`spec` hiển thị vào
+  từng dòng skuPriceChains + định nghĩa **`PriceListDocSchema`** (doc vốn
+  dựng ad-hoc từ M12.4, nay có schema validate CẢ 2 đầu — function ghi +
+  client đọc, luật #2): bảng ADR-009 dòng #8 + cập nhật contract scenario.md
+  §5. `toPriceListDoc(output, products)` zip theo index (calculateScenario
+  giữ nguyên thứ tự products) + ĐỐI CHIẾU khóa từng dòng trước khi ghi
+  (throw nếu lệch — không bao giờ ghi sai hàng). UI
+  `src/features/price-list/PriceList.tsx` đúng prototype (search tên/kích cỡ
+  + toggle Trước VAT/Có VAT [thuế suất suy từ chính dữ liệu — sales không đọc
+  được costPool] + 10 nút lọc loại + bảng 6 cột), nguồn DUY NHẤT
+  outputs/priceList cho MỌI vai; `useScenarioData` mở rộng đọc trọn doc
+  priceList (sales không còn lấy riêng priceLadder). 2 chỗ CỐ Ý khác
+  prototype (prototype mock sai so nguồn chân lý, ghi lại để khỏi tưởng
+  thiếu): 8 SKU chưa khuôn ẩn bằng `managementStatus` (ADR-007) thay
+  hard-code EXCLUDED_SKUS; KHÔNG có dòng #100 "Dung môi 550" (PriceList Excel
+  99 dòng — solvent550PricePerBox là vật tư phụ trong CostPool, không phải
+  SKU thương mại). Verify: `npm run test:functions` 9/9 (test on-scenario-write
+  thêm assertion unit/spec), `npm test` 328/328, typecheck root+functions,
+  build OK; chạy thật emulator + seed + screenshot vai sales: **91 SKU**
+  (= 99 − 8 pending_mold), lọc "Tê giảm" đúng 18 dòng (19 − 1 chưa khuôn),
+  giá khớp fixture v3.7 (DN20 71.600, Tê đều 20 26.900).
 - **M12.5 (2026-07-08, cùng phiên M12.4b/c)**: Màn hình Dashboard THẬT — UI
   đầu tiên nối Firestore. 4 phần:
   (a) **Engine `src/engine/dashboard-support.ts`** — `calculateDashboardKpis()`

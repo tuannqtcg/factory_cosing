@@ -197,7 +197,7 @@ mỗi tầng đọc, vì Firestore security rules không thể ẩn field trong 
 |---|---|---|---|
 | `scenarios/{id}` | `ScenarioInput` đầy đủ (Resource, Product, CostPool, Inventory) | `admin` toàn bộ; `pricing` các field KHÔNG nằm trong danh sách khóa (`resource.md`/`cost-pool.md` đã liệt kê) | `admin`, `pricing` |
 | `scenarios/{id}/outputs/internal` | `ScenarioOutput` đầy đủ — ghi bởi Cloud Function (Admin SDK) sau mỗi lần `scenarios/{id}` đổi, KHÔNG client ghi trực tiếp | Cloud Function only | `admin`, `pricing` |
-| `scenarios/{id}/outputs/priceList` | Chỉ `skuPriceChains[].chain` (4 field cuối: vfPrice/tcgPrice/listPrice±VAT) + `priceLadder` — KHÔNG có `materialCostPerUnit`/`breakEvenPerUnit`/tồn kho | Cloud Function only | `admin`, `pricing`, **`sales`** |
+| `scenarios/{id}/outputs/priceList` | Chỉ `skuPriceChains[].chain` (4 field cuối: vfPrice/tcgPrice/listPrice±VAT) + `priceLadder` + `unit`/`spec` hiển thị từng dòng (thêm 2026-07-08, M12.6 — bảng ADR-009 #8, schema: `PriceListDocSchema`) — KHÔNG có `materialCostPerUnit`/`breakEvenPerUnit`/tồn kho | Cloud Function only | `admin`, `pricing`, **`sales`** |
 | `scenarios/{id}/outputs/plan` | `PlanResult` (T1) — tầng VẬN HÀNH | Cloud Function tính; `production` ghi `PlanInput` ở doc riêng `scenarios/{id}/planInputs/{period}` | `admin`, `pricing`, `production` |
 | `scenarios/{id}/outputs/targetCosting` | Kết quả T2/T3 (bao gồm giá thâm nhập) — tầng CHIẾN LƯỢC | Cloud Function tính từ request `pricing`/`admin` | `admin`, `pricing` — **`production` KHÔNG đọc được** (ADR-006) |
 | `scenarios/{id}/moldAssets/{moldId}` | 1 `MoldAsset` — tách collection con để audit log riêng khi mua khuôn mới (sự kiện hiếm, cần lịch sử) | `admin` only | `admin`, `pricing` (đọc để biết công suất, không sửa) |

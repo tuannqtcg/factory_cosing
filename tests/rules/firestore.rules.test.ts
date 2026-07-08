@@ -93,6 +93,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'scenarios/scn-1/outputs/internal'), { fullCostPerKg: 12345 });
     await setDoc(doc(db, 'scenarios/scn-1/outputs/priceList'), { priceLadder: { targetPrice: 1 } });
     await setDoc(doc(db, 'scenarios/scn-1/outputs/plan'), { laborToHire: { pipe: 0, fitting: 0 } });
+    await setDoc(doc(db, 'scenarios/scn-1/outputs/productCatalog'), { pipes: [], fittings: [] });
     await setDoc(doc(db, 'scenarios/scn-1/outputs/targetCosting'), { feasible: true, value: 1 });
     await setDoc(doc(db, 'scenarios/scn-1/moldAssets/mold-1'), { id: 'mold-1', label: 'Cút 90º' });
   });
@@ -226,6 +227,23 @@ describe('planInputs/{period} (production ghi input kế hoạch)', () => {
       await setDoc(doc(context.firestore(), 'scenarios/scn-1/planInputs/2026-Q3'), { scenarioId: 'scn-1' });
     });
     await assertSucceeds(getDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1/planInputs/2026-Q3')));
+  });
+});
+
+describe('outputs/productCatalog (danh mục SP cho production — ADR-014, KHÔNG giá)', () => {
+  it('production đọc được (nguồn dựng form Kế Hoạch SX)', async () => {
+    await assertSucceeds(getDoc(doc(ctxFor('production').firestore(), 'scenarios/scn-1/outputs/productCatalog')));
+  });
+  it('admin + pricing đọc được', async () => {
+    await assertSucceeds(getDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/outputs/productCatalog')));
+    await assertSucceeds(getDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1/outputs/productCatalog')));
+  });
+  it('sales KHÔNG đọc được (không màn nào cần — ADR-014 mục 2)', async () => {
+    await assertFails(getDoc(doc(ctxFor('sales').firestore(), 'scenarios/scn-1/outputs/productCatalog')));
+  });
+  it('client KHÔNG ghi được, kể cả admin/production (Cloud Function only)', async () => {
+    await assertFails(setDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/outputs/productCatalog'), { pipes: [] }));
+    await assertFails(setDoc(doc(ctxFor('production').firestore(), 'scenarios/scn-1/outputs/productCatalog'), { pipes: [] }));
   });
 });
 

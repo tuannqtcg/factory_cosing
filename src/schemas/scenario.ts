@@ -141,6 +141,82 @@ export const ScenarioOutputSchema = z.object({
 });
 export type ScenarioOutput = z.infer<typeof ScenarioOutputSchema>;
 
+// ── Doc `outputs/priceList` (sales-safe, scenario.md §5) ────────────────────
+// Thêm 2026-07-08 (Pha 3 M12.6, bảng ADR-009 dòng #8): trước giờ doc này do
+// Cloud Function dựng ad-hoc (toPriceListDoc M12.4) không có schema riêng —
+// định nghĩa rõ để validate CẢ 2 đầu (function ghi + client đọc, luật #2).
+// `unit`/`spec` là 2 field HIỂN THỊ bổ sung cùng lúc (bảng giá chào khách cần
+// ĐVT + quy cách; vai sales không đọc được `scenarios/{id}` nên phải nằm ngay
+// trong doc). TUYỆT ĐỐI không thêm field giá vốn/tồn kho vào đây.
+export const PriceListDocSchema = z.object({
+  priceLadder: ScenarioOutputSchema.shape.priceLadder,
+  skuPriceChains: z.array(
+    z.object({
+      productKey: z.object({
+        productName: z.string().optional(),
+        sizeLabel: z.string().optional(),
+        dn: z.string().optional(),
+        materialId: z.string(),
+      }),
+      managementStatus: z.enum(['active', 'pending_mold']),
+      unit: z.string(), // Ống luôn 'mét'; Phụ kiện theo FittingProduct.unit
+      spec: z.string(), // Ống: PipeProduct.spec (SDR); Phụ kiện: schedule (SCH40/80), '' nếu thiếu
+      chain: z.object({
+        vfPricePerUnit: z.number(),
+        tcgPricePerUnit: z.number(),
+        listPriceBeforeVat: z.number().int(),
+        listPriceWithVat: z.number().int(),
+      }),
+    }),
+  ),
+});
+export type PriceListDoc = z.infer<typeof PriceListDocSchema>;
+
+// ── Doc `outputs/productCatalog` (ADR-014, M12.7) ───────────────────────────
+// Danh mục SP + tham số VẬN HÀNH tối thiểu cho vai `production` dựng form Kế
+// Hoạch SX (production không đọc được `scenarios/{id}` — bảng §6). Cloud
+// Function ghi cùng onScenarioWrite. TUYỆT ĐỐI KHÔNG field giá (giá bán, giá
+// vốn, markup, tồn kho, tỷ giá) — đơn trọng/chu kỳ/cavity/công suất là dữ
+// liệu kỹ thuật, xem ADR-014 mục 1.
+export const ProductCatalogDocSchema = z.object({
+  pipes: z.array(
+    z.object({
+      dn: z.string(),
+      unitWeightKgPerM: z.number().positive(),
+      materialId: z.string(),
+      materialName: z.string(),
+    }),
+  ),
+  fittings: z.array(
+    z.object({
+      productName: z.string(),
+      sizeLabel: z.string(),
+      unit: z.string(),
+      unitWeightKg: z.number().positive(),
+      cycleTimeSec: z.number().positive(),
+      cavity: z.number().int().positive(),
+      managementStatus: z.enum(['active', 'pending_mold']), // form ẩn SKU chưa có khuôn (ADR-007)
+      materialId: z.string(),
+      materialName: z.string(),
+    }),
+  ),
+  params: z.object({
+    pipe: z.object({
+      yieldRate: z.number(),
+      actualCapacityKgPerHour: z.number(),
+      hoursPerShift: z.number(),
+      hoursAvailablePerShiftYear: z.number(), // batches × ngày chạy liên tục × giờ/ca
+      peoplePerShift: z.number().int(),
+    }),
+    fitting: z.object({
+      yieldRate: z.number(),
+      normalMachineHoursUtilizedYear: z.number(), // giờ máy khả dụng tại CS bình thường
+      peoplePerShift: z.number().int(),
+    }),
+  }),
+});
+export type ProductCatalogDoc = z.infer<typeof ProductCatalogDocSchema>;
+
 // ── Plan_SX (T1 — tầng VẬN HÀNH, ADR-005/006) ───────────────────────────────
 const InsufficientCapacity = z.object({
   status: z.literal('insufficient'),
@@ -231,6 +307,9 @@ export const TargetProfitRequestSchema = z.object({
   scenarioId: z.string(),
   productLine: z.enum(['pipe', 'fitting']),
   targetProfitVnd: z.number().int(),
+  // Bổ sung 2026-07-08 (Pha 3 M12.4c): CVP theo (line, material) sau ADR-012 —
+  // bỏ trống = material tham chiếu của line. ADR-013 mục 2 + bảng ADR-009 #6.
+  materialId: z.string().optional(),
 });
 export type TargetProfitRequest = z.infer<typeof TargetProfitRequestSchema>;
 
@@ -249,6 +328,15 @@ export const TargetPriceRequestSchema = z.object({
   targetListPriceVnd: z.number().int(),
   freeVarPath: z.string(),
   isPenetrationPrice: z.boolean(),
+  // Bổ sung 2026-07-08 (Pha 3 M12.4c): chọn SKU cho solver — khoảng trống #2
+  // của ADR-010. `targetListPriceVnd` đối chiếu `chain.listPriceBeforeVat` của
+  // SKU này. ADR-013 mục 1 + bảng ADR-009 #7.
+  productKey: z.object({
+    dn: z.string().optional(), // Ống — bắt buộc khi productLine='pipe'
+    productName: z.string().optional(), // Phụ kiện — bắt buộc khi productLine='fitting'
+    sizeLabel: z.string().optional(),
+    materialId: z.string().optional(), // ADR-012 — bỏ trống = SKU đầu tiên trùng khóa
+  }),
 });
 export type TargetPriceRequest = z.infer<typeof TargetPriceRequestSchema>;
 

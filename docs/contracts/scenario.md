@@ -155,18 +155,32 @@ CHÍNH LÀ forward CVP, không phải ngoại lệ của luật cấm.
 
 ```ts
 // T2 — dạng đóng, KHÔNG qua solver (đúng skill inverse-solver mục 2)
+// Bổ sung `materialId` 2026-07-08 (Pha 3 M12.4c) — CVP theo (line, material)
+// sau ADR-012; bỏ trống = material tham chiếu của line. Xem ADR-013 mục 2 +
+// bảng ADR-009 dòng #6.
 export const TargetProfitRequestSchema = z.object({
   scenarioId: z.string(), productLine: z.enum(['pipe', 'fitting']), targetProfitVnd: z.number().int(),
+  materialId: z.string().optional(),
 });
 export const TargetProfitResultSchema = z.object({
   requiredQtyKgOrMachineHours: z.number(), requiredShifts: z.number(), feasibleWithinNormalCapacity: z.boolean(),
 });
 
 // T3 — qua solver, kèm giá thâm nhập (penetration price) như 1 trường hợp con
+// Bổ sung `productKey` 2026-07-08 (Pha 3 M12.4c) — chọn SKU cho solver, khoảng
+// trống #2 của ADR-010. `targetListPriceVnd` đối chiếu `chain.listPriceBeforeVat`
+// của SKU đó; `freeVarPath` phải nằm trong allowlist server-side (bounds/tol
+// KHÔNG do client cấp). Xem ADR-013 mục 1+3 + bảng ADR-009 dòng #7.
 export const TargetPriceRequestSchema = z.object({
   scenarioId: z.string(), productLine: z.enum(['pipe', 'fitting']),
   targetListPriceVnd: z.number().int(), freeVarPath: z.string(),
   isPenetrationPrice: z.boolean(), // true = giá bị ép từ thị trường/đấu thầu (ADR-006), chỉ khác NGUỒN GỐC mục tiêu, dùng chung cơ chế
+  productKey: z.object({
+    dn: z.string().optional(),          // Ống — bắt buộc khi productLine='pipe'
+    productName: z.string().optional(), // Phụ kiện — bắt buộc khi productLine='fitting'
+    sizeLabel: z.string().optional(),
+    materialId: z.string().optional(),  // ADR-012 — bỏ trống = SKU đầu tiên trùng khóa
+  }),
 });
 export const TargetPriceResultSchema = z.union([
   z.object({ feasible: z.literal(true), value: z.number(), forwardOutput: ScenarioOutputSchema }),
@@ -183,8 +197,9 @@ mỗi tầng đọc, vì Firestore security rules không thể ẩn field trong 
 |---|---|---|---|
 | `scenarios/{id}` | `ScenarioInput` đầy đủ (Resource, Product, CostPool, Inventory) | `admin` toàn bộ; `pricing` các field KHÔNG nằm trong danh sách khóa (`resource.md`/`cost-pool.md` đã liệt kê) | `admin`, `pricing` |
 | `scenarios/{id}/outputs/internal` | `ScenarioOutput` đầy đủ — ghi bởi Cloud Function (Admin SDK) sau mỗi lần `scenarios/{id}` đổi, KHÔNG client ghi trực tiếp | Cloud Function only | `admin`, `pricing` |
-| `scenarios/{id}/outputs/priceList` | Chỉ `skuPriceChains[].chain` (4 field cuối: vfPrice/tcgPrice/listPrice±VAT) + `priceLadder` — KHÔNG có `materialCostPerUnit`/`breakEvenPerUnit`/tồn kho | Cloud Function only | `admin`, `pricing`, **`sales`** |
+| `scenarios/{id}/outputs/priceList` | Chỉ `skuPriceChains[].chain` (4 field cuối: vfPrice/tcgPrice/listPrice±VAT) + `priceLadder` + `unit`/`spec` hiển thị từng dòng (thêm 2026-07-08, M12.6 — bảng ADR-009 #8, schema: `PriceListDocSchema`) — KHÔNG có `materialCostPerUnit`/`breakEvenPerUnit`/tồn kho | Cloud Function only | `admin`, `pricing`, **`sales`** |
 | `scenarios/{id}/outputs/plan` | `PlanResult` (T1) — tầng VẬN HÀNH | Cloud Function tính; `production` ghi `PlanInput` ở doc riêng `scenarios/{id}/planInputs/{period}` | `admin`, `pricing`, `production` |
+| `scenarios/{id}/outputs/productCatalog` | Danh mục SP + tham số vận hành (`ProductCatalogDocSchema` — KHÔNG field giá nào, thêm 2026-07-08 theo **ADR-014**) để `production` dựng form Kế Hoạch SX | Cloud Function only | `admin`, `pricing`, `production` |
 | `scenarios/{id}/outputs/targetCosting` | Kết quả T2/T3 (bao gồm giá thâm nhập) — tầng CHIẾN LƯỢC | Cloud Function tính từ request `pricing`/`admin` | `admin`, `pricing` — **`production` KHÔNG đọc được** (ADR-006) |
 | `scenarios/{id}/moldAssets/{moldId}` | 1 `MoldAsset` — tách collection con để audit log riêng khi mua khuôn mới (sự kiện hiếm, cần lịch sử) | `admin` only | `admin`, `pricing` (đọc để biết công suất, không sửa) |
 
@@ -212,6 +227,7 @@ lẫn khi test parity Excel, không phải 2 bản logic khác nhau.
 | `outputs/internal` (giá vốn đầy đủ) | Đọc | Đọc | ✗ | ✗ |
 | `outputs/priceList` (giá bán) | Đọc | Đọc | Đọc | ✗ |
 | `outputs/plan` (T1 vận hành) | Đọc | Đọc | ✗ | Đọc+Ghi input |
+| `outputs/productCatalog` (danh mục SP, không giá — ADR-014) | Đọc | Đọc | ✗ | Đọc |
 | `outputs/targetCosting` (T2/T3 chiến lược) | Đọc+Ghi request | Đọc+Ghi request | ✗ | ✗ |
 | `moldAssets` | Đọc+Ghi | Đọc | ✗ | ✗ |
 

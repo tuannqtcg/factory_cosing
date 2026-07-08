@@ -67,6 +67,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // outputs/productCatalog — danh mục SP + tham số vận hành (KHÔNG giá,
+      // ADR-014) cho vai production dựng form Kế Hoạch SX; sales không cần
+      match /outputs/productCatalog {
+        allow read: if isAdmin() || isPricing() || isProduction();
+        allow write: if false;
+      }
+
       // outputs/plan — PlanResult (T1), Cloud Function tính từ planInputs/{period}
       match /outputs/plan {
         allow read: if isAdmin() || isPricing() || isProduction();

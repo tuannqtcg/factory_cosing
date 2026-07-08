@@ -10,12 +10,40 @@
   thật bằng dev server + screenshot), M12.3 (Firebase Emulator Suite +
   `firestore.rules` theo bảng phân quyền `scenario.md` §5-6, 33 test rules
   chạy thật trên emulator qua `npm run test:rules`), M12.4 (Cloud Function
-  `onScenarioWrite` — `functions/`, ghi `outputs/internal`+`outputs/priceList`,
-  2 test tích hợp thật qua `npm run test:functions`; ADR-010 tách M12.4b/c
-  hoãn vì Plan_SX chưa orchestrate + T3 thiếu trường chọn SKU). Tiếp theo:
-  **M12.4b** (Cloud Function `onPlanInputWrite` — ghi `outputs/plan`).
-  `npm test` 297/297 xanh (286 + 11 test Corzan M13), `npm run build` chạy
-  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  `onScenarioWrite` — `functions/`, ghi `outputs/internal`+`outputs/priceList`;
+  ADR-010 tách M12.4b/c hoãn có lý do), M12.4b (2026-07-08 — Cloud Function
+  `onPlanInputWrite` ghi `outputs/plan` + engine mới
+  `src/engine/plan-support.ts`: `deriveMoldSetCountBySizeDN()` và
+  orchestrator pure `calculatePlanForScenario()` — M12.7 tái dùng được),
+  M12.4c (2026-07-08 — HTTPS Callable `computeTargetCosting` T2+T3 + engine
+  `src/engine/target-costing.ts` + **ADR-013**: `productKey` chọn SKU cho T3,
+  `materialId` optional cho T2 (bảng ADR-009 #6/#7), allowlist biến dò
+  server-side, doc `outputs/targetCosting` ghi đè {kind, request, result};
+  9 test tích hợp thật qua `npm run test:functions` gồm test quyền trên Auth
+  Emulator). **Cả 3 Cloud Function của scenario.md §5 đã xong.** M12.5
+  (2026-07-08 cùng phiên — màn Dashboard THẬT, UI đầu tiên nối Firestore:
+  engine `dashboard-support.ts` cho 2 khối số vàng dashboard.json chưa từng
+  có hàm [capacityLevels + investment, công thức giải mã từ số vàng, 9 parity
+  test], shell + auth theo vai [sidebar "Xem Như Vai" = đăng nhập user demo
+  claim `role` trên Auth Emulator], seed script `npm run seed:emulator`,
+  Dashboard đủ I-IV đúng prototype [top-down "Compound tối đa" dùng solve()
+  trên calculateScenario client-side — không công thức ngược tay]; verify
+  chạy thật bằng emulator + dev server + screenshot 2 vai, số vàng v3.7 hiện
+  đúng trên màn hình). M12.6 (2026-07-08 cùng phiên — màn Bảng Giá sales-safe:
+  thêm `unit`/`spec` vào doc priceList + `PriceListDocSchema` [bảng ADR-009
+  #8], UI search/lọc loại/toggle VAT/bảng 6 cột từ outputs/priceList cho mọi
+  vai, ẩn 8 SKU pending_mold bằng managementStatus, KHÔNG dòng Dung môi 550
+  [Excel 99 dòng là chân lý]; verify chạy thật vai sales 91 SKU giá v3.7
+  đúng). M12.7 (2026-07-08 cùng phiên — màn Kế Hoạch SX vai production +
+  **ADR-014** [user chốt phương án a]: doc mới `outputs/productCatalog`
+  danh mục SP + tham số vận hành KHÔNG giá, rules production đọc được
+  [37/37], PlanScreen nhập Ống/PK + "Lưu & tính" → onPlanInputWrite tính
+  outputs/plan, verify chạy thật khớp kịch bản A plan.test.ts). Tiếp theo:
+  **M12.8** (màn Target Costing — LƯU Ý prototype KHÔNG có tab riêng, nếu
+  cần màn riêng phải mockup hỏi user duyệt trước — xem "Việc tiếp theo"
+  trong `docs/M12_PLAN.md`). `npm test` 328/328 xanh (286 + 11 Corzan + 12
+  plan-support + 10 target-costing + 9 dashboard-kpis), rules 37/37,
+  functions 9/9, `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
   ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
   (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
   2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây
@@ -67,7 +95,8 @@
   chiếu. **Engine lõi Pha 3 (M1-M11) coi như HOÀN THÀNH** — chỉ còn M12 (UI
   thật + Firestore), CHỜ user xác nhận mở rộng phạm vi trước khi bắt đầu.
 - ADR đã CHẤP NHẬN: 001-008 (đầy đủ, xem chi tiết bên dưới điểm 8, 9, 10),
-  **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3),
+  **009** (retroactive — bảng field bổ sung vào schema đã đóng băng, Pha 3;
+  dòng #6/#7 thêm 2026-07-08 theo ADR-013),
   **010** (ranh giới Cloud Function cho ScenarioOutput/Plan/TargetCosting, M12.4),
   **011** (2026-07-07 — đối chiếu Excel `BlazeMaster_Model_v3_7.xlsx`: Phụ kiện
   `avgProductivityKgPerMachineHour` đổi từ nhập tay 44,6 sang tính bottom-up từ
@@ -94,6 +123,14 @@
   forward + rule corzan.json LÀ nguồn chân lý. KHÔNG còn việc treo cho
   ADR-012. Chi tiết: `docs/contracts/material.md` (có mục "Bổ sung khi code
   Pha 3 M13") + `docs/sessions/SESSION_2026-07-07.md`.)
+  **013** (2026-07-08 — M12.4c `computeTargetCosting`: `productKey` chọn SKU
+  T3 + `materialId` T2, allowlist biến dò server-side [5 biến liên tục v1,
+  `shifts` hoãn M12.8], doc `outputs/targetCosting` ghi đè
+  {kind, request, result}, quyền pricing/admin qua custom claim),
+  **014** (2026-07-08 — M12.7, user chốt "phương án a": doc
+  `outputs/productCatalog` danh mục SP + tham số vận hành cho vai production
+  dựng form Kế Hoạch SX — TUYỆT ĐỐI không field giá; production/admin/pricing
+  đọc, sales ✗, Cloud Function ghi),
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

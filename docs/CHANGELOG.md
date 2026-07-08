@@ -1,5 +1,60 @@
 # CHANGELOG — Costing App Kit
 
+## v1.28 (2026-07-08) — M12.4b→M12.7 trong 1 phiên: đủ 3 Cloud Function + 3 màn hình UI thật (Dashboard, Bảng Giá, Kế Hoạch SX) + ADR-013/014, đóng gói cho phiên tối
+
+**5 milestone, 7 commit, 2 ADR mới** (chi tiết từng phần: `docs/sessions/SESSION_2026-07-08.md` + nhật ký `docs/M12_PLAN.md` — đây là tóm tắt kit):
+
+- **M12.4b** — Cloud Function `onPlanInputWrite` (ghi đè `outputs/plan`) +
+  engine `plan-support.ts`: `deriveMoldSetCountBySizeDN()` (66 khuôn →
+  {20:4, 25:9, 32:8, 40:10, 50:11, 65:9, 80:7, 100:8}, đếm tay độc lập) và
+  orchestrator pure `calculatePlanForScenario()`.
+- **M12.4c + ADR-013** — HTTPS Callable `computeTargetCosting` (T2/T3) +
+  engine `target-costing.ts`: `productKey` chọn SKU vào
+  `TargetPriceRequestSchema`, `materialId` optional vào
+  `TargetProfitRequestSchema` (bảng ADR-009 #6/#7); bounds/tol KHÔNG do
+  client cấp — allowlist 5 biến dò liên tục v1 (`shifts` hoãn, có chỗ chờ
+  trong ADR); doc `outputs/targetCosting` ghi đè {kind, request, result};
+  lần đầu solver chạy bisection trên `calculateScenario()` nguyên con.
+  → **Cả 3 Cloud Function của `scenario.md` §5 hoàn tất.**
+- **M12.5** — màn Dashboard THẬT (UI đầu tiên nối Firestore): engine
+  `dashboard-support.ts` cho 2 khối số vàng dashboard.json chưa từng có hàm
+  (capacityLevels — phân bổ chi phí chung GIỮ mức CS bình thường; investment
+  — tổng vốn gồm cả nguyên giá Lab/UL; công thức GIẢI MÃ từ số vàng khớp
+  tuyệt đối trước khi code, 9 parity test); hạ tầng client
+  (`src/lib/firebase.ts` emulator-mặc-định, seed `npm run seed:emulator` —
+  4 user demo custom claim `role`); AppShell "Xem Như Vai" = đăng nhập thật
+  trên Auth Emulator để rules chạy thật; top-down "Compound tối đa" dùng
+  `solve()` client-side (KHÔNG công thức ngược tay như prototype mock).
+- **M12.6** — màn Bảng Giá sales-safe: thêm `unit`/`spec` vào doc priceList +
+  `PriceListDocSchema` (bảng ADR-009 #8, validate 2 đầu); ẩn 8 SKU
+  pending_mold bằng `managementStatus` (bỏ hard-code EXCLUDED_SKUS của
+  prototype); KHÔNG dòng "Dung môi 550" (Excel 99 dòng là chân lý). Chạy
+  thật vai sales: 91 SKU đúng giá v3.7.
+- **M12.7 + ADR-014** — màn Kế Hoạch SX (vai production): user được trình 2
+  phương án cấp danh mục SP (production không đọc được `scenarios/{id}`) và
+  chốt "phương án a" → doc mới `outputs/productCatalog` (danh mục + tham số
+  vận hành, TUYỆT ĐỐI không field giá — test kiểm cả chuỗi JSON;
+  production/admin/pricing đọc, sales ✗). PlanScreen: cột dẫn xuất = số học
+  từ catalog; ca cần/NVL đ/nhân công/cảnh báo khuôn CHỈ từ `outputs/plan`
+  (client không lắp công thức engine). Chạy thật đúng kịch bản A
+  plan.test.ts, khớp tuyệt đối số tính tay.
+
+Trạng thái xanh cuối phiên: `npm test` **328/328** (+31 test mới),
+`test:rules` **37/37** (+4), `test:functions` **9/9** (+7), typecheck
+root+functions, build OK. Mỗi màn hình đều verify CHẠY THẬT
+(emulator + seed + dev server + Playwright screenshot theo vai).
+
+Rà tài liệu khi đóng gói: `PROJECT_SPEC.md` §3 bullet `functions/` cập nhật
+theo hiện trạng (2 trigger + 1 callable + nuance engine client-side cho
+admin/pricing); CONTEXT_PASTE sắp lại thứ tự danh sách ADR (011/012 trước
+013/014).
+
+Con trỏ phiên tối: **M12.8 Target Costing** — MỞ ĐẦU bằng mockup màn riêng
+(spec §2 đã dự kiến từ Pha 0 nhưng prototype đóng băng chưa có tab này —
+mockup là hoàn thiện thiếu sót, vẫn phải user duyệt layout trước khi code);
+backend đã xong hết (callable M12.4c). Sau đó M12.9 (form Tồn kho/Giả
+định/Cấu hình), M12.10 (security review + chuẩn bị merge — kết Pha 3).
+
 ## v1.27 (2026-07-07) — Merge ADR-011 + ADR-012 vào nhánh mặc định + chốt sổ tri thức cho phiên mới
 Merge `claude/material-product-mapping-0ea68t` (7 commit: ADR-011 v3.7 → brief/
 prototype → ADR-012 + material.md → M13.1 → M13.2 → chốt sổ → cập nhật tri

@@ -1,5 +1,17 @@
 # CHANGELOG — Costing App Kit
 
+## v1.29 (2026-07-08) — Merge M12.4b→M12.7 (kit v1.28) vào nhánh mặc định
+Merge `claude/next-session-work-iz1i9g` (8 commit: M12.4b → M12.4c/ADR-013 →
+M12.5 → M12.6 → M12.7/ADR-014 → đóng gói v1.28) vào nhánh mặc định
+`claude/project-knowledge-setup-2au4hr` (merge commit `be2bdd2`, --no-ff,
+theo yêu cầu user "merge cập nhật lên github"). Verify TRÊN nhánh mặc định
+SAU merge, đủ 5 cổng: `npm test` 328/328, typecheck (root + functions) sạch,
+`npm run build` OK, `npm run test:rules` 37/37, `npm run test:functions` 9/9
+trên emulator thật — không xung đột, không lỗi ẩn (nhánh mặc định đứng yên ở
+`f298f01` từ lần merge trước nên merge thuần tiến). Nhánh làm việc đã đồng
+bộ về đúng head nhánh mặc định sau merge. Con trỏ phiên tối: **M12.8** (mở
+đầu bằng mockup màn Target Costing — xem v1.28 + `docs/M12_PLAN.md`).
+
 ## v1.28 (2026-07-08) — M12.4b→M12.7 trong 1 phiên: đủ 3 Cloud Function + 3 màn hình UI thật (Dashboard, Bảng Giá, Kế Hoạch SX) + ADR-013/014, đóng gói cho phiên tối
 
 **5 milestone, 7 commit, 2 ADR mới** (chi tiết từng phần: `docs/sessions/SESSION_2026-07-08.md` + nhật ký `docs/M12_PLAN.md` — đây là tóm tắt kit):

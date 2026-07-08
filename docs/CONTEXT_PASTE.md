@@ -44,9 +44,11 @@
   trong `docs/M12_PLAN.md`). `npm test` 328/328 xanh (286 + 11 Corzan + 12
   plan-support + 10 target-costing + 9 dashboard-kpis), rules 37/37,
   functions 9/9, `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
-  ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
-  (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
-  2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây
+  ADR-012/M13 đã MERGE 2026-07-07 (`a4badf1`); nhánh M12.4b→M12.7 + kit v1.28
+  (`claude/next-session-work-iz1i9g`) đã MERGE 2026-07-08 (merge commit
+  `be2bdd2`, verify sau merge đủ 5 cổng: 328/328 + typecheck + build + rules
+  37/37 + functions 9/9 trên emulator thật) vào
+  `claude/project-knowledge-setup-2au4hr`** — đây
   là nhánh mặc định thật của repo (repo KHÔNG có `main`). Mọi commit push thẳng vào branch làm việc do hạ tầng
   phiên chỉ định lúc bắt đầu (tên đổi theo từng phiên — xem branch Git hiện
   tại, KHÔNG cố định 1 tên qua nhiều phiên); quy trình mặc định vẫn KHÔNG tự

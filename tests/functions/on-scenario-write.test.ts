@@ -94,6 +94,21 @@ describe('Cloud Function onScenarioWrite (emulator thật)', () => {
       (e: any) => e.line === 'pipe' && e.materialId === 'bm-orange-pipe',
     )?.ladder;
     expect(actualPipeLadder.targetPrice).toBeCloseTo(expectedPipeLadder.targetPrice, 3);
+
+    // ADR-014 (M12.7) — outputs/productCatalog: danh mục SP cho production,
+    // TUYỆT ĐỐI không field giá (kiểm cả chuỗi JSON, không chỉ vài field).
+    const catalog = await waitFor(async () => {
+      const snap = await db.doc(`scenarios/${scenarioId}/outputs/productCatalog`).get();
+      return snap.exists ? snap.data() : undefined;
+    });
+    expect(catalog?.pipes).toHaveLength(8);
+    expect(catalog?.fittings).toHaveLength(91);
+    expect(catalog?.fittings[0].cycleTimeSec).toBeTypeOf('number');
+    expect(catalog?.params.fitting.normalMachineHoursUtilizedYear).toBeGreaterThan(0);
+    const catalogJson = JSON.stringify(catalog).toLowerCase();
+    for (const banned of ['price', 'cost', 'markup', 'usdvnd', 'inventory', 'lot']) {
+      expect(catalogJson, `productCatalog không được chứa "${banned}"`).not.toContain(banned);
+    }
   }, 20000);
 
   it('xóa scenarios/{id} → Cloud Function dọn outputs/internal + outputs/priceList', async () => {
@@ -105,5 +120,7 @@ describe('Cloud Function onScenarioWrite (emulator thật)', () => {
     });
     const priceListSnap = await db.doc(`scenarios/${scenarioId}/outputs/priceList`).get();
     expect(priceListSnap.exists).toBe(false);
+    const catalogSnap = await db.doc(`scenarios/${scenarioId}/outputs/productCatalog`).get();
+    expect(catalogSnap.exists).toBe(false);
   }, 20000);
 });

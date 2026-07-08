@@ -172,6 +172,51 @@ export const PriceListDocSchema = z.object({
 });
 export type PriceListDoc = z.infer<typeof PriceListDocSchema>;
 
+// ── Doc `outputs/productCatalog` (ADR-014, M12.7) ───────────────────────────
+// Danh mục SP + tham số VẬN HÀNH tối thiểu cho vai `production` dựng form Kế
+// Hoạch SX (production không đọc được `scenarios/{id}` — bảng §6). Cloud
+// Function ghi cùng onScenarioWrite. TUYỆT ĐỐI KHÔNG field giá (giá bán, giá
+// vốn, markup, tồn kho, tỷ giá) — đơn trọng/chu kỳ/cavity/công suất là dữ
+// liệu kỹ thuật, xem ADR-014 mục 1.
+export const ProductCatalogDocSchema = z.object({
+  pipes: z.array(
+    z.object({
+      dn: z.string(),
+      unitWeightKgPerM: z.number().positive(),
+      materialId: z.string(),
+      materialName: z.string(),
+    }),
+  ),
+  fittings: z.array(
+    z.object({
+      productName: z.string(),
+      sizeLabel: z.string(),
+      unit: z.string(),
+      unitWeightKg: z.number().positive(),
+      cycleTimeSec: z.number().positive(),
+      cavity: z.number().int().positive(),
+      managementStatus: z.enum(['active', 'pending_mold']), // form ẩn SKU chưa có khuôn (ADR-007)
+      materialId: z.string(),
+      materialName: z.string(),
+    }),
+  ),
+  params: z.object({
+    pipe: z.object({
+      yieldRate: z.number(),
+      actualCapacityKgPerHour: z.number(),
+      hoursPerShift: z.number(),
+      hoursAvailablePerShiftYear: z.number(), // batches × ngày chạy liên tục × giờ/ca
+      peoplePerShift: z.number().int(),
+    }),
+    fitting: z.object({
+      yieldRate: z.number(),
+      normalMachineHoursUtilizedYear: z.number(), // giờ máy khả dụng tại CS bình thường
+      peoplePerShift: z.number().int(),
+    }),
+  }),
+});
+export type ProductCatalogDoc = z.infer<typeof ProductCatalogDocSchema>;
+
 // ── Plan_SX (T1 — tầng VẬN HÀNH, ADR-005/006) ───────────────────────────────
 const InsufficientCapacity = z.object({
   status: z.literal('insufficient'),

@@ -7,6 +7,8 @@ import { useAuth } from '../auth/useAuth.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
+import PlanScreen from '../plan/PlanScreen.js';
+import { usePlanData } from '../plan/usePlanData.js';
 import type { AppRole } from '../../lib/firebase.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
@@ -35,9 +37,11 @@ const ROLE_DEFS: Array<{ id: AppRole; label: string; desc: string }> = [
   { id: 'production', label: 'Sản Xuất', desc: 'Chỉ kế hoạch SX' },
   { id: 'admin', label: 'Toàn Quyền', desc: 'Tất cả màn hình + cấu hình nhà máy' },
 ];
+/** Kỳ kế hoạch mặc định của màn Kế Hoạch SX (đổi kỳ ngay trong form). */
+const DEFAULT_PLAN_PERIOD = '2026-Q3';
+
 /** Tab chưa dựng → milestone tương ứng trong docs/M12_PLAN.md. */
 const PENDING_TAB_MILESTONE: Record<string, string> = {
-  plan: 'M12.7',
   inventory: 'M12.9',
   config: 'M12.9',
   assumptions: 'M12.9',
@@ -55,6 +59,7 @@ export default function AppShell() {
   const activeTab = allowedTabs.includes(rawActiveTab) ? rawActiveTab : (allowedTabs[0] ?? 'dashboard');
 
   const data = useScenarioData(SCENARIO_ID, role);
+  const planData = usePlanData(SCENARIO_ID, DEFAULT_PLAN_PERIOD, role);
 
   const userTabs = USER_TABS.filter((t) => allowedTabs.includes(t.id));
   const adminTabs = ADMIN_TABS.filter((t) => allowedTabs.includes(t.id));
@@ -148,7 +153,21 @@ export default function AppShell() {
               <Dashboard role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} salesPriceLadder={data.priceList?.priceLadder ?? null} />
             )}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
-            {activeTab !== 'dashboard' && activeTab !== 'pricelist' && (
+            {activeTab === 'plan' && (
+              <>
+                {planData.error && (
+                  <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{planData.error}</div>
+                )}
+                <PlanScreen
+                  catalog={planData.catalog}
+                  planResult={planData.planResult}
+                  savedInput={planData.savedInput}
+                  scenarioId={SCENARIO_ID}
+                  onSave={planData.savePlanInput}
+                />
+              </>
+            )}
+            {activeTab !== 'dashboard' && activeTab !== 'pricelist' && activeTab !== 'plan' && (
               <div style={{ padding: '32px 36px' }}>
                 <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>{[...USER_TABS, ...ADMIN_TABS].find((t) => t.id === activeTab)?.label}</h1>
                 <p style={{ fontSize: 12, color: '#737373' }}>

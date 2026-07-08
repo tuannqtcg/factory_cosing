@@ -19,6 +19,7 @@ import {
   ScenarioInputSchema,
   ScenarioOutputSchema,
   PriceListDocSchema,
+  ProductCatalogDocSchema,
   PlanInputSchema,
   PlanResultSchema,
   TargetProfitRequestSchema,
@@ -32,6 +33,10 @@ import {
 } from '../../src/schemas/scenario.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
+import { calculatePipeCapacity } from '../../src/engine/pipe.js';
+import { calculateFittingCapacity } from '../../src/engine/fitting.js';
+import { managementStatusOf } from '../../src/schemas/product.js';
+import type { ContinuousKgResource, MachineHourResource } from '../../src/schemas/resource.js';
 import {
   computeTargetProfitForScenario,
   computeTargetPriceForScenario,
@@ -73,6 +78,53 @@ function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['product
   });
 }
 
+// ADR-014 (M12.7) — danh mục SP + tham số vận hành cho vai production dựng
+// form Kế Hoạch SX. TUYỆT ĐỐI không field giá (xem ADR-014 mục 1).
+function toProductCatalogDoc(scenarioInput: ScenarioInput) {
+  const pipeResource = scenarioInput.resources.pipe as ContinuousKgResource;
+  const fittingResource = scenarioInput.resources.fitting as MachineHourResource;
+  const fittingProducts = scenarioInput.products.filter((p) => p.kind === 'fitting');
+  const pipeCapacity = calculatePipeCapacity(pipeResource);
+  const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
+  const materialNameOf = (id: string) => scenarioInput.materials.find((m) => m.id === id)?.name ?? id;
+
+  return ProductCatalogDocSchema.parse({
+    pipes: scenarioInput.products
+      .filter((p) => p.kind === 'pipe')
+      .map((p) => ({
+        dn: p.dn,
+        unitWeightKgPerM: p.unitWeightKgPerM,
+        materialId: p.materialId,
+        materialName: materialNameOf(p.materialId),
+      })),
+    fittings: fittingProducts.map((p) => ({
+      productName: p.productName,
+      sizeLabel: p.sizeLabel,
+      unit: p.unit,
+      unitWeightKg: p.unitWeightKg,
+      cycleTimeSec: p.cycleTimeSec,
+      cavity: p.cavity,
+      managementStatus: managementStatusOf(p, fittingResource.moldAssets),
+      materialId: p.materialId,
+      materialName: materialNameOf(p.materialId),
+    })),
+    params: {
+      pipe: {
+        yieldRate: pipeResource.yieldRate,
+        actualCapacityKgPerHour: pipeResource.actualCapacityKgPerHour,
+        hoursPerShift: pipeResource.hoursPerShift,
+        hoursAvailablePerShiftYear: pipeCapacity.normalOperatingHours / pipeResource.normalShifts,
+        peoplePerShift: pipeResource.peoplePerShift,
+      },
+      fitting: {
+        yieldRate: fittingResource.yieldRate,
+        normalMachineHoursUtilizedYear: fittingCapacity.normalMachineHoursUtilized,
+        peoplePerShift: fittingResource.peoplePerShift,
+      },
+    },
+  });
+}
+
 export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async (event) => {
   const { scenarioId } = event.params;
   const db = getFirestore();
@@ -80,12 +132,13 @@ export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async
 
   if (!afterSnap?.exists) {
     // scenario bị xóa — dọn MỌI doc outputs đã tính (chỉ Cloud Function ghi
-    // các doc này; outputs/plan thêm từ M12.4b — planInputs là INPUT của
-    // production, không phải doc tính ra, KHÔNG tự xóa).
+    // các doc này; outputs/plan thêm từ M12.4b, productCatalog từ M12.7 —
+    // planInputs là INPUT của production, không phải doc tính ra, KHÔNG tự xóa).
     await Promise.all([
       db.doc(`scenarios/${scenarioId}/outputs/internal`).delete(),
       db.doc(`scenarios/${scenarioId}/outputs/priceList`).delete(),
       db.doc(`scenarios/${scenarioId}/outputs/plan`).delete(),
+      db.doc(`scenarios/${scenarioId}/outputs/productCatalog`).delete(),
     ]);
     return;
   }
@@ -96,6 +149,7 @@ export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async
   await Promise.all([
     db.doc(`scenarios/${scenarioId}/outputs/internal`).set(scenarioOutput),
     db.doc(`scenarios/${scenarioId}/outputs/priceList`).set(toPriceListDoc(scenarioOutput, scenarioInput.products)),
+    db.doc(`scenarios/${scenarioId}/outputs/productCatalog`).set(toProductCatalogDoc(scenarioInput)),
   ]);
 });
 

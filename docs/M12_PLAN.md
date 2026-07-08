@@ -26,8 +26,8 @@
 | M12.4c | HTTPS Callable `computeTargetCosting` — T2 + T3 (ADR-013: field chọn SKU, allowlist biến dò) + engine `target-costing.ts` | ADR-010, ADR-013, `solver.ts` (M10) | `functions/src/index.ts`, `src/engine/target-costing.ts` | **[x] 2026-07-08** |
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) + engine `dashboard-support.ts` (KPI có số vàng) + shell/auth/seed | prototype tab `dashboard` | `src/features/dashboard/`, `src/features/shell/`, `src/engine/dashboard-support.ts`, `src/lib/`, `scripts/seed-emulator.ts` | **[x] 2026-07-08** |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) + `unit`/`spec` vào doc priceList (ADR-009 #8) | prototype tab `pricelist` | `src/features/price-list/`, `PriceListDocSchema` | **[x] 2026-07-08** |
-| M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] |
+| M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) + doc `outputs/productCatalog` (**ADR-014**) | prototype tab `plan`, `plan.ts` (M9), ADR-014 | `src/features/plan/`, `ProductCatalogDocSchema` | **[x] 2026-07-08** |
+| M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] |
 | M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] |
 
@@ -42,31 +42,53 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.7: Màn hình Kế Hoạch SX (vai `production`).** Trước khi code:
-1. Prototype đóng băng tab `plan`: 2 bảng nhập (Ống theo DN mét; Phụ kiện
-   theo loại×size cái) + summary giờ máy/huy động/NVL cần mua. Vai production
-   là vai DUY NHẤT thấy tab này (ROLE_TAB_ACCESS đã đúng trong AppShell).
-2. Dữ liệu: production KHÔNG đọc được `scenarios/{id}`/`outputs/internal`/
-   `outputs/priceList` (rules M12.3) — chỉ Đọc+Ghi `planInputs/{period}` và
-   Đọc `outputs/plan`. `useScenarioData` hiện SKIP vai production — viết hook
-   riêng (vd `usePlanData`) đọc/ghi 2 doc đó. Danh mục SP để dựng form nhập
-   (DN list, loại phụ kiện×size): production không đọc được products[] từ
-   scenario doc → CÂN NHẮC: (a) thêm danh mục tối thiểu (khóa SP, không giá)
-   vào outputs/plan hoặc doc riêng — cần dòng ADR-009 mới; hay (b) cho
-   production đọc outputs/priceList (có productKey+unit/spec, KHÔNG giá vốn
-   nhưng CÓ giá bán — bảng §6 hiện nói production ✗ priceList). Phương án (a)
-   sạch hơn về phân quyền — quyết + ghi ADR trước khi code, KHÔNG tự chọn ngầm.
-3. Ghi `planInputs/{period}` → `onPlanInputWrite` (M12.4b) tự tính
-   `outputs/plan` — UI chỉ hiển thị PlanResult (shiftsNeeded, cảnh báo khuôn,
-   NVL cần mua theo material ADR-012, nhân công cần tuyển, idle cost).
-4. Verify chạy thật như M12.5/M12.6 (emulator + seed + screenshot vai
-   production; seed đã tạo sẵn production@demo.local).
+→ **M12.8: Màn hình Target Costing (vai `pricing`/`admin`).** Trước khi code:
+1. Prototype đóng băng: KHÔNG có tab target-costing riêng — T2/T3 nằm ở panel
+   "III. Phân tích ngược" của Dashboard (đã dựng M12.5 cho biến compound) +
+   thiết kế ADR-005/006. Xem lại prototype + ADR trước: nếu cần MÀN RIÊNG
+   (chọn SKU, chọn biến dò, T2 lợi nhuận mục tiêu) thì đó là bổ sung UI ngoài
+   prototype đóng băng → cần quay lại Pha 1 hỏi user duyệt layout (1 mockup
+   nhanh là đủ) TRƯỚC khi code, đúng quy trình.
+2. Backend đã XONG HẾT: callable `computeTargetCosting` (M12.4c, ADR-013) —
+   T2 (`TargetProfitRequest`: productLine + targetProfitVnd + materialId?) và
+   T3 (`TargetPriceRequest`: productKey chọn SKU + targetListPriceVnd +
+   freeVarPath trong allowlist). UI chỉ gọi httpsCallable + hiển thị
+   kind/result (+ forward-verify đầy đủ của T3 — luật #4 inverse-solver).
+3. Biến nguyên `shifts` nếu màn hình cần → bổ sung ADR-013 + allowlist +
+   solveDiscrete (đã ghi chỗ chờ trong ADR-013).
+4. Verify chạy thật như M12.5-M12.7 (emulator + seed + screenshot).
 
-Sau M12.7: M12.8 (Target Costing — callable M12.4c; biến `shifts` nếu cần →
-bổ sung ADR-013 + allowlist), M12.9, M12.10 theo bảng.
+Sau M12.8: M12.9 (Tồn kho + Giả định + Cấu hình — form input cho
+admin/pricing, ghi scenarios/{id}, trigger tự tính lại), M12.10 (security
+review Pha 4 + chạy lại toàn bộ parity + chuẩn bị merge).
 
 ## Nhật ký milestone đã xong
 
+- **M12.7 (2026-07-08, cùng phiên M12.4b→M12.6)**: Màn hình Kế Hoạch SX (vai
+  production) + **ADR-014** (user chốt "phương án a" sau khi được trình 2
+  lựa chọn): doc mới `outputs/productCatalog` (`ProductCatalogDocSchema`) —
+  danh mục SP + tham số VẬN HÀNH tối thiểu (đơn trọng/chu kỳ/cavity/công
+  suất — dữ liệu KỸ THUẬT, TUYỆT ĐỐI không field giá; test tích hợp kiểm cả
+  chuỗi JSON không chứa price/cost/markup/usdVnd/inventory/lot) do
+  `onScenarioWrite` ghi + dọn cùng vòng đời; rules cho production/admin/
+  pricing đọc, sales ✗, client không ghi (4 case rules mới → 37/37);
+  contract §5/§6 thêm dòng. UI `src/features/plan/` (PlanScreen + usePlanData
+  — production chỉ đọc productCatalog + outputs/plan, đọc/ghi
+  planInputs/{period}, KHÔNG chạm scenarios/{id}): bảng Ống nhập MÉT theo DN
+  (kg/m, kg TP, giờ máy, ngày SX) + bảng Phụ kiện nhóm theo loại nhập SỐ CÁI
+  (83 SKU active — pending_mold ẩn) + hàng nhập kỳ/nhân công/dự phòng (3
+  field PlanInput ADR-009 #3 mà prototype mock không có) + nút "Lưu & tính".
+  Ranh giới engine GIỮ NGHIÊM: cột dẫn xuất từng dòng là số học thuần từ
+  catalog; "Ca máy cần"/NVL đ/nhân công/cảnh báo khuôn CHỈ hiển thị từ
+  `outputs/plan` do onPlanInputWrite tính (khác prototype mock tự tính —
+  đúng nguyên tắc client không lắp công thức engine). Form tự nạp lại
+  planInputs đã lưu. Verify: rules 37/37, functions 9/9 (thêm assertion
+  productCatalog + dọn khi xóa), `npm test` 328/328, typecheck, build; chạy
+  thật vai production (DN50 50.000m + Tê đều 20 20.000 cái = kịch bản A
+  plan.test.ts): preview 63.000 kg/500 giờ/62,5 ngày; server trả 2 ca Ống +
+  1 ca PK + tuyển 0 người; NVL bm-orange-pipe 73.500 kg / 6.314.800.275 đ /
+  222.705 $ + bm-fitting 1.283 kg / 140.097.329 đ — khớp tuyệt đối số tính
+  tay unit test M12.4b.
 - **M12.6 (2026-07-08, cùng phiên M12.4b/c/M12.5)**: Màn hình Bảng Giá
   (sales-safe). Phát hiện khi khảo sát: doc `outputs/priceList` THIẾU
   ĐVT/Quy cách mà bảng giá prototype (UI đóng băng) cần, và vai sales không

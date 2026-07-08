@@ -34,11 +34,16 @@
   #8], UI search/lọc loại/toggle VAT/bảng 6 cột từ outputs/priceList cho mọi
   vai, ẩn 8 SKU pending_mold bằng managementStatus, KHÔNG dòng Dung môi 550
   [Excel 99 dòng là chân lý]; verify chạy thật vai sales 91 SKU giá v3.7
-  đúng). Tiếp theo: **M12.7** (màn Kế Hoạch SX vai production — xem "Việc
-  tiếp theo" trong `docs/M12_PLAN.md`, CÓ quyết định phân quyền danh mục SP
-  cần ADR trước khi code). `npm test` 328/328 xanh (286 + 11 Corzan + 12
-  plan-support + 10 target-costing + 9 dashboard-kpis), `npm run build` chạy
-  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  đúng). M12.7 (2026-07-08 cùng phiên — màn Kế Hoạch SX vai production +
+  **ADR-014** [user chốt phương án a]: doc mới `outputs/productCatalog`
+  danh mục SP + tham số vận hành KHÔNG giá, rules production đọc được
+  [37/37], PlanScreen nhập Ống/PK + "Lưu & tính" → onPlanInputWrite tính
+  outputs/plan, verify chạy thật khớp kịch bản A plan.test.ts). Tiếp theo:
+  **M12.8** (màn Target Costing — LƯU Ý prototype KHÔNG có tab riêng, nếu
+  cần màn riêng phải mockup hỏi user duyệt trước — xem "Việc tiếp theo"
+  trong `docs/M12_PLAN.md`). `npm test` 328/328 xanh (286 + 11 Corzan + 12
+  plan-support + 10 target-costing + 9 dashboard-kpis), rules 37/37,
+  functions 9/9, `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
   ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
   (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
   2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây
@@ -97,6 +102,10 @@
   T3 + `materialId` T2, allowlist biến dò server-side [5 biến liên tục v1,
   `shifts` hoãn M12.8], doc `outputs/targetCosting` ghi đè
   {kind, request, result}, quyền pricing/admin qua custom claim),
+  **014** (2026-07-08 — M12.7, user chốt "phương án a": doc
+  `outputs/productCatalog` danh mục SP + tham số vận hành cho vai production
+  dựng form Kế Hoạch SX — TUYỆT ĐỐI không field giá; production/admin/pricing
+  đọc, sales ✗, Cloud Function ghi),
   **011** (2026-07-07 — đối chiếu Excel `BlazeMaster_Model_v3_7.xlsx`: Phụ kiện
   `avgProductivityKgPerMachineHour` đổi từ nhập tay 44,6 sang tính bottom-up từ
   bảng khuôn, có ghi đè tùy chọn; kéo theo MHR/giá thành 2 dòng/99 giá SKU/thang

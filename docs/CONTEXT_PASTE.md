@@ -20,11 +20,19 @@
   `materialId` optional cho T2 (bảng ADR-009 #6/#7), allowlist biến dò
   server-side, doc `outputs/targetCosting` ghi đè {kind, request, result};
   9 test tích hợp thật qua `npm run test:functions` gồm test quyền trên Auth
-  Emulator). **Cả 3 Cloud Function của scenario.md §5 đã xong** — tiếp theo:
-  **M12.5** (màn hình Dashboard — bắt đầu chuỗi UI, xem "Việc tiếp theo"
-  trong `docs/M12_PLAN.md`). `npm test` 319/319 xanh (286 + 11 Corzan M13 +
-  12 plan-support M12.4b + 10 target-costing M12.4c), `npm run build` chạy
-  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  Emulator). **Cả 3 Cloud Function của scenario.md §5 đã xong.** M12.5
+  (2026-07-08 cùng phiên — màn Dashboard THẬT, UI đầu tiên nối Firestore:
+  engine `dashboard-support.ts` cho 2 khối số vàng dashboard.json chưa từng
+  có hàm [capacityLevels + investment, công thức giải mã từ số vàng, 9 parity
+  test], shell + auth theo vai [sidebar "Xem Như Vai" = đăng nhập user demo
+  claim `role` trên Auth Emulator], seed script `npm run seed:emulator`,
+  Dashboard đủ I-IV đúng prototype [top-down "Compound tối đa" dùng solve()
+  trên calculateScenario client-side — không công thức ngược tay]; verify
+  chạy thật bằng emulator + dev server + screenshot 2 vai, số vàng v3.7 hiện
+  đúng trên màn hình). Tiếp theo: **M12.6** (màn Bảng Giá sales-safe — xem
+  "Việc tiếp theo" trong `docs/M12_PLAN.md`). `npm test` 328/328 xanh (286 +
+  11 Corzan + 12 plan-support + 10 target-costing + 9 dashboard-kpis),
+  `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
   ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
   (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
   2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây

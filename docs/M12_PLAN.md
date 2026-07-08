@@ -24,8 +24,8 @@
 | M12.4 | Cloud Function `onScenarioWrite` (Firestore trigger `scenarios/{id}`) — chạy `calculateScenario()` server-side, ghi `outputs/internal` + `outputs/priceList` | `scenario.md` §5, ADR-010 | `functions/src/index.ts` | **[x] 2026-07-06** |
 | M12.4b | Cloud Function `onPlanInputWrite` (trigger `planInputs/{period}`) — ghi `outputs/plan` (T1) + engine `deriveMoldSetCountBySizeDN()`/`calculatePlanForScenario()` | ADR-010, `plan.ts` (M9) | `functions/src/index.ts`, `src/engine/plan-support.ts` | **[x] 2026-07-08** |
 | M12.4c | HTTPS Callable `computeTargetCosting` — T2 + T3 (ADR-013: field chọn SKU, allowlist biến dò) + engine `target-costing.ts` | ADR-010, ADR-013, `solver.ts` (M10) | `functions/src/index.ts`, `src/engine/target-costing.ts` | **[x] 2026-07-08** |
-| M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] |
+| M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) + engine `dashboard-support.ts` (KPI có số vàng) + shell/auth/seed | prototype tab `dashboard` | `src/features/dashboard/`, `src/features/shell/`, `src/engine/dashboard-support.ts`, `src/lib/`, `scripts/seed-emulator.ts` | **[x] 2026-07-08** |
+| M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] |
 | M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] |
 | M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] |
@@ -42,30 +42,77 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.5: Màn hình Dashboard** — bắt đầu chuỗi UI (M12.5-M12.9). Trước khi
-code:
-1. Mở `prototype/blazemaster-costing-app.dc.html` tab `dashboard` — UI/UX
-   ĐÓNG BĂNG (user duyệt 2026-07-06), code React thật phải đúng prototype,
-   KHÔNG phát minh layout mới (muốn đổi → quay lại Pha 1 + ADR).
-2. Dữ liệu đọc từ Firestore qua emulator: `scenarios/{id}` +
-   `outputs/internal` (vai admin/pricing — Dashboard là màn nội bộ). Client
-   KHÔNG tự tính — mọi số từ `outputs/*` do Cloud Function ghi (scenario.md
-   §5). Scaffold M12.2 đã có sẵn Vite+React+Tailwind+Recharts ở
-   `src/features/`.
-3. LƯU Ý ADR-012: ScenarioOutput theo (line, materialId) —
-   thang giá/CVP/khóa giá đọc từ `byLineMaterial`/`byMaterial`, UI cần chọn/
-   hiển thị theo nguyên liệu (xem prototype multi-material đã duyệt
-   `prototype/multi-material-catalog.html` cho pattern chọn material).
-4. Auth emulator: user + custom claim `role` (xem cách tests/functions/
-   compute-target-costing.test.ts tạo user/claim/idToken).
+→ **M12.6: Màn hình Bảng Giá (sales-safe).** Trước khi code:
+1. Prototype đóng băng tab `pricelist` (search + filter loại SP + toggle
+   trước/sau VAT + bảng 6 cột STT/Sản phẩm/Kích cỡ/Quy cách/ĐVT/Giá) —
+   KHÔNG phát minh layout mới.
+2. Nguồn dữ liệu: `outputs/priceList` (đủ cho MỌI vai kể cả sales — đã có
+   productKey/managementStatus/4 giá cuối + priceLadder; 8 SKU `pending_mold`
+   ẨN khỏi bảng theo ADR-007/008 — lọc bằng `managementStatus`, KHÔNG
+   hard-code danh sách như prototype EXCLUDED_SKUS).
+3. Hạ tầng M12.5 TÁI DÙNG NGUYÊN: `AppShell` đã có tab `pricelist` +
+   placeholder (thay bằng component thật ở `src/features/price-list/`),
+   `useScenarioData` mở rộng đọc trọn `outputs/priceList` (hiện chỉ lấy
+   priceLadder cho sales), auth/seed/emulator đã sẵn (`npm run emulators` +
+   `npm run seed:emulator` + `npm run dev`).
+4. ADR-012: SKU trùng tên/size giữa BlazeMaster/Corzan — hiển thị/nhóm theo
+   materialId (baseline seed chỉ có BlazeMaster nên chưa lộ, nhưng code phải
+   dùng productKey.materialId làm khóa React key).
+5. Verify chạy thật giống M12.5: emulator + seed + dev server + screenshot
+   (script mẫu xem session log 2026-07-08 phần 3).
 
-Sau M12.5: M12.6 (Bảng Giá — sales-safe, đọc `outputs/priceList`), M12.7 (Kế
-Hoạch SX — tái dùng `calculatePlanForScenario` + `onPlanInputWrite` M12.4b),
-M12.8 (Target Costing — gọi callable `computeTargetCosting` M12.4c; nếu cần
-biến `shifts` thì bổ sung ADR-013 + allowlist), M12.9, M12.10 theo bảng.
+Sau M12.6: M12.7 (Kế Hoạch SX — tái dùng `calculatePlanForScenario`/`onPlanInputWrite`
+M12.4b, vai production), M12.8 (Target Costing — callable M12.4c), M12.9,
+M12.10 theo bảng.
 
 ## Nhật ký milestone đã xong
 
+- **M12.5 (2026-07-08, cùng phiên M12.4b/c)**: Màn hình Dashboard THẬT — UI
+  đầu tiên nối Firestore. 4 phần:
+  (a) **Engine `src/engine/dashboard-support.ts`** — `calculateDashboardKpis()`
+  cho 2 khối số vàng dashboard.json TRƯỚC GIỜ chưa có hàm engine:
+  `capacityLevels` (3 mức công suất Ống — chạy lại mô hình chi phí tại
+  normalShifts=1/2/3 NHƯNG phân bổ chi phí chung GIỮ mức tại CS bình thường;
+  công thức GIẢI MÃ từ số vàng bằng Python độc lập khớp tuyệt đối TRƯỚC khi
+  code) + `investment` (tổng vốn = thiết bị + khuôn + vốn đầu tư Lab/UL;
+  EBIT = Σkg×(tier5−tier3) − chi phí ngoài SX; DT hòa vốn toàn DN = (định phí
+  CVP 2 dòng + ngoài SX) ÷ tỷ lệ số dư đảm phí tại giá VF; payback = vốn ÷
+  (EBIT + tổng khấu hao, khuôn theo asOfYear ADR-007)). 9 test parity
+  `tests/parity/dashboard-kpis.test.ts` (+1 test Corzan không đổi KPI tham
+  chiếu). KHÔNG thêm field vào ScenarioOutput (schema đóng băng) — đây là view
+  dẫn xuất, vai admin/pricing gọi engine client-side (đọc được trọn
+  ScenarioInput nên không xuyên ranh giới dữ liệu nào).
+  (b) **Hạ tầng client**: `src/lib/firebase.ts` (mặc định emulator
+  `demo-costing-app`, có VITE_FIREBASE_API_KEY là tự chuyển project thật —
+  đúng quyết định hạ tầng M12), `scripts/seed-emulator.ts` chạy bằng
+  `vite-node` (`npm run seed:emulator` — 4 user demo
+  {role}@demo.local/demo-password + custom claim `role` + scenario baseline
+  từ fixture, Cloud Function tự tính outputs), script `npm run emulators`.
+  (c) **UI**: `src/features/shell/AppShell.tsx` (sidebar đúng prototype —
+  brand, "Xem Như Vai" = ĐĂNG NHẬP user demo theo vai trên Auth Emulator
+  [prototype chỉ đổi state; bản thật phải auth để rules chạy — cơ chế
+  dev-only, project thật sẽ có login thật ở security-review Pha 4], nav
+  USER/ADMIN theo ROLE_TAB_ACCESS ADR-006, tab chưa dựng → placeholder trỏ
+  milestone) + `src/features/dashboard/` (Dashboard.tsx, useScenarioData.ts,
+  useAuth.ts): lock bar ADR-004 theo material đang chọn + nút "Chốt Baseline
+  Mới" (updateDoc baseline=replacement cho material MỞ KHÓA), thang giá 5 bậc
+  byLineMaterial + MaterialPicker khi >1 material/line (ADR-012), 3 mức công
+  suất, top-down panel (margin/SL hòa vốn = forward từ cvp+ladder; "Compound
+  tối đa" = `solve()` bisection trên `calculateScenario` client-side — KHÔNG
+  công thức ngược tay, luật inverse-solver #1; prototype mock dùng closed-form
+  là đúng lỗi cần tránh), 6 KPI card mục IV. Nguồn dữ liệu tách theo VAI đúng
+  scenario.md §5: admin/pricing đọc scenario+outputs/internal (onSnapshot,
+  validate Zod cả client — luật #2); sales CHỈ đọc outputs/priceList (không
+  chạm doc bị rules chặn); production không có tab dashboard.
+  (d) **Verify chạy thật**: emulator + seed + `npm run dev` + Playwright
+  screenshot cả 2 vai — pricing thấy đủ I-IV với số vàng v3.7 khớp màn hình
+  (thang giá 100.663→132.899 / 3 mức 113.195/108.038/106.319 / KPI 15,97 tỷ
+  · 16,37 tỷ · 33,78 tỷ · 0,82 năm; top-down 120.000đ → margin 11,4%,
+  compound tối đa 3,46 USD/kg từ solver, banner "Lãi thấp"); sales chỉ thấy
+  thang giá + ghi chú ADR-006 (đọc từ outputs/priceList thật qua rules).
+  `npm test` 328/328 (+9 parity mới), typecheck + build OK. Lưu ý kỹ thuật:
+  `src/vite-env.d.ts` (types vite/client cho import.meta.env);
+  playwright-core cài `--no-save` khi cần chụp (không vào package.json).
 - **M12.4c (2026-07-08, cùng phiên M12.4b)**: HTTPS Callable
   `computeTargetCosting` + engine `src/engine/target-costing.ts` + **ADR-013**
   (đóng khoảng trống #2 của ADR-010 và 3 khoảng trống lộ thêm khi bắt tay

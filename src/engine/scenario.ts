@@ -49,8 +49,9 @@ import { managementStatusOf } from '../schemas/product.js';
  * là đợt nhập MỚI NHẤT (UI nhập lô mới sẽ chèn lên đầu mảng). Đổi giả định
  * này chỉ ảnh hưởng cảnh báo staleness, KHÔNG ảnh hưởng giá thành/lãi giữ kho
  * (2 số đó dùng tổng/bình quân toàn bộ lots, không phân biệt thứ tự).
+ * Export để plan-support.ts (M12.4b) dùng CÙNG quy ước khi evaluate khóa giá.
  */
-function lastLotPriceOf(lots: Array<{ priceUsdPerKg: number }>): number | null {
+export function lastLotPriceOf(lots: Array<{ priceUsdPerKg: number }>): number | null {
   return lots[0]?.priceUsdPerKg ?? null;
 }
 function lastInsertLotPriceOf(lots: Array<{ unitPriceVnd: number }>): number | null {

@@ -22,8 +22,8 @@
 | M12.2 | Scaffold frontend thật (Vite + React 18 + TS strict + Tailwind + Recharts) | AGENTS.md stack | `src/features/`, `vite.config.ts`, `tailwind.config.ts` | **[x] 2026-07-06** |
 | M12.3 | Firebase Emulator Suite: `firebase.json` + `firestore.rules` (bảng phân quyền §6) + `firestore.indexes.json` + rules unit test | `docs/contracts/scenario.md` §5-6 | `firebase.json`, `firestore.rules`, `tests/rules/` | **[x] 2026-07-06** |
 | M12.4 | Cloud Function `onScenarioWrite` (Firestore trigger `scenarios/{id}`) — chạy `calculateScenario()` server-side, ghi `outputs/internal` + `outputs/priceList` | `scenario.md` §5, ADR-010 | `functions/src/index.ts` | **[x] 2026-07-06** |
-| M12.4b | Cloud Function `onPlanInputWrite` (trigger `planInputs/{period}`) — ghi `outputs/plan` (T1). Cần thêm `deriveMoldSetCountBySizeDN()` trong engine trước (chưa tồn tại) | ADR-010, `plan.ts` (M9) | `functions/src/index.ts`, `src/engine/plan-support.ts` (mới) | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.4c | HTTPS Callable `computeTargetCosting` — T2 (`solveTargetProfit`, dạng đóng, làm được ngay) + T3 (`solve()`, CẦN sửa `TargetPriceRequestSchema` thêm trường chọn SKU trước — đóng băng Pha 2, cần ADR riêng) | ADR-010, `solver.ts` (M10) | `functions/src/index.ts` | [ ] |
+| M12.4b | Cloud Function `onPlanInputWrite` (trigger `planInputs/{period}`) — ghi `outputs/plan` (T1) + engine `deriveMoldSetCountBySizeDN()`/`calculatePlanForScenario()` | ADR-010, `plan.ts` (M9) | `functions/src/index.ts`, `src/engine/plan-support.ts` | **[x] 2026-07-08** |
+| M12.4c | HTTPS Callable `computeTargetCosting` — T2 (`solveTargetProfit`, dạng đóng, làm được ngay) + T3 (`solve()`, CẦN sửa `TargetPriceRequestSchema` thêm trường chọn SKU trước — đóng băng Pha 2, cần ADR riêng) | ADR-010, `solver.ts` (M10) | `functions/src/index.ts` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) | prototype tab `dashboard` | `src/features/dashboard/` | [ ] |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) | prototype tab `pricelist` | `src/features/price-list/` | [ ] |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) | prototype tab `plan`, `plan.ts` (M9) | `src/features/plan/` | [ ] |
@@ -42,47 +42,59 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.4b: Cloud Function `onPlanInputWrite`.** Đọc ADR-010 (lý do tách khỏi
-M12.4 xong) + `docs/contracts/scenario.md` §5 (dòng `outputs/plan`) trước khi
-viết. **⚠ CẬP NHẬT SAU M13 (ADR-012, 2026-07-07 — multi-material):** engine đã
-đổi theo `docs/contracts/material.md` — đọc contract đó TRƯỚC. Ảnh hưởng trực
-tiếp các bước dưới: `calculatePlan()` giờ nhận thêm tham số thứ 4
-`PlanMaterialPricing[]` ({materialId, compoundLandedPerKgVnd,
-replacementUsdPerKgRaw} cho mọi material trong `ScenarioInput.materials[]`);
-`calculatePipeCostAtNormalCapacity`/`calculateFittingCostAtNormalCapacity`
-nhận `material: MaterialPricingInput` (giá ĐÃ QUA khóa ADR-004 — evaluate từng
-material giống `src/engine/scenario.ts`) thay `compoundPricingPriceUsdPerKg`;
-`calculateFittingCapacity` nhận thêm `fittingProducts` (ADR-011);
-`PlanResult.materialRequirement` giờ là MẢNG theo materialId; UI các màn
-M12.5+ dựng theo ScenarioOutput MỚI (byLineMaterial/byMaterial).
-1. Viết `deriveMoldSetCountBySizeDN(moldAssets: MoldAsset[], products:
-   FittingProduct[]): Record<number, number>` (file mới, gợi ý
-   `src/engine/plan-support.ts`) — với mỗi `MoldAsset`, tra `producesSkus` →
-   `FittingProduct.moldSizeDN` (join qua `productName`+`sizeLabel`), 1
-   `MoldAsset` = 1 bộ khuôn (cộng 1 vào đúng `sizeDN` — 1 khuôn có thể ra
-   nhiều SKU cùng size DN, không cộng trùng nếu 1 khuôn map tới NHIỀU SKU
-   cùng 1 size). Viết `tests/unit/` verify bằng `mold-assets.json`+`fitting.json`
-   thật (không có số vàng Excel riêng cho hàm này — plan.ts vốn đã "không có
-   số vàng Excel", xem cảnh báo đầu `plan.ts`).
-2. Trong `functions/src/index.ts`: thêm `onPlanInputWrite` (Firestore trigger
-   `onWrite` trên `scenarios/{id}/planInputs/{period}`) — đọc `scenarios/{id}`
-   (ScenarioInput), gọi lại `calculatePipeCapacity`/`calculatePipeCostAtNormalCapacity`/
-   `calculatePipeCvp`/`calculateFittingCapacity`/`calculateFittingCostAtNormalCapacity`
-   (CHẤP NHẬN gọi lại theo ADR-010, không viết công thức mới) + hàm mới ở
-   bước 1, rồi gọi `calculatePlan()` (đã có, M9) → ghi `outputs/plan`
-   (GHI ĐÈ — 1 doc duy nhất theo đúng path `scenario.md` §5, không tạo
-   sub-collection theo period, xem lý do ở ADR-010).
-3. Test tích hợp giống `tests/functions/on-scenario-write.test.ts` (M12.4) —
-   tái dùng `tests/helpers/scenario-fixture.ts`, ghi `planInputs/{period}` rồi
-   verify `outputs/plan` xuất hiện đúng.
-4. Cập nhật bảng M12.4b `[x]` + nhật ký.
-
-Sau M12.4b: **M12.4c** (HTTPS Callable `computeTargetCosting`, T2 trước — xem
-ADR-010 mục 3; T3 cần ADR riêng sửa `TargetPriceRequestSchema` thêm trường
-chọn SKU, KHÔNG tự thêm field ngầm).
+→ **M12.4c: HTTPS Callable `computeTargetCosting`.** Đọc ADR-010 mục 3 (lý do
+chọn `onCall` thay trigger) + `docs/contracts/scenario.md` §4
+(`TargetPriceRequestSchema`/`TargetProfitRequestSchema`) + ADR-005/006 trước
+khi viết. Phạm vi 2 nấc, làm T2 TRƯỚC:
+1. **T2 (làm được ngay)**: callable nhận `TargetProfitRequestSchema`, đọc
+   `scenarios/{id}`, gọi `solveTargetProfit()` (M10, dạng đóng, tái dùng
+   cvp.ts) → trả kết quả (hoặc ghi `outputs/targetCosting` theo `scenario.md`
+   §5 — đọc kỹ contract để chọn đúng, request rời rạc có thể chỉ cần trả về).
+   Nhớ kiểm tra vai `pricing`/`admin` từ auth context (custom claims — xem
+   tests/rules/ M12.3 cách đặt claim).
+2. **T3 (BỊ CHẶN — cần ADR trước)**: `solve()` cần trường chọn SKU trong
+   `TargetPriceRequestSchema` (đóng băng Pha 2). Ghi ADR mới (hoặc bổ sung
+   ADR-010) quyết định cấu trúc field chọn SKU (Ống: `dn`+`materialId`;
+   Phụ kiện: `productName`+`sizeLabel`+`materialId` — ADR-012 làm khóa cũ
+   không còn duy nhất), cập nhật bảng ADR-009, RỒI mới code. KHÔNG tự thêm
+   field ngầm. Nếu hết thời gian phiên: làm T2 xong commit được ngay, T3 để
+   phiên sau.
 
 ## Nhật ký milestone đã xong
 
+- **M12.4b (2026-07-08)**: Cloud Function `onPlanInputWrite` + engine
+  `src/engine/plan-support.ts`. 2 hàm engine mới (KHÔNG sửa schema nào → theo
+  ADR-010 không cần dòng ADR-009): `deriveMoldSetCountBySizeDN(moldAssets,
+  products)` — 1 `MoldAsset` = 1 bộ khuôn, cộng 1 vào TỪNG size DN distinct
+  mà khuôn ép ra (join `producesSkus` → `moldSizeDN` qua
+  productName+sizeLabel; SKU không có trong danh mục thì bỏ qua); và
+  `calculatePlanForScenario(ScenarioInput, PlanInput)` — orchestration
+  Plan_SX đặt Ở ENGINE (pure) thay vì viết thẳng trong Cloud Function, hơi
+  rộng hơn mô tả gốc ("gọi lại trong index.ts") nhưng đúng tinh thần
+  PROJECT_SPEC §3 (engine dùng chung mọi nơi): test được bằng `npm test`
+  thường không cần emulator, và M12.7 (màn Kế Hoạch SX) tái dùng được nguyên.
+  Wiring: material tham chiếu dòng Ống + khóa giá từng material giống hệt
+  `calculateScenario()` (tái dùng `lastLotPriceOf` — export thêm từ
+  scenario.ts); `compoundLandedPerKgVnd` = `landedCostPerKgVnd(giá ĐÃ KHÓA)`
+  (trùng công thức `cost.compoundLandedPerKg`, verify bằng test);
+  `calculateFittingCostAtNormalCapacity` hóa ra KHÔNG cần cho plan (mô tả cũ
+  liệt kê thừa — `CalculateFittingPlanInputs` không nhận cost). Số kỳ vọng
+  đếm tay độc lập từ mold-assets.json (66 khuôn):
+  {20:4, 25:9, 32:8, 40:10, 50:11, 65:9, 80:7, 100:8}. `onPlanInputWrite`
+  (trigger `scenarios/{id}/planInputs/{period}`): đọc scenario, parse 2 đầu
+  Zod, ghi ĐÈ `outputs/plan` (1 doc duy nhất); planInput bị XÓA → dọn
+  `outputs/plan` (không lưu period nguồn nên không phân biệt được — dọn cho
+  khỏi stale); scenario không tồn tại → log + bỏ qua (v2 không retry).
+  `onScenarioWrite` xóa scenario giờ dọn thêm `outputs/plan` (trước chỉ dọn
+  2 doc nó tự ghi). `vitest.functions.config.ts` thêm
+  `fileParallelism: false` — 2 file test functions cùng `recursiveDelete`
+  collection `scenarios` ở afterAll, chạy song song sẽ xóa dữ liệu của nhau.
+  Test: 12 unit (`tests/unit/plan-support.test.ts` — fixture thật + quy tắc
+  đếm tổng hợp + đối chiếu số tính tay plan.test.ts kịch bản A + 2 case
+  multi-material Corzan ADR-012) + 3 tích hợp emulator
+  (`tests/functions/on-plan-input-write.test.ts` — tính đúng, ghi đè, dọn khi
+  xóa). Verify: `npm test` 309/309, `npm run test:functions` 5/5,
+  `npm run test:rules` 33/33, typecheck root+functions, `npm run build` OK.
 - **M12.4 (2026-07-06)**: Cloud Function `onScenarioWrite`. Phát hiện khi bắt
   tay code (đã tưởng làm cả 4 doc `outputs/*` trong 1 hàm theo mô tả gốc của
   bảng): 2 khoảng trống thiết kế chặn `outputs/plan`/`outputs/targetCosting`

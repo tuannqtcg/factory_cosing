@@ -10,12 +10,16 @@
   thật bằng dev server + screenshot), M12.3 (Firebase Emulator Suite +
   `firestore.rules` theo bảng phân quyền `scenario.md` §5-6, 33 test rules
   chạy thật trên emulator qua `npm run test:rules`), M12.4 (Cloud Function
-  `onScenarioWrite` — `functions/`, ghi `outputs/internal`+`outputs/priceList`,
-  2 test tích hợp thật qua `npm run test:functions`; ADR-010 tách M12.4b/c
-  hoãn vì Plan_SX chưa orchestrate + T3 thiếu trường chọn SKU). Tiếp theo:
-  **M12.4b** (Cloud Function `onPlanInputWrite` — ghi `outputs/plan`).
-  `npm test` 297/297 xanh (286 + 11 test Corzan M13), `npm run build` chạy
-  được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
+  `onScenarioWrite` — `functions/`, ghi `outputs/internal`+`outputs/priceList`;
+  ADR-010 tách M12.4b/c hoãn có lý do), M12.4b (2026-07-08 — Cloud Function
+  `onPlanInputWrite` ghi `outputs/plan` + engine mới
+  `src/engine/plan-support.ts`: `deriveMoldSetCountBySizeDN()` và
+  orchestrator pure `calculatePlanForScenario()` — M12.7 tái dùng được;
+  5 test tích hợp thật qua `npm run test:functions`). Tiếp theo:
+  **M12.4c** (HTTPS Callable `computeTargetCosting` — T2 làm ngay, T3 cần ADR
+  chọn SKU trước, xem "Việc tiếp theo" trong `docs/M12_PLAN.md`).
+  `npm test` 309/309 xanh (286 + 11 Corzan M13 + 12 plan-support M12.4b),
+  `npm run build` chạy được. **PR #2 (M12.3-M12.4) đã MERGE 2026-07-06 (`fc6d5fc`); nhánh ADR-011 +
   ADR-012/M13 (`claude/material-product-mapping-0ea68t`) đã MERGE 2026-07-07
   (merge commit `a4badf1`, verify sau merge: 297/297 + rules 33/33 + functions
   2/2 trên emulator thật) vào `claude/project-knowledge-setup-2au4hr`** — đây

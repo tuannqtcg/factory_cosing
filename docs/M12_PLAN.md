@@ -31,8 +31,8 @@
 | M12.9a | Vá 2 lỗ hổng thật trong `firestore.rules` phát hiện khi rà soát M12.9: bug đường dẫn chết `inventory.pipe/fitting.priceLock.thresholdPct` (không tồn tại sau ADR-012 → MỌI lần pricing ghi scenarios/{id} bị từ chối kể cả field không khóa) + thiếu khóa `products[]` admin-only (product.md) | `firestore.rules`, product.md | `firestore.rules`, `tests/rules/` | **[x] 2026-07-09** |
 | M12.9b | Màn hình Cấu Hình Nhà Máy (tab `config`, vai admin/pricing) — field-map lại đúng `resources.pipe/fitting` + `costPool` (KHÔNG theo bucket "chung" giả định của mock) | prototype tab `config`, resource.md, cost-pool.md | `src/features/config/ConfigScreen.tsx` | **[x] 2026-07-09** |
 | M12.9c | Màn hình báo cáo Ống CPVC + Phụ Kiện (tab `ong`/`pk`, đọc-only, tái dùng `ScenarioOutput` đã có — KHÔNG gọi lại cost breakdown nội bộ engine) | prototype tab `ong/pk` | `src/features/production-report/ProductionReport.tsx` | **[x] 2026-07-09** |
-| M12.9d | Màn hình Tồn Kho Compound + Tham Số (vai admin/pricing) — cần **mockup Pha 1 mới** vì prototype vẽ TRƯỚC ADR-012 (giả định 2 bucket Ống/PK cứng thay vì `materials[]` thật); còn cần quyết định khóa field trong mảng (`materials[].inventory.priceLock.thresholdPct`, `inventory.metalInsert[].thresholdPct`) | prototype tab `inventory/assumptions` (THAM KHẢO, không porting thẳng), material.md, pricing-chain.md | `src/features/inventory/`, `src/features/assumptions/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] |
+| M12.9d | Màn hình Tồn Kho Compound + Tham Số (vai admin/pricing), dựng theo `materials[]` thật (ADR-012) — mockup Pha 1 mới đã duyệt + **ADR-015** (khóa `thresholdPct` trong mảng bằng unroll theo index cố định) | mockup Pha 1 M12.9d, ADR-015, material.md, pricing-chain.md | `src/features/inventory/InventoryScreen.tsx`, `src/features/assumptions/AssumptionsScreen.tsx`, `firestore.rules` | **[x] 2026-07-09** |
+| M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 
 ## Cách phiên mới bắt đầu
 1. Đọc bảng trên, tìm milestone đầu tiên chưa `[x]`.
@@ -45,28 +45,73 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.9d: Màn hình Tồn Kho Compound + Tham Số (vai `admin`/`pricing`).**
-M12.9a/b/c ĐÃ XONG (vá rules + Cấu Hình Nhà Máy + báo cáo Ống/Phụ Kiện — xem
-nhật ký bên dưới). M12.9d KHÔNG được porting thẳng từ prototype
-(`inventory`/`assumptions` tab) — prototype vẽ TRƯỚC ADR-012 (multi-material),
-giả định cứng 2 bucket Ống/Phụ Kiện thay vì `materials[]` thật (có thể >2 nếu
-thêm nguyên liệu như Corzan). Trước khi code: dựng **mockup Pha 1 mới** (per
-material list editor — thêm/sửa material, lots tồn kho, replacement price,
-baseline/threshold) → hỏi user duyệt layout, giống quy trình M12.8. Đồng thời
-cần QUYẾT ĐỊNH (có thể ghi ADR) cách khóa field ADMIN-ONLY trong mảng cho
-Firestore rules — 2 field đang treo: `materials[].inventory.priceLock.thresholdPct`
-và `inventory.metalInsert[].priceLock.thresholdPct` (theo từng dòng
-`(renType,ptSize)`) — rules hiện KHÔNG khóa field trong phần tử mảng (xem ghi
-chú trong `firestore.rules` sau M12.9a). Cân nhắc: unroll theo index cố định
-(mảng thực tế nhỏ, có bound) hay chấp nhận để `pricing` sửa được (defense-in-depth
-qua client-side disable, không phải hard security boundary) — CHƯA quyết, để
-dành đúng lúc dựng M12.9d.
-
-Sau M12.9d: M12.10 (security review Pha 4 + chạy lại toàn bộ parity + chuẩn bị
-merge — cổng cuối của M12/Pha 3). security-review nên đặc biệt soát lại 2 field
-treo ở trên trước khi merge.
+→ **M12.10: Security review (Pha 4 gate) + chạy lại toàn bộ parity + chuẩn bị
+merge.** M12.1-M12.9d ĐÃ XONG — toàn bộ 9 tab của prototype đã dựng thật, nối
+Firestore/Cloud Functions, không còn tab placeholder nào trong `AppShell.tsx`.
+Đây là milestone CUỐI của M12 (và của Pha 3) — dùng skill `security-review`:
+1. Rà lại `firestore.rules` toàn bộ 1 lượt cuối theo bảng `scenario.md` §6 —
+   đối chiếu từng ô với rules thật, không chỉ tin test đã xanh.
+2. Đặc biệt soát ADR-015 (unroll theo index cố định): cận trên `materials[]`
+   = 8 hiện đủ margin an toàn (danh mục thật có 2 material) — nếu users đã
+   thêm nhiều material qua UI M12.9d trước khi review, verify KHÔNG vượt cận
+   trên; `inventory.metalInsert[]` cố định 10 dòng, không có nguy cơ này.
+3. Xác nhận UI M12.9d LUÔN append material mới vào cuối mảng (không chèn
+   giữa) — đúng giả định ADR-015 mục "Hệ quả".
+4. Rà `docs/contracts/*.md` còn STALE chỗ nào (vd `cost-pool.md` vẫn ghi
+   `markupVfPipe/markupVfFitting`/`compoundImportTaxRate` — pre-ADR-012, chưa
+   cập nhật dù code đã đúng) — cập nhật cho khớp implementation thật trước merge.
+5. Chạy lại toàn bộ 5 cổng (`npm test`, `typecheck` root+functions,
+   `test:rules`, `test:functions`, `build`) 1 lần cuối trên nhánh sạch.
+6. Checklist bí mật/secrets, Firebase config thật (nếu có) trước khi merge.
 
 ## Nhật ký milestone đã xong
+
+- **M12.9d (2026-07-09, cùng phiên M12.9a/b/c)**: Màn hình Tồn Kho Compound
+  (tab `inventory`) + Tham Số (tab `assumptions`) — mockup Pha 1 mới dựng
+  riêng (KHÔNG porting prototype gốc, vẽ trước ADR-012), user duyệt layout
+  ("layout này ổn đấy"), sau đó hỏi thêm 1 câu quyết định kiến trúc còn treo:
+  cách khóa `thresholdPct` admin-only TRONG TỪNG phần tử `materials[]`/
+  `inventory.metalInsert[]` — user không tự tin chọn, tôi khuyến nghị + giải
+  thích rồi chốt **unroll theo index cố định** (ghi **ADR-015**, không phải
+  defense-in-depth client-side suông) vì 2 lý do: mảng thực tế nhỏ có bound rõ
+  ràng (materials hiện 2-4, metalInsert cố định 10), và đây là field bảo mật
+  thật (pricing có thể tự gọi Firestore SDK bỏ qua UI nếu chỉ disable client).
+  **`firestore.rules`**: thêm `materialThresholdLocked`/`metalInsertThresholdLocked`
+  (kiểm 1 index) + `materialsThresholdAllLocked`/`metalInsertsThresholdAllLocked`
+  (unroll 0..7 cho materials, 0..9 cho metalInsert — cận trên đã biết thực
+  tế), gọi trong `scenarioLockedFieldsUnchanged()`. Field khác trong CÙNG
+  phần tử (`lots`, `baseline`, `replacementPriceUsdPerKg`) vẫn mở cho pricing —
+  test xác nhận không lỡ khóa nhầm. Giới hạn ĐÃ GHI RÕ trong ADR-015: vượt cận
+  trên 8 material thì các phần tử dư không được bảo vệ (rủi ro thấp, danh mục
+  nguyên liệu tăng chậm) — UI M12.9d LUÔN append material mới vào cuối mảng để
+  giữ đúng giả định thứ tự của cả ADR-012 lẫn ADR-015. `tests/rules/`: cập
+  nhật fixture thêm material thứ 2 (`corzan-pipe`) + 1 dòng metalInsert, thêm
+  6 test ADR-015 (pricing sửa threshold index 0/1 bị từ chối, admin được phép,
+  pricing sửa field khác trong cùng phần tử vẫn được phép) → 47/47.
+  **UI**: `src/features/inventory/InventoryScreen.tsx` (material picker + bảng
+  đợt nhập editable [tối đa 5 lô] + 4 KPI card [bình quân gia quyền tính THẲNG
+  bằng `weightedAvgUsdPerKg()`/`totalInventoryKg()` — hàm pure đã xuất, xem
+  trước trên draft CHƯA lưu; lãi/lỗ giữ kho + cảnh báo VAS-02 lấy từ
+  `outputs/internal.dualCosting` ĐÃ tính sẵn, không tính lại] + "+ Thêm nguyên
+  liệu mới" [tạo Material rỗng, APPEND cuối mảng, KHÔNG gán Product — ngoài
+  phạm vi] + bảng 10 dòng ren kim loại mở rộng xem/sửa đợt nhập);
+  `src/features/assumptions/AssumptionsScreen.tsx` (mỗi material 1 card: giá
+  tái tạo/baseline/markupVf/thuế NK/phí logistics mở cho pricing, ngưỡng khóa
+  🔒 admin-only [khớp ADR-015 thật, không còn "chỉ trang trí" như ghi chú
+  mockup] + nút "Chốt Baseline Mới" [tái dùng pattern Dashboard M12.5] + bảng
+  ngưỡng khóa ren kim loại). Cả 2 màn ghi `setDoc` FULL document (giữ nguyên
+  phần dữ liệu không đụng tới), `ScenarioInputSchema.safeParse` trước khi ghi.
+  AppShell: xóa hẳn `PENDING_TAB_MILESTONE`/nhánh placeholder — 9/9 tab đã có
+  màn thật.
+  **Verify THẬT** (emulator + seed + `npm run dev` + Playwright, seed thật chỉ
+  có 2 material [bm-orange-pipe/bm-fitting], KHÔNG Corzan): vai pricing thấy
+  đúng 12 field khóa ở Tham Số (2 material × 1 threshold + 10 metalInsert),
+  sửa lô tồn kho + markupVf (field không khóa) → lưu thành công cả 2 màn; vai
+  admin: 0 field khóa, sửa `thresholdPct` material từ 0,03 → 0,08 → lưu thành
+  công (xác nhận rules thật server-side chấp nhận admin đúng như thiết kế, không
+  chỉ pass trên fixture test). `npm test` 328/328 (không đổi — không thêm
+  engine mới), `test:rules` 47/47, `test:functions` 9/9, typecheck root+functions,
+  build OK.
 
 - **M12.9a/b/c (2026-07-09, cùng phiên)**: Nghiên cứu mở đầu M12.9 phát hiện
   prototype cho tab `inventory`/`assumptions` vẽ TRƯỚC ADR-012 (không dùng

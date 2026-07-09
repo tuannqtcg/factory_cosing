@@ -51,7 +51,13 @@ const baseScenario = {
       id: 'bm-orange-pipe',
       name: 'BlazeMaster Orange (ống)',
       markupVf: 0.25,
-      inventory: { lots: [], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.2 },
+      inventory: { lots: [{ tons: 10, priceUsdPerKg: 3.03 }], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.2 },
+    },
+    {
+      id: 'corzan-pipe',
+      name: 'Corzan 3710 (ống)',
+      markupVf: 0.25,
+      inventory: { lots: [], priceLock: { baseline: 3.47, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.47 },
     },
   ],
   products: [{ kind: 'pipe', dn: 'DN20', materialId: 'bm-orange-pipe' }],
@@ -69,7 +75,11 @@ const baseScenario = {
     markup: { markupTcg: 0.15, listPriceMargin: 0.1 },
     solvent550PricePerBox: 100000,
   },
-  inventory: { metalInsert: [] },
+  inventory: {
+    metalInsert: [
+      { renType: 'trong', ptSize: '15', lots: [{ qtyOnHand: 11000, unitPriceVnd: 16200 }], priceLock: { baseline: 16200, thresholdPct: 0.05 }, replacementPriceVnd: 16200 },
+    ],
+  },
 };
 
 function ctxFor(role: 'admin' | 'pricing' | 'sales' | 'production') {
@@ -183,7 +193,7 @@ describe('scenarios/{id} — ghi field KHÔNG khóa (markup/currency/materials/r
       })
     );
   });
-  it('pricing sửa materials[] (nguyên liệu — chưa có khóa per-field, xem ghi chú M12.9a) được phép', async () => {
+  it('pricing sửa materials[0] field KHÔNG khóa (markupVf/lots/replacementPriceUsdPerKg), GIỮ NGUYÊN thresholdPct → được phép', async () => {
     await assertSucceeds(
       updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
         materials: [
@@ -191,9 +201,64 @@ describe('scenarios/{id} — ghi field KHÔNG khóa (markup/currency/materials/r
             id: 'bm-orange-pipe',
             name: 'BlazeMaster Orange (ống)',
             markupVf: 0.3,
-            inventory: { lots: [], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.5 },
+            inventory: { lots: [{ tons: 12, priceUsdPerKg: 3.1 }], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.5 },
           },
+          baseScenario.materials[1],
         ],
+      })
+    );
+  });
+});
+
+describe('scenarios/{id} — ADR-015: thresholdPct khóa TRONG TỪNG phần tử materials[]/metalInsert[]', () => {
+  it('pricing đổi materials[0].inventory.priceLock.thresholdPct bị từ chối', async () => {
+    await assertFails(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        materials: [
+          { ...baseScenario.materials[0]!, inventory: { ...baseScenario.materials[0]!.inventory, priceLock: { baseline: 1.2, thresholdPct: 0.1 } } },
+          baseScenario.materials[1]!,
+        ],
+      })
+    );
+  });
+  it('pricing đổi materials[1].inventory.priceLock.thresholdPct (index thứ 2, không phải index 0) bị từ chối', async () => {
+    await assertFails(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        materials: [
+          baseScenario.materials[0]!,
+          { ...baseScenario.materials[1]!, inventory: { ...baseScenario.materials[1]!.inventory, priceLock: { baseline: 3.47, thresholdPct: 0.1 } } },
+        ],
+      })
+    );
+  });
+  it('admin đổi materials[1].inventory.priceLock.thresholdPct được phép', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1'), {
+        materials: [
+          baseScenario.materials[0]!,
+          { ...baseScenario.materials[1]!, inventory: { ...baseScenario.materials[1]!.inventory, priceLock: { baseline: 3.47, thresholdPct: 0.1 } } },
+        ],
+      })
+    );
+  });
+  it('pricing đổi inventory.metalInsert[0].priceLock.thresholdPct bị từ chối', async () => {
+    await assertFails(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        'inventory.metalInsert': [{ ...baseScenario.inventory.metalInsert[0]!, priceLock: { baseline: 16200, thresholdPct: 0.1 } }],
+      })
+    );
+  });
+  it('admin đổi inventory.metalInsert[0].priceLock.thresholdPct được phép', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1'), {
+        'inventory.metalInsert': [{ ...baseScenario.inventory.metalInsert[0]!, priceLock: { baseline: 16200, thresholdPct: 0.1 } }],
+      })
+    );
+  });
+  it('pricing sửa inventory.metalInsert[0].lots (không khóa), GIỮ NGUYÊN thresholdPct → được phép', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        'inventory.metalInsert': [{ ...baseScenario.inventory.metalInsert[0]!, lots: [{ qtyOnHand: 12000, unitPriceVnd: 16500 }] }],
       })
     );
   });

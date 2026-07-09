@@ -12,6 +12,8 @@ import { usePlanData } from '../plan/usePlanData.js';
 import TargetCosting from '../target-costing/TargetCosting.js';
 import ConfigScreen from '../config/ConfigScreen.js';
 import ProductionReport from '../production-report/ProductionReport.js';
+import InventoryScreen from '../inventory/InventoryScreen.js';
+import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import type { AppRole } from '../../lib/firebase.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
@@ -46,11 +48,6 @@ const ROLE_DEFS: Array<{ id: AppRole; label: string; desc: string }> = [
 /** Kỳ kế hoạch mặc định của màn Kế Hoạch SX (đổi kỳ ngay trong form). */
 const DEFAULT_PLAN_PERIOD = '2026-Q3';
 
-/** Tab chưa dựng → milestone tương ứng trong docs/M12_PLAN.md. */
-const PENDING_TAB_MILESTONE: Record<string, string> = {
-  inventory: 'M12.9d',
-  assumptions: 'M12.9d',
-};
 
 export default function AppShell() {
   const authState = useAuth();
@@ -160,6 +157,8 @@ export default function AppShell() {
               <TargetCosting role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
             )}
             {activeTab === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
+            {activeTab === 'inventory' && <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />}
+            {activeTab === 'assumptions' && <AssumptionsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'ong' && <ProductionReport role={role} line="pipe" scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'pk' && <ProductionReport role={role} line="fitting" scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'plan' && (
@@ -175,21 +174,6 @@ export default function AppShell() {
                   onSave={planData.savePlanInput}
                 />
               </>
-            )}
-            {activeTab !== 'dashboard' &&
-              activeTab !== 'pricelist' &&
-              activeTab !== 'plan' &&
-              activeTab !== 'targetcosting' &&
-              activeTab !== 'config' &&
-              activeTab !== 'ong' &&
-              activeTab !== 'pk' && (
-              <div style={{ padding: '32px 36px' }}>
-                <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>{[...USER_TABS, ...ADMIN_TABS].find((t) => t.id === activeTab)?.label}</h1>
-                <p style={{ fontSize: 12, color: '#737373' }}>
-                  Màn hình này chưa dựng — theo lộ trình <code>docs/M12_PLAN.md</code> ({PENDING_TAB_MILESTONE[activeTab] ?? 'M12.x'}). Prototype đã duyệt:{' '}
-                  <code>prototype/blazemaster-costing-app.dc.html</code>.
-                </p>
-              </div>
             )}
           </>
         )}

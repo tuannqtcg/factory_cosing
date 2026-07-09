@@ -20,7 +20,12 @@ const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..')
 let testEnv: RulesTestEnvironment;
 
 // Fixture tối giản — chỉ đủ field mà firestore.rules đọc tới (không cần khớp
-// đầy đủ ScenarioInputSchema, rules không chạy Zod).
+// đầy đủ ScenarioInputSchema, rules không chạy Zod). Sau ADR-012 (2026-07-07):
+// materials[] thay `inventory.pipe/fitting`, costPool.markup chỉ còn
+// markupTcg/listPriceMargin (markupVfPipe/Fitting → Material.markupVf),
+// costPool.currency bỏ 2 field thuế/logistics (→ Material). Fixture cũ dùng
+// shape TIỀN ADR-012 khiến bug đường dẫn chết trong `firestore.rules` (M12.9a)
+// không bị test này bắt được — xem "scenarios/{id} — ghi field KHÔNG khóa".
 const baseScenario = {
   id: 'scn-1',
   asOfYear: 2026,
@@ -32,6 +37,7 @@ const baseScenario = {
       extruderCount: 2,
       moldPullerCutterCost: 50000000,
       yieldRate: 0.95,
+      hoursPerShift: 8,
     },
     fitting: {
       driverType: 'machine_hour',
@@ -40,7 +46,15 @@ const baseScenario = {
       moldAssets: [],
     },
   },
-  products: [],
+  materials: [
+    {
+      id: 'bm-orange-pipe',
+      name: 'BlazeMaster Orange (ống)',
+      markupVf: 0.25,
+      inventory: { lots: [], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.2 },
+    },
+  ],
+  products: [{ kind: 'pipe', dn: 'DN20', materialId: 'bm-orange-pipe' }],
   costPool: {
     sharedFixedCosts: {
       labAnnualized: 1,
@@ -51,21 +65,11 @@ const baseScenario = {
       annualLandRent: 1,
     },
     nonProductionCosts: { operatingCostPerYear: 1, financialCostPerYear: 1 },
-    currency: {
-      usdVndRate: 25000,
-      vatOutputRate: 0.08,
-      mandatoryInsuranceRate: 0.1,
-      compoundImportTaxRate: 0.03,
-      customsLogisticsFeeRate: 0.01,
-    },
-    markup: { markupVfPipe: 0.2, markupVfFitting: 0.25, markupTcg: 0.15, listPriceMargin: 0.1 },
+    currency: { usdVndRate: 25000, vatOutputRate: 0.08, mandatoryInsuranceRate: 0.1 },
+    markup: { markupTcg: 0.15, listPriceMargin: 0.1 },
     solvent550PricePerBox: 100000,
   },
-  inventory: {
-    pipe: { lots: [], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.2 },
-    fitting: { lots: [], priceLock: { baseline: 1.3, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.3 },
-    metalInsert: [],
-  },
+  inventory: { metalInsert: [] },
 };
 
 function ctxFor(role: 'admin' | 'pricing' | 'sales' | 'production') {
@@ -135,20 +139,61 @@ describe('scenarios/{id} — ghi field KHÓA (resource.md/cost-pool.md)', () => 
       })
     );
   });
+  it('pricing sửa products[] (khóa, product.md — M12.9a vá) bị từ chối', async () => {
+    await assertFails(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        products: [{ kind: 'pipe', dn: 'DN25', materialId: 'bm-orange-pipe' }],
+      })
+    );
+  });
+  it('admin sửa products[] được phép', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1'), {
+        products: [{ kind: 'pipe', dn: 'DN25', materialId: 'bm-orange-pipe' }],
+      })
+    );
+  });
 });
 
-describe('scenarios/{id} — ghi field KHÔNG khóa (markup/currency)', () => {
+describe('scenarios/{id} — ghi field KHÔNG khóa (markup/currency/materials/resources không nằm trong danh sách)', () => {
   it('pricing sửa costPool.markup được phép', async () => {
     await assertSucceeds(
       updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
-        'costPool.markup.markupVfPipe': 0.3,
+        'costPool.markup.markupTcg': 0.3,
       })
     );
   });
   it('sales sửa costPool.markup (dù không khóa) vẫn bị từ chối — sales không có quyền ghi scenario', async () => {
     await assertFails(
       updateDoc(doc(ctxFor('sales').firestore(), 'scenarios/scn-1'), {
-        'costPool.markup.markupVfPipe': 0.3,
+        'costPool.markup.markupTcg': 0.3,
+      })
+    );
+  });
+  // M12.9a — regression: trước khi vá, `scenarioLockedFieldsUnchanged()` đọc
+  // `inventory.pipe/fitting.priceLock.thresholdPct` KHÔNG tồn tại trên document
+  // thật (post ADR-012) → rules ném lỗi khi evaluate → MỌI lần pricing ghi
+  // scenarios/{id} đều bị từ chối, kể cả field không khóa như dưới đây. Test
+  // này lẽ ra phải đỏ trước khi vá (fixture cũ ở đây vẫn dùng shape lỗi thời
+  // nên không bắt được — đã sửa fixture ở trên cho khớp thật).
+  it('pricing sửa resources.pipe.hoursPerShift (không khóa) được phép — regression bug đường dẫn chết inventory.pipe/fitting', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        'resources.pipe.hoursPerShift': 12,
+      })
+    );
+  });
+  it('pricing sửa materials[] (nguyên liệu — chưa có khóa per-field, xem ghi chú M12.9a) được phép', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        materials: [
+          {
+            id: 'bm-orange-pipe',
+            name: 'BlazeMaster Orange (ống)',
+            markupVf: 0.3,
+            inventory: { lots: [], priceLock: { baseline: 1.2, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 1.5 },
+          },
+        ],
       })
     );
   });

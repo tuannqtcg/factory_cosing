@@ -28,7 +28,10 @@
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) + `unit`/`spec` vào doc priceList (ADR-009 #8) | prototype tab `pricelist` | `src/features/price-list/`, `PriceListDocSchema` | **[x] 2026-07-08** |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) + doc `outputs/productCatalog` (**ADR-014**) | prototype tab `plan`, `plan.ts` (M9), ADR-014 | `src/features/plan/`, `ProductCatalogDocSchema` | **[x] 2026-07-08** |
 | M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | **[x] 2026-07-09** |
-| M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
+| M12.9a | Vá 2 lỗ hổng thật trong `firestore.rules` phát hiện khi rà soát M12.9: bug đường dẫn chết `inventory.pipe/fitting.priceLock.thresholdPct` (không tồn tại sau ADR-012 → MỌI lần pricing ghi scenarios/{id} bị từ chối kể cả field không khóa) + thiếu khóa `products[]` admin-only (product.md) | `firestore.rules`, product.md | `firestore.rules`, `tests/rules/` | **[x] 2026-07-09** |
+| M12.9b | Màn hình Cấu Hình Nhà Máy (tab `config`, vai admin/pricing) — field-map lại đúng `resources.pipe/fitting` + `costPool` (KHÔNG theo bucket "chung" giả định của mock) | prototype tab `config`, resource.md, cost-pool.md | `src/features/config/ConfigScreen.tsx` | **[x] 2026-07-09** |
+| M12.9c | Màn hình báo cáo Ống CPVC + Phụ Kiện (tab `ong`/`pk`, đọc-only, tái dùng `ScenarioOutput` đã có — KHÔNG gọi lại cost breakdown nội bộ engine) | prototype tab `ong/pk` | `src/features/production-report/ProductionReport.tsx` | **[x] 2026-07-09** |
+| M12.9d | Màn hình Tồn Kho Compound + Tham Số (vai admin/pricing) — cần **mockup Pha 1 mới** vì prototype vẽ TRƯỚC ADR-012 (giả định 2 bucket Ống/PK cứng thay vì `materials[]` thật); còn cần quyết định khóa field trong mảng (`materials[].inventory.priceLock.thresholdPct`, `inventory.metalInsert[].thresholdPct`) | prototype tab `inventory/assumptions` (THAM KHẢO, không porting thẳng), material.md, pricing-chain.md | `src/features/inventory/`, `src/features/assumptions/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] |
 
 ## Cách phiên mới bắt đầu
@@ -42,20 +45,86 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.9: Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input
-form)**, theo prototype tab `inventory`/`assumptions`/`config`/`ong`/`pk` — 5
-tab admin còn placeholder trong `AppShell.tsx` (`PENDING_TAB_MILESTONE`), ghi
-`scenarios/{id}` (Cloud Function `onScenarioWrite` tự tính lại outputs/*).
-Cân nhắc tách 5 tab thành các milestone con nếu 1 phiên không đủ (theo đúng kỷ
-luật chia nhỏ đã dùng ở M12.4/M12.8) — đọc field-lock còn treo ở M12.3
-(`product.md`/`pricing-chain.md` chưa vào rules) trước khi cho phép ghi
-`products[]`/`inventory.metalInsert[].thresholdPct` qua form, có thể cần
-ADR mới nếu muốn khóa field trong mảng.
+→ **M12.9d: Màn hình Tồn Kho Compound + Tham Số (vai `admin`/`pricing`).**
+M12.9a/b/c ĐÃ XONG (vá rules + Cấu Hình Nhà Máy + báo cáo Ống/Phụ Kiện — xem
+nhật ký bên dưới). M12.9d KHÔNG được porting thẳng từ prototype
+(`inventory`/`assumptions` tab) — prototype vẽ TRƯỚC ADR-012 (multi-material),
+giả định cứng 2 bucket Ống/Phụ Kiện thay vì `materials[]` thật (có thể >2 nếu
+thêm nguyên liệu như Corzan). Trước khi code: dựng **mockup Pha 1 mới** (per
+material list editor — thêm/sửa material, lots tồn kho, replacement price,
+baseline/threshold) → hỏi user duyệt layout, giống quy trình M12.8. Đồng thời
+cần QUYẾT ĐỊNH (có thể ghi ADR) cách khóa field ADMIN-ONLY trong mảng cho
+Firestore rules — 2 field đang treo: `materials[].inventory.priceLock.thresholdPct`
+và `inventory.metalInsert[].priceLock.thresholdPct` (theo từng dòng
+`(renType,ptSize)`) — rules hiện KHÔNG khóa field trong phần tử mảng (xem ghi
+chú trong `firestore.rules` sau M12.9a). Cân nhắc: unroll theo index cố định
+(mảng thực tế nhỏ, có bound) hay chấp nhận để `pricing` sửa được (defense-in-depth
+qua client-side disable, không phải hard security boundary) — CHƯA quyết, để
+dành đúng lúc dựng M12.9d.
 
-Sau M12.9: M12.10 (security review Pha 4 + chạy lại toàn bộ parity + chuẩn bị
-merge — cổng cuối của M12/Pha 3).
+Sau M12.9d: M12.10 (security review Pha 4 + chạy lại toàn bộ parity + chuẩn bị
+merge — cổng cuối của M12/Pha 3). security-review nên đặc biệt soát lại 2 field
+treo ở trên trước khi merge.
 
 ## Nhật ký milestone đã xong
+
+- **M12.9a/b/c (2026-07-09, cùng phiên)**: Nghiên cứu mở đầu M12.9 phát hiện
+  prototype cho tab `inventory`/`assumptions` vẽ TRƯỚC ADR-012 (không dùng
+  được thẳng) — user chốt chia nhỏ, làm phần AN TOÀN trước (rules fix +
+  config + báo cáo Ống/PK), hoãn Tồn Kho/Tham Số sang M12.9d (mockup riêng).
+  **M12.9a — vá `firestore.rules`**: (1) XÓA 2 dòng khóa
+  `inventory.pipe/fitting.priceLock.thresholdPct` — ADR-012 (2026-07-07) đã bỏ
+  hẳn `inventory.pipe/fitting` (chuyển vào `materials[].inventory`), rules cũ
+  đọc field KHÔNG TỒN TẠI trên document thật → Firestore ném lỗi khi evaluate
+  → **MỌI lần `pricing` ghi `scenarios/{id}` đều bị từ chối, kể cả field
+  không khóa** (bug thật, không chỉ "khóa vô tác dụng" — không bị
+  `tests/rules/firestore.rules.test.ts` cũ bắt được vì fixture test ở đó CŨNG
+  dùng shape lỗi thời `inventory.pipe/fitting`, không phải bug của rules mà là
+  bug của TEST không theo kịp schema thật); (2) THÊM khóa `products[]`
+  admin-only (product.md "Product chỉ admin ghi" — đã ĐÓNG BĂNG từ Pha 2 nhưng
+  chưa từng đưa vào rules). Cập nhật `baseScenario` fixture trong
+  `tests/rules/firestore.rules.test.ts` khớp schema thật post-ADR-012
+  (`materials[]` thay `inventory.pipe/fitting`, `costPool.markup` chỉ còn
+  `markupTcg`/`listPriceMargin`) + thêm test regression "pricing sửa field
+  KHÔNG khóa (`resources.pipe.hoursPerShift`) được phép" — lẽ ra phải ĐỎ trước
+  khi vá, giờ XANH. `npm run test:rules` 41/41 (từ 33 + 8 test mới).
+  **M12.9b — Cấu Hình Nhà Máy** (`src/features/config/ConfigScreen.tsx`, tab
+  `config` mở thêm cho `pricing` — trước chỉ admin thấy trong
+  `ROLE_TAB_ACCESS`, sai vì resource.md/cost-pool.md đều cho pricing sửa field
+  KHÔNG khóa): field-map lại đúng schema thật thay vì bucket "lịch vận hành
+  chung" giả định của mock (schema không có object dùng chung — mỗi Resource
+  Ống/Phụ Kiện có bộ field vận hành RIÊNG, khối A của prototype tách thành 2
+  khối B/C ở đây). Khóa field client-side (disable input) ĐÚNG danh sách
+  resource.md/cost-pool.md (5 field Ống + machineTypes/yieldRate PK + toàn bộ
+  costPool trừ markup/currency = 19 field khóa) — KHÁC mock (chỉ 4 field
+  costPool có 🔒 trực quan, thiếu 5 field còn lại của "toàn bộ CostPool trừ
+  markup/currency" theo đúng câu chữ cost-pool.md) — chốt theo ĐÚNG câu chữ
+  contract, ghi rõ lệch mock. Loại bỏ `avgProductivityKgPerMachineHour` khỏi
+  form (ADR-011: đổi giữa auto/ghi đè thủ công là đổi CHÍNH SÁCH công suất,
+  cần ADR riêng, không phải field nhập tay thường). `moldAssets` hiển thị
+  READ-ONLY (tổng giá trị + số bộ) — sửa qua audit log riêng `moldAssets/{id}`
+  (ADR-007 "còn treo"), không có input trực tiếp. Ghi bằng `setDoc` FULL
+  document (spread từ `scenario` gốc + field đã sửa) — giữ nguyên
+  `materials[]`/`products[]`/`inventory.metalInsert[]` không đổi.
+  **M12.9c — báo cáo Ống CPVC + Phụ Kiện** (`src/features/production-report/ProductionReport.tsx`,
+  dùng chung 1 component cho 2 tab qua prop `line`): thang giá 5 bậc + CVP +
+  bảng giá theo DN/SKU — TÁI DÙNG `ScenarioOutput` đã có, KHÔNG gọi lại
+  `calculatePipe/FittingCostAtNormalCapacity()` (hàm này không xuất field
+  trung gian material/processing/packaging riêng ra `ScenarioOutput` — tự gọi
+  lại sẽ trùng lặp wiring nội bộ của `calculateScenario()`, rủi ro trôi logic;
+  muốn breakdown chi tiết hơn phải export thêm field — đổi schema đóng băng,
+  cần ADR, để dành quyết định cho M12.9d hoặc phiên sau). Thay bằng "thẻ chi
+  phí" 2 mảng dùng ĐÚNG số đã tổng hợp sẵn trong thang giá (tier1 sàn biến phí
+  ≈ vật liệu+bao bì, tier3−tier1 ≈ gia công+phân bổ chung) — khác mock (mock
+  có 5 thẻ + 3 phân đoạn material/processing/packaging tách riêng), ghi rõ lý
+  do lệch. Verify THẬT (emulator + seed + `npm run dev` + Playwright, cả 2
+  vai): pricing thấy đúng 19 field khóa (disabled) ở Cấu Hình, sửa field
+  không khóa (markupTcg) → lưu thành công → Cloud Function tính lại → hiện
+  ngay ở báo cáo Ống/PK (round-trip xác nhận qua số liệu đổi theo đúng input
+  mới, không phải giả lập); admin sửa field khóa (actualCapacityKgPerHour)
+  cũng lưu thành công (0 field bị disable cho admin). `npm test` 328/328
+  (không đổi — M12.9b/c không thêm engine mới), `npm run test:functions` 9/9,
+  `npm run test:rules` 41/41, typecheck root+functions, build OK.
 
 - **M12.8 (2026-07-09)**: Màn hình Định Giá Ngược (Target Costing, tab
   `targetcosting`, vai `pricing`/`admin`) — **mockup Pha 1 trước** (artifact

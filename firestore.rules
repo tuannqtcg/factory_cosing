@@ -20,12 +20,25 @@ service cloud.firestore {
 
     // Danh sách field khóa của scenarios/{id} — resource.md + cost-pool.md
     // (scenario.md §5 dòng 1: "pricing các field KHÔNG nằm trong danh sách
-    // khóa (resource.md/cost-pool.md đã liệt kê)"). product.md
-    // ("Product chỉ admin ghi") và pricing-chain.md (thresholdPct admin-only
-    // trong metalInsert[] theo từng dòng) KHÔNG đưa vào đây — scenario.md
-    // không trỏ 2 nguồn đó cho hàng này, và rules không có vòng lặp để khóa
-    // field trong TỪNG phần tử mảng metalInsert theo (renType, ptSize). Ghi
-    // rõ ở docs/M12_PLAN.md nhật ký M12.3 làm việc còn treo.
+    // khóa (resource.md/cost-pool.md đã liệt kê)") + product.md ("Product chỉ
+    // admin ghi", M12.9a vá — trước đây thiếu, pricing ghi được products[] dù
+    // contract đã cấm). pricing-chain.md (thresholdPct admin-only theo TỪNG
+    // dòng trong `materials[].inventory.priceLock`/`inventory.metalInsert[]`)
+    // KHÔNG đưa vào đây — rules không có vòng lặp để khóa field trong TỪNG
+    // phần tử mảng mà không lỡ khóa luôn các field khác (vd `lots`) mà pricing
+    // ĐƯỢC sửa trong cùng phần tử. Cần ADR khi dựng màn Tồn Kho/Tham Số
+    // (M12.9 kế tiếp) — xem docs/M12_PLAN.md nhật ký M12.9a.
+    //
+    // M12.9a: XÓA 2 dòng khóa `inventory.pipe/fitting.priceLock.thresholdPct`
+    // cũ — ADR-012 (2026-07-07) đã bỏ hẳn `inventory.pipe`/`inventory.fitting`
+    // (chuyển vào `materials[].inventory`), nên 2 field này KHÔNG tồn tại
+    // trong document thật nữa. Truy cập field không tồn tại trên map khiến
+    // rules ném lỗi khi evaluate → cả biểu thức && sập theo kiểu fail-closed,
+    // tức là MỌI lần `pricing` ghi `scenarios/{id}` đều bị từ chối kể cả field
+    // không khóa (bug thật, không phải chỉ "khóa không có tác dụng" — phát
+    // hiện khi rà lại rules cho M12.9, KHÔNG phát hiện được qua
+    // `tests/rules/firestore.rules.test.ts` cũ vì fixture test ở đó cũng dùng
+    // sai shape `inventory.pipe/fitting` lỗi thời, chưa từng chạy Zod để lộ ra).
     function scenarioLockedFieldsUnchanged(existing, incoming) {
       return incoming.resources.pipe.actualCapacityKgPerHour == existing.resources.pipe.actualCapacityKgPerHour
         && incoming.resources.pipe.extruderPriceEach == existing.resources.pipe.extruderPriceEach
@@ -39,10 +52,8 @@ service cloud.firestore {
         && incoming.costPool.sharedFixedCosts == existing.costPool.sharedFixedCosts
         && incoming.costPool.nonProductionCosts == existing.costPool.nonProductionCosts
         && incoming.costPool.solvent550PricePerBox == existing.costPool.solvent550PricePerBox
-        // pricing-chain.md: thresholdPct của priceLock compound (không phải
-        // mảng, nên khóa được trực tiếp) — admin only, baseline vẫn mở cho pricing
-        && incoming.inventory.pipe.priceLock.thresholdPct == existing.inventory.pipe.priceLock.thresholdPct
-        && incoming.inventory.fitting.priceLock.thresholdPct == existing.inventory.fitting.priceLock.thresholdPct;
+        // product.md: "Product chỉ admin ghi" — toàn bộ mảng, pricing không sửa BOM/master data
+        && incoming.products == existing.products;
     }
 
     // scenarios/{id} — ScenarioInput đầy đủ (scenario.md §5 dòng 1)

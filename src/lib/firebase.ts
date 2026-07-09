@@ -7,6 +7,7 @@
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
 const envApiKey = import.meta.env.VITE_FIREBASE_API_KEY as string | undefined;
 /** true = chưa cấu hình project thật → nói chuyện với Emulator Suite. */
@@ -24,11 +25,13 @@ const app = initializeApp(
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const functions = getFunctions(app);
 
 if (isEmulatorMode) {
   // Port khớp firebase.json — đổi ở đó thì đổi ở đây.
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 }
 
 export type AppRole = 'admin' | 'pricing' | 'sales' | 'production';

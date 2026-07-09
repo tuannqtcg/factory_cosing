@@ -9,20 +9,22 @@ import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
 import PlanScreen from '../plan/PlanScreen.js';
 import { usePlanData } from '../plan/usePlanData.js';
+import TargetCosting from '../target-costing/TargetCosting.js';
 import type { AppRole } from '../../lib/firebase.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
 const ROLE_TAB_ACCESS: Record<AppRole, string[]> = {
-  pricing: ['dashboard', 'pricelist', 'inventory', 'assumptions', 'ong', 'pk'],
+  pricing: ['dashboard', 'pricelist', 'targetcosting', 'inventory', 'assumptions', 'ong', 'pk'],
   sales: ['dashboard', 'pricelist'],
   production: ['plan'],
-  admin: ['dashboard', 'pricelist', 'plan', 'inventory', 'config', 'assumptions', 'ong', 'pk'],
+  admin: ['dashboard', 'pricelist', 'plan', 'targetcosting', 'inventory', 'config', 'assumptions', 'ong', 'pk'],
 };
 const USER_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'pricelist', label: 'Bảng Giá' },
   { id: 'plan', label: 'Kế Hoạch SX' },
+  { id: 'targetcosting', label: 'Định Giá Ngược' },
 ];
 const ADMIN_TABS = [
   { id: 'inventory', label: 'Tồn Kho Compound' },
@@ -153,6 +155,9 @@ export default function AppShell() {
               <Dashboard role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} salesPriceLadder={data.priceList?.priceLadder ?? null} />
             )}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
+            {activeTab === 'targetcosting' && (
+              <TargetCosting role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
+            )}
             {activeTab === 'plan' && (
               <>
                 {planData.error && (
@@ -167,7 +172,7 @@ export default function AppShell() {
                 />
               </>
             )}
-            {activeTab !== 'dashboard' && activeTab !== 'pricelist' && activeTab !== 'plan' && (
+            {activeTab !== 'dashboard' && activeTab !== 'pricelist' && activeTab !== 'plan' && activeTab !== 'targetcosting' && (
               <div style={{ padding: '32px 36px' }}>
                 <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>{[...USER_TABS, ...ADMIN_TABS].find((t) => t.id === activeTab)?.label}</h1>
                 <p style={{ fontSize: 12, color: '#737373' }}>

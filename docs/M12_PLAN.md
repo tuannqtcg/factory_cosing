@@ -27,8 +27,8 @@
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) + engine `dashboard-support.ts` (KPI có số vàng) + shell/auth/seed | prototype tab `dashboard` | `src/features/dashboard/`, `src/features/shell/`, `src/engine/dashboard-support.ts`, `src/lib/`, `scripts/seed-emulator.ts` | **[x] 2026-07-08** |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) + `unit`/`spec` vào doc priceList (ADR-009 #8) | prototype tab `pricelist` | `src/features/price-list/`, `PriceListDocSchema` | **[x] 2026-07-08** |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) + doc `outputs/productCatalog` (**ADR-014**) | prototype tab `plan`, `plan.ts` (M9), ADR-014 | `src/features/plan/`, `ProductCatalogDocSchema` | **[x] 2026-07-08** |
-| M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] |
+| M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | **[x] 2026-07-09** |
+| M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
 | M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] |
 
 ## Cách phiên mới bắt đầu
@@ -42,30 +42,68 @@
    trình đã chốt từ Phiên 13).
 
 ## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.8: Màn hình Target Costing (vai `pricing`/`admin`).** Trước khi code:
-1. Prototype đóng băng KHÔNG có tab target-costing riêng — T2/T3 mới chỉ có
-   panel "III. Phân tích ngược" của Dashboard (đã dựng M12.5 cho biến
-   compound). NHƯNG `PROJECT_SPEC.md` §2 đã dự kiến từ Pha 0: "màn hình
-   Target Costing riêng, dùng inverse solver; production KHÔNG thấy màn hình
-   này" → làm màn riêng là HOÀN THIỆN prototype còn thiếu so với spec, không
-   phải phát minh phạm vi. Quy trình đúng: mockup nhanh (chọn SKU, chọn biến
-   dò trong allowlist ADR-013, T2 lợi nhuận mục tiêu, hiển thị
-   forward-verify) → hỏi user duyệt layout → mới code. MỞ ĐẦU PHIÊN bằng
-   việc dựng mockup này.
-2. Backend đã XONG HẾT: callable `computeTargetCosting` (M12.4c, ADR-013) —
-   T2 (`TargetProfitRequest`: productLine + targetProfitVnd + materialId?) và
-   T3 (`TargetPriceRequest`: productKey chọn SKU + targetListPriceVnd +
-   freeVarPath trong allowlist). UI chỉ gọi httpsCallable + hiển thị
-   kind/result (+ forward-verify đầy đủ của T3 — luật #4 inverse-solver).
-3. Biến nguyên `shifts` nếu màn hình cần → bổ sung ADR-013 + allowlist +
-   solveDiscrete (đã ghi chỗ chờ trong ADR-013).
-4. Verify chạy thật như M12.5-M12.7 (emulator + seed + screenshot).
+→ **M12.9: Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input
+form)**, theo prototype tab `inventory`/`assumptions`/`config`/`ong`/`pk` — 5
+tab admin còn placeholder trong `AppShell.tsx` (`PENDING_TAB_MILESTONE`), ghi
+`scenarios/{id}` (Cloud Function `onScenarioWrite` tự tính lại outputs/*).
+Cân nhắc tách 5 tab thành các milestone con nếu 1 phiên không đủ (theo đúng kỷ
+luật chia nhỏ đã dùng ở M12.4/M12.8) — đọc field-lock còn treo ở M12.3
+(`product.md`/`pricing-chain.md` chưa vào rules) trước khi cho phép ghi
+`products[]`/`inventory.metalInsert[].thresholdPct` qua form, có thể cần
+ADR mới nếu muốn khóa field trong mảng.
 
-Sau M12.8: M12.9 (Tồn kho + Giả định + Cấu hình — form input cho
-admin/pricing, ghi scenarios/{id}, trigger tự tính lại), M12.10 (security
-review Pha 4 + chạy lại toàn bộ parity + chuẩn bị merge).
+Sau M12.9: M12.10 (security review Pha 4 + chạy lại toàn bộ parity + chuẩn bị
+merge — cổng cuối của M12/Pha 3).
 
 ## Nhật ký milestone đã xong
+
+- **M12.8 (2026-07-09)**: Màn hình Định Giá Ngược (Target Costing, tab
+  `targetcosting`, vai `pricing`/`admin`) — **mockup Pha 1 trước** (artifact
+  HTML/JS thuần, không React/CDN — môi trường Artifact chặn mọi request ngoài
+  nên không tải được React qua CDN; dùng đúng token thị giác Dashboard/
+  AppShell + công thức tuyến tính minh họa neo đúng nghiệm vàng case chuẩn
+  skill inverse-solver để demo tương tác), user duyệt layout ("layout ổn")
+  rồi mới code thật — đúng vì `PROJECT_SPEC.md` §2 đã dự kiến từ Pha 0 "màn
+  hình Target Costing riêng" mà prototype Pha 1 gốc chưa có tab riêng (T2/T3
+  trước đó chỉ có panel "III. Phân tích ngược" của Dashboard cho 1 biến
+  compound) — làm màn riêng là HOÀN THIỆN spec, không phát minh phạm vi.
+  Code thật: `src/features/target-costing/` (`TargetCosting.tsx` +
+  `useTargetCosting.ts`) gọi thẳng HTTPS Callable `computeTargetCosting`
+  (M12.4c/ADR-013, đã xong từ trước) — client KHÔNG lắp lại công thức engine,
+  chỉ validate Zod 2 đầu (luật #2) rồi hiển thị kết quả + forward-verify đầy
+  đủ (chuỗi biến→calculateScenario→listPriceBeforeVat=mục tiêu, luật #4 skill
+  inverse-solver) cho T3, banner khả thi/không khả thi kèm `achievableRange`.
+  Thêm `functions` export vào `src/lib/firebase.ts` (`getFunctions` +
+  `connectFunctionsEmulator` port 5001, khớp `firebase.json`) — lần đầu client
+  gọi Callable (M12.5-M12.7 chỉ dùng Firestore). Không có schema riêng cho doc
+  `outputs/targetCosting` trong contract đóng băng (scenario.md §4 chỉ mô tả
+  bằng lời `{kind, request, result}`) — ghép lại từ
+  `TargetProfitRequest/ResultSchema` + `TargetPriceRequest/ResultSchema` đã có
+  ngay trong `useTargetCosting.ts` (không sửa `schemas/scenario.ts`), dùng
+  CHỈ để khôi phục "lần chạy gần nhất" khi mở lại app (banner xanh đầu trang)
+  — đúng ý đồ ADR-013 mục 4, không phát minh thêm.
+  Wiring `AppShell.tsx`: tab `targetcosting` ("Định Giá Ngược") thêm vào
+  `ROLE_TAB_ACCESS.pricing`/`.admin` + `USER_TABS`.
+  **Bug phát hiện khi verify thật** (không thấy được nếu chỉ tin typecheck):
+  `TargetProfitRequestSchema.materialId` optional nhưng Firebase Callable SDK
+  JSON-encode `undefined` → `null` khi gửi qua network, khiến
+  `z.string().optional()` phía server nhận `null` và reject (`invalid_type`).
+  Sửa: chỉ đưa key `materialId` vào object request khi user THỰC SỰ chọn
+  (spread có điều kiện `...(t2MaterialId ? {materialId: t2MaterialId} : {})`)
+  thay vì gán `?? undefined` — bài học áp dụng mọi field optional gửi qua
+  httpsCallable sau này.
+  **Verify THẬT** (emulator + seed + `npm run dev` + Playwright, vai pricing):
+  T2 Ống profit=0 → 108.761 kg/năm khớp TUYỆT ĐỐI
+  `pipe.json.cvp.breakEvenKgYear` (108761,088...); T2 Phụ kiện profit=1 tỷ →
+  26.948 giờ máy, Q hòa vốn hiển thị 18.942 khớp `fitting.json.cvp.breakEvenKgYear`
+  (18941,97...); T3 DN20 goal-seek giá compound tại mục tiêu = giá niêm yết
+  hiện tại (71.600đ) → hội tụ compound 2,97 USD/kg, forward-verify
+  listPriceBeforeVat = 71.600 khớp tuyệt đối mục tiêu (banner xanh); T3 mục
+  tiêu 50.000.000đ (vượt trần bound compound [0,20] USD/kg) →
+  `feasible:false`, `achievableRange: [7.400, 431.600]` hiển thị đúng kèm lý
+  do. "Lần chạy gần nhất" tự cập nhật đúng qua `onSnapshot` sau mỗi lần chạy.
+  `npm test` 328/328 (không đổi — M12.8 không thêm engine mới, tái dùng M12.4c
+  nguyên), typecheck root + functions sạch, `npm run build` OK.
 
 - **M12.7 (2026-07-08, cùng phiên M12.4b→M12.6)**: Màn hình Kế Hoạch SX (vai
   production) + **ADR-014** (user chốt "phương án a" sau khi được trình 2

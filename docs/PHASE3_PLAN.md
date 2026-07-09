@@ -57,12 +57,12 @@ thật + Firestore"). M12 tự chia nhỏ thành M12.1-M12.10, xem
 **`docs/M12_PLAN.md`** cho bảng trạng thái + nhật ký chi tiết + "cách phiên
 mới bắt đầu" — đọc file đó TRƯỚC, KHÔNG lặp lại chi tiết ở đây (giống cách
 `PHASE3_PLAN.md` này tách khỏi `CONTEXT_PASTE.md`).
-Đã xong M12.1-M12.7 (2026-07-08 cùng phiên: M12.4b `onPlanInputWrite`;
+Đã xong M12.1-M12.8 (2026-07-08/09 cùng phiên: M12.4b `onPlanInputWrite`;
 M12.4c `computeTargetCosting` + ADR-013; M12.5 Dashboard + shell/auth/seed;
-M12.6 Bảng Giá sales-safe; M12.7 Kế Hoạch SX + ADR-014 `outputs/productCatalog`
-— xem `docs/M12_PLAN.md`). Con trỏ hiện tại của M12: **M12.8** (Target
-Costing — prototype KHÔNG có tab riêng, cần mockup hỏi user trước nếu làm màn
-riêng). LƯU Ý sau M13 (ADR-012): mọi màn hình M12 còn lại phải dựng theo
+M12.6 Bảng Giá sales-safe; M12.7 Kế Hoạch SX + ADR-014 `outputs/productCatalog`;
+M12.8 Định Giá Ngược — mockup Pha 1 duyệt trước, rồi màn thật gọi callable
+`computeTargetCosting` — xem `docs/M12_PLAN.md`). Con trỏ hiện tại của M12:
+**M12.9** (Tồn kho + Giả định + Cấu hình). LƯU Ý sau M13 (ADR-012): mọi màn hình M12 còn lại phải dựng theo
 ScenarioOutput MỚI (thang giá/CVP/khóa giá/kho theo (line, materialId) — xem
 `docs/contracts/material.md`).
 Quyết định hạ tầng đã chốt: CHƯA có Firebase project thật → dùng Emulator

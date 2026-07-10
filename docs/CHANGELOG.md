@@ -1,5 +1,54 @@
 # CHANGELOG — Costing App Kit
 
+## v1.30 (2026-07-10) — Pha 4: Firebase project THẬT + ADR-016/017, deploy + verify xong
+
+Sau khi Pha 3 hoàn tất (v1.29), user tạo Firebase project thật đầu tiên
+(`bmcosting-ver-2`, dùng CHUNG với nhiều app khác) và bắt đầu Pha 4 (hạ tầng
+thật). 2 ADR mới, cả 2 đã deploy + verify trên project thật (không chỉ
+Emulator):
+
+- **ADR-016** — Firestore Database ID của project thật là `manufacture`
+  (không phải `(default)`). Tham số hóa `FIRESTORE_DATABASE_ID` qua
+  `firebase-functions/params.defineString`, dùng CHUNG cho cả trigger
+  `onDocumentWritten` (`database` option) lẫn `getFirestore()` — rủi ro kỹ
+  thuật đã lường trước: nếu chỉ đổi 1 trong 2 chỗ, Cloud Function trigger sẽ
+  lắng nghe nhầm `(default)` trống rỗng và KHÔNG BAO GIỜ chạy trên project
+  thật (lỗi âm thầm). Verify bằng Emulator: viết song song 2 handle
+  `getFirestore(app)`/`getFirestore(app, 'manufacture')` xác nhận cô lập
+  hoàn toàn. `functions/.env.<projectId>` (không phải secret) chọn giá trị
+  theo từng project — phát hiện + sửa 1 lỗi treo: thiếu file
+  `.env.demo-costing-app` khiến `firebase emulators:exec` (non-interactive)
+  treo vô hạn chờ CLI hỏi giá trị tham số mới.
+- **ADR-017** — Cơ chế cấp/thu hồi custom claim `role` cho user Auth THẬT
+  (còn treo từ M12.10): Cloud Function `setUserRole` (onCall, admin-only) +
+  audit log `roleAudit/{entryId}` (top-level, append-only, chỉ admin đọc) +
+  `scripts/bootstrap-admin.ts` (phá vòng con-gà-quả-trứng — cấp admin đầu
+  tiên bằng Admin SDK trực tiếp, KHÔNG qua Cloud Function). 4 test tích hợp
+  mới (`tests/functions/set-user-role.test.ts`) + 3 test rules mới.
+- **Deploy thật lên `bmcosting-ver-2`** (qua Google Cloud Shell — service
+  account key user upload KHÔNG đủ quyền deploy rules/functions, chỉ đủ Admin
+  SDK runtime, đã xử lý an toàn: dừng đúng lúc, xóa file, khuyến nghị thu
+  hồi): `firestore.rules` publish thủ công qua Console (đúng database
+  `manufacture`); `firebase deploy --only functions` qua tài khoản cá nhân
+  user (giữ nguyên function `api` của app khác trong project dùng chung — 2
+  function Firestore trigger fail lần đầu do Eventarc Service Agent cần vài
+  phút lan quyền, retry thành công cả 4 function); `npm run bootstrap-admin`
+  cấp `role=admin` thật; `npm run seed:production` (script mới, KHÔNG đụng
+  Auth/không tạo user demo, khác `seed-emulator.ts`) ghi baseline v3.4 vào
+  `scenarios/baseline-v3.4` — Cloud Function tự tính đủ 3 `outputs/*` với dữ
+  liệu không rỗng, xác nhận trên Console thật.
+- `render.yaml` (cấu hình Pha 1 cũ trỏ mockup `prototype/*.dc.html`) cập nhật
+  để deploy app THẬT (Vite build `dist/`) lên Render.com — CHƯA verify deploy
+  Render thật, còn treo cho phiên sau.
+
+Đủ 5 cổng mọi bước: `npm test` 328/328, `test:functions` 13/13, `test:rules`
+58/58, typecheck root+functions, build OK. Chi tiết đầy đủ:
+`docs/sessions/SESSION_2026-07-10.md` (2 phiên cùng ngày, phần 2 và phần 3).
+Còn treo cho phiên sau: gọi thử `setUserRole` (không phải bootstrap script)
+trên project thật để xác nhận `roleAudit` ghi đúng; thu hồi service account
+key đã upload trong chat; verify deploy Render + thêm domain Render vào
+Firebase Auth "Authorized domains".
+
 ## v1.29 (2026-07-08) — Merge M12.4b→M12.7 (kit v1.28) vào nhánh mặc định
 Merge `claude/next-session-work-iz1i9g` (8 commit: M12.4b → M12.4c/ADR-013 →
 M12.5 → M12.6 → M12.7/ADR-014 → đóng gói v1.28) vào nhánh mặc định

@@ -1,10 +1,22 @@
+# Deploy frontend THẬT (Vite + React, SPA) lên Render.com dạng Static Site.
+# Backend (Firestore + Cloud Functions) đã ở Firebase project bmcosting-ver-2
+# (ADR-016/017) — Render CHỈ host phần tĩnh (HTML/JS/CSS build ra từ `dist/`).
+# Thay thế cấu hình cũ (Pha 1) từng trỏ vào `prototype/*.dc.html` — mockup dữ
+# liệu giả, không còn dùng nữa vì app thật đã code xong (Pha 3).
+# 4 biến môi trường VITE_FIREBASE_* phải điền tay trên Render Dashboard
+# (Environment tab) — KHÔNG đặt giá trị thật ở đây (file này commit vào git).
 services:
   - type: web
-    name: factory-cosing-prototype
+    name: bmcosting-app
     runtime: static
-    buildCommand: ""
-    staticPublishPath: ./prototype
-    routes:
-      - type: rewrite
-        source: /
-        destination: /blazemaster-costing-app.dc.html
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_FIREBASE_API_KEY
+        sync: false
+      - key: VITE_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: VITE_FIREBASE_PROJECT_ID
+        sync: false
+      - key: VITE_FIREBASE_DATABASE_ID
+        sync: false

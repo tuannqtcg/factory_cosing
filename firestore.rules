@@ -161,6 +161,17 @@ service cloud.firestore {
       }
     }
 
+    // roleAudit/{entryId} — ADR-017: audit log cấp/thu hồi custom claim
+    // `role` (ai cấp, cho ai, role cũ→mới). TOP-LEVEL (không dưới
+    // scenarios/{id} — role không thuộc về 1 scenario). Chỉ Cloud Function
+    // `setUserRole` (Admin SDK) ghi — `allow write: if false` không chặn Admin
+    // SDK, chỉ chặn client, giống mọi outputs/* khác. Chỉ admin đọc được (ai
+    // khác không cần biết lịch sử cấp quyền).
+    match /roleAudit/{entryId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Mặc định: từ chối mọi path khác không khai báo ở trên.
     match /{document=**} {
       allow read, write: if false;

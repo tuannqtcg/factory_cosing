@@ -24,7 +24,12 @@ const app = initializeApp(
 );
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// ADR-016: project thật dùng database Firestore đặt tên "manufacture" (không
+// phải "(default)") — chỉ áp dụng khi KHÔNG chạy Emulator (Emulator vẫn dùng
+// "(default)", không đổi hành vi bộ test hiện có). Đọc qua
+// VITE_FIREBASE_DATABASE_ID để không hard-code tên database vào code.
+const databaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID as string | undefined;
+export const db = isEmulatorMode || !databaseId ? getFirestore(app) : getFirestore(app, databaseId);
 export const functions = getFunctions(app);
 
 if (isEmulatorMode) {

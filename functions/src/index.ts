@@ -13,8 +13,10 @@
 // các function này chỉ làm auth + I/O Firestore + parse Zod 2 đầu.
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import {
   ScenarioInputSchema,
   ScenarioOutputSchema,
@@ -31,6 +33,13 @@ import {
   type TargetProfitRequest,
   type TargetPriceRequest,
 } from '../../src/schemas/scenario.js';
+import {
+  AppRoleSchema,
+  SetUserRoleRequestSchema,
+  SetUserRoleResultSchema,
+  RoleAuditEntryFieldsSchema,
+  type AppRole,
+} from '../../src/schemas/role-management.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
 import { calculatePipeCapacity } from '../../src/engine/pipe.js';
@@ -43,6 +52,16 @@ import {
 } from '../../src/engine/target-costing.js';
 
 initializeApp();
+
+// Database Firestore không phải "(default)" cho project thật (đặt tên
+// "manufacture" trên Console, xem docs/decisions/ADR-016). Đọc qua tham số
+// hóa (functions/.env.<projectId>) để trigger CŨNG lắng nghe đúng database —
+// nếu chỉ đổi getFirestore() mà bỏ trống "database" ở trigger, function sẽ
+// lắng nghe nhầm "(default)" trống rỗng và KHÔNG BAO GIỜ chạy trên project
+// thật (lỗi âm thầm, không có exception nào báo). Emulator/project demo
+// (không có file .env riêng) rơi về default "(default)" — không đổi hành vi
+// bộ test hiện có.
+const firestoreDatabaseId = defineString('FIRESTORE_DATABASE_ID', { default: '(default)' });
 
 // M12.6 (bảng ADR-009 #8): thêm unit/spec hiển thị — sales không đọc được
 // scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
@@ -125,9 +144,11 @@ function toProductCatalogDoc(scenarioInput: ScenarioInput) {
   });
 }
 
-export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async (event) => {
+export const onScenarioWrite = onDocumentWritten(
+  { document: 'scenarios/{scenarioId}', database: firestoreDatabaseId },
+  async (event) => {
   const { scenarioId } = event.params;
-  const db = getFirestore();
+  const db = getFirestore(firestoreDatabaseId.value());
   const afterSnap = event.data?.after;
 
   if (!afterSnap?.exists) {
@@ -157,9 +178,11 @@ export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async
 // tính PlanResult, GHI ĐÈ `outputs/plan` (1 doc DUY NHẤT theo path
 // scenario.md §5, không sub-collection theo period — outputs/plan = kết quả
 // của lần ghi planInput GẦN NHẤT, lý do ở ADR-010).
-export const onPlanInputWrite = onDocumentWritten('scenarios/{scenarioId}/planInputs/{period}', async (event) => {
+export const onPlanInputWrite = onDocumentWritten(
+  { document: 'scenarios/{scenarioId}/planInputs/{period}', database: firestoreDatabaseId },
+  async (event) => {
   const { scenarioId } = event.params;
-  const db = getFirestore();
+  const db = getFirestore(firestoreDatabaseId.value());
   const planOutputRef = db.doc(`scenarios/${scenarioId}/outputs/plan`);
   const afterSnap = event.data?.after;
 
@@ -211,7 +234,7 @@ export const computeTargetCosting = onCall(async (request) => {
     throw new HttpsError('invalid-argument', `Request không khớp TargetProfitRequest/TargetPriceRequest: ${String(err)}`);
   }
 
-  const db = getFirestore();
+  const db = getFirestore(firestoreDatabaseId.value());
   const scenarioSnap = await db.doc(`scenarios/${parsed.scenarioId}`).get();
   if (!scenarioSnap.exists) {
     throw new HttpsError('not-found', `scenarios/${parsed.scenarioId} không tồn tại.`);
@@ -237,4 +260,58 @@ export const computeTargetCosting = onCall(async (request) => {
 
   await db.doc(`scenarios/${parsed.scenarioId}/outputs/targetCosting`).set({ kind, request: parsed, result });
   return { kind, result };
+});
+
+// ADR-017 — cấp/thu hồi custom claim `role` cho Firebase Auth user thật.
+// Còn treo từ M12.10 (scenario.md "Còn treo"): `scripts/seed-emulator.ts` gọi
+// Admin SDK trực tiếp CHỈ dùng được cho Emulator (môi trường tin cậy) — cần 1
+// cơ chế cho project thật. Hướng đã chọn: Cloud Function onCall admin-only +
+// audit log (không phải quy trình thủ công ngoài app), CHƯA cần UI riêng (gọi
+// qua script, xem scripts/bootstrap-admin.ts cho lần cấp admin ĐẦU TIÊN — vấn
+// đề con-gà-quả-trứng: chưa có admin nào thì chưa ai gọi được function này).
+export const setUserRole = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Cần đăng nhập để đổi role.');
+  }
+  if (request.auth.token.role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Chỉ vai admin được cấp/thu hồi role (ADR-017).');
+  }
+
+  let parsed;
+  try {
+    parsed = SetUserRoleRequestSchema.parse(request.data);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', `Request không khớp SetUserRoleRequest: ${String(err)}`);
+  }
+
+  const auth = getAuth();
+  let targetUser;
+  try {
+    targetUser = await auth.getUser(parsed.targetUid);
+  } catch {
+    throw new HttpsError('not-found', `Không tìm thấy user với uid ${parsed.targetUid}.`);
+  }
+
+  const oldRoleParsed = AppRoleSchema.safeParse(targetUser.customClaims?.role);
+  const oldRole: AppRole | null = oldRoleParsed.success ? oldRoleParsed.data : null;
+
+  await auth.setCustomUserClaims(parsed.targetUid, { ...targetUser.customClaims, role: parsed.role });
+
+  const db = getFirestore(firestoreDatabaseId.value());
+  const auditEntry = RoleAuditEntryFieldsSchema.parse({
+    targetUid: parsed.targetUid,
+    targetEmail: targetUser.email ?? null,
+    oldRole,
+    newRole: parsed.role,
+    changedByUid: request.auth.uid,
+    changedByEmail: request.auth.token.email ?? null,
+  });
+  await db.collection('roleAudit').add({ ...auditEntry, at: FieldValue.serverTimestamp() });
+
+  return SetUserRoleResultSchema.parse({
+    targetUid: parsed.targetUid,
+    targetEmail: targetUser.email ?? null,
+    oldRole,
+    newRole: parsed.role,
+  });
 });

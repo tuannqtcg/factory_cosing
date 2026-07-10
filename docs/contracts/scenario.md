@@ -239,15 +239,8 @@ phía client bằng Firestore rules + tách doc thật ở Pha 3.
 - ~~Chuẩn hóa `thresholdPct` trong `metal-insert.json`~~ — XONG (M6, Pha 3).
 - ~~Viết Cloud Function trigger tính `ScenarioOutput` + ghi 4 doc con~~ — XONG
   (M12.4, `onScenarioWrite`).
-- **Custom claim `role` trên Firebase Auth user — VẪN CÒN TREO tại M12.10
-  (security-review, 2026-07-09).** Cơ chế hiện tại: `scripts/seed-emulator.ts`
-  gọi `auth.setCustomUserClaims()` trực tiếp bằng Admin SDK — CHỈ dùng được
-  cho user demo trên Emulator (script chạy trong môi trường tin cậy, không
-  phải luồng cấp quyền cho user thật). Khi có Firebase project thật, PHẢI thiết
-  kế 1 trong 2: (a) Cloud Function `onCall` admin-only gọi
-  `setCustomUserClaims()` theo yêu cầu cấp quyền, ghi audit log ai cấp/thu hồi
-  role cho ai; (b) console/quy trình vận hành thủ công ngoài app (chấp nhận
-  được cho quy mô nhỏ, nhưng vẫn cần audit log). KHÔNG merge tính năng "đổi vai
-  user" vào production tới khi có 1 trong 2 cơ chế trên — hiện app chỉ dùng
-  Emulator, chưa phải rủi ro thật, nhưng phải chặn TRƯỚC khi trỏ vào project
-  Firebase thật (xem `docs/M12_PLAN.md` M12.10).
+- ~~Custom claim `role` trên Firebase Auth user~~ — XONG (**ADR-017**,
+  2026-07-10): Cloud Function `setUserRole` (onCall, admin-only) +
+  `roleAudit/{entryId}` (append-only, chỉ admin đọc) + `scripts/bootstrap-admin.ts`
+  cho admin đầu tiên. `scripts/seed-emulator.ts` (gọi Admin SDK trực tiếp) vẫn
+  CHỈ dùng cho Emulator — không đổi.

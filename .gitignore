@@ -7,6 +7,13 @@
 .env
 .env.*
 serviceAccount*.json
+# Ngoại lệ: KHÔNG phải secret, chỉ chọn database Firestore theo project ID
+# (ADR-016) — an toàn commit để mọi phiên/máy deploy đều tự có cấu hình đúng.
+!functions/.env.bmcosting-ver-2
+!functions/.env.demo-costing-app
+# Ngoại lệ: chỉ liệt kê TÊN biến môi trường (không có giá trị thật), giúp
+# phiên sau biết cần điền gì — không phải secret.
+!.env.example
 
 # Node
 node_modules/

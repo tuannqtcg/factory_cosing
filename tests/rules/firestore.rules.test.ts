@@ -440,6 +440,34 @@ describe('priceLockAudit/{entryId} — M12.10 (security-review): audit log "Ch�
   });
 });
 
+describe('roleAudit/{entryId} — ADR-017: audit log cấp/thu hồi custom claim role (top-level, chỉ Cloud Function ghi)', () => {
+  const entry = {
+    targetUid: 'uid-target',
+    targetEmail: 'target@demo.local',
+    oldRole: null,
+    newRole: 'pricing',
+    changedByUid: 'uid-admin',
+    changedByEmail: 'admin@demo.local',
+  };
+  it('admin đọc được lịch sử cấp role', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'roleAudit/entry-1'), entry);
+    });
+    await assertSucceeds(getDoc(doc(ctxFor('admin').firestore(), 'roleAudit/entry-1')));
+  });
+  it('pricing/sales/production KHÔNG đọc được', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'roleAudit/entry-2'), entry);
+    });
+    await assertFails(getDoc(doc(ctxFor('pricing').firestore(), 'roleAudit/entry-2')));
+    await assertFails(getDoc(doc(ctxFor('sales').firestore(), 'roleAudit/entry-2')));
+    await assertFails(getDoc(doc(ctxFor('production').firestore(), 'roleAudit/entry-2')));
+  });
+  it('KHÔNG ai ghi trực tiếp được, kể cả admin (chỉ Cloud Function qua Admin SDK)', async () => {
+    await assertFails(setDoc(doc(ctxFor('admin').firestore(), 'roleAudit/entry-3'), entry));
+  });
+});
+
 describe('path không khai báo — mặc định từ chối', () => {
   it('admin cũng không đọc được path lạ', async () => {
     await assertFails(getDoc(doc(ctxFor('admin').firestore(), 'someOtherCollection/doc1')));

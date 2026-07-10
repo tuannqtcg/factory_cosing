@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "demo-costing-app"
+    "default": "demo-costing-app",
+    "production": "bmcosting-ver-2"
   }
 }

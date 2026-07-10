@@ -2,7 +2,38 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **PHA 3 (M1-M12.10) HOÀN TẤT 2026-07-10 — xem `docs/sessions/SESSION_2026-07-10.md`
+- **PHA 4 ĐANG CHẠY (2026-07-10) — có Firebase project THẬT + đã deploy.**
+  User tạo project thật `bmcosting-ver-2` (dùng CHUNG với nhiều app khác:
+  `financial-suite`, `landingpage`, `sso-tcg`, `ai-studio-*`...) với Firestore
+  Database ID **`manufacture`** (không phải `(default)`) — sinh ra
+  **ADR-016** (tham số hóa tên database qua `firebase-functions/params`,
+  CẢ trigger `onDocumentWritten` LẪN `getFirestore()` đều phải dùng chung 1
+  tham số, không thì trigger lắng nghe nhầm database trống và không bao giờ
+  chạy — lỗi âm thầm). Cũng chốt **ADR-017**: cơ chế cấp/thu hồi custom claim
+  `role` cho user Auth thật — Cloud Function `setUserRole` (onCall,
+  admin-only) + audit log `roleAudit/{entryId}` (append-only) +
+  `scripts/bootstrap-admin.ts` (cấp admin đầu tiên, phá vòng con-gà-quả-trứng).
+  **Đã deploy + verify THẬT trên project thật** (qua Google Cloud Shell —
+  service account key mặc định KHÔNG đủ quyền deploy rules/functions, chỉ
+  đủ quyền Admin SDK runtime, xem `docs/sessions/SESSION_2026-07-10.md` phần
+  2 cho toàn bộ chi tiết): `firestore.rules` publish thủ công qua Console,
+  4 Cloud Function deploy qua `firebase deploy --only functions` (giữ nguyên
+  function `api` của app khác trong project dùng chung — chọn "No" khi CLI
+  hỏi xóa), `npm run bootstrap-admin` cấp `role=admin` thật cho
+  `tuannq6886@gmail.com`, `npm run seed:production` ghi baseline v3.4 vào
+  `scenarios/baseline-v3.4` — Cloud Function tự tính đủ 3
+  `outputs/{internal,priceList,productCatalog}` với dữ liệu không rỗng, xác
+  nhận trên Console THẬT (không phải Emulator).
+  `render.yaml` (cấu hình Pha 1 cũ trỏ mockup `prototype/*.dc.html`) đã cập
+  nhật để deploy app THẬT (`npm run build` → `dist/`) — CHƯA verify deploy
+  Render thật trong phiên này (cần user tự làm trên Render Dashboard, 4 biến
+  `VITE_FIREBASE_*` phải điền tay, KHÔNG sync tự động từ file).
+  **Còn treo**: gọi thử `setUserRole` (không phải `bootstrap-admin.ts`) trên
+  project thật để xác nhận `roleAudit` ghi đúng; thu hồi service account key
+  đã upload trong chat (không đủ quyền gây hại nhưng nên thu hồi); deploy
+  thật lên Render + thêm domain Render vào Firebase Auth "Authorized domains"
+  (bắt buộc, nếu không đăng nhập sẽ lỗi "unauthorized domain").
+- (Lịch sử Pha 3) **PHA 3 (M1-M12.10) HOÀN TẤT 2026-07-10 — xem `docs/sessions/SESSION_2026-07-10.md`
   và mục "Nhật ký milestone đã xong" trong `docs/M12_PLAN.md` cho chi tiết đầy
   đủ M12.8/M12.9a-d/M12.10 (KHÔNG lặp lại ở đây, đoạn dưới giữ nguyên làm lịch
   sử tới M12.7).** Toàn bộ 9 tab của prototype đã dựng thật (không còn
@@ -159,6 +190,17 @@
   tế nhỏ hơn nhiều] — user được hỏi giữa unroll thật vs defense-in-depth
   client-side, chốt theo khuyến nghị. UI M12.9d luôn APPEND material mới vào
   cuối mảng để giữ đúng giả định index cố định),
+  **016** (2026-07-10 — Pha 4, project thật `bmcosting-ver-2` dùng Firestore
+  Database ID `manufacture` thay vì `(default)`: tham số hóa
+  `FIRESTORE_DATABASE_ID` qua `firebase-functions/params.defineString`, dùng
+  CHUNG cho trigger `onDocumentWritten` + `getFirestore()` — verify thật cả
+  Emulator lẫn project thật, xem `docs/decisions/ADR-016-named-firestore-database.md`),
+  **017** (2026-07-10 — Pha 4, cấp/thu hồi custom claim `role` cho user Auth
+  thật: Cloud Function `setUserRole` [onCall, admin-only] + audit log
+  `roleAudit/{entryId}` [append-only] + `scripts/bootstrap-admin.ts` [phá
+  vòng con-gà-quả-trứng cho admin đầu tiên] — verify thật cả Emulator
+  [13/13 test] lẫn project thật [cấp `role=admin` thành công cho
+  `tuannq6886@gmail.com`], xem `docs/decisions/ADR-017-custom-claim-role-management.md`),
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

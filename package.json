@@ -13,6 +13,8 @@
     "typecheck": "tsc --noEmit",
     "emulators": "npm --prefix functions run build && firebase emulators:start --only firestore,functions,auth",
     "seed:emulator": "vite-node scripts/seed-emulator.ts",
+    "bootstrap-admin": "vite-node scripts/bootstrap-admin.ts",
+    "seed:production": "vite-node scripts/seed-production.ts",
     "extract-fixtures": "echo 'Script trích fixture từ Excel chưa viết (fixture hiện có đã trích tay Phiên 1-13) — xem CLAUDE.md' && exit 1"
   },
   "dependencies": {

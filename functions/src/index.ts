@@ -13,6 +13,7 @@
 // các function này chỉ làm auth + I/O Firestore + parse Zod 2 đầu.
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import {
@@ -43,6 +44,16 @@ import {
 } from '../../src/engine/target-costing.js';
 
 initializeApp();
+
+// Database Firestore không phải "(default)" cho project thật (đặt tên
+// "manufacture" trên Console, xem docs/decisions/ADR-016). Đọc qua tham số
+// hóa (functions/.env.<projectId>) để trigger CŨNG lắng nghe đúng database —
+// nếu chỉ đổi getFirestore() mà bỏ trống "database" ở trigger, function sẽ
+// lắng nghe nhầm "(default)" trống rỗng và KHÔNG BAO GIỜ chạy trên project
+// thật (lỗi âm thầm, không có exception nào báo). Emulator/project demo
+// (không có file .env riêng) rơi về default "(default)" — không đổi hành vi
+// bộ test hiện có.
+const firestoreDatabaseId = defineString('FIRESTORE_DATABASE_ID', { default: '(default)' });
 
 // M12.6 (bảng ADR-009 #8): thêm unit/spec hiển thị — sales không đọc được
 // scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
@@ -125,9 +136,11 @@ function toProductCatalogDoc(scenarioInput: ScenarioInput) {
   });
 }
 
-export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async (event) => {
+export const onScenarioWrite = onDocumentWritten(
+  { document: 'scenarios/{scenarioId}', database: firestoreDatabaseId },
+  async (event) => {
   const { scenarioId } = event.params;
-  const db = getFirestore();
+  const db = getFirestore(firestoreDatabaseId.value());
   const afterSnap = event.data?.after;
 
   if (!afterSnap?.exists) {
@@ -157,9 +170,11 @@ export const onScenarioWrite = onDocumentWritten('scenarios/{scenarioId}', async
 // tính PlanResult, GHI ĐÈ `outputs/plan` (1 doc DUY NHẤT theo path
 // scenario.md §5, không sub-collection theo period — outputs/plan = kết quả
 // của lần ghi planInput GẦN NHẤT, lý do ở ADR-010).
-export const onPlanInputWrite = onDocumentWritten('scenarios/{scenarioId}/planInputs/{period}', async (event) => {
+export const onPlanInputWrite = onDocumentWritten(
+  { document: 'scenarios/{scenarioId}/planInputs/{period}', database: firestoreDatabaseId },
+  async (event) => {
   const { scenarioId } = event.params;
-  const db = getFirestore();
+  const db = getFirestore(firestoreDatabaseId.value());
   const planOutputRef = db.doc(`scenarios/${scenarioId}/outputs/plan`);
   const afterSnap = event.data?.after;
 
@@ -211,7 +226,7 @@ export const computeTargetCosting = onCall(async (request) => {
     throw new HttpsError('invalid-argument', `Request không khớp TargetProfitRequest/TargetPriceRequest: ${String(err)}`);
   }
 
-  const db = getFirestore();
+  const db = getFirestore(firestoreDatabaseId.value());
   const scenarioSnap = await db.doc(`scenarios/${parsed.scenarioId}`).get();
   if (!scenarioSnap.exists) {
     throw new HttpsError('not-found', `scenarios/${parsed.scenarioId} không tồn tại.`);

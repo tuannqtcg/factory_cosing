@@ -12,6 +12,7 @@ import { fmtVnd, fmtPct } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '../../schemas/scenario.js';
 import type { Material } from '../../schemas/material.js';
 import type { MetalInsertCatalogEntry } from '../../schemas/pricing-chain.js';
+import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 
 function numField(
   label: string,
@@ -55,11 +56,14 @@ function numField(
 
 export default function AssumptionsScreen({
   role,
+  user,
   scenarioId,
   scenario,
   internal,
 }: {
   role: AppRole;
+  /** M12.10 (security-review) — ai đổi baseline, ghi vào priceLockAudit. */
+  user: { uid: string; email: string | null } | null;
   scenarioId: string;
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
@@ -68,12 +72,17 @@ export default function AssumptionsScreen({
   const isAdmin = role === 'admin';
   const [form, setForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
+  // Bản chụp baseline lúc TẢI/LƯU GẦN NHẤT — diff với form lúc lưu để biết
+  // material nào vừa đổi baseline (M12.10 audit log), không phụ thuộc user bấm
+  // nút "Chốt Baseline Mới" hay tự gõ tay — log theo KẾT QUẢ, không theo cơ chế UI.
+  const lastPersistedMaterialsRef = useRef<Material[] | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
 
   if (scenario && !loadedRef.current) {
     loadedRef.current = true;
     setForm(scenario);
+    lastPersistedMaterialsRef.current = scenario.materials;
   }
 
   if (!canEdit) {
@@ -117,9 +126,31 @@ export default function AssumptionsScreen({
       setSaveError(`Dữ liệu không hợp lệ: ${parsed.error.issues[0]?.message ?? 'lỗi không rõ'}`);
       return;
     }
+    // M12.10 (security-review) — phát hiện material nào ĐỔI baseline TRƯỚC khi
+    // ghi (so với bản đã lưu gần nhất), để ghi audit log SAU KHI ghi thành công.
+    const prevMaterials = lastPersistedMaterialsRef.current ?? [];
+    const baselineChanges = parsed.data.materials
+      .map((m) => ({ m, prev: prevMaterials.find((p) => p.id === m.id) }))
+      .filter(({ m, prev }) => prev && prev.inventory.priceLock.baseline !== m.inventory.priceLock.baseline);
     try {
       await setDoc(doc(db, `scenarios/${scenarioId}`), parsed.data);
       setSaveState('saved');
+      lastPersistedMaterialsRef.current = parsed.data.materials;
+      if (user && (role === 'admin' || role === 'pricing')) {
+        await Promise.all(
+          baselineChanges.map(({ m, prev }) =>
+            writePriceLockAuditEntry(scenarioId, {
+              materialId: m.id,
+              materialName: m.name,
+              oldBaselineUsdPerKg: prev!.inventory.priceLock.baseline,
+              newBaselineUsdPerKg: m.inventory.priceLock.baseline,
+              changedByUid: user.uid,
+              changedByEmail: user.email,
+              changedByRole: role,
+            }),
+          ),
+        );
+      }
     } catch (err) {
       setSaveState('error');
       setSaveError(err instanceof Error ? err.message : String(err));

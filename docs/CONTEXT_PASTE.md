@@ -2,8 +2,26 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **Tiến độ Pha 3: engine lõi M1-M11 xong, M12 (UI thật + Firestore) ĐANG LÀM
-  — user đã xác nhận mở rộng phạm vi 2026-07-06.** M12 tự chia nhỏ M12.1-M12.10
+- **PHA 3 (M1-M12.10) HOÀN TẤT 2026-07-10 — xem `docs/sessions/SESSION_2026-07-10.md`
+  và mục "Nhật ký milestone đã xong" trong `docs/M12_PLAN.md` cho chi tiết đầy
+  đủ M12.8/M12.9a-d/M12.10 (KHÔNG lặp lại ở đây, đoạn dưới giữ nguyên làm lịch
+  sử tới M12.7).** Toàn bộ 9 tab của prototype đã dựng thật (không còn
+  placeholder trong `AppShell.tsx`); **ADR-015** (khóa `thresholdPct` trong
+  `materials[]`/`inventory.metalInsert[]` bằng unroll theo index cố định,
+  M12.9d); M12.10 (security-review) vá 2 lỗ hổng rules thật (M12.9a: bug
+  đường dẫn chết chặn MỌI lần pricing ghi scenario + thiếu khóa `products[]`),
+  vá 2 contract doc trôi khỏi schema từ ADR-012 (`cost-pool.md`/`product.md`),
+  bổ sung audit log `priceLockAudit` cho "Chốt Baseline Mới" (checklist bắt
+  buộc của skill security-review, trước đó chưa có). Đủ 5 cổng: `npm test`
+  328/328, `test:rules` 55/55, `test:functions` 9/9, typecheck root+functions,
+  build OK — verify thật qua emulator, không chỉ fixture.
+  **Còn treo trước khi trỏ Firebase project THẬT (không phải rủi ro khi còn
+  dùng Emulator)**: cơ chế cấp custom claim `role` cho user thật — xem mục
+  "Còn treo" `docs/contracts/scenario.md`.
+  **Tiếp theo**: merge nhánh làm việc lên nhánh mặc định (chưa làm, cần user
+  xác nhận) → cân nhắc bước "đóng gói tri thức" (kit version) nếu cần trước
+  khi giao phiên sau.
+- (Lịch sử tới M12.7, giữ nguyên tham khảo) M12 tự chia nhỏ M12.1-M12.10
   ở **`docs/M12_PLAN.md`** (đọc file đó, KHÔNG lặp lại chi tiết ở đây) — đã
   xong M12.1 (orchestrator `calculateScenario()`, `src/engine/scenario.ts`),
   M12.2 (scaffold Vite+React 18+TS strict+Tailwind+Recharts, đã verify chạy
@@ -57,7 +75,9 @@
   merge phải khôi phục lại từ nhánh mặc định mới nhất, không lắp thêm commit
   lên lịch sử đã merge. Chi tiết đầy đủ bên dưới + `docs/PHASE3_PLAN.md` +
   `docs/M12_PLAN.md`.
-- **Pha: 3 (Code) — ĐANG LÀM, chia milestone nhỏ**. Pha 1 (Prototype) đã được
+- **Pha: 3 (Code) — HOÀN TẤT 2026-07-10 (M1-M12.10), chuẩn bị merge/Pha 4.**
+  Đoạn dưới đây (lịch sử M1-M11 + trạng thái "ĐANG LÀM") giữ nguyên làm tham
+  khảo, xem bullet đầu trang cho trạng thái THẬT hiện tại. Pha 1 (Prototype) đã được
   user **DUYỆT UI chính thức ngày 2026-07-06**;
   `prototype/blazemaster-costing-app.dc.html` là nguồn tham chiếu UI/UX đóng
   băng — đổi thiết kế màn hình phải quay lại Pha 1 ghi ADR mới. Schema Pha 2
@@ -133,6 +153,12 @@
   `outputs/productCatalog` danh mục SP + tham số vận hành cho vai production
   dựng form Kế Hoạch SX — TUYỆT ĐỐI không field giá; production/admin/pricing
   đọc, sales ✗, Cloud Function ghi),
+  **015** (2026-07-09/10 — M12.9d, security-review M12.10: khóa `thresholdPct`
+  admin-only TRONG TỪNG phần tử `materials[]`/`inventory.metalInsert[]` bằng
+  UNROLL theo index cố định trong `firestore.rules` [cận trên 8/10, mảng thực
+  tế nhỏ hơn nhiều] — user được hỏi giữa unroll thật vs defense-in-depth
+  client-side, chốt theo khuyến nghị. UI M12.9d luôn APPEND material mới vào
+  cuối mảng để giữ đúng giả định index cố định),
 - File tri thức cần đọc khi vào phiên mới: `AGENTS.md` → `CLAUDE.md` → file này →
   `docs/PROJECT_SPEC.md` (nếu cần chi tiết) → `docs/decisions/ADR-*.md` (nếu đụng
   đúng vùng nghiệp vụ đó).

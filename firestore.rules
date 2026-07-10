@@ -149,6 +149,16 @@ service cloud.firestore {
         allow read: if isAdmin() || isPricing();
         allow write: if isAdmin();
       }
+
+      // priceLockAudit/{entryId} — M12.10 (security-review): audit log "Chốt
+      // Baseline Mới" (ai/khi nào/giá cũ→mới, ADR-004). APPEND ONLY — admin/
+      // pricing tạo được (cả 2 vai đều có quyền chốt baseline, scenario.md §6
+      // dòng "field không khóa"), KHÔNG ai được sửa/xóa (toàn vẹn lịch sử).
+      match /priceLockAudit/{entryId} {
+        allow read: if isAdmin() || isPricing();
+        allow create: if isAdmin() || isPricing();
+        allow update, delete: if false;
+      }
     }
 
     // Mặc định: từ chối mọi path khác không khai báo ở trên.

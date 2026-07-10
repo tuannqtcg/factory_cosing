@@ -391,6 +391,55 @@ describe('moldAssets/{moldId}', () => {
   });
 });
 
+describe('priceLockAudit/{entryId} — M12.10 (security-review): audit log "Chốt Baseline Mới"', () => {
+  const entry = {
+    materialId: 'bm-orange-pipe',
+    materialName: 'BlazeMaster Orange (ống)',
+    oldBaselineUsdPerKg: 3.03,
+    newBaselineUsdPerKg: 3.1,
+    changedByUid: 'user-pricing',
+    changedByEmail: 'pricing@demo.local',
+    changedByRole: 'pricing',
+  };
+  it('pricing tạo entry được phép', async () => {
+    await assertSucceeds(setDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1/priceLockAudit/entry-1'), entry));
+  });
+  it('admin tạo entry được phép', async () => {
+    await assertSucceeds(setDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/priceLockAudit/entry-2'), entry));
+  });
+  it('sales KHÔNG tạo được', async () => {
+    await assertFails(setDoc(doc(ctxFor('sales').firestore(), 'scenarios/scn-1/priceLockAudit/entry-3'), entry));
+  });
+  it('production KHÔNG tạo được', async () => {
+    await assertFails(setDoc(doc(ctxFor('production').firestore(), 'scenarios/scn-1/priceLockAudit/entry-4'), entry));
+  });
+  it('admin/pricing đọc được lịch sử', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'scenarios/scn-1/priceLockAudit/entry-5'), entry);
+    });
+    await assertSucceeds(getDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/priceLockAudit/entry-5')));
+    await assertSucceeds(getDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1/priceLockAudit/entry-5')));
+  });
+  it('sales KHÔNG đọc được lịch sử', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'scenarios/scn-1/priceLockAudit/entry-6'), entry);
+    });
+    await assertFails(getDoc(doc(ctxFor('sales').firestore(), 'scenarios/scn-1/priceLockAudit/entry-6')));
+  });
+  it('KHÔNG ai được SỬA entry đã ghi (append-only), kể cả admin', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'scenarios/scn-1/priceLockAudit/entry-7'), entry);
+    });
+    await assertFails(updateDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/priceLockAudit/entry-7'), { newBaselineUsdPerKg: 999 }));
+  });
+  it('KHÔNG ai được XÓA entry đã ghi, kể cả admin', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'scenarios/scn-1/priceLockAudit/entry-8'), entry);
+    });
+    await assertFails(deleteDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/priceLockAudit/entry-8')));
+  });
+});
+
 describe('path không khai báo — mặc định từ chối', () => {
   it('admin cũng không đọc được path lạ', async () => {
     await assertFails(getDoc(doc(ctxFor('admin').firestore(), 'someOtherCollection/doc1')));

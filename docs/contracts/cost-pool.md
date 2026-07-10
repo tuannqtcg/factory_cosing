@@ -3,6 +3,13 @@
 > Pha 2 — ĐÓNG BĂNG sau khi user duyệt. Sửa cấu trúc field ở đây bắt buộc phải có
 > ADR mới (AGENTS.md luật #5).
 > Nguồn nghiệp vụ: `tests/fixtures/assumptions.json`, BUSINESS_MODEL.md §1, §4.
+> **M12.10 (security-review)**: vá lại khối code bên dưới cho khớp
+> `src/schemas/cost-pool.ts` thật — ADR-012 (2026-07-07) đã BỎ
+> `compoundImportTaxRate`/`customsLogisticsFeeRate` khỏi `CurrencyParamsSchema`
+> (chuyển vào TỪNG `Material`, xem `material.md`) và BỎ
+> `markupVfPipe`/`markupVfFitting` khỏi `MarkupChainSchema` (chuyển vào
+> `Material.markupVf`) — bản ghi ở đây bị sót khi làm ADR-012 (ADR-012 §"Hệ quả"
+> có liệt kê sửa `cost-pool.md` nhưng chưa từng thực hiện).
 
 ## Nguyên tắc
 
@@ -33,18 +40,20 @@ export const NonProductionCostsSchema = z.object({
 });
 export type NonProductionCosts = z.infer<typeof NonProductionCostsSchema>;
 
+// Sửa 2026-07-07 (ADR-012): BỎ compoundImportTaxRate/customsLogisticsFeeRate —
+// thuế NK/phí logistics chuyển vào TỪNG Material (BlazeMaster 6% EU, Corzan 0%
+// AIFTA — xem material.md). CurrencyParamsSchema chỉ còn tham số THẬT SỰ toàn cục.
 export const CurrencyParamsSchema = z.object({
   usdVndRate: z.number().positive(),
   vatOutputRate: z.number().min(0).max(1),
   mandatoryInsuranceRate: z.number().min(0).max(1),
-  compoundImportTaxRate: z.number().min(0).max(1),
-  customsLogisticsFeeRate: z.number().min(0).max(1),
 });
 export type CurrencyParams = z.infer<typeof CurrencyParamsSchema>;
 
+// Sửa 2026-07-07 (ADR-012): BỎ markupVfPipe/markupVfFitting — markup VF chuyển
+// vào TỪNG Material (Material.markupVf). GIỮ markupTcg + listPriceMargin là
+// chính sách kênh phân phối CHUNG mọi nguyên liệu.
 export const MarkupChainSchema = z.object({
-  markupVfPipe: z.number().min(0),
-  markupVfFitting: z.number().min(0),
   markupTcg: z.number().min(0),
   listPriceMargin: z.number().min(0).max(1),
 });
@@ -70,6 +79,11 @@ export type CostPool = z.infer<typeof CostPoolSchema>;
 
 ## Khóa tham số theo vai
 Toàn bộ `CostPool` (trừ `markup` và `currency` — pricing cần chỉnh khi đàm phán)
-chỉ `admin` ghi, khớp danh sách 14 field khóa hiện có trong prototype
-(`labCost`, `testUL`, `compliance`, `rent`). `markup`/`currency` cho phép
-`pricing`/`admin` ghi (là biến chiến lược T2/T3, không phải hạ tầng SX).
+chỉ `admin` ghi — cụ thể là TOÀN BỘ `sharedFixedCosts` (6 field: `labAnnualized`,
+`vnUlSetupAnnualized`, `ulSetupAnnualized`, `depreciationYears`,
+`annualComplianceFee`, `annualLandRent`), TOÀN BỘ `nonProductionCosts` (2 field:
+`operatingCostPerYear`, `financialCostPerYear`), và `solvent550PricePerBox`
+(9 field khóa — implementation thật ở `firestore.rules`
+`scenarioLockedFieldsUnchanged()`, đúng theo M12.9b `ConfigScreen.tsx`).
+`markup`/`currency` cho phép `pricing`/`admin` ghi (là biến chiến lược T2/T3,
+không phải hạ tầng SX).

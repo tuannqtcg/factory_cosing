@@ -349,3 +349,25 @@ export const TargetPriceResultSchema = z.union([
   }),
 ]);
 export type TargetPriceResult = z.infer<typeof TargetPriceResultSchema>;
+
+// ── Doc `scenarios/{id}/priceLockAudit/{entryId}` — M12.10 (security-review) ─
+// Yêu cầu bắt buộc của skill security-review: "Audit log cho thao tác đổi giá
+// (ai, khi nào, giá cũ → mới)". Trước M12.10, "Chốt Baseline Mới" (Dashboard
+// M12.5, AssumptionsScreen M12.9d) chỉ `updateDoc` thẳng baseline — không có
+// lịch sử ai chốt/khi nào/giá cũ→mới (đúng như prototype comment "có audit
+// log trong production" từng ghi nhưng chưa làm). 1 doc = 1 lần chốt baseline
+// cho 1 material — APPEND ONLY (rules cấm update/delete, xem firestore.rules).
+// `at` = serverTimestamp() (Firestore FieldValue sentinel) — KHÔNG validate
+// qua Zod trước khi ghi (sentinel không phải Timestamp thật cho tới khi commit
+// server-side); chỉ các field còn lại được `PriceLockAuditEntryFieldsSchema`
+// validate trước khi `addDoc`, xem `src/lib/priceLockAudit.ts`.
+export const PriceLockAuditEntryFieldsSchema = z.object({
+  materialId: z.string(),
+  materialName: z.string(),
+  oldBaselineUsdPerKg: z.number(),
+  newBaselineUsdPerKg: z.number(),
+  changedByUid: z.string(),
+  changedByEmail: z.string().nullable(),
+  changedByRole: z.enum(['admin', 'pricing']),
+});
+export type PriceLockAuditEntryFields = z.infer<typeof PriceLockAuditEntryFieldsSchema>;

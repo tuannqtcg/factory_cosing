@@ -3,7 +3,11 @@
 > Pha 2 — ĐÓNG BĂNG sau khi user duyệt. Sửa cấu trúc field ở đây bắt buộc phải có
 > ADR mới (AGENTS.md luật #5).
 > Nguồn nghiệp vụ: ADR-001 (driver theo loại SP), ADR-007 (managementStatus —
-> quyết định bổ sung), ADR-008 (BOM ren kim loại).
+> quyết định bổ sung), ADR-008 (BOM ren kim loại), ADR-012 (thêm `materialId`).
+> **M12.10 (security-review)**: vá lại khối code bên dưới cho khớp
+> `src/schemas/product.ts` thật — ADR-012 (2026-07-07) đã thêm `materialId` vào
+> CẢ 2 nhánh nhưng bản ghi ở đây bị sót khi làm ADR-012 (chỉ cập nhật
+> `material.md`/`scenario.md`, quên `product.md` dù ADR-012 §"Hệ quả" có liệt kê).
 
 ## Nguyên tắc
 
@@ -24,6 +28,7 @@ export const PipeProductSchema = z.object({
   odMm: z.number().positive(),
   minWallThicknessMm: z.number().positive(),
   unitWeightKgPerM: z.number().positive(),
+  materialId: z.string(),         // ADR-012 — tra tới Material trong materials[]
 });
 export type PipeProduct = z.infer<typeof PipeProductSchema>;
 
@@ -47,6 +52,7 @@ export const FittingProductSchema = z.object({
   cavity: z.number().int().positive(),
   unitWeightKg: z.number().positive(),
   metalInsert: MetalInsertBomSchema.optional(),
+  materialId: z.string(),         // ADR-012 — tra tới Material trong materials[]
 });
 export type FittingProduct = z.infer<typeof FittingProductSchema>;
 

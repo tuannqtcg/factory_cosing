@@ -32,7 +32,7 @@
 | M12.9b | Màn hình Cấu Hình Nhà Máy (tab `config`, vai admin/pricing) — field-map lại đúng `resources.pipe/fitting` + `costPool` (KHÔNG theo bucket "chung" giả định của mock) | prototype tab `config`, resource.md, cost-pool.md | `src/features/config/ConfigScreen.tsx` | **[x] 2026-07-09** |
 | M12.9c | Màn hình báo cáo Ống CPVC + Phụ Kiện (tab `ong`/`pk`, đọc-only, tái dùng `ScenarioOutput` đã có — KHÔNG gọi lại cost breakdown nội bộ engine) | prototype tab `ong/pk` | `src/features/production-report/ProductionReport.tsx` | **[x] 2026-07-09** |
 | M12.9d | Màn hình Tồn Kho Compound + Tham Số (vai admin/pricing), dựng theo `materials[]` thật (ADR-012) — mockup Pha 1 mới đã duyệt + **ADR-015** (khóa `thresholdPct` trong mảng bằng unroll theo index cố định) | mockup Pha 1 M12.9d, ADR-015, material.md, pricing-chain.md | `src/features/inventory/InventoryScreen.tsx`, `src/features/assumptions/AssumptionsScreen.tsx`, `firestore.rules` | **[x] 2026-07-09** |
-| M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
+| M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | `firestore.rules`, `docs/contracts/{cost-pool,product,scenario}.md`, `src/lib/priceLockAudit.ts` | **[x] 2026-07-10** |
 
 ## Cách phiên mới bắt đầu
 1. Đọc bảng trên, tìm milestone đầu tiên chưa `[x]`.
@@ -44,27 +44,60 @@
    định 1 tên qua nhiều phiên, xem branch Git hiện tại) (KHÔNG tạo PR — quy
    trình đã chốt từ Phiên 13).
 
-## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.10: Security review (Pha 4 gate) + chạy lại toàn bộ parity + chuẩn bị
-merge.** M12.1-M12.9d ĐÃ XONG — toàn bộ 9 tab của prototype đã dựng thật, nối
-Firestore/Cloud Functions, không còn tab placeholder nào trong `AppShell.tsx`.
-Đây là milestone CUỐI của M12 (và của Pha 3) — dùng skill `security-review`:
-1. Rà lại `firestore.rules` toàn bộ 1 lượt cuối theo bảng `scenario.md` §6 —
-   đối chiếu từng ô với rules thật, không chỉ tin test đã xanh.
-2. Đặc biệt soát ADR-015 (unroll theo index cố định): cận trên `materials[]`
-   = 8 hiện đủ margin an toàn (danh mục thật có 2 material) — nếu users đã
-   thêm nhiều material qua UI M12.9d trước khi review, verify KHÔNG vượt cận
-   trên; `inventory.metalInsert[]` cố định 10 dòng, không có nguy cơ này.
-3. Xác nhận UI M12.9d LUÔN append material mới vào cuối mảng (không chèn
-   giữa) — đúng giả định ADR-015 mục "Hệ quả".
-4. Rà `docs/contracts/*.md` còn STALE chỗ nào (vd `cost-pool.md` vẫn ghi
-   `markupVfPipe/markupVfFitting`/`compoundImportTaxRate` — pre-ADR-012, chưa
-   cập nhật dù code đã đúng) — cập nhật cho khớp implementation thật trước merge.
-5. Chạy lại toàn bộ 5 cổng (`npm test`, `typecheck` root+functions,
-   `test:rules`, `test:functions`, `build`) 1 lần cuối trên nhánh sạch.
-6. Checklist bí mật/secrets, Firebase config thật (nếu có) trước khi merge.
+## M12 HOÀN TẤT — 2026-07-10
+Toàn bộ M12.1-M12.10 đã xong. **Pha 3 coi như HOÀN TẤT** (M1-M12.10 đều `[x]`).
+Việc tiếp theo KHÔNG còn nằm trong M12_PLAN.md — xem
+`docs/sessions/SESSION_2026-07-10.md` mục "Còn treo / việc phiên sau":
+merge nhánh làm việc lên nhánh mặc định (chưa làm, cần user xác nhận), cân
+nhắc "đóng gói tri thức" (kit version) nếu cần trước khi giao phiên sau, và 1
+mục còn treo thật sự (không phải merge-blocker): cơ chế cấp custom claim
+`role` cho user thật khi có Firebase project thật (xem `scenario.md` "Còn treo").
 
 ## Nhật ký milestone đã xong
+
+- **M12.10 (2026-07-10, security-review Pha 4 gate)**: Đối chiếu
+  `firestore.rules` với bảng `scenario.md` §6 từng ô — default-deny xác nhận,
+  tách doc đúng (sales không đọc được cost, `outputs/priceList` sạch không có
+  `materialCostPerUnit`/tồn kho), mọi Cloud Function parse Zod server-side
+  trước khi tin dữ liệu, quét bí mật sạch (`.env`/serviceAccount/private
+  key/API key — không có gì lọt, `.gitignore` đúng). **Phát hiện 2 contract
+  doc TRÔI khỏi schema thật từ ADR-012** (ADR-012 §"Hệ quả" liệt kê phải sửa
+  nhưng chưa từng làm): `cost-pool.md` còn `markupVfPipe/Fitting`/
+  `compoundImportTaxRate`/`customsLogisticsFeeRate` (đã bỏ từ 2026-07-07);
+  `product.md` thiếu field `materialId` cả 2 nhánh pipe/fitting — vá cả 2 +
+  cập nhật mục "Khóa tham số theo vai" cho khớp rules thật (9 field, không
+  phải "14 field" mơ hồ như bản cũ). Cập nhật `scenario.md` "Còn treo": 2/3
+  mục đã xong từ lâu (gạch), mục custom-claim-role viết lại rõ ràng — chỉ
+  dùng được cho Emulator, PHẢI thiết kế cơ chế cấp quyền thật trước khi trỏ
+  project Firebase thật.
+  **Bổ sung audit log "Chốt Baseline Mới"** — checklist BẮT BUỘC của skill
+  security-review, trước đó `updateDoc` thẳng không lưu vết (dù prototype
+  comment cũ đã nhắc "có audit log trong production"). Doc mới
+  `scenarios/{id}/priceLockAudit/{entryId}` APPEND ONLY (rules cấm
+  update/delete kể cả admin — toàn vẹn lịch sử): `PriceLockAuditEntryFieldsSchema`
+  (`schemas/scenario.ts`) + helper dùng chung `src/lib/priceLockAudit.ts`
+  (`writePriceLockAuditEntry`, `at: serverTimestamp()` KHÔNG qua Zod vì là
+  FieldValue sentinel) + wiring vào `Dashboard.tsx` (`chotBaselineMoi`, ghi
+  audit SAU KHI `updateDoc` thành công, 1 entry/material đổi) và
+  `AssumptionsScreen.tsx` (`handleSave`, DIFF baseline trước/sau so bản đã
+  lưu gần nhất qua `lastPersistedMaterialsRef` — bắt được CẢ trường hợp gõ
+  tay trực tiếp, không chỉ bấm nút "Chốt Baseline Mới" — log theo KẾT QUẢ,
+  không theo cơ chế UI). Threading `user` (uid/email) từ `useAuth` xuống 2
+  màn qua `AppShell.tsx` (trước đây chỉ truyền `role`, không có identity).
+  8 test rules mới (tạo được theo admin/pricing, KHÔNG được theo sales/
+  production, đọc được theo admin/pricing, KHÔNG đọc được theo sales, KHÔNG
+  sửa/xóa được kể cả admin) → 55/55.
+  **Verify audit log THẬT** (không chỉ fixture test): emulator + seed +
+  Playwright — sửa giá tái tạo material `bm-orange-pipe` từ 3,03 → 6,0 USD/kg
+  (vượt ngưỡng 3%) → badge chuyển "MỞ KHÓA" → bấm "Chốt Baseline Mới" + Lưu →
+  đọc thẳng Firestore Emulator bằng Admin SDK (bypass rules để verify, không
+  qua REST API ẩn danh vì đúng thiết kế bị 403) xác nhận đúng 1 doc:
+  `{materialId: "bm-orange-pipe", oldBaselineUsdPerKg: 3.03,
+  newBaselineUsdPerKg: 6, changedByUid: "demo-pricing",
+  changedByEmail: "pricing@demo.local", changedByRole: "pricing",
+  at: <server timestamp thật>}`.
+  Đủ 5 cổng cuối: `npm test` 328/328, `test:rules` 55/55, `test:functions`
+  9/9, typecheck root+functions, build OK.
 
 - **M12.9d (2026-07-09, cùng phiên M12.9a/b/c)**: Màn hình Tồn Kho Compound
   (tab `inventory`) + Tham Số (tab `assumptions`) — mockup Pha 1 mới dựng

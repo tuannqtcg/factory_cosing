@@ -150,7 +150,14 @@ export default function AppShell() {
               <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{data.error}</div>
             )}
             {activeTab === 'dashboard' && (
-              <Dashboard role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} salesPriceLadder={data.priceList?.priceLadder ?? null} />
+              <Dashboard
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+                scenarioId={SCENARIO_ID}
+                scenario={data.scenario}
+                internal={data.internal}
+                salesPriceLadder={data.priceList?.priceLadder ?? null}
+              />
             )}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
             {activeTab === 'targetcosting' && (
@@ -158,7 +165,15 @@ export default function AppShell() {
             )}
             {activeTab === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {activeTab === 'inventory' && <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />}
-            {activeTab === 'assumptions' && <AssumptionsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />}
+            {activeTab === 'assumptions' && (
+              <AssumptionsScreen
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+                scenarioId={SCENARIO_ID}
+                scenario={data.scenario}
+                internal={data.internal}
+              />
+            )}
             {activeTab === 'ong' && <ProductionReport role={role} line="pipe" scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'pk' && <ProductionReport role={role} line="fitting" scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'plan' && (

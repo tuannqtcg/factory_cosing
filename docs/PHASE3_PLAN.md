@@ -32,7 +32,7 @@
 | M9 | Plan_SX (T1 — tầng vận hành, dạng đóng, chưa có số vàng thật) | BUSINESS_MODEL §6; `scenario.md` §3 | `src/engine/plan.ts` | **[x] 2026-07-06** |
 | M10 | Inverse solver (T2 dạng đóng CVP, T3 bisection) + forward-verify bắt buộc | ADR-005/006; skill `inverse-solver`; `scenario.md` §4 | `src/engine/solver.ts` | **[x] 2026-07-06** |
 | M11 | Bộ test parity Excel đầy đủ 372 assertion (gom tất cả M2-M9 lại thành 1 suite hoàn chỉnh, đối chiếu skill `excel-parity-testing`) | Toàn bộ `tests/fixtures/*.json` | `tests/parity/` | **[x] 2026-07-06** |
-| M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 — **user đã xác nhận 2026-07-06, chia nhỏ tiếp ở `docs/M12_PLAN.md` (M12.1-M12.10)** | `prototype/blazemaster-costing-app.dc.html`, `scenario.md`, `docs/M12_PLAN.md` | `src/features/` | **ĐANG LÀM** — xem `docs/M12_PLAN.md` cho trạng thái chi tiết từng milestone con |
+| M12 | UI thật (React/TS/Tailwind theo prototype đã duyệt) + nối Firestore theo `scenario.md` §5-6 — **user đã xác nhận 2026-07-06, chia nhỏ tiếp ở `docs/M12_PLAN.md` (M12.1-M12.10)** | `prototype/blazemaster-costing-app.dc.html`, `scenario.md`, `docs/M12_PLAN.md` | `src/features/` | **[x] 2026-07-10** — xem `docs/M12_PLAN.md` cho trạng thái chi tiết từng milestone con |
 | M13 | Multi-material (ADR-012, chen ngang theo yêu cầu user 2026-07-07, đi đủ 4 pha trong ngày): M13.1 Material entity + engine theo (line, materialId), migration parity BM v3.7 tuyệt đối; M13.2 danh mục Corzan (giá thật 3,47/3,97, thuế 0% AIFTA xác nhận, SKU sinh theo rule ống ×1,1/phụ kiện giống hệt) + 11 test số-tính-tay + test cách ly. LƯU Ý cho M12 tiếp theo: UI phải dựng theo output MỚI (byLineMaterial/byMaterial), xem `docs/contracts/material.md` | ADR-012, `docs/contracts/material.md`, `tests/fixtures/corzan.json` | `src/schemas/material.ts`, `src/engine/scenario.ts`, `tests/parity/corzan.test.ts` | **[x] 2026-07-07** |
 
 ## Ghi chú kỹ thuật xuyên suốt (áp dụng mọi milestone)
@@ -50,22 +50,17 @@
 - `npm test` phải xanh trước MỌI commit (CLAUDE.md) — không commit dở dang một
   milestone nếu test đỏ; thà dừng ở milestone trước.
 
-## Việc tiếp theo ngay khi phiên sau vào
-→ **Engine lõi (M1-M11) ĐÃ XONG. M12 (UI thật + Firestore) ĐANG LÀM** — user
-đã xác nhận mở rộng phạm vi ngày 2026-07-06 ("hoàn thiện nốt pha 3... M12 UI
-thật + Firestore"). M12 tự chia nhỏ thành M12.1-M12.10, xem
-**`docs/M12_PLAN.md`** cho bảng trạng thái + nhật ký chi tiết + "cách phiên
-mới bắt đầu" — đọc file đó TRƯỚC, KHÔNG lặp lại chi tiết ở đây (giống cách
-`PHASE3_PLAN.md` này tách khỏi `CONTEXT_PASTE.md`).
-Đã xong M12.1-M12.9d (2026-07-08/09 cùng phiên: M12.4b `onPlanInputWrite`;
-M12.4c `computeTargetCosting` + ADR-013; M12.5 Dashboard + shell/auth/seed;
-M12.6 Bảng Giá sales-safe; M12.7 Kế Hoạch SX + ADR-014 `outputs/productCatalog`;
-M12.8 Định Giá Ngược; M12.9a vá 2 lỗ hổng firestore.rules; M12.9b Cấu Hình
-Nhà Máy; M12.9c báo cáo Ống/Phụ Kiện; M12.9d Tồn Kho + Tham Số + **ADR-015**
-[khóa `thresholdPct` trong mảng bằng unroll theo index cố định] — xem
-`docs/M12_PLAN.md`). **TOÀN BỘ 9 tab của prototype đã dựng thật** — không còn
-placeholder nào. Con trỏ hiện tại của M12: **M12.10** (security review Pha 4
-+ chạy lại toàn bộ parity + chuẩn bị merge — cổng CUỐI của Pha 3).
+## PHA 3 HOÀN TẤT — 2026-07-10
+→ **M1-M12.10 đều `[x]`. Pha 3 (Code) coi như XONG.** M12 tự chia nhỏ thành
+M12.1-M12.10, chi tiết đầy đủ + nhật ký từng milestone ở **`docs/M12_PLAN.md`**
+(KHÔNG lặp lại ở đây). M12.10 (security-review, cổng cuối Pha 4) đã vá 2 lỗ
+hổng rules thật (M12.9a) + 2 contract doc trôi khỏi schema (M12.10) + bổ sung
+audit log `priceLockAudit` cho thao tác đổi giá — xem
+`docs/sessions/SESSION_2026-07-10.md` cho tường thuật đầy đủ cả phiên.
+**Việc tiếp theo KHÔNG còn nằm trong Pha 3**: merge nhánh làm việc lên nhánh
+mặc định (cần user xác nhận), rồi Pha 4 thật sự bắt đầu khi có Firebase
+project thật (còn treo: cơ chế cấp custom claim `role` cho user thật — xem
+`docs/contracts/scenario.md` "Còn treo").
 Quyết định hạ tầng đã chốt: CHƯA có Firebase project thật → dùng Emulator
 Suite (xem đầu `docs/M12_PLAN.md`).
 

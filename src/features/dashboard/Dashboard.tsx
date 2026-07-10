@@ -17,6 +17,7 @@ import { referenceMaterialOf } from '../../engine/scenario.js';
 import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
 import { solve } from '../../engine/solver.js';
 import { calculateScenario } from '../../engine/scenario.js';
+import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 
 const TIER_DEFS = [
   { key: 'variableCostFloor', bac: 1, label: 'Sàn biến phí', role: 'Không ai được bán thủng — lỗ tiền tươi ngay lập tức', color: '#DC2626' },
@@ -154,12 +155,15 @@ function CardNote({ children }: { children: React.ReactNode }) {
 
 export default function Dashboard({
   role,
+  user,
   scenarioId,
   scenario,
   internal,
   salesPriceLadder,
 }: {
   role: AppRole;
+  /** M12.10 (security-review) — ai chốt baseline, ghi vào priceLockAudit. */
+  user: { uid: string; email: string | null } | null;
   scenarioId: string;
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
@@ -240,14 +244,30 @@ export default function Dashboard({
   const anyUnlocked = lockRows.some(([, , e]) => !e!.evaluation.isLocked);
 
   const chotBaselineMoi = async () => {
-    if (!scenario) return;
+    if (!scenario || !user || (role !== 'admin' && role !== 'pricing')) return;
     // ADR-004: chốt lại baseline = replacement hiện hành cho material đang MỞ KHÓA.
+    const changed: Array<{ materialId: string; materialName: string; oldBaseline: number; newBaseline: number }> = [];
     const materials = scenario.materials.map((m) => {
       const entry = internal?.priceLock.byMaterial.find((e) => e.materialId === m.id);
       if (!entry || entry.evaluation.isLocked) return m;
+      changed.push({ materialId: m.id, materialName: m.name, oldBaseline: m.inventory.priceLock.baseline, newBaseline: m.inventory.replacementPriceUsdPerKg });
       return { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, baseline: m.inventory.replacementPriceUsdPerKg } } };
     });
     await updateDoc(doc(db, `scenarios/${scenarioId}`), { materials });
+    // M12.10 (security-review) — audit log SAU KHI ghi thành công, 1 entry/material đổi.
+    await Promise.all(
+      changed.map((c) =>
+        writePriceLockAuditEntry(scenarioId, {
+          materialId: c.materialId,
+          materialName: c.materialName,
+          oldBaselineUsdPerKg: c.oldBaseline,
+          newBaselineUsdPerKg: c.newBaseline,
+          changedByUid: user.uid,
+          changedByEmail: user.email,
+          changedByRole: role,
+        }),
+      ),
+    );
   };
 
   const tierAt = pipeLadder;

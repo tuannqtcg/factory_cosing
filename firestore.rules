@@ -18,14 +18,65 @@ service cloud.firestore {
     function isSales() { return hasRole('sales'); }
     function isProduction() { return hasRole('production'); }
 
+    // ADR-015 (M12.9d): khóa `thresholdPct` admin-only TRONG TỪNG phần tử của
+    // materials[]/inventory.metalInsert[] — Firestore Rules không có vòng lặp
+    // động nên UNROLL theo index cố định (cận trên đã biết thực tế: materials
+    // ≤8, metalInsert đúng 10 dòng theo business model ADR-008). Chỉ khóa
+    // đúng field thresholdPct — field khác trong CÙNG phần tử (lots, baseline,
+    // replacementPriceUsdPerKg...) vẫn mở cho pricing. Phần tử ngoài cận trên
+    // (materials index ≥8) KHÔNG được bảo vệ — giới hạn ĐÃ BIẾT, xem ADR-015
+    // mục "Hệ quả". UI thật (M12.9d) luôn APPEND material mới vào cuối mảng,
+    // không chèn giữa — giữ đúng bất biến thứ tự materials[] (ADR-012).
+    function materialThresholdLocked(existing, incoming, i) {
+      return i >= existing.materials.size() || i >= incoming.materials.size()
+        || incoming.materials[i].inventory.priceLock.thresholdPct
+           == existing.materials[i].inventory.priceLock.thresholdPct;
+    }
+    function materialsThresholdAllLocked(existing, incoming) {
+      return materialThresholdLocked(existing, incoming, 0)
+        && materialThresholdLocked(existing, incoming, 1)
+        && materialThresholdLocked(existing, incoming, 2)
+        && materialThresholdLocked(existing, incoming, 3)
+        && materialThresholdLocked(existing, incoming, 4)
+        && materialThresholdLocked(existing, incoming, 5)
+        && materialThresholdLocked(existing, incoming, 6)
+        && materialThresholdLocked(existing, incoming, 7);
+    }
+    function metalInsertThresholdLocked(existing, incoming, i) {
+      return i >= existing.inventory.metalInsert.size() || i >= incoming.inventory.metalInsert.size()
+        || incoming.inventory.metalInsert[i].priceLock.thresholdPct
+           == existing.inventory.metalInsert[i].priceLock.thresholdPct;
+    }
+    function metalInsertsThresholdAllLocked(existing, incoming) {
+      return metalInsertThresholdLocked(existing, incoming, 0)
+        && metalInsertThresholdLocked(existing, incoming, 1)
+        && metalInsertThresholdLocked(existing, incoming, 2)
+        && metalInsertThresholdLocked(existing, incoming, 3)
+        && metalInsertThresholdLocked(existing, incoming, 4)
+        && metalInsertThresholdLocked(existing, incoming, 5)
+        && metalInsertThresholdLocked(existing, incoming, 6)
+        && metalInsertThresholdLocked(existing, incoming, 7)
+        && metalInsertThresholdLocked(existing, incoming, 8)
+        && metalInsertThresholdLocked(existing, incoming, 9);
+    }
+
     // Danh sách field khóa của scenarios/{id} — resource.md + cost-pool.md
     // (scenario.md §5 dòng 1: "pricing các field KHÔNG nằm trong danh sách
-    // khóa (resource.md/cost-pool.md đã liệt kê)"). product.md
-    // ("Product chỉ admin ghi") và pricing-chain.md (thresholdPct admin-only
-    // trong metalInsert[] theo từng dòng) KHÔNG đưa vào đây — scenario.md
-    // không trỏ 2 nguồn đó cho hàng này, và rules không có vòng lặp để khóa
-    // field trong TỪNG phần tử mảng metalInsert theo (renType, ptSize). Ghi
-    // rõ ở docs/M12_PLAN.md nhật ký M12.3 làm việc còn treo.
+    // khóa (resource.md/cost-pool.md đã liệt kê)") + product.md ("Product chỉ
+    // admin ghi", M12.9a vá — trước đây thiếu, pricing ghi được products[] dù
+    // contract đã cấm) + pricing-chain.md/material.md (thresholdPct admin-only
+    // theo TỪNG dòng trong materials[]/metalInsert[] — ADR-015, M12.9d).
+    //
+    // M12.9a: XÓA 2 dòng khóa `inventory.pipe/fitting.priceLock.thresholdPct`
+    // cũ — ADR-012 (2026-07-07) đã bỏ hẳn `inventory.pipe`/`inventory.fitting`
+    // (chuyển vào `materials[].inventory`), nên 2 field này KHÔNG tồn tại
+    // trong document thật nữa. Truy cập field không tồn tại trên map khiến
+    // rules ném lỗi khi evaluate → cả biểu thức && sập theo kiểu fail-closed,
+    // tức là MỌI lần `pricing` ghi `scenarios/{id}` đều bị từ chối kể cả field
+    // không khóa (bug thật, không phải chỉ "khóa không có tác dụng" — phát
+    // hiện khi rà lại rules cho M12.9, KHÔNG phát hiện được qua
+    // `tests/rules/firestore.rules.test.ts` cũ vì fixture test ở đó cũng dùng
+    // sai shape `inventory.pipe/fitting` lỗi thời, chưa từng chạy Zod để lộ ra).
     function scenarioLockedFieldsUnchanged(existing, incoming) {
       return incoming.resources.pipe.actualCapacityKgPerHour == existing.resources.pipe.actualCapacityKgPerHour
         && incoming.resources.pipe.extruderPriceEach == existing.resources.pipe.extruderPriceEach
@@ -39,10 +90,11 @@ service cloud.firestore {
         && incoming.costPool.sharedFixedCosts == existing.costPool.sharedFixedCosts
         && incoming.costPool.nonProductionCosts == existing.costPool.nonProductionCosts
         && incoming.costPool.solvent550PricePerBox == existing.costPool.solvent550PricePerBox
-        // pricing-chain.md: thresholdPct của priceLock compound (không phải
-        // mảng, nên khóa được trực tiếp) — admin only, baseline vẫn mở cho pricing
-        && incoming.inventory.pipe.priceLock.thresholdPct == existing.inventory.pipe.priceLock.thresholdPct
-        && incoming.inventory.fitting.priceLock.thresholdPct == existing.inventory.fitting.priceLock.thresholdPct;
+        // product.md: "Product chỉ admin ghi" — toàn bộ mảng, pricing không sửa BOM/master data
+        && incoming.products == existing.products
+        // ADR-015: thresholdPct admin-only theo từng phần tử mảng
+        && materialsThresholdAllLocked(existing, incoming)
+        && metalInsertsThresholdAllLocked(existing, incoming);
     }
 
     // scenarios/{id} — ScenarioInput đầy đủ (scenario.md §5 dòng 1)
@@ -96,6 +148,16 @@ service cloud.firestore {
       match /moldAssets/{moldId} {
         allow read: if isAdmin() || isPricing();
         allow write: if isAdmin();
+      }
+
+      // priceLockAudit/{entryId} — M12.10 (security-review): audit log "Chốt
+      // Baseline Mới" (ai/khi nào/giá cũ→mới, ADR-004). APPEND ONLY — admin/
+      // pricing tạo được (cả 2 vai đều có quyền chốt baseline, scenario.md §6
+      // dòng "field không khóa"), KHÔNG ai được sửa/xóa (toàn vẹn lịch sử).
+      match /priceLockAudit/{entryId} {
+        allow read: if isAdmin() || isPricing();
+        allow create: if isAdmin() || isPricing();
+        allow update, delete: if false;
       }
     }
 

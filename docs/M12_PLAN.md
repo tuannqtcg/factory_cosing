@@ -27,9 +27,12 @@
 | M12.5 | Màn hình Dashboard (React thật, nối Firestore qua emulator) + engine `dashboard-support.ts` (KPI có số vàng) + shell/auth/seed | prototype tab `dashboard` | `src/features/dashboard/`, `src/features/shell/`, `src/engine/dashboard-support.ts`, `src/lib/`, `scripts/seed-emulator.ts` | **[x] 2026-07-08** |
 | M12.6 | Màn hình Bảng Giá (sales-safe — không có field giá vốn) + `unit`/`spec` vào doc priceList (ADR-009 #8) | prototype tab `pricelist` | `src/features/price-list/`, `PriceListDocSchema` | **[x] 2026-07-08** |
 | M12.7 | Màn hình Kế Hoạch SX (vai `production`, Plan_SX input/output) + doc `outputs/productCatalog` (**ADR-014**) | prototype tab `plan`, `plan.ts` (M9), ADR-014 | `src/features/plan/`, `ProductCatalogDocSchema` | **[x] 2026-07-08** |
-| M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | [ ] ← **BẮT ĐẦU TỪ ĐÂY** |
-| M12.9 | Màn hình Tồn kho + Giả định + Cấu hình (vai `admin`/`pricing`, input form) | prototype tab `inventory/assumptions/config/ong/pk` | `src/features/config/` | [ ] |
-| M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | — | [ ] |
+| M12.8 | Màn hình Target Costing (T2/T3, vai `pricing`/`admin`) — dùng `solver.ts` với `ScenarioInput`/`ScenarioOutput` thật thay generic | ADR-005/006, `solver.ts` (M10) | `src/features/target-costing/` | **[x] 2026-07-09** |
+| M12.9a | Vá 2 lỗ hổng thật trong `firestore.rules` phát hiện khi rà soát M12.9: bug đường dẫn chết `inventory.pipe/fitting.priceLock.thresholdPct` (không tồn tại sau ADR-012 → MỌI lần pricing ghi scenarios/{id} bị từ chối kể cả field không khóa) + thiếu khóa `products[]` admin-only (product.md) | `firestore.rules`, product.md | `firestore.rules`, `tests/rules/` | **[x] 2026-07-09** |
+| M12.9b | Màn hình Cấu Hình Nhà Máy (tab `config`, vai admin/pricing) — field-map lại đúng `resources.pipe/fitting` + `costPool` (KHÔNG theo bucket "chung" giả định của mock) | prototype tab `config`, resource.md, cost-pool.md | `src/features/config/ConfigScreen.tsx` | **[x] 2026-07-09** |
+| M12.9c | Màn hình báo cáo Ống CPVC + Phụ Kiện (tab `ong`/`pk`, đọc-only, tái dùng `ScenarioOutput` đã có — KHÔNG gọi lại cost breakdown nội bộ engine) | prototype tab `ong/pk` | `src/features/production-report/ProductionReport.tsx` | **[x] 2026-07-09** |
+| M12.9d | Màn hình Tồn Kho Compound + Tham Số (vai admin/pricing), dựng theo `materials[]` thật (ADR-012) — mockup Pha 1 mới đã duyệt + **ADR-015** (khóa `thresholdPct` trong mảng bằng unroll theo index cố định) | mockup Pha 1 M12.9d, ADR-015, material.md, pricing-chain.md | `src/features/inventory/InventoryScreen.tsx`, `src/features/assumptions/AssumptionsScreen.tsx`, `firestore.rules` | **[x] 2026-07-09** |
+| M12.10 | Security review (skill `security-review`) + chạy lại toàn bộ parity + chuẩn bị merge (Pha 4 gate) | AGENTS.md luật #2,#3 | `firestore.rules`, `docs/contracts/{cost-pool,product,scenario}.md`, `src/lib/priceLockAudit.ts` | **[x] 2026-07-10** |
 
 ## Cách phiên mới bắt đầu
 1. Đọc bảng trên, tìm milestone đầu tiên chưa `[x]`.
@@ -41,31 +44,213 @@
    định 1 tên qua nhiều phiên, xem branch Git hiện tại) (KHÔNG tạo PR — quy
    trình đã chốt từ Phiên 13).
 
-## Việc tiếp theo ngay khi phiên sau vào
-→ **M12.8: Màn hình Target Costing (vai `pricing`/`admin`).** Trước khi code:
-1. Prototype đóng băng KHÔNG có tab target-costing riêng — T2/T3 mới chỉ có
-   panel "III. Phân tích ngược" của Dashboard (đã dựng M12.5 cho biến
-   compound). NHƯNG `PROJECT_SPEC.md` §2 đã dự kiến từ Pha 0: "màn hình
-   Target Costing riêng, dùng inverse solver; production KHÔNG thấy màn hình
-   này" → làm màn riêng là HOÀN THIỆN prototype còn thiếu so với spec, không
-   phải phát minh phạm vi. Quy trình đúng: mockup nhanh (chọn SKU, chọn biến
-   dò trong allowlist ADR-013, T2 lợi nhuận mục tiêu, hiển thị
-   forward-verify) → hỏi user duyệt layout → mới code. MỞ ĐẦU PHIÊN bằng
-   việc dựng mockup này.
-2. Backend đã XONG HẾT: callable `computeTargetCosting` (M12.4c, ADR-013) —
-   T2 (`TargetProfitRequest`: productLine + targetProfitVnd + materialId?) và
-   T3 (`TargetPriceRequest`: productKey chọn SKU + targetListPriceVnd +
-   freeVarPath trong allowlist). UI chỉ gọi httpsCallable + hiển thị
-   kind/result (+ forward-verify đầy đủ của T3 — luật #4 inverse-solver).
-3. Biến nguyên `shifts` nếu màn hình cần → bổ sung ADR-013 + allowlist +
-   solveDiscrete (đã ghi chỗ chờ trong ADR-013).
-4. Verify chạy thật như M12.5-M12.7 (emulator + seed + screenshot).
-
-Sau M12.8: M12.9 (Tồn kho + Giả định + Cấu hình — form input cho
-admin/pricing, ghi scenarios/{id}, trigger tự tính lại), M12.10 (security
-review Pha 4 + chạy lại toàn bộ parity + chuẩn bị merge).
+## M12 HOÀN TẤT — 2026-07-10
+Toàn bộ M12.1-M12.10 đã xong. **Pha 3 coi như HOÀN TẤT** (M1-M12.10 đều `[x]`).
+Việc tiếp theo KHÔNG còn nằm trong M12_PLAN.md — xem
+`docs/sessions/SESSION_2026-07-10.md` mục "Còn treo / việc phiên sau":
+merge nhánh làm việc lên nhánh mặc định (chưa làm, cần user xác nhận), cân
+nhắc "đóng gói tri thức" (kit version) nếu cần trước khi giao phiên sau, và 1
+mục còn treo thật sự (không phải merge-blocker): cơ chế cấp custom claim
+`role` cho user thật khi có Firebase project thật (xem `scenario.md` "Còn treo").
 
 ## Nhật ký milestone đã xong
+
+- **M12.10 (2026-07-10, security-review Pha 4 gate)**: Đối chiếu
+  `firestore.rules` với bảng `scenario.md` §6 từng ô — default-deny xác nhận,
+  tách doc đúng (sales không đọc được cost, `outputs/priceList` sạch không có
+  `materialCostPerUnit`/tồn kho), mọi Cloud Function parse Zod server-side
+  trước khi tin dữ liệu, quét bí mật sạch (`.env`/serviceAccount/private
+  key/API key — không có gì lọt, `.gitignore` đúng). **Phát hiện 2 contract
+  doc TRÔI khỏi schema thật từ ADR-012** (ADR-012 §"Hệ quả" liệt kê phải sửa
+  nhưng chưa từng làm): `cost-pool.md` còn `markupVfPipe/Fitting`/
+  `compoundImportTaxRate`/`customsLogisticsFeeRate` (đã bỏ từ 2026-07-07);
+  `product.md` thiếu field `materialId` cả 2 nhánh pipe/fitting — vá cả 2 +
+  cập nhật mục "Khóa tham số theo vai" cho khớp rules thật (9 field, không
+  phải "14 field" mơ hồ như bản cũ). Cập nhật `scenario.md` "Còn treo": 2/3
+  mục đã xong từ lâu (gạch), mục custom-claim-role viết lại rõ ràng — chỉ
+  dùng được cho Emulator, PHẢI thiết kế cơ chế cấp quyền thật trước khi trỏ
+  project Firebase thật.
+  **Bổ sung audit log "Chốt Baseline Mới"** — checklist BẮT BUỘC của skill
+  security-review, trước đó `updateDoc` thẳng không lưu vết (dù prototype
+  comment cũ đã nhắc "có audit log trong production"). Doc mới
+  `scenarios/{id}/priceLockAudit/{entryId}` APPEND ONLY (rules cấm
+  update/delete kể cả admin — toàn vẹn lịch sử): `PriceLockAuditEntryFieldsSchema`
+  (`schemas/scenario.ts`) + helper dùng chung `src/lib/priceLockAudit.ts`
+  (`writePriceLockAuditEntry`, `at: serverTimestamp()` KHÔNG qua Zod vì là
+  FieldValue sentinel) + wiring vào `Dashboard.tsx` (`chotBaselineMoi`, ghi
+  audit SAU KHI `updateDoc` thành công, 1 entry/material đổi) và
+  `AssumptionsScreen.tsx` (`handleSave`, DIFF baseline trước/sau so bản đã
+  lưu gần nhất qua `lastPersistedMaterialsRef` — bắt được CẢ trường hợp gõ
+  tay trực tiếp, không chỉ bấm nút "Chốt Baseline Mới" — log theo KẾT QUẢ,
+  không theo cơ chế UI). Threading `user` (uid/email) từ `useAuth` xuống 2
+  màn qua `AppShell.tsx` (trước đây chỉ truyền `role`, không có identity).
+  8 test rules mới (tạo được theo admin/pricing, KHÔNG được theo sales/
+  production, đọc được theo admin/pricing, KHÔNG đọc được theo sales, KHÔNG
+  sửa/xóa được kể cả admin) → 55/55.
+  **Verify audit log THẬT** (không chỉ fixture test): emulator + seed +
+  Playwright — sửa giá tái tạo material `bm-orange-pipe` từ 3,03 → 6,0 USD/kg
+  (vượt ngưỡng 3%) → badge chuyển "MỞ KHÓA" → bấm "Chốt Baseline Mới" + Lưu →
+  đọc thẳng Firestore Emulator bằng Admin SDK (bypass rules để verify, không
+  qua REST API ẩn danh vì đúng thiết kế bị 403) xác nhận đúng 1 doc:
+  `{materialId: "bm-orange-pipe", oldBaselineUsdPerKg: 3.03,
+  newBaselineUsdPerKg: 6, changedByUid: "demo-pricing",
+  changedByEmail: "pricing@demo.local", changedByRole: "pricing",
+  at: <server timestamp thật>}`.
+  Đủ 5 cổng cuối: `npm test` 328/328, `test:rules` 55/55, `test:functions`
+  9/9, typecheck root+functions, build OK.
+
+- **M12.9d (2026-07-09, cùng phiên M12.9a/b/c)**: Màn hình Tồn Kho Compound
+  (tab `inventory`) + Tham Số (tab `assumptions`) — mockup Pha 1 mới dựng
+  riêng (KHÔNG porting prototype gốc, vẽ trước ADR-012), user duyệt layout
+  ("layout này ổn đấy"), sau đó hỏi thêm 1 câu quyết định kiến trúc còn treo:
+  cách khóa `thresholdPct` admin-only TRONG TỪNG phần tử `materials[]`/
+  `inventory.metalInsert[]` — user không tự tin chọn, tôi khuyến nghị + giải
+  thích rồi chốt **unroll theo index cố định** (ghi **ADR-015**, không phải
+  defense-in-depth client-side suông) vì 2 lý do: mảng thực tế nhỏ có bound rõ
+  ràng (materials hiện 2-4, metalInsert cố định 10), và đây là field bảo mật
+  thật (pricing có thể tự gọi Firestore SDK bỏ qua UI nếu chỉ disable client).
+  **`firestore.rules`**: thêm `materialThresholdLocked`/`metalInsertThresholdLocked`
+  (kiểm 1 index) + `materialsThresholdAllLocked`/`metalInsertsThresholdAllLocked`
+  (unroll 0..7 cho materials, 0..9 cho metalInsert — cận trên đã biết thực
+  tế), gọi trong `scenarioLockedFieldsUnchanged()`. Field khác trong CÙNG
+  phần tử (`lots`, `baseline`, `replacementPriceUsdPerKg`) vẫn mở cho pricing —
+  test xác nhận không lỡ khóa nhầm. Giới hạn ĐÃ GHI RÕ trong ADR-015: vượt cận
+  trên 8 material thì các phần tử dư không được bảo vệ (rủi ro thấp, danh mục
+  nguyên liệu tăng chậm) — UI M12.9d LUÔN append material mới vào cuối mảng để
+  giữ đúng giả định thứ tự của cả ADR-012 lẫn ADR-015. `tests/rules/`: cập
+  nhật fixture thêm material thứ 2 (`corzan-pipe`) + 1 dòng metalInsert, thêm
+  6 test ADR-015 (pricing sửa threshold index 0/1 bị từ chối, admin được phép,
+  pricing sửa field khác trong cùng phần tử vẫn được phép) → 47/47.
+  **UI**: `src/features/inventory/InventoryScreen.tsx` (material picker + bảng
+  đợt nhập editable [tối đa 5 lô] + 4 KPI card [bình quân gia quyền tính THẲNG
+  bằng `weightedAvgUsdPerKg()`/`totalInventoryKg()` — hàm pure đã xuất, xem
+  trước trên draft CHƯA lưu; lãi/lỗ giữ kho + cảnh báo VAS-02 lấy từ
+  `outputs/internal.dualCosting` ĐÃ tính sẵn, không tính lại] + "+ Thêm nguyên
+  liệu mới" [tạo Material rỗng, APPEND cuối mảng, KHÔNG gán Product — ngoài
+  phạm vi] + bảng 10 dòng ren kim loại mở rộng xem/sửa đợt nhập);
+  `src/features/assumptions/AssumptionsScreen.tsx` (mỗi material 1 card: giá
+  tái tạo/baseline/markupVf/thuế NK/phí logistics mở cho pricing, ngưỡng khóa
+  🔒 admin-only [khớp ADR-015 thật, không còn "chỉ trang trí" như ghi chú
+  mockup] + nút "Chốt Baseline Mới" [tái dùng pattern Dashboard M12.5] + bảng
+  ngưỡng khóa ren kim loại). Cả 2 màn ghi `setDoc` FULL document (giữ nguyên
+  phần dữ liệu không đụng tới), `ScenarioInputSchema.safeParse` trước khi ghi.
+  AppShell: xóa hẳn `PENDING_TAB_MILESTONE`/nhánh placeholder — 9/9 tab đã có
+  màn thật.
+  **Verify THẬT** (emulator + seed + `npm run dev` + Playwright, seed thật chỉ
+  có 2 material [bm-orange-pipe/bm-fitting], KHÔNG Corzan): vai pricing thấy
+  đúng 12 field khóa ở Tham Số (2 material × 1 threshold + 10 metalInsert),
+  sửa lô tồn kho + markupVf (field không khóa) → lưu thành công cả 2 màn; vai
+  admin: 0 field khóa, sửa `thresholdPct` material từ 0,03 → 0,08 → lưu thành
+  công (xác nhận rules thật server-side chấp nhận admin đúng như thiết kế, không
+  chỉ pass trên fixture test). `npm test` 328/328 (không đổi — không thêm
+  engine mới), `test:rules` 47/47, `test:functions` 9/9, typecheck root+functions,
+  build OK.
+
+- **M12.9a/b/c (2026-07-09, cùng phiên)**: Nghiên cứu mở đầu M12.9 phát hiện
+  prototype cho tab `inventory`/`assumptions` vẽ TRƯỚC ADR-012 (không dùng
+  được thẳng) — user chốt chia nhỏ, làm phần AN TOÀN trước (rules fix +
+  config + báo cáo Ống/PK), hoãn Tồn Kho/Tham Số sang M12.9d (mockup riêng).
+  **M12.9a — vá `firestore.rules`**: (1) XÓA 2 dòng khóa
+  `inventory.pipe/fitting.priceLock.thresholdPct` — ADR-012 (2026-07-07) đã bỏ
+  hẳn `inventory.pipe/fitting` (chuyển vào `materials[].inventory`), rules cũ
+  đọc field KHÔNG TỒN TẠI trên document thật → Firestore ném lỗi khi evaluate
+  → **MỌI lần `pricing` ghi `scenarios/{id}` đều bị từ chối, kể cả field
+  không khóa** (bug thật, không chỉ "khóa vô tác dụng" — không bị
+  `tests/rules/firestore.rules.test.ts` cũ bắt được vì fixture test ở đó CŨNG
+  dùng shape lỗi thời `inventory.pipe/fitting`, không phải bug của rules mà là
+  bug của TEST không theo kịp schema thật); (2) THÊM khóa `products[]`
+  admin-only (product.md "Product chỉ admin ghi" — đã ĐÓNG BĂNG từ Pha 2 nhưng
+  chưa từng đưa vào rules). Cập nhật `baseScenario` fixture trong
+  `tests/rules/firestore.rules.test.ts` khớp schema thật post-ADR-012
+  (`materials[]` thay `inventory.pipe/fitting`, `costPool.markup` chỉ còn
+  `markupTcg`/`listPriceMargin`) + thêm test regression "pricing sửa field
+  KHÔNG khóa (`resources.pipe.hoursPerShift`) được phép" — lẽ ra phải ĐỎ trước
+  khi vá, giờ XANH. `npm run test:rules` 41/41 (từ 33 + 8 test mới).
+  **M12.9b — Cấu Hình Nhà Máy** (`src/features/config/ConfigScreen.tsx`, tab
+  `config` mở thêm cho `pricing` — trước chỉ admin thấy trong
+  `ROLE_TAB_ACCESS`, sai vì resource.md/cost-pool.md đều cho pricing sửa field
+  KHÔNG khóa): field-map lại đúng schema thật thay vì bucket "lịch vận hành
+  chung" giả định của mock (schema không có object dùng chung — mỗi Resource
+  Ống/Phụ Kiện có bộ field vận hành RIÊNG, khối A của prototype tách thành 2
+  khối B/C ở đây). Khóa field client-side (disable input) ĐÚNG danh sách
+  resource.md/cost-pool.md (5 field Ống + machineTypes/yieldRate PK + toàn bộ
+  costPool trừ markup/currency = 19 field khóa) — KHÁC mock (chỉ 4 field
+  costPool có 🔒 trực quan, thiếu 5 field còn lại của "toàn bộ CostPool trừ
+  markup/currency" theo đúng câu chữ cost-pool.md) — chốt theo ĐÚNG câu chữ
+  contract, ghi rõ lệch mock. Loại bỏ `avgProductivityKgPerMachineHour` khỏi
+  form (ADR-011: đổi giữa auto/ghi đè thủ công là đổi CHÍNH SÁCH công suất,
+  cần ADR riêng, không phải field nhập tay thường). `moldAssets` hiển thị
+  READ-ONLY (tổng giá trị + số bộ) — sửa qua audit log riêng `moldAssets/{id}`
+  (ADR-007 "còn treo"), không có input trực tiếp. Ghi bằng `setDoc` FULL
+  document (spread từ `scenario` gốc + field đã sửa) — giữ nguyên
+  `materials[]`/`products[]`/`inventory.metalInsert[]` không đổi.
+  **M12.9c — báo cáo Ống CPVC + Phụ Kiện** (`src/features/production-report/ProductionReport.tsx`,
+  dùng chung 1 component cho 2 tab qua prop `line`): thang giá 5 bậc + CVP +
+  bảng giá theo DN/SKU — TÁI DÙNG `ScenarioOutput` đã có, KHÔNG gọi lại
+  `calculatePipe/FittingCostAtNormalCapacity()` (hàm này không xuất field
+  trung gian material/processing/packaging riêng ra `ScenarioOutput` — tự gọi
+  lại sẽ trùng lặp wiring nội bộ của `calculateScenario()`, rủi ro trôi logic;
+  muốn breakdown chi tiết hơn phải export thêm field — đổi schema đóng băng,
+  cần ADR, để dành quyết định cho M12.9d hoặc phiên sau). Thay bằng "thẻ chi
+  phí" 2 mảng dùng ĐÚNG số đã tổng hợp sẵn trong thang giá (tier1 sàn biến phí
+  ≈ vật liệu+bao bì, tier3−tier1 ≈ gia công+phân bổ chung) — khác mock (mock
+  có 5 thẻ + 3 phân đoạn material/processing/packaging tách riêng), ghi rõ lý
+  do lệch. Verify THẬT (emulator + seed + `npm run dev` + Playwright, cả 2
+  vai): pricing thấy đúng 19 field khóa (disabled) ở Cấu Hình, sửa field
+  không khóa (markupTcg) → lưu thành công → Cloud Function tính lại → hiện
+  ngay ở báo cáo Ống/PK (round-trip xác nhận qua số liệu đổi theo đúng input
+  mới, không phải giả lập); admin sửa field khóa (actualCapacityKgPerHour)
+  cũng lưu thành công (0 field bị disable cho admin). `npm test` 328/328
+  (không đổi — M12.9b/c không thêm engine mới), `npm run test:functions` 9/9,
+  `npm run test:rules` 41/41, typecheck root+functions, build OK.
+
+- **M12.8 (2026-07-09)**: Màn hình Định Giá Ngược (Target Costing, tab
+  `targetcosting`, vai `pricing`/`admin`) — **mockup Pha 1 trước** (artifact
+  HTML/JS thuần, không React/CDN — môi trường Artifact chặn mọi request ngoài
+  nên không tải được React qua CDN; dùng đúng token thị giác Dashboard/
+  AppShell + công thức tuyến tính minh họa neo đúng nghiệm vàng case chuẩn
+  skill inverse-solver để demo tương tác), user duyệt layout ("layout ổn")
+  rồi mới code thật — đúng vì `PROJECT_SPEC.md` §2 đã dự kiến từ Pha 0 "màn
+  hình Target Costing riêng" mà prototype Pha 1 gốc chưa có tab riêng (T2/T3
+  trước đó chỉ có panel "III. Phân tích ngược" của Dashboard cho 1 biến
+  compound) — làm màn riêng là HOÀN THIỆN spec, không phát minh phạm vi.
+  Code thật: `src/features/target-costing/` (`TargetCosting.tsx` +
+  `useTargetCosting.ts`) gọi thẳng HTTPS Callable `computeTargetCosting`
+  (M12.4c/ADR-013, đã xong từ trước) — client KHÔNG lắp lại công thức engine,
+  chỉ validate Zod 2 đầu (luật #2) rồi hiển thị kết quả + forward-verify đầy
+  đủ (chuỗi biến→calculateScenario→listPriceBeforeVat=mục tiêu, luật #4 skill
+  inverse-solver) cho T3, banner khả thi/không khả thi kèm `achievableRange`.
+  Thêm `functions` export vào `src/lib/firebase.ts` (`getFunctions` +
+  `connectFunctionsEmulator` port 5001, khớp `firebase.json`) — lần đầu client
+  gọi Callable (M12.5-M12.7 chỉ dùng Firestore). Không có schema riêng cho doc
+  `outputs/targetCosting` trong contract đóng băng (scenario.md §4 chỉ mô tả
+  bằng lời `{kind, request, result}`) — ghép lại từ
+  `TargetProfitRequest/ResultSchema` + `TargetPriceRequest/ResultSchema` đã có
+  ngay trong `useTargetCosting.ts` (không sửa `schemas/scenario.ts`), dùng
+  CHỈ để khôi phục "lần chạy gần nhất" khi mở lại app (banner xanh đầu trang)
+  — đúng ý đồ ADR-013 mục 4, không phát minh thêm.
+  Wiring `AppShell.tsx`: tab `targetcosting` ("Định Giá Ngược") thêm vào
+  `ROLE_TAB_ACCESS.pricing`/`.admin` + `USER_TABS`.
+  **Bug phát hiện khi verify thật** (không thấy được nếu chỉ tin typecheck):
+  `TargetProfitRequestSchema.materialId` optional nhưng Firebase Callable SDK
+  JSON-encode `undefined` → `null` khi gửi qua network, khiến
+  `z.string().optional()` phía server nhận `null` và reject (`invalid_type`).
+  Sửa: chỉ đưa key `materialId` vào object request khi user THỰC SỰ chọn
+  (spread có điều kiện `...(t2MaterialId ? {materialId: t2MaterialId} : {})`)
+  thay vì gán `?? undefined` — bài học áp dụng mọi field optional gửi qua
+  httpsCallable sau này.
+  **Verify THẬT** (emulator + seed + `npm run dev` + Playwright, vai pricing):
+  T2 Ống profit=0 → 108.761 kg/năm khớp TUYỆT ĐỐI
+  `pipe.json.cvp.breakEvenKgYear` (108761,088...); T2 Phụ kiện profit=1 tỷ →
+  26.948 giờ máy, Q hòa vốn hiển thị 18.942 khớp `fitting.json.cvp.breakEvenKgYear`
+  (18941,97...); T3 DN20 goal-seek giá compound tại mục tiêu = giá niêm yết
+  hiện tại (71.600đ) → hội tụ compound 2,97 USD/kg, forward-verify
+  listPriceBeforeVat = 71.600 khớp tuyệt đối mục tiêu (banner xanh); T3 mục
+  tiêu 50.000.000đ (vượt trần bound compound [0,20] USD/kg) →
+  `feasible:false`, `achievableRange: [7.400, 431.600]` hiển thị đúng kèm lý
+  do. "Lần chạy gần nhất" tự cập nhật đúng qua `onSnapshot` sau mỗi lần chạy.
+  `npm test` 328/328 (không đổi — M12.8 không thêm engine mới, tái dùng M12.4c
+  nguyên), typecheck root + functions sạch, `npm run build` OK.
 
 - **M12.7 (2026-07-08, cùng phiên M12.4b→M12.6)**: Màn hình Kế Hoạch SX (vai
   production) + **ADR-014** (user chốt "phương án a" sau khi được trình 2

@@ -9,20 +9,28 @@ import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
 import PlanScreen from '../plan/PlanScreen.js';
 import { usePlanData } from '../plan/usePlanData.js';
+import TargetCosting from '../target-costing/TargetCosting.js';
+import ConfigScreen from '../config/ConfigScreen.js';
+import ProductionReport from '../production-report/ProductionReport.js';
+import InventoryScreen from '../inventory/InventoryScreen.js';
+import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import type { AppRole } from '../../lib/firebase.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
 const ROLE_TAB_ACCESS: Record<AppRole, string[]> = {
-  pricing: ['dashboard', 'pricelist', 'inventory', 'assumptions', 'ong', 'pk'],
+  // M12.9b: `config` mở cho pricing (resource.md — pricing sửa field KHÔNG
+  // khóa như số ca/ngày vận hành/lương/điện nước; field khóa disable trong form).
+  pricing: ['dashboard', 'pricelist', 'targetcosting', 'config', 'inventory', 'assumptions', 'ong', 'pk'],
   sales: ['dashboard', 'pricelist'],
   production: ['plan'],
-  admin: ['dashboard', 'pricelist', 'plan', 'inventory', 'config', 'assumptions', 'ong', 'pk'],
+  admin: ['dashboard', 'pricelist', 'plan', 'targetcosting', 'inventory', 'config', 'assumptions', 'ong', 'pk'],
 };
 const USER_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'pricelist', label: 'Bảng Giá' },
   { id: 'plan', label: 'Kế Hoạch SX' },
+  { id: 'targetcosting', label: 'Định Giá Ngược' },
 ];
 const ADMIN_TABS = [
   { id: 'inventory', label: 'Tồn Kho Compound' },
@@ -40,14 +48,6 @@ const ROLE_DEFS: Array<{ id: AppRole; label: string; desc: string }> = [
 /** Kỳ kế hoạch mặc định của màn Kế Hoạch SX (đổi kỳ ngay trong form). */
 const DEFAULT_PLAN_PERIOD = '2026-Q3';
 
-/** Tab chưa dựng → milestone tương ứng trong docs/M12_PLAN.md. */
-const PENDING_TAB_MILESTONE: Record<string, string> = {
-  inventory: 'M12.9',
-  config: 'M12.9',
-  assumptions: 'M12.9',
-  ong: 'M12.9',
-  pk: 'M12.9',
-};
 
 export default function AppShell() {
   const authState = useAuth();
@@ -150,9 +150,32 @@ export default function AppShell() {
               <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{data.error}</div>
             )}
             {activeTab === 'dashboard' && (
-              <Dashboard role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} salesPriceLadder={data.priceList?.priceLadder ?? null} />
+              <Dashboard
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+                scenarioId={SCENARIO_ID}
+                scenario={data.scenario}
+                internal={data.internal}
+                salesPriceLadder={data.priceList?.priceLadder ?? null}
+              />
             )}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
+            {activeTab === 'targetcosting' && (
+              <TargetCosting role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
+            )}
+            {activeTab === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
+            {activeTab === 'inventory' && <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />}
+            {activeTab === 'assumptions' && (
+              <AssumptionsScreen
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+                scenarioId={SCENARIO_ID}
+                scenario={data.scenario}
+                internal={data.internal}
+              />
+            )}
+            {activeTab === 'ong' && <ProductionReport role={role} line="pipe" scenario={data.scenario} internal={data.internal} />}
+            {activeTab === 'pk' && <ProductionReport role={role} line="fitting" scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'plan' && (
               <>
                 {planData.error && (
@@ -166,15 +189,6 @@ export default function AppShell() {
                   onSave={planData.savePlanInput}
                 />
               </>
-            )}
-            {activeTab !== 'dashboard' && activeTab !== 'pricelist' && activeTab !== 'plan' && (
-              <div style={{ padding: '32px 36px' }}>
-                <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>{[...USER_TABS, ...ADMIN_TABS].find((t) => t.id === activeTab)?.label}</h1>
-                <p style={{ fontSize: 12, color: '#737373' }}>
-                  Màn hình này chưa dựng — theo lộ trình <code>docs/M12_PLAN.md</code> ({PENDING_TAB_MILESTONE[activeTab] ?? 'M12.x'}). Prototype đã duyệt:{' '}
-                  <code>prototype/blazemaster-costing-app.dc.html</code>.
-                </p>
-              </div>
             )}
           </>
         )}

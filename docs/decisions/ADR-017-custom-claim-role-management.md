@@ -37,11 +37,15 @@ console trước, dựng UI sau nếu nhu cầu thật xuất hiện).
    rules) ghi được.
 3. **Vấn đề con-gà-quả-trứng** (chưa có admin nào thì không ai gọi được
    `setUserRole`): `scripts/bootstrap-admin.ts` — script chạy MỘT LẦN bằng
-   Admin SDK trực tiếp (bỏ qua Cloud Function/rules, dùng
-   `GOOGLE_APPLICATION_CREDENTIALS` trỏ service account key thật), cấp
-   `role=admin` cho 1 user cụ thể (email hoặc uid). Có guard chặn chạy nhầm
-   vào Emulator (`FIREBASE_AUTH_EMULATOR_HOST` set thì thoát) — Emulator đã có
-   `seed-emulator.ts` lo riêng.
+   Admin SDK trực tiếp (bỏ qua Cloud Function/rules), cấp `role=admin` cho 1
+   user cụ thể (email hoặc uid). Xác thực qua Application Default Credentials
+   — TỰ ĐỘNG có sẵn trên Cloud Shell/GCE (không cần
+   `GOOGLE_APPLICATION_CREDENTIALS`), hoặc trỏ thủ công biến đó tới service
+   account key nếu chạy máy khác. Có guard chặn chạy nhầm vào Emulator
+   (`FIREBASE_AUTH_EMULATOR_HOST` set thì thoát) — Emulator đã có
+   `seed-emulator.ts` lo riêng. Lần cấp NÀY không ghi `roleAudit` (đi thẳng
+   Admin SDK, ngoài phạm vi Cloud Function) — mọi lần đổi role SAU đó phải
+   qua `setUserRole` để có audit log.
 4. **Chưa có UI** — cấp role hiện tại gọi qua script/console
    (`firebase functions:call`/HTTP trực tiếp), vì tần suất đổi role thấp
    (không phải thao tác hàng ngày). Nếu nhu cầu thật xuất hiện (nhiều user,
@@ -59,7 +63,14 @@ console trước, dựng UI sau nếu nhu cầu thật xuất hiện).
   `npm run test:functions` (Auth+Firestore+Functions Emulator thật — tạo
   user, set claim qua callable, đọc lại claim bằng `auth.getUser()` độc lập,
   xác nhận `roleAudit` ghi đúng), typecheck root+functions.
-- **Chưa verify trên project thật** (`bmcosting-ver-2`) — cần user tự deploy
-  `functions` (service account đã thử KHÔNG đủ quyền deploy, xem lịch sử
-  phiên) rồi tự chạy `scripts/bootstrap-admin.ts` để có admin đầu tiên, sau đó
-  gọi thử `setUserRole` xác nhận claim thật đổi trên user Auth thật.
+- **Verify trên project thật (2026-07-10, `bmcosting-ver-2`) — XONG**: user tự
+  deploy `functions` qua Google Cloud Shell (`firebase login` tài khoản cá
+  nhân + `firebase deploy --only functions` — service account key ban đầu
+  KHÔNG đủ quyền deploy như dự đoán, xem lịch sử phiên; 2 function Firestore
+  trigger fail lần đầu do Eventarc Service Agent cần vài phút lan quyền, retry
+  thành công). Chạy `scripts/bootstrap-admin.ts` qua Cloud Shell (ADC tự động
+  theo tài khoản đăng nhập, KHÔNG cần service account key) — cấp
+  `role=admin` cho `tuannq6886@gmail.com` (uid `hKgxaWJgszcGOWU1fHz0gFVgw4p1`)
+  thành công. Sửa 1 bug nhỏ phát hiện lúc chạy thật: script cũ BẮT BUỘC phải
+  có `GOOGLE_APPLICATION_CREDENTIALS`, chặn nhầm luồng ADC tự động của Cloud
+  Shell/GCE — đã nới guard, chỉ còn chặn Emulator.

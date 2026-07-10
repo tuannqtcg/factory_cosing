@@ -33,6 +33,8 @@
   đã upload trong chat (không đủ quyền gây hại nhưng nên thu hồi); deploy
   thật lên Render + thêm domain Render vào Firebase Auth "Authorized domains"
   (bắt buộc, nếu không đăng nhập sẽ lỗi "unauthorized domain").
+  **Đã MERGE vào nhánh mặc định 2026-07-10** (merge commit `fcf25b5`, kit
+  v1.31, verify đủ 5 cổng SAU merge trên `claude/project-knowledge-setup-2au4hr`).
 - (Lịch sử Pha 3) **PHA 3 (M1-M12.10) HOÀN TẤT 2026-07-10 — xem `docs/sessions/SESSION_2026-07-10.md`
   và mục "Nhật ký milestone đã xong" trong `docs/M12_PLAN.md` cho chi tiết đầy
   đủ M12.8/M12.9a-d/M12.10 (KHÔNG lặp lại ở đây, đoạn dưới giữ nguyên làm lịch

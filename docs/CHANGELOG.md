@@ -1,5 +1,20 @@
 # CHANGELOG — Costing App Kit
 
+## v1.31 (2026-07-10) — Merge Pha 4 (kit v1.30) vào nhánh mặc định
+
+Merge `claude/github-ai-agent-repos-k7z2to` (8 commit: ADR-016 → ADR-017 →
+fix bootstrap-admin → seed-production → render.yaml → đóng gói v1.30) vào
+nhánh mặc định `claude/project-knowledge-setup-2au4hr` (merge commit
+`fcf25b5`, --no-ff, theo yêu cầu user "merge lên github"). Verify TRÊN nhánh
+mặc định SAU merge, đủ 5 cổng: `npm test` 328/328, typecheck (root +
+functions) sạch, `npm run build` OK, `npm run test:rules` 58/58, `npm run
+test:functions` 13/13 trên emulator thật — không xung đột, merge thuần tiến
+(nhánh mặc định đứng yên từ lần merge trước nên không có gì phải giải quyết).
+Con trỏ phiên sau: gọi thử `setUserRole` trên project thật để xác nhận
+`roleAudit` ghi đúng ngoài Emulator; thu hồi service account key đã upload
+trong chat; verify deploy Render + thêm domain vào Firebase Auth "Authorized
+domains".
+
 ## v1.30 (2026-07-10) — Pha 4: Firebase project THẬT + ADR-016/017, deploy + verify xong
 
 Sau khi Pha 3 hoàn tất (v1.29), user tạo Firebase project thật đầu tiên

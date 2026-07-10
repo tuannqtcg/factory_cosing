@@ -69,12 +69,16 @@ phải cấm dùng tên khác `(default)`).
   `.env.demo-costing-app` nên `firestoreDatabaseId` rơi về default
   `(default)` trong code) — xác nhận hành vi cũ giữ nguyên 100%, không phải
   đoán.
-- Deploy thật (`firebase deploy --project bmcosting-ver-2 --only firestore:rules,firestore:indexes,functions`)
-  CHƯA được verify trên project thật trong phiên này (không có quyền
-  `firebase login` vào tài khoản Google của user) — user cần tự chạy lệnh
-  deploy rồi verify 1 lần bằng cách ghi thử 1 `scenarios/{id}` và xác nhận
-  `outputs/internal` xuất hiện trong đúng database `manufacture` (Console
-  Firestore, không phải `(default)`).
+- **Verify trên project thật (2026-07-10) — XONG**: user tự deploy qua Google
+  Cloud Shell (`firebase login` tài khoản cá nhân — service account key không
+  đủ quyền như dự đoán ở mục "Rủi ro"), publish `firestore.rules` thủ công
+  qua Console cho đúng database `manufacture`, rồi `npm run seed:production`
+  ghi `scenarios/baseline-v3.4` — xác nhận Cloud Function `onScenarioWrite`
+  tự tạo đủ 3 sub-document `outputs/internal`, `outputs/priceList`,
+  `outputs/productCatalog` với dữ liệu KHÔNG rỗng, đúng trong database
+  `manufacture` (không phải `(default)`, không phải database nào khác trong
+  9 database của project dùng chung). Tham số hóa `database` ở trigger hoạt
+  động đúng như thiết kế — không còn là rủi ro lý thuyết.
 - Nếu sau này thêm database thứ 2 cho mục đích khác (vd multi-tenant), cách
   làm đúng là thêm 1 `defineString` tham số MỚI (không tái dùng biến này) —
   tránh lặp lại giả định "mỗi project chỉ 1 database" ở chỗ khác.

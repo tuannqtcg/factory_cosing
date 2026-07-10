@@ -6,9 +6,14 @@
 // cấp thêm admin/đổi role user khác, KHÔNG chạy lại script này trừ khi mất hết
 // admin.
 //
-// Cách chạy (trên máy bạn, KHÔNG chạy trong phiên có Emulator đang mở):
-//   GOOGLE_APPLICATION_CREDENTIALS=/path/tới/service-account.json \
-//     npm run bootstrap-admin -- <email-hoặc-uid>
+// Cách chạy — 2 cách xác thực đều dùng được (Admin SDK tự chọn theo môi
+// trường qua Application Default Credentials, KHÔNG cần chỉ định thủ công):
+//   (a) Google Cloud Shell: ADC đã có sẵn tự động theo tài khoản đăng nhập
+//       Cloud Shell — chỉ cần `npm run bootstrap-admin -- <email-hoặc-uid>`.
+//   (b) Máy khác (không phải Cloud Shell/GCE): cần biến
+//       GOOGLE_APPLICATION_CREDENTIALS trỏ tới file service account key thật
+//       (Console Firebase → Project settings → Service accounts → Generate
+//       new private key), rồi chạy lệnh trên.
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
@@ -21,13 +26,6 @@ if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
   console.error(
     'Script này CHỈ dùng cho project THẬT — bỏ biến FIREBASE_AUTH_EMULATOR_HOST trước khi chạy ' +
       '(scripts/seed-emulator.ts đã lo phần cấp role trên Emulator, không cần script này).',
-  );
-  process.exit(1);
-}
-if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  console.error(
-    'Thiếu biến GOOGLE_APPLICATION_CREDENTIALS — trỏ tới file service account key thật ' +
-      '(Console Firebase → Project settings → Service accounts → Generate new private key).',
   );
   process.exit(1);
 }

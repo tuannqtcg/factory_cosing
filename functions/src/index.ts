@@ -15,7 +15,8 @@ import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { defineString } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import {
   ScenarioInputSchema,
   ScenarioOutputSchema,
@@ -32,6 +33,13 @@ import {
   type TargetProfitRequest,
   type TargetPriceRequest,
 } from '../../src/schemas/scenario.js';
+import {
+  AppRoleSchema,
+  SetUserRoleRequestSchema,
+  SetUserRoleResultSchema,
+  RoleAuditEntryFieldsSchema,
+  type AppRole,
+} from '../../src/schemas/role-management.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
 import { calculatePipeCapacity } from '../../src/engine/pipe.js';
@@ -252,4 +260,58 @@ export const computeTargetCosting = onCall(async (request) => {
 
   await db.doc(`scenarios/${parsed.scenarioId}/outputs/targetCosting`).set({ kind, request: parsed, result });
   return { kind, result };
+});
+
+// ADR-017 — cấp/thu hồi custom claim `role` cho Firebase Auth user thật.
+// Còn treo từ M12.10 (scenario.md "Còn treo"): `scripts/seed-emulator.ts` gọi
+// Admin SDK trực tiếp CHỈ dùng được cho Emulator (môi trường tin cậy) — cần 1
+// cơ chế cho project thật. Hướng đã chọn: Cloud Function onCall admin-only +
+// audit log (không phải quy trình thủ công ngoài app), CHƯA cần UI riêng (gọi
+// qua script, xem scripts/bootstrap-admin.ts cho lần cấp admin ĐẦU TIÊN — vấn
+// đề con-gà-quả-trứng: chưa có admin nào thì chưa ai gọi được function này).
+export const setUserRole = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Cần đăng nhập để đổi role.');
+  }
+  if (request.auth.token.role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Chỉ vai admin được cấp/thu hồi role (ADR-017).');
+  }
+
+  let parsed;
+  try {
+    parsed = SetUserRoleRequestSchema.parse(request.data);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', `Request không khớp SetUserRoleRequest: ${String(err)}`);
+  }
+
+  const auth = getAuth();
+  let targetUser;
+  try {
+    targetUser = await auth.getUser(parsed.targetUid);
+  } catch {
+    throw new HttpsError('not-found', `Không tìm thấy user với uid ${parsed.targetUid}.`);
+  }
+
+  const oldRoleParsed = AppRoleSchema.safeParse(targetUser.customClaims?.role);
+  const oldRole: AppRole | null = oldRoleParsed.success ? oldRoleParsed.data : null;
+
+  await auth.setCustomUserClaims(parsed.targetUid, { ...targetUser.customClaims, role: parsed.role });
+
+  const db = getFirestore(firestoreDatabaseId.value());
+  const auditEntry = RoleAuditEntryFieldsSchema.parse({
+    targetUid: parsed.targetUid,
+    targetEmail: targetUser.email ?? null,
+    oldRole,
+    newRole: parsed.role,
+    changedByUid: request.auth.uid,
+    changedByEmail: request.auth.token.email ?? null,
+  });
+  await db.collection('roleAudit').add({ ...auditEntry, at: FieldValue.serverTimestamp() });
+
+  return SetUserRoleResultSchema.parse({
+    targetUid: parsed.targetUid,
+    targetEmail: targetUser.email ?? null,
+    oldRole,
+    newRole: parsed.role,
+  });
 });

@@ -5,7 +5,15 @@
 // (VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_AUTH_DOMAIN)
 // — KHÔNG sửa code, có API key là tự tắt chế độ emulator.
 import { initializeApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import {
+  connectAuthEmulator,
+  getAuth,
+  GoogleAuthProvider,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
@@ -50,6 +58,18 @@ export type AppRole = 'admin' | 'pricing' | 'sales' | 'production';
  */
 export async function signInAsRole(role: AppRole): Promise<User> {
   const credential = await signInWithEmailAndPassword(auth, `${role}@demo.local`, 'demo-password');
+  return credential.user;
+}
+
+/**
+ * Đăng nhập thật cho project thật (KHÔNG dùng ở chế độ emulator) — user tự
+ * chọn tài khoản Google, vai (`role`) đến từ custom claim đã được admin cấp
+ * qua Cloud Function `setUserRole`/`scripts/bootstrap-admin.ts` (ADR-017).
+ * Đăng nhập thành công nhưng chưa có claim `role` vẫn hợp lệ — `roleOf()`
+ * trả `null`, UI tự hiển thị màn "chưa được cấp vai".
+ */
+export async function signInWithGoogle(): Promise<User> {
+  const credential = await signInWithPopup(auth, new GoogleAuthProvider());
   return credential.user;
 }
 

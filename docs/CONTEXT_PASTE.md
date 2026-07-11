@@ -3,19 +3,26 @@
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
 - **PHA 4 ĐANG CHẠY (2026-07-11) — Render CHỐT là kênh deploy CHÍNH THỨC,
-  ĐÃ DEPLOY THẬT.** Domain: **`https://bmcosting-app.onrender.com`** (user
-  báo đã Apply Blueprint xong ở phiên trước — không tự verify được từ session
-  này, bị chặn ở tầng proxy môi trường, KHÔNG phải lỗi site, xem
-  `docs/sessions/SESSION_2026-07-11.md`). `render.yaml` ở root đúng chuẩn
-  Blueprint (`type: web` + `runtime: static`, verify đối chiếu field
-  reference chính thức của Render). **Còn treo QUAN TRỌNG**: chưa xác nhận
-  đã thêm `bmcosting-app.onrender.com` vào Firebase Console → Authentication
-  → Authorized domains (project `bmcosting-ver-2`) — thiếu bước này thì đăng
-  nhập trên domain thật sẽ lỗi "unauthorized domain". Block `hosting` trong
-  `firebase.json` (site `bmcosting-app`, thêm cùng phiên trước khi chốt kênh
-  chính thức) GIỮ NGUYÊN ở trạng thái dự phòng, KHÔNG chủ động deploy —
-  không phải kênh chính thức, chỉ dọn nếu sau này xác
-  nhận không cần nữa.
+  ĐÃ DEPLOY THẬT.** Domain: **`https://bmcosting-app.onrender.com`**.
+  `render.yaml` ở root đúng chuẩn Blueprint (`type: web` + `runtime: static`).
+  **PHÁT HIỆN cùng phiên**: bản deploy trước đó KHÔNG ai đăng nhập được — nút
+  "Xem Như Vai" chỉ đăng nhập user demo (`<vai>@demo.local`) CHỈ tồn tại trên
+  Auth Emulator, vô nghĩa với project thật. Đã fix: thêm **Google Sign-In**
+  thật cho chế độ production (`signInWithGoogle()` trong `src/lib/firebase.ts`,
+  nút "Đăng nhập bằng Google" trong `AppShell.tsx` khi `!isEmulatorMode`,
+  giữ nguyên "Xem Như Vai" cho emulator/dev không đổi) — xem
+  `docs/sessions/SESSION_2026-07-11.md` phần cuối cho chi tiết + code.
+  `npm test` 328/328, typecheck+build sạch.
+  **Còn treo QUAN TRỌNG (user tự làm trước khi dùng được)**:
+  (1) xác nhận đã thêm `bmcosting-app.onrender.com` vào Firebase Console →
+  Authentication → Authorized domains (project `bmcosting-ver-2`) chưa;
+  (2) **bật Google làm Sign-in provider** trong Firebase Console →
+  Authentication → Sign-in method (chưa bật thì popup báo
+  `auth/operation-not-allowed`); (3) đảm bảo Render tự deploy lại code mới
+  này (hoặc tự "Manual Deploy"); (4) sau khi đăng nhập
+  `tuannq6886@gmail.com` (đã có `role=admin` thật) xác nhận thấy đủ tab
+  ADMIN. Block `hosting` trong `firebase.json` (site `bmcosting-app`) GIỮ
+  NGUYÊN ở trạng thái dự phòng, KHÔNG phải kênh chính thức.
 - (Lịch sử 2026-07-10) **PHA 4 — có Firebase project THẬT + đã deploy.**
   User tạo project thật `bmcosting-ver-2` (dùng CHUNG với nhiều app khác:
   `financial-suite`, `landingpage`, `sso-tcg`, `ai-studio-*`...) với Firestore

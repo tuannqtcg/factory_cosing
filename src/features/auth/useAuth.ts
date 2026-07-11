@@ -3,7 +3,7 @@
 // src/lib/firebase.ts).
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth, roleOf, signInAsRole, type AppRole } from '../../lib/firebase.js';
+import { auth, roleOf, signInAsRole, signInWithGoogle, signOutCurrentUser, type AppRole } from '../../lib/firebase.js';
 
 export interface AuthState {
   status: 'loading' | 'signed-out' | 'signed-in';
@@ -11,6 +11,9 @@ export interface AuthState {
   role: AppRole | null;
   /** Đăng nhập bằng user demo của vai (emulator). Lỗi (chưa seed) → trả message. */
   switchRole: (role: AppRole) => Promise<string | null>;
+  /** Đăng nhập Google thật (project thật, ADR-017). Lỗi → trả message. */
+  signInGoogle: () => Promise<string | null>;
+  signOut: () => Promise<void>;
 }
 
 export function useAuth(): AuthState {
@@ -39,5 +42,14 @@ export function useAuth(): AuthState {
     }
   };
 
-  return { ...state, switchRole };
+  const signInGoogle = async (): Promise<string | null> => {
+    try {
+      await signInWithGoogle();
+      return null;
+    } catch {
+      return 'Đăng nhập Google thất bại — thử lại, hoặc liên hệ admin nếu domain chưa được thêm vào Firebase Auth Authorized domains.';
+    }
+  };
+
+  return { ...state, switchRole, signInGoogle, signOut: signOutCurrentUser };
 }

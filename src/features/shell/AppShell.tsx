@@ -4,6 +4,7 @@
 // Mới có tab `dashboard` (M12.5) — tab khác hiện placeholder trỏ milestone.
 import { useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
+import { isEmulatorMode } from '../../lib/firebase.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
@@ -89,23 +90,51 @@ export default function AppShell() {
         </div>
 
         <div style={{ padding: '12px 16px 10px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-          <div style={{ fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginBottom: 7 }}>Xem Như Vai</div>
-          {ROLE_DEFS.map((r) => {
-            const active = r.id === role;
-            return (
+          {isEmulatorMode ? (
+            <>
+              <div style={{ fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginBottom: 7 }}>Xem Như Vai</div>
+              {ROLE_DEFS.map((r) => {
+                const active = r.id === role;
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => {
+                      setAuthError(null);
+                      void authState.switchRole(r.id).then(setAuthError);
+                    }}
+                    style={{ padding: '6px 10px', marginBottom: 3, borderRadius: 2, cursor: 'pointer', background: active ? '#a8003b' : 'transparent', border: `1px solid ${active ? '#a8003b' : 'rgba(255,255,255,.14)'}` }}
+                  >
+                    <div style={{ fontSize: 11, fontWeight: active ? 700 : 500, color: active ? '#fff' : '#d4d4d4' }}>{r.label}</div>
+                    <div style={{ fontSize: 8, color: '#8a8a8a', marginTop: 1 }}>{r.desc}</div>
+                  </div>
+                );
+              })}
+            </>
+          ) : authState.status === 'signed-in' ? (
+            <>
+              <div style={{ fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginBottom: 7 }}>Tài Khoản</div>
+              <div style={{ fontSize: 11, color: '#d4d4d4', marginBottom: 6, wordBreak: 'break-all' }}>{authState.user?.email}</div>
               <div
-                key={r.id}
+                onClick={() => void authState.signOut()}
+                style={{ padding: '6px 10px', borderRadius: 2, cursor: 'pointer', border: '1px solid rgba(255,255,255,.14)', fontSize: 11, color: '#d4d4d4' }}
+              >
+                Đăng xuất
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginBottom: 7 }}>Đăng Nhập</div>
+              <div
                 onClick={() => {
                   setAuthError(null);
-                  void authState.switchRole(r.id).then(setAuthError);
+                  void authState.signInGoogle().then(setAuthError);
                 }}
-                style={{ padding: '6px 10px', marginBottom: 3, borderRadius: 2, cursor: 'pointer', background: active ? '#a8003b' : 'transparent', border: `1px solid ${active ? '#a8003b' : 'rgba(255,255,255,.14)'}` }}
+                style={{ padding: '6px 10px', borderRadius: 2, cursor: 'pointer', background: '#a8003b', border: '1px solid #a8003b', fontSize: 11, fontWeight: 700, color: '#fff', textAlign: 'center' }}
               >
-                <div style={{ fontSize: 11, fontWeight: active ? 700 : 500, color: active ? '#fff' : '#d4d4d4' }}>{r.label}</div>
-                <div style={{ fontSize: 8, color: '#8a8a8a', marginTop: 1 }}>{r.desc}</div>
+                Đăng nhập bằng Google
               </div>
-            );
-          })}
+            </>
+          )}
           {authError && <div style={{ fontSize: 9, color: '#f87171', marginTop: 5 }}>{authError}</div>}
         </div>
 
@@ -135,12 +164,30 @@ export default function AppShell() {
       {/* ═══ MAIN ═══ */}
       <main style={{ flex: 1, overflow: 'auto', background: '#ebe6d4', minWidth: 0 }}>
         {authState.status === 'loading' && <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang kiểm tra đăng nhập…</div>}
-        {authState.status === 'signed-out' && (
+        {authState.status === 'signed-out' && isEmulatorMode && (
           <div style={{ padding: '32px 36px' }}>
             <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Chọn vai để bắt đầu</h1>
             <p style={{ fontSize: 12, color: '#737373', maxWidth: 480 }}>
               Chọn 1 vai ở khối "Xem Như Vai" bên trái — app đăng nhập bằng user demo tương ứng trên Auth Emulator (chạy{' '}
               <code>npm run emulators</code> rồi <code>npm run seed:emulator</code> trước).
+            </p>
+          </div>
+        )}
+        {authState.status === 'signed-out' && !isEmulatorMode && (
+          <div style={{ padding: '32px 36px' }}>
+            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Đăng nhập để bắt đầu</h1>
+            <p style={{ fontSize: 12, color: '#737373', maxWidth: 480 }}>
+              Bấm "Đăng nhập bằng Google" ở khối "Đăng Nhập" bên trái. Tài khoản phải được admin cấp vai (role) trước —
+              liên hệ admin nếu đăng nhập xong vẫn không thấy màn hình.
+            </p>
+          </div>
+        )}
+        {authState.status === 'signed-in' && !role && (
+          <div style={{ padding: '32px 36px' }}>
+            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Chưa được cấp quyền</h1>
+            <p style={{ fontSize: 12, color: '#737373', maxWidth: 480 }}>
+              Tài khoản <strong>{authState.user?.email}</strong> đã đăng nhập thành công nhưng chưa được admin cấp vai
+              (role). Liên hệ admin để cấp quyền qua Cloud Function <code>setUserRole</code>.
             </p>
           </div>
         )}

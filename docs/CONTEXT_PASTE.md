@@ -2,15 +2,18 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **PHA 4 ĐANG CHẠY (2026-07-11) — chuẩn bị thêm Firebase Hosting song song
-  Render** (xem `docs/sessions/SESSION_2026-07-11.md`). Thêm block `hosting`
-  vào `firebase.json` (site riêng `bmcosting-app`, không dùng site mặc định
-  vì project `bmcosting-ver-2` dùng chung nhiều app khác), verify
-  `npm run build` ra đúng `dist/index.html`. **CHƯA deploy thật** (cần user
-  tự `firebase hosting:sites:create` + `firebase deploy --only hosting` +
-  tự thêm domain vào Auth Authorized Domains — xem file session để có lệnh
-  đầy đủ). Chưa chốt Render hay Firebase Hosting (hay cả 2) là kênh chính
-  thức — cần hỏi user ở phiên có deploy thật.
+- **PHA 4 ĐANG CHẠY (2026-07-11) — Render CHỐT là kênh deploy CHÍNH THỨC**
+  (user quyết định, xem `docs/sessions/SESSION_2026-07-11.md`). `render.yaml`
+  ở root đã đúng chuẩn Blueprint (`type: web` + `runtime: static`, verify
+  đối chiếu field reference chính thức của Render) — user tự Apply Blueprint
+  trên Render Dashboard (New + → Blueprint → chọn repo → Apply → điền tay 4
+  biến `VITE_FIREBASE_*` đánh dấu `sync: false` → sau khi có domain phải tự
+  thêm vào Firebase Auth → Authorized domains, nếu không sẽ lỗi "unauthorized
+  domain"). **CHƯA có xác nhận đã Apply/deploy thật xong** — còn treo phiên
+  sau. Block `hosting` trong `firebase.json` (site `bmcosting-app`, thêm cùng
+  phiên trước khi chốt kênh chính thức) GIỮ NGUYÊN ở trạng thái dự phòng,
+  KHÔNG chủ động deploy — không phải kênh chính thức, chỉ dọn nếu sau này xác
+  nhận không cần nữa.
 - (Lịch sử 2026-07-10) **PHA 4 — có Firebase project THẬT + đã deploy.**
   User tạo project thật `bmcosting-ver-2` (dùng CHUNG với nhiều app khác:
   `financial-suite`, `landingpage`, `sso-tcg`, `ai-studio-*`...) với Firestore

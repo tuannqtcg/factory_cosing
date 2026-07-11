@@ -2,7 +2,16 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
-- **PHA 4 ĐANG CHẠY (2026-07-10) — có Firebase project THẬT + đã deploy.**
+- **PHA 4 ĐANG CHẠY (2026-07-11) — chuẩn bị thêm Firebase Hosting song song
+  Render** (xem `docs/sessions/SESSION_2026-07-11.md`). Thêm block `hosting`
+  vào `firebase.json` (site riêng `bmcosting-app`, không dùng site mặc định
+  vì project `bmcosting-ver-2` dùng chung nhiều app khác), verify
+  `npm run build` ra đúng `dist/index.html`. **CHƯA deploy thật** (cần user
+  tự `firebase hosting:sites:create` + `firebase deploy --only hosting` +
+  tự thêm domain vào Auth Authorized Domains — xem file session để có lệnh
+  đầy đủ). Chưa chốt Render hay Firebase Hosting (hay cả 2) là kênh chính
+  thức — cần hỏi user ở phiên có deploy thật.
+- (Lịch sử 2026-07-10) **PHA 4 — có Firebase project THẬT + đã deploy.**
   User tạo project thật `bmcosting-ver-2` (dùng CHUNG với nhiều app khác:
   `financial-suite`, `landingpage`, `sso-tcg`, `ai-studio-*`...) với Firestore
   Database ID **`manufacture`** (không phải `(default)`) — sinh ra

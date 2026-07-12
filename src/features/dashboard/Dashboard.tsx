@@ -18,6 +18,7 @@ import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
 import { solve } from '../../engine/solver.js';
 import { calculateScenario } from '../../engine/scenario.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
+import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ReferenceLine } from 'recharts';
 
 const TIER_DEFS = [
   { key: 'variableCostFloor', bac: 1, label: 'Sàn biến phí', role: 'Không ai được bán thủng — lỗ tiền tươi ngay lập tức', color: '#DC2626' },
@@ -82,11 +83,9 @@ function MaterialPicker({
 function LadderSection({
   pipeLadder,
   fittingLadder,
-  pickers,
 }: {
   pipeLadder: Ladder;
   fittingLadder: Ladder;
-  pickers?: React.ReactNode;
 }) {
   const range = (l: Ladder) => ({ min: l.variableCostFloor, max: l.targetPrice });
   const rp = range(pipeLadder);
@@ -95,7 +94,6 @@ function LadderSection({
   return (
     <div style={{ marginBottom: 22 }}>
       <SectionHeader index="I" title="THANG GIÁ 5 BẬC — VNĐ/KG" />
-      {pickers}
       <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.05)' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 160px 160px', padding: '9px 18px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 12 }}>
           <div />
@@ -175,6 +173,7 @@ export default function Dashboard({
   const [topDownPrice, setTopDownPrice] = useState(0);
   const [pipeMaterialId, setPipeMaterialId] = useState<string | null>(null);
   const [fittingMaterialId, setFittingMaterialId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'overview' | 'manufacturing' | 'investor' | 'pricing'>('overview');
 
   // ── Chọn material theo line (ADR-012) — mặc định material tham chiếu ──────
   const pipeMaterials = useMemo(
@@ -200,7 +199,27 @@ export default function Dashboard({
   const pipeCvpEntry = internal?.cvp.byLineMaterial.find((e) => e.line === 'pipe' && e.materialId === activePipeMatId) ?? null;
   const pipeCvp = pipeCvpEntry && pipeCvpEntry.line === 'pipe' ? pipeCvpEntry : null;
 
+  const fittingCvpEntry = internal?.cvp.byLineMaterial.find((e) => e.line === 'fitting' && e.materialId === activeFittingMatId) ?? null;
+  const fittingCvp = fittingCvpEntry && fittingCvpEntry.line === 'fitting' ? fittingCvpEntry : null;
+
   const kpis = useMemo(() => (canSeeCostDetail && scenario ? calculateDashboardKpis(scenario) : null), [canSeeCostDetail, scenario]);
+
+  const pipeCvpChartData = useMemo(() => {
+    if (!pipeCvp || !pipeLadder || !kpis) return [];
+    const maxCapacity = kpis.capacityLevels[2]?.productionKgYear || pipeCvp.breakEvenKgYear * 2;
+    const step = maxCapacity / 5;
+    const data = [];
+    for (let i = 0; i <= 6; i++) {
+      const kg = i * step;
+      data.push({
+        kg: Math.round(kg),
+        doanhThu: (kg * pipeLadder.targetPrice) / 1e9,
+        chiPhi: (pipeCvp.fixedCostPerYear + kg * pipeCvp.variableCostPerKg) / 1e9,
+        dinhPhi: pipeCvp.fixedCostPerYear / 1e9,
+      });
+    }
+    return data;
+  }, [pipeCvp, pipeLadder, kpis]);
 
   // ── Top-down: compound tối đa = bisection trên calculateScenario (luật
   //   inverse-solver #1: KHÔNG công thức ngược tay), mục tiêu = giá thành đầy
@@ -284,20 +303,86 @@ export default function Dashboard({
   const tdBannerBg = tdAboveFullCost ? '#f0fdf4' : tdAboveFloor ? '#fffbeb' : '#fef2f2';
 
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Tổng Quan Quản Trị</div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Dashboard — BlazeMaster CPVC</h1>
-        {canSeeCostDetail && scenario && (
-          <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
-            Mô hình giá thành v3.7 · Tỷ giá: {fmtVnd(usdRate!)} · Replacement ống: {fmtUsd(pipeRefMaterial!.inventory.replacementPriceUsdPerKg)} USD/kg · PK:{' '}
-            {fmtUsd(fittingRefMaterial!.inventory.replacementPriceUsdPerKg)} USD/kg
+    <div style={{ padding: '32px 36px', maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <div>
+          <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Tổng Quan Quản Trị</div>
+          <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, letterSpacing: '-.5px' }}>Bảng điều khiển (Dashboard)</h1>
+          {canSeeCostDetail && scenario && (
+            <div style={{ fontSize: 11, color: '#737373', marginTop: 6, display: 'flex', gap: 12 }}>
+              <span>Tỷ giá: <b>{fmtVnd(usdRate!)}</b></span>
+              <span>•</span>
+              <span>Nguyên liệu Ống: <b>{pipeRefMaterial?.name || '—'}</b> ({fmtUsd(pipeRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
+              <span>•</span>
+              <span>Nguyên liệu PK: <b>{fittingRefMaterial?.name || '—'}</b> ({fmtUsd(fittingRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
+            </div>
+          )}
+        </div>
+        {canSeeCostDetail && (
+          <div style={{ display: 'flex', gap: 12 }}>
+            <MaterialPicker label="Dòng Ống" materials={pipeMaterials} selectedId={activePipeMatId ?? ''} onSelect={setPipeMaterialId} />
+            <MaterialPicker label="Dòng Phụ kiện" materials={fittingMaterials} selectedId={activeFittingMatId ?? ''} onSelect={setFittingMaterialId} />
           </div>
         )}
       </div>
 
-      {/* Lock bar — ADR-004, chỉ tầng chiến lược (ADR-006) */}
-      {canSeeCostDetail && lockRows.length > 0 && (
+      {/* Tabs Navigation */}
+      {canSeeCostDetail && (
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #e5e5e5', marginBottom: 24 }}>
+          {[
+            { id: 'overview', label: 'TỔNG QUAN' },
+            { id: 'manufacturing', label: 'SẢN XUẤT' },
+            { id: 'investor', label: 'ĐẦU TƯ & TÀI CHÍNH' },
+            { id: 'pricing', label: 'CHIẾN LƯỢC GIÁ' },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setActiveTab(t.id as any)}
+              style={{
+                background: 'none', border: 'none', padding: '0 0 12px 0',
+                fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase',
+                color: activeTab === t.id ? '#a8003b' : '#737373',
+                borderBottom: `2px solid ${activeTab === t.id ? '#a8003b' : 'transparent'}`,
+                cursor: 'pointer',
+                marginBottom: -1
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Overview Tab */}
+      {activeTab === 'overview' && canSeeCostDetail && kpis && internal && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
+            <Card>
+              <CardLabel>EBIT Mục Tiêu (CS Bình thường)</CardLabel>
+              <CardValue color={kpis.investment.ebitAtNormalCapacityVfPrice > 0 ? '#16A34A' : '#DC2626'}>{fmtTyVnd(kpis.investment.ebitAtNormalCapacityVfPrice)}</CardValue>
+              <CardNote>Tại giá VF & chạy 3 ca</CardNote>
+            </Card>
+            <Card>
+              <CardLabel>Thời gian thu hồi vốn</CardLabel>
+              <CardValue color="#16A34A">{kpis.investment.paybackYears.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} năm</CardValue>
+              <CardNote>Tổng đầu tư: {fmtTyVnd(kpis.investment.totalFixedCapitalInvested)}</CardNote>
+            </Card>
+            <Card>
+              <CardLabel>Điểm hòa vốn toàn DN</CardLabel>
+              <CardValue>{fmtTyVnd(kpis.investment.enterpriseBreakEvenRevenuePerYear)}</CardValue>
+              <CardNote>Doanh thu yêu cầu để bù đắp định phí</CardNote>
+            </Card>
+            <Card>
+              <CardLabel>Chi phí gia công Ống (không NVL)</CardLabel>
+              <CardValue color="#ea580c">{fmtVnd(kpis.capacityLevels.find(l => l.shifts === 3)?.processingCostPerKg || 0)} đ/kg</CardValue>
+              <CardNote>Tại năng suất 3 ca</CardNote>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Lock bar — ADR-004, di chuyển vào Tab Pricing (Chiến lược giá) */}
+      {(activeTab === 'pricing' || !canSeeCostDetail) && lockRows.length > 0 && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
           {lockRows.map(([label, material, entry]) => {
             const ev = entry!.evaluation;
@@ -326,41 +411,43 @@ export default function Dashboard({
         </div>
       )}
 
-      {/* I. Thang giá */}
-      {pipeLadder && fittingLadder && (
+      {/* I. Thang giá - Chuyển vào Tab Pricing */}
+      {(activeTab === 'pricing' || !canSeeCostDetail) && pipeLadder && fittingLadder && (
         <LadderSection
           pipeLadder={pipeLadder}
           fittingLadder={fittingLadder}
-          pickers={
-            canSeeCostDetail ? (
-              <>
-                <MaterialPicker label="Ống" materials={pipeMaterials} selectedId={activePipeMatId ?? ''} onSelect={setPipeMaterialId} />
-                <MaterialPicker label="Phụ kiện" materials={fittingMaterials} selectedId={activeFittingMatId ?? ''} onSelect={setFittingMaterialId} />
-              </>
-            ) : undefined
-          }
         />
       )}
 
       {canSeeCostDetail && kpis && internal && pipeLadder && pipeCvp ? (
         <>
           {/* II. Sản xuất — 3 mức công suất Ống */}
-          <div style={{ marginBottom: 22 }}>
-            <SectionHeader index="II" title="SẢN XUẤT — 3 MỨC CÔNG SUẤT ỐNG" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          {activeTab === 'manufacturing' && (
+            <div style={{ marginBottom: 22 }}>
+              <SectionHeader index="II" title="HIỆU QUẢ THEO CÔNG SUẤT — DÒNG ỐNG (ĐÙN LIÊN TỤC)" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
               {kpis.capacityLevels.map((level, i) => {
-                const marginVf = tdTarget > 0 ? ((tdTarget - level.costPerKg) / tdTarget) * 100 : 0;
+                 const marginVf = tdTarget > 0 ? ((tdTarget - level.costPerKg) / tdTarget) * 100 : 0;
                 return (
                   <div key={level.shifts} onClick={() => setSelectedShift(i)} style={{ background: '#fff', border: `2px solid ${i === selectedShift ? '#a8003b' : '#e0e0e0'}`, borderRadius: 2, padding: 15, cursor: 'pointer' }}>
-                    <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#737373', fontWeight: 600, marginBottom: 7 }}>{level.shifts} ca</div>
+                    <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#737373', fontWeight: 600, marginBottom: 7 }}>Mô phỏng Ống: {level.shifts} ca</div>
                     <div style={{ fontSize: 19, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px' }}>{fmtVnd(level.productionKgYear)}</div>
-                    <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 10 }}>kg/năm · {Math.round((level.shifts / 3) * 100)}% CS thiết kế</div>
+                    <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 8 }}>kg ống/năm · {Math.round((level.shifts / 3) * 100)}% CS thiết kế</div>
+                    <div style={{ height: 4, background: '#f0f0f0', borderRadius: 2, marginBottom: 12, overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.round((level.shifts / 3) * 100)}%`, height: '100%', background: level.shifts === 1 ? '#eab308' : level.shifts === 2 ? '#3b82f6' : '#16a34a' }} />
+                    </div>
                     <div style={{ height: 1, background: '#f0f0f0', marginBottom: 10 }} />
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                       <div>
                         <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Giá thành/kg</div>
                         <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(level.costPerKg)} đ</div>
                       </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Phí gia công/kg</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#ea580c' }}>{fmtVnd(level.processingCostPerKg)} đ</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', marginTop: 10 }}>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Margin VF</div>
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#16A34A' }}>{marginVf.toFixed(2)}%</div>
@@ -370,12 +457,43 @@ export default function Dashboard({
                 );
               })}
             </div>
+            <div style={{ marginTop: 24 }}>
+              <SectionHeader index="" title="HIỆU QUẢ SẢN XUẤT — DÒNG PHỤ KIỆN (ÉP PHUN)" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+                <div style={{ background: '#fff', border: '2px solid #e0e0e0', borderRadius: 2, padding: 15 }}>
+                  <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#737373', fontWeight: 600, marginBottom: 7 }}>Công suất bình thường</div>
+                  <div style={{ fontSize: 19, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px' }}>{fmtVnd(kpis.fittingCapacity.productionKgYear)}</div>
+                  <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 10 }}>kg phụ kiện/năm</div>
+                  <div style={{ height: 1, background: '#f0f0f0', marginBottom: 10 }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <div>
+                      <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Giá thành/kg</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(kpis.fittingCapacity.costPerKg)} đ</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Phí gia công/kg</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#ea580c' }}>{fmtVnd(kpis.fittingCapacity.processingCostPerKg)} đ</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', marginTop: 10 }}>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Margin VF</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#16A34A' }}>
+                        {fittingLadder ? ((fittingLadder.targetPrice - kpis.fittingCapacity.costPerKg) / fittingLadder.targetPrice * 100).toFixed(2) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          )}
 
           {/* III. Top-down */}
-          <div style={{ marginBottom: 22 }}>
-            <SectionHeader index="III" title="PHÂN TÍCH NGƯỢC (TOP-DOWN) — ỐNG CPVC" color="#333" note="Nhập giá bán mục tiêu → hệ thống tính ngược compound, margin, sản lượng" />
-            <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
+          {activeTab === 'pricing' && (
+            <div style={{ marginBottom: 22 }}>
+              <SectionHeader index="III" title="PHÂN TÍCH NGƯỢC (TOP-DOWN) — CHIẾN LƯỢC MUA HÀNG" color="#333" note="Nhập giá bán mục tiêu (VNĐ/kg) → hệ thống tự tìm ngược mức giá thu mua nguyên liệu tối đa (USD/kg) để đạt điểm hòa vốn." />
+              <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 0 }}>
                 <div style={{ padding: 20, borderRight: '1px solid #f0f0f0', background: '#f5f5f3' }}>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>Giá bán mục tiêu — Ống (đ/kg)</div>
@@ -431,13 +549,18 @@ export default function Dashboard({
                   </div>
                 </div>
               </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* IV. Hòa vốn & đầu tư */}
-          <div>
-            <SectionHeader index="IV" title="HÒA VỐN & ĐẦU TƯ" />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+          {/* IV. Hòa vốn & Đầu tư */}
+          {activeTab === 'investor' && (
+            <div>
+              <SectionHeader index="IV" title="ĐẦU TƯ TÀI SẢN DÙNG CHUNG & ĐIỂM HÒA VỐN (CVP)" />
+              <div style={{ fontSize: 11, color: '#555', marginBottom: 16, background: '#f5f5f5', padding: '10px 14px', borderRadius: 2, borderLeft: '3px solid #d97706' }}>
+                <b>Lưu ý về Tài sản dùng chung (Shared Assets):</b> Khấu hao khuôn mẫu và máy đùn ở đây là chi phí được phân bổ theo <b>tổng công suất của tất cả thương hiệu/vật liệu</b> (VD: BlazeMaster, Corzan...) được chạy trên cùng dây chuyền.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
               <Card>
                 <CardLabel>Hòa vốn CVP — Ống</CardLabel>
                 <CardValue>{fmtVnd(pipeCvp.breakEvenKgYear)} kg</CardValue>
@@ -453,6 +576,21 @@ export default function Dashboard({
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fef2f2', padding: '3px 8px', borderRadius: 2, marginTop: 7 }}>
                   <span style={{ color: '#DC2626', fontSize: 10, fontWeight: 600 }}>⚠ Cảnh báo tải thấp</span>
                 </div>
+              </Card>
+              <Card>
+                <CardLabel>Hòa vốn CVP — Phụ kiện</CardLabel>
+                <CardValue>{fittingCvp ? fmtVnd(fittingCvp.breakEvenKgYear) : '—'} kg</CardValue>
+                <CardNote>{fittingCvp ? fmtPct(fittingCvp.pctOfUtilizedHours) : '—'} giờ máy huy động</CardNote>
+                {fittingCvp && (
+                <div style={{ height: 4, background: '#f0f0f0', borderRadius: 2, marginTop: 7 }}>
+                  <div style={{ width: `${Math.min(100, Math.round(fittingCvp.pctOfUtilizedHours * 100))}%`, height: 4, background: '#16A34A', borderRadius: 2 }} />
+                </div>
+                )}
+              </Card>
+              <Card>
+                <CardLabel>Chi phí CSNR — Phụ kiện</CardLabel>
+                <CardValue color="#DC2626">{fittingCvp ? fmtTyVnd(fittingCvp.fixedCostPerYear) : '—'}</CardValue>
+                <CardNote>Định phí chưa được hấp thụ (giờ máy rảnh rỗi)</CardNote>
               </Card>
               <Card>
                 <CardLabel>Doanh thu hòa vốn toàn DN</CardLabel>
@@ -474,8 +612,29 @@ export default function Dashboard({
                 <CardValue color="#16A34A">{kpis.investment.paybackYears.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} năm</CardValue>
                 <CardNote>EBIT + khấu hao · ~{Math.round(kpis.investment.paybackYears * 12)} tháng</CardNote>
               </Card>
+              </div>
+              <div style={{ marginTop: 32 }}>
+                <SectionHeader index="" title="BIỂU ĐỒ HÒA VỐN CVP — ỐNG (ĐƠN VỊ: TỶ VNĐ)" />
+                <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, padding: 20, height: 400 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={pipeCvpChartData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                      <XAxis dataKey="kg" tickFormatter={(v) => fmtVnd(v)} tick={{ fontSize: 11 }} />
+                      <YAxis tickFormatter={(v) => v.toFixed(1)} tick={{ fontSize: 11 }} />
+                      <Tooltip formatter={(value: number) => value.toFixed(2) + ' Tỷ đ'} labelFormatter={(lbl) => 'Sản lượng: ' + fmtVnd(Number(lbl)) + ' kg'} />
+                      <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
+                      <Area type="monotone" dataKey="dinhPhi" fill="#fee2e2" stroke="none" name="Định phí" />
+                      <Line type="monotone" dataKey="chiPhi" stroke="#dc2626" strokeWidth={3} name="Tổng chi phí" dot={false} />
+                      <Line type="monotone" dataKey="doanhThu" stroke="#16a34a" strokeWidth={3} name="Tổng doanh thu" dot={false} />
+                      {pipeCvp && (
+                        <ReferenceLine x={pipeCvp.breakEvenKgYear} stroke="#d97706" strokeDasharray="3 3" label={{ position: 'top', value: 'Hòa vốn', fill: '#d97706', fontSize: 11 }} />
+                      )}
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </>
       ) : (
         !canSeeCostDetail && (

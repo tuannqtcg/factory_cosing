@@ -27,6 +27,8 @@ export interface PipeCapacityLevel {
   productionKgYear: number;
   /** Giá thành đầy đủ/kg nếu chỉ chạy `shifts` ca (Dashboard mục II). */
   costPerKg: number;
+  /** Phí gia công/kg (không gồm NVL) */
+  processingCostPerKg: number;
 }
 
 export interface InvestmentKpis {
@@ -40,8 +42,15 @@ export interface InvestmentKpis {
   paybackYears: number;
 }
 
+export interface FittingCapacityLevel {
+  productionKgYear: number;
+  costPerKg: number;
+  processingCostPerKg: number;
+}
+
 export interface DashboardKpis {
   capacityLevels: PipeCapacityLevel[];
+  fittingCapacity: FittingCapacityLevel;
   investment: InvestmentKpis;
 }
 
@@ -129,7 +138,10 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     const costPerKg =
       costAtShifts.fullCostPerKg +
       (pipeCost.sharedCostAllocated - costAtShifts.sharedCostAllocated) / capacityAtShifts.normalCapacityKgYear;
-    return { shifts, productionKgYear: capacityAtShifts.normalCapacityKgYear, costPerKg };
+    const processingCostPerKg =
+      costAtShifts.unitProcessingCostPerKg +
+      (pipeCost.sharedCostAllocated - costAtShifts.sharedCostAllocated) / capacityAtShifts.normalCapacityKgYear;
+    return { shifts, productionKgYear: capacityAtShifts.normalCapacityKgYear, costPerKg, processingCostPerKg };
   });
 
   // ── Mục IV: Đầu tư ─────────────────────────────────────────────────────────
@@ -168,6 +180,11 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
 
   return {
     capacityLevels,
+    fittingCapacity: {
+      productionKgYear: fittingKg,
+      costPerKg: fittingCost.fullCostPerKgRef,
+      processingCostPerKg: fittingCost.processingCostPerKgRef,
+    },
     investment: {
       totalFixedCapitalInvested,
       enterpriseBreakEvenRevenuePerYear,

@@ -2,6 +2,11 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
+- **PHA 4 ĐANG CHẠY (2026-07-13) — Tái cấu trúc Dashboard UX & Auth Seeding.**
+  Giải quyết lỗi đăng nhập môi trường Production bằng cách tạo script `scripts/create-demo-users.ts`, seed trực tiếp 4 user (admin, pricing, sales, production) với custom claims (role) lên Firebase Auth thật qua Admin SDK (đã có `.env` chứa API Key).
+  **ADR-018 (UX Redesign)**: Tái cấu trúc Dashboard theo nguyên lý **Progressive Disclosure**. Màn hình khổng lồ được tách làm 4 Tab (Tổng quan, Sản xuất, Đầu tư & Tài chính, Chiến lược giá). Làm rõ khái niệm "Tài sản dùng chung (Shared Assets)" cho khuôn/máy đùn, và làm rõ module "Sản xuất" hiện tại chỉ mô phỏng cho "Dòng Ống" (đùn liên tục).
+  **Đã hoàn thành Phase 2 (Data Visualization)**: Global Material Selector đã được đưa lên Header dùng chung cho toàn bộ Dashboard; bổ sung Progress Bar hiển thị % huy động công suất (Sản xuất); thêm Biểu đồ Hòa vốn CVP trực quan bằng Recharts (Đầu tư & Tài chính).
+  **Còn treo phiên sau (Phase 3)**: Kiểm thử và verify phân quyền hiển thị trên UI các tab cho 4 role (Admin, Pricing, Sales, Production) khi đăng nhập trên giao diện thật. Xem chi tiết `docs/sessions/SESSION_2026-07-13.md`.
 - **PHA 4 ĐANG CHẠY (2026-07-10) — có Firebase project THẬT + đã deploy.**
   User tạo project thật `bmcosting-ver-2` (dùng CHUNG với nhiều app khác:
   `financial-suite`, `landingpage`, `sso-tcg`, `ai-studio-*`...) với Firestore
@@ -28,11 +33,6 @@
   nhật để deploy app THẬT (`npm run build` → `dist/`) — CHƯA verify deploy
   Render thật trong phiên này (cần user tự làm trên Render Dashboard, 4 biến
   `VITE_FIREBASE_*` phải điền tay, KHÔNG sync tự động từ file).
-  **Còn treo**: gọi thử `setUserRole` (không phải `bootstrap-admin.ts`) trên
-  project thật để xác nhận `roleAudit` ghi đúng; thu hồi service account key
-  đã upload trong chat (không đủ quyền gây hại nhưng nên thu hồi); deploy
-  thật lên Render + thêm domain Render vào Firebase Auth "Authorized domains"
-  (bắt buộc, nếu không đăng nhập sẽ lỗi "unauthorized domain").
   **Đã MERGE vào nhánh mặc định 2026-07-10** (merge commit `fcf25b5`, kit
   v1.31, verify đủ 5 cổng SAU merge trên `claude/project-knowledge-setup-2au4hr`).
 - (Lịch sử Pha 3) **PHA 3 (M1-M12.10) HOÀN TẤT 2026-07-10 — xem `docs/sessions/SESSION_2026-07-10.md`

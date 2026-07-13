@@ -26,8 +26,9 @@ import { db } from '../../lib/firebase.js';
 import type { AppRole } from '../../lib/firebase.js';
 import { fmtVnd } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
-import type { ContinuousKgResource, MachineHourResource } from '../../schemas/resource.js';
+import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
 import type { CostPool } from '../../schemas/cost-pool.js';
+import { MoldAssetModal } from './MoldAssetModal.js';
 
 function SectionHeader({ title, color = '#a8003b', right }: { title: string; color?: string; right?: React.ReactNode }) {
   return (
@@ -65,7 +66,7 @@ function FieldGrid<T extends Record<string, unknown>>({
   accentBg: string;
 }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)' }}>
+    <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
       {fields.map((f) => {
         const disabled = !!f.locked && pricingLocked;
         return (
@@ -102,47 +103,54 @@ function FieldGrid<T extends Record<string, unknown>>({
   );
 }
 
-const PIPE_FIELDS: Array<FieldDef<ContinuousKgResource>> = [
-  { key: 'maxCapacityKgPerHour', label: 'Công suất tối đa máy đùn', unit: 'kg/giờ' },
+const PIPE_MACHINE_FIELDS: Array<FieldDef<ContinuousKgResource>> = [
+  { key: 'maxCapacityKgPerHour', label: 'Công suất tối đa máy đùn', unit: 'kg/giờ', locked: true },
   { key: 'actualCapacityKgPerHour', label: 'Công suất thực tế máy đùn', unit: 'kg/giờ', locked: true },
-  { key: 'normalShifts', label: 'Số ca bình thường', unit: 'ca (1-3)' },
   { key: 'extruderCount', label: 'Số máy đùn', unit: 'máy', locked: true },
   { key: 'yieldRate', label: 'Yield sản phẩm đạt', unit: 'tỷ lệ (0,9=90%)', locked: true, step: '0.01' },
   { key: 'extruderPriceEach', label: 'Đơn giá máy đùn/máy', unit: 'đ/máy', locked: true },
+  { key: 'depreciationYears', label: 'Số năm khấu hao máy', unit: 'năm', locked: true },
   { key: 'moldPullerCutterCost', label: 'Khuôn ống + puller/cutter', unit: 'đ', locked: true },
-  { key: 'depreciationYears', label: 'Số năm khấu hao máy', unit: 'năm' },
-  { key: 'annualMaintenance', label: 'Bảo trì phần ống', unit: 'đ/năm' },
+  { key: 'moldDepreciationYears', label: 'Số năm khấu hao khuôn ống', unit: 'năm', locked: true },
+  { key: 'electricityKw', label: 'Điện vận hành', unit: 'kW', locked: true },
+  { key: 'waterM3PerHour', label: 'Nước tiêu thụ', unit: 'm³/giờ', locked: true },
+  { key: 'continuousRunDaysPerBatch', label: 'Ngày chạy / đợt', unit: 'ngày', locked: true },
+  { key: 'maintenanceDaysPerBatch', label: 'Ngày bảo trì / đợt', unit: 'ngày', locked: true },
+  { key: 'operatingDaysPerYear', label: 'Ngày vận hành / năm', unit: 'ngày', locked: true },
+  { key: 'hoursPerShift', label: 'Số giờ / ca', unit: 'giờ', locked: true },
+];
+
+const PIPE_OP_FIELDS: Array<FieldDef<ContinuousKgResource>> = [
+  { key: 'normalShifts', label: 'Số ca bình thường', unit: 'ca (1-3)' },
   { key: 'peoplePerShift', label: 'Số người / ca', unit: 'người' },
   { key: 'avgSalaryMonthly', label: 'Lương bình quân', unit: 'đ/tháng' },
   { key: 'monthsSalaryPerYear', label: 'Số tháng lương', unit: 'tháng/năm' },
-  { key: 'continuousRunDaysPerBatch', label: 'Ngày chạy / đợt', unit: 'ngày' },
-  { key: 'maintenanceDaysPerBatch', label: 'Ngày bảo trì / đợt', unit: 'ngày' },
-  { key: 'operatingDaysPerYear', label: 'Ngày vận hành / năm', unit: 'ngày' },
-  { key: 'hoursPerShift', label: 'Số giờ / ca', unit: 'giờ' },
-  { key: 'electricityKw', label: 'Điện vận hành', unit: 'kW' },
   { key: 'electricityPricePerKwh', label: 'Đơn giá điện', unit: 'đ/kWh' },
-  { key: 'waterM3PerHour', label: 'Nước', unit: 'm³/giờ' },
   { key: 'waterPricePerM3', label: 'Đơn giá nước', unit: 'đ/m³' },
+  { key: 'annualMaintenance', label: 'Bảo trì phần ống', unit: 'đ/năm' },
   { key: 'packagingCostPerKg', label: 'Bao bì + vật tư tiêu hao', unit: 'đ/kg TP' },
 ];
 
-const FITTING_FIELDS: Array<FieldDef<MachineHourResource>> = [
+const FITTING_MACHINE_FIELDS: Array<FieldDef<MachineHourResource>> = [
+  { key: 'yieldRate', label: 'Yield sản phẩm đạt', unit: 'tỷ lệ', locked: true, step: '0.01' },
+  { key: 'depreciationYears', label: 'Số năm khấu hao máy ép', unit: 'năm', locked: true },
+  { key: 'electricityKwPerMachineHour', label: 'Điện / giờ máy', unit: 'kW', locked: true },
+  { key: 'waterM3PerMachineHour', label: 'Nước / giờ máy', unit: 'm³/giờ', locked: true },
+  { key: 'continuousRunDaysPerBatch', label: 'Ngày chạy / đợt', unit: 'ngày', locked: true },
+  { key: 'maintenanceDaysPerBatch', label: 'Ngày bảo trì / đợt', unit: 'ngày', locked: true },
+  { key: 'operatingDaysPerYear', label: 'Ngày vận hành / năm', unit: 'ngày', locked: true },
+  { key: 'hoursPerShift', label: 'Số giờ / ca', unit: 'giờ', locked: true },
+];
+
+const FITTING_OP_FIELDS: Array<FieldDef<MachineHourResource>> = [
   { key: 'normalShifts', label: 'Số ca bình thường', unit: 'ca (1-3)' },
   { key: 'normalUtilizationFactor', label: 'Hệ số huy động', unit: 'tỷ lệ', step: '0.05' },
-  { key: 'yieldRate', label: 'Yield sản phẩm đạt', unit: 'tỷ lệ', locked: true, step: '0.01' },
-  { key: 'depreciationYears', label: 'Số năm khấu hao máy ép', unit: 'năm' },
-  { key: 'annualMoldMaintenance', label: 'Bảo trì khuôn', unit: 'đ/năm' },
   { key: 'peoplePerShift', label: 'Số người / ca', unit: 'người' },
   { key: 'avgSalaryMonthly', label: 'Lương bình quân', unit: 'đ/tháng' },
   { key: 'monthsSalaryPerYear', label: 'Số tháng lương', unit: 'tháng/năm' },
-  { key: 'continuousRunDaysPerBatch', label: 'Ngày chạy / đợt', unit: 'ngày' },
-  { key: 'maintenanceDaysPerBatch', label: 'Ngày bảo trì / đợt', unit: 'ngày' },
-  { key: 'operatingDaysPerYear', label: 'Ngày vận hành / năm', unit: 'ngày' },
-  { key: 'hoursPerShift', label: 'Số giờ / ca', unit: 'giờ' },
-  { key: 'electricityKwPerMachineHour', label: 'Điện / giờ máy', unit: 'kW' },
   { key: 'electricityPricePerKwh', label: 'Đơn giá điện', unit: 'đ/kWh' },
-  { key: 'waterM3PerMachineHour', label: 'Nước / giờ máy', unit: 'm³/giờ' },
   { key: 'waterPricePerM3', label: 'Đơn giá nước', unit: 'đ/m³' },
+  { key: 'annualMoldMaintenance', label: 'Bảo trì khuôn', unit: 'đ/năm' },
   { key: 'packagingCostPerKg', label: 'Bao bì + vật tư', unit: 'đ/kg TP' },
 ];
 
@@ -156,14 +164,20 @@ type CostPoolFlat = {
   operatingCostPerYear: number;
   financialCostPerYear: number;
   solvent550PricePerBox: number;
+  factoryConstructionCost: number;
+  factoryDepreciationYears: number;
+  workingCapital: number;
 };
 const COST_POOL_LOCKED_FIELDS: Array<FieldDef<CostPoolFlat>> = [
+  { key: 'factoryConstructionCost', label: 'XD Nhà xưởng & Phụ trợ (CAPEX)', unit: 'đ', locked: true },
+  { key: 'factoryDepreciationYears', label: 'Số năm khấu hao xưởng', unit: 'năm', locked: true },
+  { key: 'workingCapital', label: 'Vốn lưu động ban đầu', unit: 'đ', locked: true },
   { key: 'labAnnualized', label: 'Phòng thử nghiệm (Lab)', unit: 'đ/năm', locked: true },
   { key: 'ulSetupAnnualized', label: 'Khởi tạo thử nghiệm UL', unit: 'đ/năm', locked: true },
   { key: 'vnUlSetupAnnualized', label: 'UL trong nước (giữ chỗ)', unit: 'đ/năm', locked: true },
   { key: 'sharedDepreciationYears', label: 'Số năm khấu hao Lab/UL', unit: 'năm', locked: true },
   { key: 'annualComplianceFee', label: 'Phí tuân thủ / năm', unit: 'đ/năm', locked: true },
-  { key: 'annualLandRent', label: 'Thuê đất / năm', unit: 'đ/năm', locked: true },
+  { key: 'annualLandRent', label: 'Thuê đất / xưởng (1 năm)', unit: 'đ/năm', locked: true },
   { key: 'operatingCostPerYear', label: 'Chi phí vận hành ngoài SX', unit: 'đ/năm · bậc 4 hòa vốn', locked: true },
   { key: 'financialCostPerYear', label: 'Chi phí tài chính (lãi vay)', unit: 'đ/năm · bậc 4 hòa vốn', locked: true },
   { key: 'solvent550PricePerBox', label: 'Dung môi 550', unit: 'đ/thùng', locked: true },
@@ -193,6 +207,7 @@ export default function ConfigScreen({
   const loadedRef = useRef(false);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showMoldModal, setShowMoldModal] = useState(false);
 
   if (scenario && !loadedRef.current) {
     loadedRef.current = true;
@@ -233,6 +248,9 @@ export default function ConfigScreen({
       if (key === 'sharedDepreciationYears') {
         return { ...f, costPool: { ...cp, sharedFixedCosts: { ...cp.sharedFixedCosts, depreciationYears: value } } };
       }
+      if (key === 'factoryDepreciationYears') {
+        return { ...f, costPool: { ...cp, sharedFixedCosts: { ...cp.sharedFixedCosts, factoryDepreciationYears: value } } };
+      }
       if (key === 'operatingCostPerYear' || key === 'financialCostPerYear') {
         return { ...f, costPool: { ...cp, nonProductionCosts: { ...cp.nonProductionCosts, [key]: value } } };
       }
@@ -261,6 +279,9 @@ export default function ConfigScreen({
     operatingCostPerYear: costPool.nonProductionCosts.operatingCostPerYear,
     financialCostPerYear: costPool.nonProductionCosts.financialCostPerYear,
     solvent550PricePerBox: costPool.solvent550PricePerBox,
+    factoryConstructionCost: costPool.sharedFixedCosts.factoryConstructionCost || 0,
+    factoryDepreciationYears: costPool.sharedFixedCosts.factoryDepreciationYears || 10,
+    workingCapital: costPool.sharedFixedCosts.workingCapital || 0,
   };
   const policyFlat: PolicyFlat = {
     usdVndRate: costPool.currency.usdVndRate,
@@ -324,8 +345,13 @@ export default function ConfigScreen({
       )}
 
       <div style={{ marginBottom: 20 }}>
-        <SectionHeader title="A. Ống CPVC — Máy đùn" />
-        <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_FIELDS} pricingLocked={pricingLocked} accent="#a8003b" accentBg="#fff7f7" />
+        <SectionHeader title="A. Ống CPVC — Biến số Vận hành & Thị trường" />
+        <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_OP_FIELDS} pricingLocked={pricingLocked} accent="#a8003b" accentBg="#fff7f7" />
+        
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 10, letterSpacing: '.05em', color: '#737373', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>Thông số Kỹ thuật & Đầu tư (Master Data)</div>
+          <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_MACHINE_FIELDS} pricingLocked={pricingLocked} accent="#d8d8d8" accentBg="#f5f5f3" />
+        </div>
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -333,12 +359,20 @@ export default function ConfigScreen({
           title="B. Phụ Kiện — Máy ép phun"
           color="#2563eb"
           right={
-            <div style={{ fontSize: 10, color: '#737373' }}>
-              Tổng giá trị khuôn hiện có: <strong style={{ color: '#1a1a1a' }}>{fmtVnd(moldAssetsTotalVnd)} đ</strong> ({fitting.moldAssets.length} bộ — quản lý qua audit log riêng, ADR-007)
+            <div style={{ fontSize: 10, color: '#737373', textAlign: 'right' }}>
+              Tổng giá trị khuôn: <strong style={{ color: '#1a1a1a' }}>{fmtVnd(fitting.moldAssets.reduce((sum, m) => sum + m.costVnd, 0))} đ</strong> ({fitting.moldAssets.length} bộ)
+              <div style={{ marginTop: 4 }}>
+                <button 
+                  onClick={() => setShowMoldModal(true)}
+                  style={{ padding: '4px 8px', fontSize: 10, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Quản lý Danh Sách {fitting.moldAssets.length} Khuôn
+                </button>
+              </div>
             </div>
           }
         />
-        <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', marginBottom: 8 }}>
+        <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', marginBottom: 8 }}>
           {fitting.machineTypes.map((m, i) => (
             <div key={m.id} style={{ display: 'contents' }}>
               <div style={{ padding: '14px 16px', borderRight: '1px solid #f2f2f2', borderBottom: '1px solid #f2f2f2' }}>
@@ -372,7 +406,12 @@ export default function ConfigScreen({
             </div>
           ))}
         </div>
-        <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_FIELDS} pricingLocked={pricingLocked} accent="#2563eb" accentBg="#eff6ff" />
+        <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_OP_FIELDS} pricingLocked={pricingLocked} accent="#2563eb" accentBg="#eff6ff" />
+
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 10, letterSpacing: '.05em', color: '#737373', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>Thông số Kỹ thuật & Đầu tư (Master Data)</div>
+          <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_MACHINE_FIELDS} pricingLocked={pricingLocked} accent="#d8d8d8" accentBg="#f5f5f3" />
+        </div>
       </div>
 
       <div style={{ marginBottom: 20 }}>
@@ -384,6 +423,18 @@ export default function ConfigScreen({
         <SectionHeader title="D. Tỷ Giá & Chính Sách Markup" color="#16A34A" right={<span style={{ fontSize: 10, color: '#737373' }}>Mở cho Định Giá — biến chiến lược T2/T3</span>} />
         <FieldGrid values={policyFlat} onChange={setPolicy} fields={POLICY_FIELDS} pricingLocked={false} accent="#16A34A" accentBg="#f0fdf4" />
       </div>
+
+      {showMoldModal && (
+        <MoldAssetModal 
+          initialMolds={fitting.moldAssets}
+          canEdit={!pricingLocked}
+          onClose={() => setShowMoldModal(false)}
+          onSave={(newMolds) => {
+            setFitting('moldAssets' as any, newMolds as any);
+            setShowMoldModal(false);
+          }}
+        />
+      )}
     </div>
   );
 }

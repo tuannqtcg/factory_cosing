@@ -26,6 +26,8 @@ interface Row {
   size: string;
   spec: string;
   unit: string;
+  designationCode: string;
+  classificationCode: string;
   priceBeforeVat: number;
   priceWithVat: number;
 }
@@ -51,6 +53,8 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
           size: isPipe ? sku.productKey.dn! : sku.productKey.sizeLabel!,
           spec: sku.spec,
           unit: sku.unit,
+          designationCode: sku.materialDesignationCode || '—',
+          classificationCode: sku.materialClassificationCode || '—',
           priceBeforeVat: sku.chain.listPriceBeforeVat,
           priceWithVat: sku.chain.listPriceWithVat,
         };
@@ -124,18 +128,20 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
       <div style={{ fontSize: 10, color: '#737373', marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
 
       <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 100px 72px 52px 130px', padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
-          {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'ĐVT'].map((h) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
+          {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'Mã định danh', 'Phân lớp', 'ĐVT'].map((h) => (
             <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
           ))}
           <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{colHeader}</div>
         </div>
         {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: '36px 1fr 100px 72px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center' }}>
+          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center' }}>
             <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
             <div style={{ fontSize: 12, fontWeight: 500 }}>{row.name}</div>
             <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
             <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.spec}</div>
+            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.designationCode}</div>
+            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.classificationCode}</div>
             <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
             <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
               {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}

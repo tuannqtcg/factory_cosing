@@ -34,9 +34,9 @@ export const functions = getFunctions(app);
 
 if (isEmulatorMode) {
   // Port khớp firebase.json — đổi ở đó thì đổi ở đây.
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
-  connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+  connectAuthEmulator(auth, 'http://127.0.0.1:9100', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8081);
+  connectFunctionsEmulator(functions, '127.0.0.1', 5002);
 }
 
 export type AppRole = 'admin' | 'pricing' | 'sales' | 'production';

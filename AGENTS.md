@@ -2,9 +2,7 @@
 
 > File này là LUẬT CHUNG cho mọi AI agent (Claude, Gemini, Copilot, Cursor).
 > Đọc file này TRƯỚC KHI làm bất cứ việc gì. Chi tiết đầy đủ: `docs/PROJECT_SPEC.md`.
-> **Phiên mới (chat/session mới)**: đọc tiếp `docs/CONTEXT_PASTE.md` — có khối
-> "TRẠNG THÁI HIỆN TẠI" ở đầu, luôn cập nhật mỗi khi đổi pha hoặc chốt ADR. Không
-> cần đọc lại toàn bộ `docs/sessions/` trừ khi cần chi tiết lý do 1 quyết định cụ thể.
+> **Phiên mới (chat/session mới)**: LỆNH BẮT BUỘC ĐẦU TIÊN CỦA AI là phải tự động dùng tool `view_file` để đọc nội dung của `docs/ROADMAP.md`. File này chứa toàn bộ trạng thái dự án, những việc đã làm và những việc cần làm tiếp theo. Không cần đọc lại toàn bộ lịch sử trong `docs/sessions/` trừ khi cần chi tiết lý do 1 quyết định cụ thể.
 
 ## Dự án là gì
 Web app tính giá thành sản xuất & định giá bán cho nhà máy CPVC (BlazeMaster),

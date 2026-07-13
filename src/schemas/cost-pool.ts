@@ -9,6 +9,10 @@ export const SharedFixedCostsSchema = z.object({
   depreciationYears: z.number().int().positive(),
   annualComplianceFee: z.number().int().nonnegative(),
   annualLandRent: z.number().int().nonnegative(),
+  // ADR-018: CAPEX / Working Capital dynamically input by user
+  factoryConstructionCost: z.number().int().nonnegative().default(0),
+  factoryDepreciationYears: z.number().int().positive().default(10),
+  workingCapital: z.number().int().nonnegative().default(0),
 });
 export type SharedFixedCosts = z.infer<typeof SharedFixedCostsSchema>;
 

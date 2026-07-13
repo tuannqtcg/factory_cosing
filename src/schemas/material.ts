@@ -24,5 +24,8 @@ export const MaterialSchema = z.object({
   markupVf: z.number().min(0),
   // Tồn kho + khóa giá — TÁI DÙNG NGUYÊN schema ADR-002/004, không thêm field:
   inventory: CompoundInventorySchema,
+  // Thêm theo ADR-013 để in Bảng Giá Niêm Yết chuẩn
+  designationCode: z.string().optional(),
+  classificationCode: z.string().optional(),
 });
 export type Material = z.infer<typeof MaterialSchema>;

@@ -80,7 +80,8 @@ export function calculatePipeCostAtNormalCapacity(
   const materialPerKgFinished = compoundLandedPerKg / resource.yieldRate;
 
   const extruderDepreciationPerYear =
-    (resource.extruderPriceEach * resource.extruderCount + resource.moldPullerCutterCost) / resource.depreciationYears;
+    (resource.extruderPriceEach * resource.extruderCount) / resource.depreciationYears +
+    resource.moldPullerCutterCost / resource.moldDepreciationYears;
   const maintenancePerYear = resource.annualMaintenance;
   const laborPerYear =
     resource.normalShifts *

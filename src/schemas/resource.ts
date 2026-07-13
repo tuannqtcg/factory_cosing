@@ -47,6 +47,7 @@ export const ContinuousKgResourceSchema = z.object({
   extruderPriceEach: z.number().int().nonnegative(),
   extruderCount: z.number().int().positive(),
   moldPullerCutterCost: z.number().int().nonnegative(),
+  moldDepreciationYears: z.number().int().positive().default(3),
   depreciationYears: z.number().int().positive(),
   annualMaintenance: z.number().int().nonnegative(),
   peoplePerShift: z.number().int().nonnegative(),

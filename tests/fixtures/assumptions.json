@@ -16,7 +16,9 @@
     "depreciationYears": 5,
     "annualComplianceFee": 250000000,
     "annualLandRent": 525000000,
-    "totalPerYear": 1253500000
+    "totalPerYear": 1253500000,
+    "factoryConstructionCost": 0,
+    "workingCapital": 0
   },
   "nonProductionCosts": {
     "operatingCostPerYear": 640000000,

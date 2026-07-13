@@ -57,9 +57,11 @@ export default function InventoryScreen({
   const [form, setForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
   const [materialId, setMaterialId] = useState<string | null>(null);
+  const [activeMainTab, setActiveMainTab] = useState<'compound' | 'metal'>('compound');
   const [expandedInsert, setExpandedInsert] = useState<string | null>(null);
   const [addingMaterial, setAddingMaterial] = useState(false);
   const [newMat, setNewMat] = useState({ id: '', name: '', code: '', originLabel: '' });
+  const [newLineUsage, setNewLineUsage] = useState<'pipe' | 'fitting' | 'both'>('pipe');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -136,23 +138,88 @@ export default function InventoryScreen({
       alert(`ID "${newMat.id}" đã tồn tại — chọn ID khác.`);
       return;
     }
-    // Luôn APPEND vào cuối mảng — giữ bất biến thứ tự materials[] (ADR-012) +
-    // đúng giả định index cố định của rules (ADR-015).
-    setMaterials((mats) => [
-      ...mats,
-      {
-        id: newMat.id.trim(),
-        name: newMat.name.trim(),
-        code: newMat.code.trim(),
-        originLabel: newMat.originLabel.trim(),
-        importTaxRate: 0,
-        customsLogisticsFeeRate: 0,
-        markupVf: 0,
-        inventory: { lots: [{ tons: 0, priceUsdPerKg: 0 }], priceLock: { baseline: 0, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 0 },
-      },
-    ]);
+    const matId = newMat.id.trim();
+    const newMaterialObj: Material = {
+      id: matId,
+      name: newMat.name.trim(),
+      code: newMat.code.trim(),
+      originLabel: newMat.originLabel.trim(),
+      importTaxRate: 0,
+      customsLogisticsFeeRate: 0,
+      markupVf: 0,
+      inventory: { lots: [{ tons: 0, priceUsdPerKg: 0 }], priceLock: { baseline: 0, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 0 },
+    };
+
+    setForm((f) => {
+      if (!f) return f;
+      const newProducts = [...f.products];
+      if (newLineUsage === 'pipe' || newLineUsage === 'both') {
+        newProducts.push({
+          kind: 'pipe',
+          dn: '20',
+          spec: 'Mẫu tự động',
+          odMm: 20,
+          minWallThicknessMm: 2,
+          unitWeightKgPerM: 0.2,
+          materialId: matId,
+        });
+      }
+      if (newLineUsage === 'fitting' || newLineUsage === 'both') {
+        newProducts.push({
+          kind: 'fitting',
+          productName: `Phụ kiện ${newMaterialObj.name}`,
+          sizeLabel: '20',
+          unit: 'cái',
+          moldSizeDN: 20,
+          cycleTimeSec: 60,
+          cavity: 1,
+          unitWeightKg: 0.1,
+          materialId: matId,
+        });
+      }
+      return {
+        ...f,
+        materials: [...f.materials, newMaterialObj],
+        products: newProducts,
+      };
+    });
+
     setNewMat({ id: '', name: '', code: '', originLabel: '' });
     setAddingMaterial(false);
+  };
+
+  const seedCorzanMaterials = () => {
+    setForm((f) => {
+      if (!f) return f;
+      if (f.materials.some(m => m.id === 'corzan-3175' || m.id === 'corzan-3212')) return f;
+
+      const mat1: Material = {
+        id: 'corzan-3175',
+        name: 'CORZAN® 3175',
+        code: 'Pipe',
+        originLabel: 'Chưa rõ',
+        importTaxRate: 0,
+        customsLogisticsFeeRate: 0,
+        markupVf: 0.25,
+        inventory: { lots: [{ tons: 0, priceUsdPerKg: 3.47 }], priceLock: { baseline: 3.47, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.47 },
+      };
+
+      const mat2: Material = {
+        id: 'corzan-3212',
+        name: 'CORZAN® 3212',
+        code: 'Fitting',
+        originLabel: 'Chưa rõ',
+        importTaxRate: 0,
+        customsLogisticsFeeRate: 0,
+        markupVf: 0.40,
+        inventory: { lots: [{ tons: 0, priceUsdPerKg: 3.97 }], priceLock: { baseline: 3.97, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.97 },
+      };
+
+      return {
+        ...f,
+        materials: [...f.materials, mat1, mat2],
+      };
+    });
   };
 
   const handleSave = async () => {
@@ -200,8 +267,25 @@ export default function InventoryScreen({
         {saveState === 'error' && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6 }}>{saveError}</div>}
       </div>
 
-      <SectionHeader title="Chọn nguyên liệu" right={<span style={{ fontSize: 9, color: '#737373' }}>materials[] hiện có {form.materials.length}</span>} />
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+        <button
+          onClick={() => setActiveMainTab('compound')}
+          style={{ padding: '6px 14px', borderRadius: 14, border: `1px solid ${activeMainTab === 'compound' ? '#a8003b' : '#d8d8d8'}`, background: activeMainTab === 'compound' ? '#a8003b' : '#fff', color: activeMainTab === 'compound' ? '#fff' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Hạt Nhựa (Compound)
+        </button>
+        <button
+          onClick={() => setActiveMainTab('metal')}
+          style={{ padding: '6px 14px', borderRadius: 14, border: `1px solid ${activeMainTab === 'metal' ? '#a8003b' : '#d8d8d8'}`, background: activeMainTab === 'metal' ? '#a8003b' : '#fff', color: activeMainTab === 'metal' ? '#fff' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+        >
+          Ren Kim Loại (Metal Insert)
+        </button>
+      </div>
+
+      {activeMainTab === 'compound' && (
+        <>
+          <SectionHeader title="Chọn nguyên liệu" right={<span style={{ fontSize: 9, color: '#737373' }}>materials[] hiện có {form.materials.length}</span>} />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
         {form.materials.map((m) => (
           <button
             key={m.id}
@@ -216,6 +300,12 @@ export default function InventoryScreen({
           style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #a8003b', background: '#fff', color: '#a8003b', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
         >
           + Thêm nguyên liệu
+        </button>
+        <button
+          onClick={seedCorzanMaterials}
+          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+        >
+          + Seed 2 Mã Corzan 
         </button>
       </div>
 
@@ -240,9 +330,21 @@ export default function InventoryScreen({
                 />
               </label>
             ))}
+            <label style={{ display: 'block' }}>
+              <span style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 4 }}>Dùng cho hệ</span>
+              <select
+                value={newLineUsage}
+                onChange={(e) => setNewLineUsage(e.target.value as any)}
+                style={{ width: '100%', padding: '5px 9px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, outline: 'none', background: '#fff' }}
+              >
+                <option value="pipe">Ống</option>
+                <option value="fitting">Phụ kiện</option>
+                <option value="both">Cả Ống và Phụ kiện</option>
+              </select>
+            </label>
           </div>
           <div style={{ fontSize: 10, color: '#737373', marginBottom: 10, lineHeight: 1.5 }}>
-            Tạo nguyên liệu MỚI rỗng (chưa gắn SP nào). Gán <code>Product.materialId</code> cho SKU cụ thể là thao tác riêng, chỉ admin (material.md) — chưa có màn hình ở đây, ngoài phạm vi M12.9d.
+            Tạo nguyên liệu MỚI. Hệ thống sẽ tự động sinh thêm 1 sản phẩm mẫu (dummy) thuộc dòng (Ống/Phụ kiện) bạn vừa chọn để nguyên liệu có thể lập tức tham gia vào quá trình tính toán giá thành.
           </div>
           <button onClick={addMaterial} style={{ padding: '8px 16px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}>
             Tạo nguyên liệu
@@ -323,7 +425,11 @@ export default function InventoryScreen({
           </div>
         </div>
       )}
+      </>
+      )}
 
+      {activeMainTab === 'metal' && (
+      <>
       <SectionHeader title="Nguyên liệu ren kim loại mua ngoài (ADR-008)" color="#2563eb" right={<span style={{ fontSize: 9, color: '#737373' }}>{form.inventory.metalInsert.length} dòng theo (loại ren, size PT) · click để mở đợt nhập</span>} />
       <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -395,6 +501,8 @@ export default function InventoryScreen({
           </tbody>
         </table>
       </div>
+      </>
+      )}
 
       {!isAdmin && (
         <div style={{ marginTop: 16, padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 2, fontSize: 10, color: '#1e3a5f' }}>

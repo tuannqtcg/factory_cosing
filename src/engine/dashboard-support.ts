@@ -36,6 +36,8 @@ export interface InvestmentKpis {
   totalFixedCapitalInvested: number;
   /** (Định phí CVP 2 dòng + chi phí vận hành + lãi vay) ÷ tỷ lệ số dư đảm phí tại giá VF. */
   enterpriseBreakEvenRevenuePerYear: number;
+  /** Doanh thu VF dự kiến (tại năng suất bình thường). */
+  expectedRevenueVf: number;
   /** Doanh thu VF − giá thành đầy đủ − chi phí ngoài SX, tại CS bình thường. */
   ebitAtNormalCapacityVfPrice: number;
   /** totalFixedCapitalInvested ÷ (EBIT + tổng khấu hao năm) — khấu hao khuôn theo asOfYear (ADR-007). */
@@ -153,7 +155,9 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     pipeResource.moldPullerCutterCost +
     fittingResource.machineTypes.reduce((sum, m) => sum + m.priceVnd * m.count, 0) +
     fittingResource.moldAssets.reduce((sum, m) => sum + m.costVnd, 0) +
-    labUlInvestment;
+    labUlInvestment +
+    (sharedFixedCosts.factoryConstructionCost || 0) +
+    (sharedFixedCosts.workingCapital || 0);
 
   const pipeKg = pipeCapacity.normalCapacityKgYear;
   const fittingKg = fittingCapacity.estimatedProductionKgYear;
@@ -170,12 +174,13 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   const enterpriseBreakEvenRevenuePerYear =
     (pipeCvp.fixedCostPerYear + fittingCvp.fixedCostPerYear + nonProductionPerYear) / contributionMarginRatio;
 
-  // Tổng khấu hao năm: đùn + máy ép + khuôn theo asOfYear (ADR-007) + Lab/UL.
+  // Tổng khấu hao năm: đùn + máy ép + khuôn theo asOfYear (ADR-007) + Lab/UL + Nhà xưởng.
   const totalDepreciationPerYear =
     pipeCost.extruderDepreciationPerYear +
     fittingCost.machineDepreciationPerYear +
     fittingCost.moldDepreciationPerYear +
-    labUlInvestment / sharedFixedCosts.depreciationYears;
+    labUlInvestment / sharedFixedCosts.depreciationYears +
+    (sharedFixedCosts.factoryConstructionCost || 0) / (sharedFixedCosts.factoryDepreciationYears || 10);
   const paybackYears = totalFixedCapitalInvested / (ebitAtNormalCapacityVfPrice + totalDepreciationPerYear);
 
   return {
@@ -188,6 +193,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     investment: {
       totalFixedCapitalInvested,
       enterpriseBreakEvenRevenuePerYear,
+      expectedRevenueVf: revenueVf,
       ebitAtNormalCapacityVfPrice,
       paybackYears,
     },

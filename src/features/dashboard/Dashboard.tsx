@@ -141,8 +141,15 @@ function LadderSection({
 function Card({ children }: { children: React.ReactNode }) {
   return <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, padding: 15 }}>{children}</div>;
 }
-function CardLabel({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.08em', color: '#737373', marginBottom: 7 }}>{children}</div>;
+function CardLabel({ children, tooltip }: { children: React.ReactNode, tooltip?: string }) {
+  return (
+    <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.08em', color: '#737373', marginBottom: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
+      {children}
+      {tooltip && (
+        <span title={tooltip} style={{ cursor: 'help', background: '#e5e5e5', color: '#555', borderRadius: '50%', width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700 }}>?</span>
+      )}
+    </div>
+  );
 }
 function CardValue({ children, color }: { children: React.ReactNode; color?: string }) {
   return <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color }}>{children}</div>;
@@ -211,11 +218,14 @@ export default function Dashboard({
     const data = [];
     for (let i = 0; i <= 6; i++) {
       const kg = i * step;
+      const doanhThu = (kg * pipeLadder.targetPrice) / 1e9;
+      const chiPhi = (pipeCvp.fixedCostPerYear + kg * pipeCvp.variableCostPerKg) / 1e9;
       data.push({
         kg: Math.round(kg),
-        doanhThu: (kg * pipeLadder.targetPrice) / 1e9,
-        chiPhi: (pipeCvp.fixedCostPerYear + kg * pipeCvp.variableCostPerKg) / 1e9,
+        doanhThu,
+        chiPhi,
         dinhPhi: pipeCvp.fixedCostPerYear / 1e9,
+        loiNhuan: doanhThu - chiPhi,
       });
     }
     return data;
@@ -354,31 +364,46 @@ export default function Dashboard({
       )}
 
       {/* Overview Tab */}
-      {activeTab === 'overview' && canSeeCostDetail && kpis && internal && (
-        <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 16, marginBottom: 24 }}>
-            <Card>
-              <CardLabel>EBIT Mục Tiêu (CS Bình thường)</CardLabel>
-              <CardValue color={kpis.investment.ebitAtNormalCapacityVfPrice > 0 ? '#16A34A' : '#DC2626'}>{fmtTyVnd(kpis.investment.ebitAtNormalCapacityVfPrice)}</CardValue>
-              <CardNote>Tại giá VF & chạy 3 ca</CardNote>
-            </Card>
-            <Card>
-              <CardLabel>Thời gian thu hồi vốn</CardLabel>
-              <CardValue color="#16A34A">{kpis.investment.paybackYears.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} năm</CardValue>
-              <CardNote>Tổng đầu tư: {fmtTyVnd(kpis.investment.totalFixedCapitalInvested)}</CardNote>
-            </Card>
-            <Card>
-              <CardLabel>Điểm hòa vốn toàn DN</CardLabel>
-              <CardValue>{fmtTyVnd(kpis.investment.enterpriseBreakEvenRevenuePerYear)}</CardValue>
-              <CardNote>Doanh thu yêu cầu để bù đắp định phí</CardNote>
-            </Card>
-            <Card>
-              <CardLabel>Chi phí gia công Ống (không NVL)</CardLabel>
-              <CardValue color="#ea580c">{fmtVnd(kpis.capacityLevels.find(l => l.shifts === 3)?.processingCostPerKg || 0)} đ/kg</CardValue>
-              <CardNote>Tại năng suất 3 ca</CardNote>
-            </Card>
-          </div>
-        </div>
+      {activeTab === 'overview' && canSeeCostDetail && kpis && internal && scenario && (
+        (() => {
+          const shifts = scenario.resources.pipe.driverType === 'continuous_kg' ? scenario.resources.pipe.normalShifts : 3;
+          return (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 16, marginBottom: 24 }}>
+                <Card>
+                  <CardLabel tooltip={`Doanh thu dự kiến tại công suất thiết kế (${shifts} ca) với giá bán mục tiêu (VF)`}>Doanh thu dự kiến</CardLabel>
+                  <CardValue color="#1a1a1a">{fmtTyVnd(kpis.investment.expectedRevenueVf)}</CardValue>
+                  <CardNote>Tại năng suất {shifts} ca + giá VF</CardNote>
+                </Card>
+                <Card>
+                  <CardLabel tooltip="Earnings Before Interest and Taxes - Lợi nhuận trước thuế và lãi vay">EBIT Mục Tiêu (CS Bình thường)</CardLabel>
+                  <CardValue color={kpis.investment.ebitAtNormalCapacityVfPrice > 0 ? '#16A34A' : '#DC2626'}>{fmtTyVnd(kpis.investment.ebitAtNormalCapacityVfPrice)}</CardValue>
+                  <CardNote>Tại giá VF & chạy {shifts} ca</CardNote>
+                </Card>
+                <Card>
+                  <CardLabel tooltip="Doanh thu cần đạt MỖI NĂM để bắt đầu có lãi, bù đắp toàn bộ định phí (gồm khấu hao, phí ngoài SX, lãi vay).">Điểm hòa vốn (Doanh thu/Năm)</CardLabel>
+                  <CardValue>{fmtTyVnd(kpis.investment.enterpriseBreakEvenRevenuePerYear)}</CardValue>
+                  <CardNote>Bù đắp Định phí: Khấu hao, Lương, Lãi vay...</CardNote>
+                </Card>
+                <Card>
+                  <CardLabel tooltip="Thời gian để dòng tiền (EBIT + Khấu hao) thu hồi lại Tổng vốn cố định ban đầu.">Thời gian thu hồi vốn</CardLabel>
+                  <CardValue color="#16A34A">{kpis.investment.paybackYears.toLocaleString('vi-VN', { maximumFractionDigits: 1 })} năm</CardValue>
+                  <CardNote>Từ dòng tiền = EBIT + Khấu hao</CardNote>
+                </Card>
+                <Card>
+                  <CardLabel>Phí gia công Ống (không NVL)</CardLabel>
+                  <CardValue color="#ea580c">{fmtVnd(kpis.capacityLevels.find(l => l.shifts === shifts)?.processingCostPerKg || 0)} đ/kg</CardValue>
+                  <CardNote>Tại năng suất {shifts} ca</CardNote>
+                </Card>
+                <Card>
+                  <CardLabel>Phí gia công Phụ Kiện (BGGQ)</CardLabel>
+                  <CardValue color="#9333ea">{fmtVnd(kpis.fittingCapacity.processingCostPerKg || 0)} đ/kg</CardValue>
+                  <CardNote>Bình quân theo trọng lượng</CardNote>
+                </Card>
+              </div>
+            </div>
+          );
+        })()
       )}
 
       {/* Lock bar — ADR-004, di chuyển vào Tab Pricing (Chiến lược giá) */}
@@ -432,7 +457,7 @@ export default function Dashboard({
                   <div key={level.shifts} onClick={() => setSelectedShift(i)} style={{ background: '#fff', border: `2px solid ${i === selectedShift ? '#a8003b' : '#e0e0e0'}`, borderRadius: 2, padding: 15, cursor: 'pointer' }}>
                     <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#737373', fontWeight: 600, marginBottom: 7 }}>Mô phỏng Ống: {level.shifts} ca</div>
                     <div style={{ fontSize: 19, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px' }}>{fmtVnd(level.productionKgYear)}</div>
-                    <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 8 }}>kg ống/năm · {Math.round((level.shifts / 3) * 100)}% CS thiết kế</div>
+                    <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 8 }}>kg ống/năm (~ {fmtVnd(level.productionKgYear / 1000)} tấn) · {Math.round((level.shifts / 3) * 100)}% CS thiết kế</div>
                     <div style={{ height: 4, background: '#f0f0f0', borderRadius: 2, marginBottom: 12, overflow: 'hidden' }}>
                       <div style={{ width: `${Math.round((level.shifts / 3) * 100)}%`, height: '100%', background: level.shifts === 1 ? '#eab308' : level.shifts === 2 ? '#3b82f6' : '#16a34a' }} />
                     </div>
@@ -453,6 +478,14 @@ export default function Dashboard({
                         <div style={{ fontSize: 13, fontWeight: 700, color: '#16A34A' }}>{marginVf.toFixed(2)}%</div>
                       </div>
                     </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
+                      <div>
+                        <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Lợi nhuận trước thuế (EBIT)</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: level.productionKgYear * (pipeLadder.targetPrice - level.costPerKg) > 0 ? '#16A34A' : '#DC2626' }}>
+                          {fmtTyVnd(level.productionKgYear * (pipeLadder.targetPrice - level.costPerKg))} Tỷ đ
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 );
               })}
@@ -463,7 +496,7 @@ export default function Dashboard({
                 <div style={{ background: '#fff', border: '2px solid #e0e0e0', borderRadius: 2, padding: 15 }}>
                   <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#737373', fontWeight: 600, marginBottom: 7 }}>Công suất bình thường</div>
                   <div style={{ fontSize: 19, fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '-.3px' }}>{fmtVnd(kpis.fittingCapacity.productionKgYear)}</div>
-                  <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 10 }}>kg phụ kiện/năm</div>
+                  <div style={{ fontSize: 10, color: '#737373', marginTop: 1, marginBottom: 10 }}>kg phụ kiện/năm (~ {fmtVnd(kpis.fittingCapacity.productionKgYear / 1000)} tấn)</div>
                   <div style={{ height: 1, background: '#f0f0f0', marginBottom: 10 }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <div>
@@ -480,6 +513,14 @@ export default function Dashboard({
                       <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Margin VF</div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#16A34A' }}>
                         {fittingLadder ? ((fittingLadder.targetPrice - kpis.fittingCapacity.costPerKg) / fittingLadder.targetPrice * 100).toFixed(2) : 0}%
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10, paddingTop: 10, borderTop: '1px solid #f0f0f0' }}>
+                    <div>
+                      <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Lợi nhuận trước thuế (EBIT)</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: fittingLadder && (kpis.fittingCapacity.productionKgYear * (fittingLadder.targetPrice - kpis.fittingCapacity.costPerKg)) > 0 ? '#16A34A' : '#DC2626' }}>
+                        {fittingLadder ? fmtTyVnd(kpis.fittingCapacity.productionKgYear * (fittingLadder.targetPrice - kpis.fittingCapacity.costPerKg)) : 0} Tỷ đ
                       </div>
                     </div>
                   </div>
@@ -562,7 +603,7 @@ export default function Dashboard({
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
               <Card>
-                <CardLabel>Hòa vốn CVP — Ống</CardLabel>
+                <CardLabel tooltip="Cost-Volume-Profit: Sản lượng yêu cầu để đủ bù đắp phần định phí của riêng dòng Ống">Hòa vốn CVP — Ống</CardLabel>
                 <CardValue>{fmtVnd(pipeCvp.breakEvenKgYear)} kg</CardValue>
                 <CardNote>{fmtPct(pipeCvp.pctOfNormalCapacity)} công suất bình thường</CardNote>
                 <div style={{ height: 4, background: '#f0f0f0', borderRadius: 2, marginTop: 7 }}>
@@ -570,7 +611,7 @@ export default function Dashboard({
                 </div>
               </Card>
               <Card>
-                <CardLabel>Chi phí CSNR — Ống</CardLabel>
+                <CardLabel tooltip="Công Suất Nhàn Rỗi: Định phí không được phân bổ vào sản phẩm do máy không chạy đủ công suất bình thường">Chi phí CSNR — Ống</CardLabel>
                 <CardValue color="#DC2626">{fmtTyVnd(pipeCvp.fixedCostPerYear)}</CardValue>
                 <CardNote>Định phí chưa được hấp thụ kỳ KH (chưa có kế hoạch SX)</CardNote>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#fef2f2', padding: '3px 8px', borderRadius: 2, marginTop: 7 }}>
@@ -578,7 +619,7 @@ export default function Dashboard({
                 </div>
               </Card>
               <Card>
-                <CardLabel>Hòa vốn CVP — Phụ kiện</CardLabel>
+                <CardLabel tooltip="Cost-Volume-Profit: Sản lượng yêu cầu để đủ bù đắp phần định phí của riêng dòng Phụ kiện">Hòa vốn CVP — Phụ kiện</CardLabel>
                 <CardValue>{fittingCvp ? fmtVnd(fittingCvp.breakEvenKgYear) : '—'} kg</CardValue>
                 <CardNote>{fittingCvp ? fmtPct(fittingCvp.pctOfUtilizedHours) : '—'} giờ máy huy động</CardNote>
                 {fittingCvp && (
@@ -588,27 +629,27 @@ export default function Dashboard({
                 )}
               </Card>
               <Card>
-                <CardLabel>Chi phí CSNR — Phụ kiện</CardLabel>
+                <CardLabel tooltip="Công Suất Nhàn Rỗi: Định phí không được phân bổ vào sản phẩm do máy không chạy đủ công suất bình thường">Chi phí CSNR — Phụ kiện</CardLabel>
                 <CardValue color="#DC2626">{fittingCvp ? fmtTyVnd(fittingCvp.fixedCostPerYear) : '—'}</CardValue>
                 <CardNote>Định phí chưa được hấp thụ (giờ máy rảnh rỗi)</CardNote>
               </Card>
               <Card>
-                <CardLabel>Doanh thu hòa vốn toàn DN</CardLabel>
+                <CardLabel tooltip="Doanh thu cần đạt để bù đắp định phí khối SX, ngoài SX và chi phí tài chính (tính theo tỷ suất LN dự kiến)">Doanh thu hòa vốn toàn DN</CardLabel>
                 <CardValue>{fmtTyVnd(kpis.investment.enterpriseBreakEvenRevenuePerYear)}</CardValue>
                 <CardNote>Gồm SX + vận hành + lãi vay</CardNote>
               </Card>
               <Card>
-                <CardLabel>Tổng vốn cố định</CardLabel>
+                <CardLabel tooltip="Tổng cộng CAPEX máy móc, khuôn, nhà xưởng, điện nước và vốn lưu động">Tổng vốn cố định</CardLabel>
                 <CardValue>{fmtTyVnd(kpis.investment.totalFixedCapitalInvested)}</CardValue>
-                <CardNote>Thiết bị + {scenario ? (scenario.resources.fitting as { moldAssets: unknown[] }).moldAssets.length : '—'} bộ khuôn + Lab/UL</CardNote>
+                <CardNote>Thiết bị + {scenario ? (scenario.resources.fitting as { moldAssets: unknown[] }).moldAssets.length : '—'} bộ khuôn + hạ tầng</CardNote>
               </Card>
               <Card>
-                <CardLabel>EBIT tại CS bình thường + VF</CardLabel>
+                <CardLabel tooltip="Lợi nhuận trước thuế và lãi vay tính tại kịch bản bán giá VF và chạy đúng công suất bình thường">EBIT tại CS bình thường + VF</CardLabel>
                 <CardValue color="#16A34A">{fmtTyVnd(kpis.investment.ebitAtNormalCapacityVfPrice)}</CardValue>
                 <CardNote>3 ca + giá mục tiêu VF</CardNote>
               </Card>
               <Card>
-                <CardLabel>Thời gian thu hồi vốn</CardLabel>
+                <CardLabel tooltip="= Tổng vốn đầu tư / (EBIT + Khấu hao)">Thời gian thu hồi vốn</CardLabel>
                 <CardValue color="#16A34A">{kpis.investment.paybackYears.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} năm</CardValue>
                 <CardNote>EBIT + khấu hao · ~{Math.round(kpis.investment.paybackYears * 12)} tháng</CardNote>
               </Card>
@@ -621,11 +662,12 @@ export default function Dashboard({
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                       <XAxis dataKey="kg" tickFormatter={(v) => fmtVnd(v)} tick={{ fontSize: 11 }} />
                       <YAxis tickFormatter={(v) => v.toFixed(1)} tick={{ fontSize: 11 }} />
-                      <Tooltip formatter={(value: number) => value.toFixed(2) + ' Tỷ đ'} labelFormatter={(lbl) => 'Sản lượng: ' + fmtVnd(Number(lbl)) + ' kg'} />
+                      <Tooltip formatter={(value: any) => Number(value).toFixed(2) + ' Tỷ đ'} labelFormatter={(lbl) => 'Sản lượng: ' + fmtVnd(Number(lbl)) + ' kg'} />
                       <Legend wrapperStyle={{ fontSize: 12, paddingTop: 10 }} />
                       <Area type="monotone" dataKey="dinhPhi" fill="#fee2e2" stroke="none" name="Định phí" />
                       <Line type="monotone" dataKey="chiPhi" stroke="#dc2626" strokeWidth={3} name="Tổng chi phí" dot={false} />
                       <Line type="monotone" dataKey="doanhThu" stroke="#16a34a" strokeWidth={3} name="Tổng doanh thu" dot={false} />
+                      <Line type="monotone" dataKey="loiNhuan" stroke="#eab308" strokeWidth={2} strokeDasharray="5 5" name="Lợi nhuận (EBIT)" dot={false} />
                       {pipeCvp && (
                         <ReferenceLine x={pipeCvp.breakEvenKgYear} stroke="#d97706" strokeDasharray="3 3" label={{ position: 'top', value: 'Hòa vốn', fill: '#d97706', fontSize: 11 }} />
                       )}

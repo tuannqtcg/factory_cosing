@@ -67,7 +67,7 @@ const firestoreDatabaseId = defineString('FIRESTORE_DATABASE_ID', { default: '(d
 // scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
 // calculateScenario() dựng bằng products.map() CÙNG THỨ TỰ → zip theo index,
 // nhưng vẫn đối chiếu khóa để không bao giờ ghi nhầm hàng khi engine đổi.
-function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['products']) {
+function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['products'], materials: ScenarioInput['materials']) {
   return PriceListDocSchema.parse({
     priceLadder: output.priceLadder,
     skuPriceChains: output.skuPriceChains.map((sku, i) => {
@@ -81,9 +81,12 @@ function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['product
       if (!matches) {
         throw new Error(`skuPriceChains[${i}] không khớp products[${i}] — thứ tự engine đổi? Không ghi priceList sai hàng.`);
       }
+      const material = materials.find(m => m.id === product.materialId);
       return {
         productKey: sku.productKey,
         managementStatus: sku.managementStatus,
+        materialDesignationCode: material?.designationCode,
+        materialClassificationCode: material?.classificationCode,
         unit: product.kind === 'pipe' ? 'mét' : product.unit,
         spec: (product.kind === 'pipe' ? product.spec : product.schedule) ?? '',
         chain: {
@@ -169,7 +172,7 @@ export const onScenarioWrite = onDocumentWritten(
 
   await Promise.all([
     db.doc(`scenarios/${scenarioId}/outputs/internal`).set(scenarioOutput),
-    db.doc(`scenarios/${scenarioId}/outputs/priceList`).set(toPriceListDoc(scenarioOutput, scenarioInput.products)),
+    db.doc(`scenarios/${scenarioId}/outputs/priceList`).set(toPriceListDoc(scenarioOutput, scenarioInput.products, scenarioInput.materials)),
     db.doc(`scenarios/${scenarioId}/outputs/productCatalog`).set(toProductCatalogDoc(scenarioInput)),
   ]);
 });

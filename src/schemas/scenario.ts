@@ -159,6 +159,8 @@ export const PriceListDocSchema = z.object({
         materialId: z.string(),
       }),
       managementStatus: z.enum(['active', 'pending_mold']),
+      materialDesignationCode: z.string().optional(),
+      materialClassificationCode: z.string().optional(),
       unit: z.string(), // Ống luôn 'mét'; Phụ kiện theo FittingProduct.unit
       spec: z.string(), // Ống: PipeProduct.spec (SDR); Phụ kiện: schedule (SCH40/80), '' nếu thiếu
       chain: z.object({

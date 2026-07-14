@@ -32,8 +32,10 @@
 - [ ] Đảm bảo UI khóa lại các nút "Lưu" hoặc "Chỉnh sửa" nếu User không có quyền.
 
 ### 3. Trải nghiệm cho vai Đầu tư / Bán hàng (SOP đơn lẻ & MOQ — user duyệt hướng 14/07)
-- [ ] Màn "Phiếu báo giá tiêu chuẩn VF": giá 1 SKU kèm ghi chú tự sinh (neo công suất định mức,
-  trạng thái khóa giá NVL, tỷ giá, chuỗi markup, ngày hiệu lực) — prototype Pha 1 đã gửi duyệt.
+- [ ] Màn "Phiếu báo giá tiêu chuẩn VF": giá 1 SKU (Ống + Phụ kiện) kèm ghi chú tự sinh (neo công suất,
+  trạng thái khóa giá NVL, tỷ giá, chuỗi markup, ngày hiệu lực) — prototype Pha 1 iteration 3 đã duyệt hướng:
+  **layout finapp: sidebar tham số đầu vào (what-if giá hạt/tỷ giá/ca máy/markup/C_setup) bên trái,
+  kết quả sống bên phải; khóa giá ADR-004 hiển thị sống; giá what-if gắn nhãn không dùng báo khách.**
 - [ ] Engine `setup-cost` + `moq`: MOQ_kg = C_setup ÷ (giá VF − sàn biến phí bậc 1); cột MOQ trên bảng giá.
 - [ ] What-if giá NVL ±% (màn What-If hiện chỉ mô phỏng ca/hệ số huy động) + kịch bản nháp (không đụng dữ liệu thật).
 

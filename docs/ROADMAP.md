@@ -10,6 +10,10 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-019 (14/07)**: Khôi phục 328/328 test parity sau "big update" — bộ số vàng v3.8
+  theo tham số nhà máy thật (3 máy đùn, khuôn 3,73 tỷ/3 năm, máy đùn 10 năm). Từ v3.8,
+  fixture + ADR là nguồn chân lý tham số đầu tư dòng Ống. Đã chốt: "giá bán tiêu chuẩn" = giá VF.
+- [x] Sửa bug Rules of Hooks ở WhatIfScreen (crash khi dữ liệu tải xong) + helper test thiếu `moldDepreciationYears` (NaN).
 - [x] Tách tồn kho Ren Kim Loại ra khỏi Tồn Kho Hạt Nhựa để UI không bị rối.
 - [x] Sửa lỗi Focus Input khi nhập liệu trên bảng Sản Phẩm (Lỗi React re-render).
 - [x] Bổ sung các công cụ nạp nhanh (Seed) cho nguyên liệu Corzan và sản phẩm Ống Corzan SCH40.
@@ -27,7 +31,13 @@
 - [ ] Viết chức năng hoặc Cloud Function để gán quyền cho các User thật.
 - [ ] Đảm bảo UI khóa lại các nút "Lưu" hoặc "Chỉnh sửa" nếu User không có quyền.
 
-### 3. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
+### 3. Trải nghiệm cho vai Đầu tư / Bán hàng (SOP đơn lẻ & MOQ — user duyệt hướng 14/07)
+- [ ] Màn "Phiếu báo giá tiêu chuẩn VF": giá 1 SKU kèm ghi chú tự sinh (neo công suất định mức,
+  trạng thái khóa giá NVL, tỷ giá, chuỗi markup, ngày hiệu lực) — prototype Pha 1 đã gửi duyệt.
+- [ ] Engine `setup-cost` + `moq`: MOQ_kg = C_setup ÷ (giá VF − sàn biến phí bậc 1); cột MOQ trên bảng giá.
+- [ ] What-if giá NVL ±% (màn What-If hiện chỉ mô phỏng ca/hệ số huy động) + kịch bản nháp (không đụng dữ liệu thật).
+
+### 4. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
 - [ ] Chờ danh mục ống SCH80 chuẩn từ nhà cung cấp để cập nhật lại Seed Data.
 - [ ] Kiểm tra lại toàn bộ quy trình từ khâu nhập Tồn kho -> Thay đổi định mức -> Tính giá thành -> Khóa giá -> Báo giá xem có bị khựng ở bước nào không.
 

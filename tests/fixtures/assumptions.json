@@ -18,6 +18,7 @@
     "annualLandRent": 525000000,
     "totalPerYear": 1253500000,
     "factoryConstructionCost": 0,
+    "factoryDepreciationYears": 10,
     "workingCapital": 0
   },
   "nonProductionCosts": {

@@ -125,6 +125,7 @@ export function buildBaselineScenarioInput(): unknown {
         extruderPriceEach: pipeFixture.params.extruderPriceEach,
         extruderCount: pipeFixture.params.extruderCount,
         moldPullerCutterCost: pipeFixture.params.moldPullerCutterCost,
+        moldDepreciationYears: pipeFixture.params.moldDepreciationYears,
         depreciationYears: pipeFixture.params.depreciationYears,
         annualMaintenance: pipeFixture.params.annualMaintenance,
         peoplePerShift: pipeFixture.params.peoplePerShift,

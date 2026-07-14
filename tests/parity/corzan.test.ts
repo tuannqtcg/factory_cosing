@@ -98,26 +98,26 @@ describe('Corzan M13.2 — CÁCH LY: thêm Corzan không xê dịch số BlazeMa
 
 describe('Corzan M13.2 — số tính tay độc lập (Python, thuế 0% + phí HQ 1%, tỷ giá 26.500)', () => {
   // landed ống = 3,47 × 1,01 × 26.500 = 92.874,55 đ/kg
-  // fullCost = 92.874,55/0,9 + 1.500 + 9.357,048351 (chi phí gia công line v3.7) = 114.050,99279587745
-  it('Ống Corzan: fullCostPerKg = 114.050,99 — thang giá bậc 3 (pipe, corzan-pipe)', () => {
+  // fullCost = 92.874,55/0,9 + 1.500 + 11.750,029811 (chi phí gia công line v3.8, ADR-019) = 116.443,97425585079
+  it('Ống Corzan: fullCostPerKg = 116.443,97 — thang giá bậc 3 (pipe, corzan-pipe)', () => {
     const ladder = output.priceLadder.byLineMaterial.find(
       (e) => e.line === 'pipe' && e.materialId === 'corzan-pipe',
     )!.ladder;
-    expect(ladder.breakEvenFullCost).toBeCloseTo(114050.99279587745, 3);
-    expect(ladder.targetPrice).toBeCloseTo(114050.99279587745 * 1.25, 3);
+    expect(ladder.breakEvenFullCost).toBeCloseTo(116443.97425585079, 3);
+    expect(ladder.targetPrice).toBeCloseTo(116443.97425585079 * 1.25, 3);
   });
 
-  // DN50 Corzan: đơn trọng 1,26 × 1,1 = 1,386 kg/m → BE/m 158.074,68 → niêm yết 367.000 (ROUNDUP -2 sau /0,7)
-  it('Ống Corzan DN50: BE/m = 158.074,68, niêm yết 367.000 trước VAT / 396.360 có VAT', () => {
+  // DN50 Corzan: đơn trọng 1,26 × 1,1 = 1,386 kg/m → BE/m 161.391,35 → niêm yết 374.700 (ROUNDUP -2 sau /0,7)
+  it('Ống Corzan DN50: BE/m = 161.391,35, niêm yết 374.700 trước VAT / 404.676 có VAT', () => {
     const chain = chainOf('corzan-pipe', { dn: 'DN50' });
-    expect(chain.chain.breakEvenPerUnit).toBeCloseTo(158074.68, 2);
-    expect(chain.chain.listPriceBeforeVat).toBe(367000);
-    expect(chain.chain.listPriceWithVat).toBe(396360);
+    expect(chain.chain.breakEvenPerUnit).toBeCloseTo(161391.35, 2);
+    expect(chain.chain.listPriceBeforeVat).toBe(374700);
+    expect(chain.chain.listPriceWithVat).toBe(404676);
   });
 
-  it('Ống Corzan DN20/DN100: niêm yết 84.500 / 1.253.500 trước VAT', () => {
-    expect(chainOf('corzan-pipe', { dn: 'DN20' }).chain.listPriceBeforeVat).toBe(84500);
-    expect(chainOf('corzan-pipe', { dn: 'DN100' }).chain.listPriceBeforeVat).toBe(1253500);
+  it('Ống Corzan DN20/DN100: niêm yết 86.300 / 1.279.800 trước VAT', () => {
+    expect(chainOf('corzan-pipe', { dn: 'DN20' }).chain.listPriceBeforeVat).toBe(86300);
+    expect(chainOf('corzan-pipe', { dn: 'DN100' }).chain.listPriceBeforeVat).toBe(1279800);
   });
 
   // landed phụ kiện = 3,97 × 1,01 × 26.500 = 106.257,05 đ/kg

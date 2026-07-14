@@ -5,8 +5,8 @@
     "sizeDN": "DN20",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 71600,
-    "priceWithVat": 77328
+    "priceBeforeVat": 73200,
+    "priceWithVat": 79056
   },
   {
     "stt": 2,
@@ -14,8 +14,8 @@
     "sizeDN": "DN25",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 101200,
-    "priceWithVat": 109296
+    "priceBeforeVat": 103500,
+    "priceWithVat": 111780
   },
   {
     "stt": 3,
@@ -23,8 +23,8 @@
     "sizeDN": "DN32",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 153100,
-    "priceWithVat": 165348
+    "priceBeforeVat": 156500,
+    "priceWithVat": 169020
   },
   {
     "stt": 4,
@@ -32,8 +32,8 @@
     "sizeDN": "DN40",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 202400,
-    "priceWithVat": 218592
+    "priceBeforeVat": 207000,
+    "priceWithVat": 223560
   },
   {
     "stt": 5,
@@ -41,8 +41,8 @@
     "sizeDN": "DN50",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 311000,
-    "priceWithVat": 335880
+    "priceBeforeVat": 318000,
+    "priceWithVat": 343440
   },
   {
     "stt": 6,
@@ -50,8 +50,8 @@
     "sizeDN": "DN65",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 454200,
-    "priceWithVat": 490536.00000000006
+    "priceBeforeVat": 464400,
+    "priceWithVat": 501552
   },
   {
     "stt": 7,
@@ -59,8 +59,8 @@
     "sizeDN": "DN80",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 668900,
-    "priceWithVat": 722412
+    "priceBeforeVat": 684000,
+    "priceWithVat": 738720
   },
   {
     "stt": 8,
@@ -68,8 +68,8 @@
     "sizeDN": "DN100",
     "spec": "SDR 13.5",
     "unit": "mét",
-    "priceBeforeVat": 1062300,
-    "priceWithVat": 1147284
+    "priceBeforeVat": 1086200,
+    "priceWithVat": 1173096
   },
   {
     "stt": 9,

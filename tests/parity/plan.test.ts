@@ -209,8 +209,9 @@ describe('Plan_SX — kịch bản A: kế hoạch vừa công suất (1 ca đ�
     expect(result.laborToHire.pipe).toBe(0);
   });
 
-  it('chi phí/kg thực tế Ống dương (đang gánh công suất nhàn rỗi) — khớp tính tay 8.256,97 (ADR-011, v3.7)', () => {
-    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(8256.973132775121, 3);
+  // Tính tay v3.8: 100.663,42 + (4.989.390.480,687 × 0,25)/63.000 − 108.711,86 = 11.750,7261 (ADR-019)
+  it('chi phí/kg thực tế Ống dương (đang gánh công suất nhàn rỗi) — khớp tính tay 11.750,73 (ADR-019, v3.8)', () => {
+    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(11750.726064335814, 3);
   });
 });
 

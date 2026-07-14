@@ -45,6 +45,10 @@ export default function WhatIfScreen({
     });
   }, [scenario]);
 
+  // Hook phải đứng TRƯỚC mọi return sớm (Rules of Hooks) — đặt sau return
+  // "Đang tải" sẽ crash khi scenario chuyển null → có dữ liệu (số hook đổi giữa 2 lần render).
+  const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
+
   if (!scenario || !internal || pipeSimulations.length === 0) {
     return <div style={{ fontSize: 12, color: '#737373' }}>Đang tải dữ liệu mô phỏng...</div>;
   }
@@ -52,8 +56,6 @@ export default function WhatIfScreen({
   const fittingResource = scenario.resources.fitting as MachineHourResource;
   const fittingProducts = scenario.products.filter(p => p.kind === 'fitting');
   const pipeProducts = scenario.products.filter(p => p.kind === 'pipe');
-
-  const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
 
   return (
     <div>

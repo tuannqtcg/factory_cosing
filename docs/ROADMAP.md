@@ -32,6 +32,12 @@
 - [ ] Đảm bảo UI khóa lại các nút "Lưu" hoặc "Chỉnh sửa" nếu User không có quyền.
 
 ### 3. Trải nghiệm cho vai Đầu tư / Bán hàng (SOP đơn lẻ & MOQ — user duyệt hướng 14/07)
+> **PHIÊN MỚI BẮT ĐẦU TỪ ĐÂY**: đọc ADR-019→023 (đặc biệt **ADR-023** — triết lý phân tầng
+> tham số + vòng đời kịch bản của user, là đặc tả gốc cho Pha 2). Việc kế tiếp đã chốt:
+> **Pha 2 — đóng băng schema một lần cho cả cụm**: lineSpeedMPerHour+speedConfirmed,
+> dieGroup, setupCost, moq 2 tầng, metadata kịch bản (draft/approved/label/so sánh),
+> preset 3 kịch bản Xấu/Trung bình/Khả quan. Prototype đã duyệt: artifact
+> "Phiếu Báo Giá Tiêu Chuẩn VF" (layout finapp, sidebar what-if).
 - [ ] Màn "Phiếu báo giá tiêu chuẩn VF": giá 1 SKU (Ống + Phụ kiện) kèm ghi chú tự sinh (neo công suất,
   trạng thái khóa giá NVL, tỷ giá, chuỗi markup, ngày hiệu lực) — prototype Pha 1 iteration 3 đã duyệt hướng:
   **layout finapp: sidebar tham số đầu vào (what-if giá hạt/tỷ giá/ca máy/markup/C_setup) bên trái,

@@ -125,9 +125,9 @@ describe('calculatePlanForScenario — baseline v3.7, đối chiếu số tính 
     expect(fittingReq.usdValueAtRawReplacement).toBeCloseTo(expectedKgToBuy * 3.85, 6);
   });
 
-  it('nhân công + chi phí nhàn rỗi Ống khớp plan.test.ts (laborToHire.pipe=0; 8.256,97 đ/kg — v3.7)', () => {
+  it('nhân công + chi phí nhàn rỗi Ống khớp plan.test.ts (laborToHire.pipe=0; 11.750,73 đ/kg — v3.7, ADR-019)', () => {
     expect(result.laborToHire.pipe).toBe(0);
-    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(8256.973132775121, 3);
+    expect(result.idleCapacityCostPipePerKg).toBeCloseTo(11750.726064335817, 3);
   });
 });
 

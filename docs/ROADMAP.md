@@ -13,23 +13,23 @@
 - [x] Tách tồn kho Ren Kim Loại ra khỏi Tồn Kho Hạt Nhựa để UI không bị rối.
 - [x] Sửa lỗi Focus Input khi nhập liệu trên bảng Sản Phẩm (Lỗi React re-render).
 - [x] Bổ sung các công cụ nạp nhanh (Seed) cho nguyên liệu Corzan và sản phẩm Ống Corzan SCH40.
+- [x] **Firebase thật (Production)**: project `bmcosting-ver-2`, database "manufacture" (ADR-016), seed baseline, deploy Render (Vite build).
+- [x] **Phân quyền Custom Claims**: Cloud Function `setUserRole` + audit log (ADR-017), script tạo 4 user demo thật với role (admin/pricing/sales/production).
+- [x] **Tham số Ống v3.7** (3 máy đùn, khấu hao 10 năm, khuôn kéo/cắt riêng 3 năm — ADR-019): tái lập toàn bộ số vàng fixture, `npm test` xanh lại 328/328.
+- [x] CAPEX nhà xưởng + vốn lưu động nhập động (ADR-018), Dashboard chia 4 tab (Progressive Disclosure).
 
 ---
 
 ## 🚀 Việc cần làm tiếp theo (Pha 4 & Vận hành thực tế)
 
-### 1. Triển khai Firebase thật (Production)
-- [ ] Thiết lập Project Firebase thật (hiện tại toàn bộ dữ liệu đang lưu trên Local Emulator).
-- [ ] Chuyển cấu hình môi trường `.env` sang project thật.
+### 1. Kiểm thử & Phân quyền (Security UI) — việc treo từ 2026-07-13
+- [ ] Đăng nhập thử 4 vai trò thật (Admin, Pricing, Sales, Production) trên UI, xác nhận Sales không thấy chi phí/giá thành, Production chỉ thấy kế hoạch, nút Lưu/Sửa bị khóa đúng vai.
+- [ ] Chạy `npm run test:rules` + `npm run test:functions` (cần emulator) xác nhận rules khớp UI.
 
-### 2. Quản lý phân quyền (Auth & Custom Claims)
-- [ ] Áp dụng Firebase Custom Claims cho các quyền (Admin, Viewer, Pricing).
-- [ ] Viết chức năng hoặc Cloud Function để gán quyền cho các User thật.
-- [ ] Đảm bảo UI khóa lại các nút "Lưu" hoặc "Chỉnh sửa" nếu User không có quyền.
-
-### 3. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
+### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
 - [ ] Chờ danh mục ống SCH80 chuẩn từ nhà cung cấp để cập nhật lại Seed Data.
 - [ ] Kiểm tra lại toàn bộ quy trình từ khâu nhập Tồn kho -> Thay đổi định mức -> Tính giá thành -> Khóa giá -> Báo giá xem có bị khựng ở bước nào không.
+- [ ] Khi có Excel v3.7 chính thức: trích lại fixture bằng cached-value để thay số vàng engine-derived (ghi chú ADR-019).
 
 ---
 

@@ -500,7 +500,7 @@ function costDetailHtml(line, inp){
 
 function lineCard(line, inp){
   return `<div class="card" style="background:#faf8f2">
-    <h3>${line.name} · <span style="color:#a8003b">${line.matDef.name}</span> — giá bán đề xuất</h3>
+    <h3>${line.name} · <span style="color:#a8003b">${line.matDef.name}</span> — giá bán VF đề xuất <span class="unit">(giá thành + markup)</span></h3>
     <div class="big-price">${fmt0.format(line.price)} <span class="unit" style="font-size:14px">đ/${line.unit}</span></div>
     <div class="cost-eq">Giá thành (giá vốn) <b>${fmt0.format(line.fullCost)} đ/kg</b> = nguyên liệu <b>${fmt0.format(line.mat)}</b> + chi phí sản xuất <b>${fmt0.format(line.procPerKg)}</b> + bao bì <b>${fmt0.format(line.pack)}</b> · lãi gộp <b>${pc(line.marginOnPrice)}</b> trên giá bán${line.mhr?` · chi phí 1 giờ máy ép <b>${fmt0.format(line.mhr)} đ</b>`:''}</div>
     ${lineWarnings(line)}
@@ -520,13 +520,12 @@ function dnTableHtml(pipe, m){
   const wf = pipe.matDef.dnFactor; // Corzan: đơn trọng +10% (ADR-012)
   const rows = C.dn.map(([dn,w0])=>{
     const w = w0*wf;
-    const be = pipe.fullCost*w, vf = applyMargin(be,m), tcg = vf*1.3;
-    const list = Math.ceil(tcg/(1-.3)/100)*100, vat = Math.round(list*1.08);
-    return `<tr><td>${dn}</td><td>${fmt2.format(w)} <span class="unit">kg/m</span></td><td>${fmt0.format(be)}</td><td>${fmt0.format(vf)}</td><td>${fmt0.format(tcg)}</td><td><b>${fmt0.format(vat)}</b></td></tr>`;
+    const be = pipe.fullCost*w, vf = applyMargin(be,m);
+    return `<tr><td>${dn}</td><td>${fmt2.format(w)} <span class="unit">kg/m</span></td><td>${fmt0.format(be)}</td><td><b>${fmt0.format(vf)}</b></td></tr>`;
   }).join('');
-  return `<details class="adv" style="margin-top:14px"><summary>Bảng giá ống <b>${pipe.matDef.name}</b> theo DN (đ/m) — mang đi đàm phán</summary>
-    <table style="margin-top:8px"><thead><tr><th>DN</th><th>Khối lượng</th><th>Giá thành /m</th><th>Giá VF /m</th><th>Giá TCG /m (+30%)</th><th>Niêm yết có VAT 8%</th></tr></thead><tbody>${rows}</tbody></table>
-    <div style="font-size:11px;color:#777;margin-top:6px">Dòng sản phẩm: <b>ống ${pipe.matDef.name}</b>${wf>1?' — đơn trọng +10% so với BlazeMaster cùng DN (ADR-012)':''}. Chuỗi giá: giá thành × markup của bạn → TCG +30% → niêm yết ÷(1−30%), làm tròn lên trăm, +VAT 8% (đúng price-ladder.ts).</div></details>`;
+  return `<details class="adv" style="margin-top:14px"><summary>Bảng giá bán VF — ống <b>${pipe.matDef.name}</b> theo DN (đ/m) — mang đi đàm phán</summary>
+    <table style="margin-top:8px"><thead><tr><th>DN</th><th>Khối lượng</th><th>Giá thành /m</th><th>Giá bán VF /m</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="font-size:11px;color:#777;margin-top:6px">Dòng sản phẩm: <b>ống ${pipe.matDef.name}</b>${wf>1?' — đơn trọng +10% so với BlazeMaster cùng DN (ADR-012)':''}. Giá bán VF = giá thành × markup của bạn, chưa gồm VAT. (Chuỗi giá TCG/niêm yết vẫn ở màn Bảng Giá cho đội sales.)</div></details>`;
 }
 
 // Panel chi tiết: chứng minh phép tính thu hồi vốn + liệt kê chi phí đã trừ
@@ -563,7 +562,7 @@ function summaryHtml(r){
     <h3 style="color:#ff5c8a">Hiệu quả toàn nhà máy cả năm với giá bán này</h3>
     ${maxNote}
     <div class="kpi-row">
-      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Doanh thu</div><div class="v" style="color:#fff">${ty(r.revenue)}</div><div class="s" style="color:#999">cả năm, chưa gồm VAT</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Doanh thu VF</div><div class="v" style="color:#fff">${ty(r.revenue)}</div><div class="s" style="color:#999">giá bán VF (giá thành + markup) × sản lượng · chưa VAT</div></div>
       <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Lãi gộp</div><div class="v" style="color:#fff">${ty(r.grossProfit)}</div><div class="s" style="color:#999">doanh thu − giá thành sản xuất</div></div>
       <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Lợi nhuận trước thuế</div><div class="v" style="color:${r.ebit>=0?'#4ade80':'#f87171'}">${ty(r.ebit)}</div><div class="s" style="color:#999">đã trừ vận hành + lãi vay</div></div>
       <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Lợi nhuận sau thuế</div><div class="v" style="color:${r.netProfit>=0?'#4ade80':'#f87171'}">${ty(r.netProfit)}</div><div class="s" style="color:#999">thuế TNDN 20% — ước tính</div></div>

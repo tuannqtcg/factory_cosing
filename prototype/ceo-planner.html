@@ -36,9 +36,11 @@
   .preset { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
   .preset button { border:1px dashed #a8003b; background:#fff; color:#a8003b; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; }
   .preset button:hover { background:#a8003b0d; }
+  .proc-hint { font-size:11.5px; color:#0e7490; background:#ecfeff; border-radius:6px; padding:5px 8px; margin-top:8px; font-variant-numeric:tabular-nums; }
   .run-btn { margin-top:16px; width:100%; padding:13px; border:0; border-radius:8px; background:#a8003b; color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
   .run-btn:disabled { background:#c9c9c9; cursor:not-allowed; }
   .big-price { font-size:30px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+  .cost-eq { font-size:12.5px; color:#444; margin-top:8px; background:#fff; border:1px solid #e5e0d0; border-radius:6px; padding:7px 10px; font-variant-numeric:tabular-nums; line-height:1.6; }
   .kpi-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
   .kpi { flex:1 1 130px; background:#faf8f2; border-radius:8px; padding:10px 12px; }
   .kpi .k { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#777; font-weight:700; }
@@ -47,6 +49,7 @@
   th { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#777; text-align:right; padding:6px 8px; border-bottom:1px solid #e5e0d0; }
   th:first-child, td:first-child { text-align:left; }
   td { padding:6px 8px; border-bottom:1px solid #f0ece0; text-align:right; font-size:13px; }
+  tr.sum td { font-weight:700; border-top:2px solid #1a1a1a; }
   .ladder { margin-top:8px; }
   .ladder .row { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:6px; font-size:12.5px; }
   .ladder .row .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
@@ -59,6 +62,12 @@
   @keyframes sh { to { background-position:-200% 0; } }
   .warn { background:#fef2f2; border-left:3px solid #DC2626; color:#7f1d1d; padding:8px 12px; border-radius:0 8px 8px 0; font-size:12.5px; margin-top:8px; }
   .ok-note { background:#f0fdf4; border-left:3px solid #16A34A; color:#14532d; padding:8px 12px; border-radius:0 8px 8px 0; font-size:12.5px; margin-top:8px; }
+  details.detail { margin-top:12px; border:1px solid #e5e0d0; border-radius:8px; background:#fff; }
+  details.detail summary { cursor:pointer; padding:10px 12px; font-size:13px; font-weight:700; color:#0e7490; list-style:none; }
+  details.detail summary::before { content:'▸ '; }
+  details.detail[open] summary::before { content:'▾ '; }
+  details.detail .inner { padding:0 12px 12px; }
+  details.detail .exp { font-size:12px; color:#555; line-height:1.65; margin-top:8px; }
   .ai-btn { margin-top:16px; width:100%; padding:14px; border:0; border-radius:8px; background:#1a1a1a; color:#fff; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
   .ai-btn:hover { background:#333; }
   .ai-btn:disabled { background:#c9c9c9; cursor:wait; }
@@ -80,7 +89,7 @@
     <div class="brand">BlazeMaster CPVC · Costing Engine · Model v3.4</div>
     <h1>Trợ Lý CEO — Giá Bán &amp; Hiệu Quả Cả Năm</h1>
     <span class="badge-mock">Prototype Pha 1 — Mock</span>
-    <span class="sub">Nhập giá nguyên liệu + margin mong muốn → giá bán, sàn đàm phán, hiệu quả khi chạy tối đa công suất.</span>
+    <span class="sub">Nhập giá nguyên liệu + markup mong muốn → giá bán, sàn đàm phán, hiệu quả khi chạy tối đa công suất. Tổng quan trước, bấm "Xem chi tiết" để soi từng con số.</span>
   </header>
 
   <!-- ═══ BƯỚC 1 — CÂU HỎI ═══ -->
@@ -94,25 +103,26 @@
     <div class="grid inputs-grid">
       <div>
         <h3>Ống CPVC <span class="unit">(đùn liên tục, theo kg)</span></h3>
-        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế NK</span></label>
+        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế nhập khẩu</span></label>
         <input type="number" id="pipeUsd" value="3.03" step="0.01" min="0" oninput="onEdit()">
         <div class="err-msg" id="pipeUsdErr">Giá phải là số dương.</div>
-        <label>Margin mong muốn <span class="unit">%</span></label>
+        <label>Markup mong muốn <span class="unit">%</span></label>
         <input type="number" id="pipeMargin" value="25" step="1" oninput="onEdit()">
-        <div class="err-msg" id="pipeMarginErr">Margin phải ≥ 0 (kiểu "trên giá bán" phải &lt; 95).</div>
+        <div class="err-msg" id="pipeMarginErr">Markup phải ≥ 0 (kiểu "lãi trên giá bán" phải &lt; 95).</div>
         <label>Số ca chạy / ngày</label>
         <div class="seg" id="pipeShifts">
           <button onclick="setSeg('pipeShifts',1)">1 ca</button><button onclick="setSeg('pipeShifts',2)">2 ca</button><button class="on" onclick="setSeg('pipeShifts',3)">3 ca</button>
         </div>
+        <div class="proc-hint" id="pipeProcHint"></div>
       </div>
       <div>
         <h3>Phụ kiện <span class="unit">(ép phun, theo giờ máy)</span></h3>
-        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế NK</span></label>
+        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế nhập khẩu</span></label>
         <input type="number" id="fitUsd" value="3.85" step="0.01" min="0" oninput="onEdit()">
         <div class="err-msg" id="fitUsdErr">Giá phải là số dương.</div>
-        <label>Margin mong muốn <span class="unit">%</span></label>
+        <label>Markup mong muốn <span class="unit">%</span></label>
         <input type="number" id="fitMargin" value="40" step="1" oninput="onEdit()">
-        <div class="err-msg" id="fitMarginErr">Margin phải ≥ 0 (kiểu "trên giá bán" phải &lt; 95).</div>
+        <div class="err-msg" id="fitMarginErr">Markup phải ≥ 0 (kiểu "lãi trên giá bán" phải &lt; 95).</div>
         <label>Số ca chạy / ngày &nbsp;·&nbsp; Huy động giờ máy</label>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <div class="seg" id="fitShifts">
@@ -122,17 +132,18 @@
             <button class="on" onclick="setSeg('fitUtil',0.6)">60%</button><button onclick="setSeg('fitUtil',0.85)">85%</button>
           </div>
         </div>
+        <div class="proc-hint" id="fitProcHint"></div>
       </div>
       <div>
-        <h3>Cách hiểu margin</h3>
+        <h3>Cách tính markup</h3>
         <div class="seg" id="marginMode" style="margin-top:6px">
-          <button class="on" onclick="setSeg('marginMode','markup')">Markup trên giá thành</button><button onclick="setSeg('marginMode','margin')">Margin trên giá bán</button>
+          <button class="on" onclick="setSeg('marginMode','markup')">Markup trên giá vốn</button><button onclick="setSeg('marginMode','margin')">Lãi trên giá bán</button>
         </div>
         <div style="font-size:11.5px;color:#777;margin-top:6px;line-height:1.5" id="marginHint">
-          Markup 25%: giá bán = giá thành × 1,25 (cách Excel v3.4 đang dùng — lãi 20% trên giá bán).
+          Markup 25% trên giá vốn: giá bán = giá thành sản xuất × 1,25 (cách Excel v3.4 đang dùng — tương đương lãi gộp 20% trên giá bán).
         </div>
         <details class="adv">
-          <summary>Tham số nâng cao (tỷ giá, thuế NK)</summary>
+          <summary>Tham số nâng cao (tỷ giá, thuế nhập khẩu)</summary>
           <label>Tỷ giá USD/VND</label>
           <input type="number" id="fxRate" value="26500" step="100" oninput="onEdit()">
           <div class="err-msg" id="fxRateErr">Tỷ giá phải là số dương.</div>
@@ -145,8 +156,8 @@
 
   <!-- ═══ BƯỚC 2 — TRẢ LỜI ═══ -->
   <div class="card" style="margin-top:16px">
-    <div class="step-label">Bước 2 — Trả lời</div>
-    <div id="resultsEmpty" class="empty">Chưa có kết quả. Nhập giá nguyên liệu, margin mong muốn và bấm <b>Chạy số liệu</b>.</div>
+    <div class="step-label">Bước 2 — Trả lời (tổng quan → bấm xem chi tiết)</div>
+    <div id="resultsEmpty" class="empty">Chưa có kết quả. Nhập giá nguyên liệu, markup mong muốn và bấm <b>Chạy số liệu</b>.</div>
     <div id="resultsLoading" style="display:none" class="grid results-grid"><div class="skeleton"></div><div class="skeleton"></div></div>
     <div id="results" style="display:none"></div>
   </div>
@@ -163,8 +174,9 @@
     <b>Những gì là GIẢ trong prototype này (Pha 1):</b>
     ① Toàn bộ công thức nhúng tại chỗ để demo — Pha 3 PHẢI thay bằng <code>src/engine/*</code> (pipe, fitting, price-ladder, cvp), cấm chép tay.
     ② Nút AI tư vấn là mock rule-based chạy trong trình duyệt — bản thật là Cloud Function <code>adviseScenario</code> gọi Claude API phía server (không API key ở client, pattern ADR-010/013), cần ADR mới ở Pha 2.
-    ③ Chưa có phân quyền — màn hình này thuộc tầng chiến lược (admin/pricing, ADR-006).
-    Số mặc định lấy từ <code>tests/fixtures/</code> (Excel v3.4): giá ống 132.898,6 đ/kg · phụ kiện 252.845,8 đ/kg · EBIT 16,37 tỷ · payback 0,816 năm tại preset chuẩn.
+    ③ Thuế thu nhập doanh nghiệp 20% là ƯỚC TÍNH minh họa — Excel v3.4 chưa có dòng thuế này.
+    ④ Chưa có phân quyền — màn hình này thuộc tầng chiến lược (admin/pricing, ADR-006).
+    Số mặc định lấy từ <code>tests/fixtures/</code> (Excel v3.4): giá ống 132.898,6 đ/kg · phụ kiện 252.845,8 đ/kg · lợi nhuận trước thuế 16,37 tỷ · thu hồi vốn 0,816 năm tại preset chuẩn.
   </footer>
 </div>
 
@@ -172,12 +184,14 @@
 'use strict';
 // ── HẰNG SỐ TỪ tests/fixtures/ (Excel v3.4) — SẼ THAY BẰNG ENGINE Ở PHA 3 ──
 const C = {
-  taxFactor: 1.07,               // 6% thuế NK + 1% phí thông quan (assumptions.json)
+  taxFactor: 1.07,               // 6% thuế nhập khẩu + 1% phí thông quan (assumptions.json)
   batches: 41, runDays: 5, hoursPerShift: 8, // 41 đợt/năm × 5 ngày chạy liên tục (287 ngày vận hành, 5+2 bảo trì)
-  nonProdPerYear: 640e6 + 2712e6,            // chi phí vận hành + lãi vay ngoài SX
+  operatingCostPerYear: 640e6,   // chi phí vận hành ngoài sản xuất
+  financialCostPerYear: 2712e6,  // chi phí lãi vay
   cashSharedTotal: 250e6 + 525e6,            // tuân thủ + thuê đất (phần TIỀN MẶT của chi phí chung)
-  invested: 15966254000,
-  deprecTotal: 478500000 + 762580800 + 1952170000, // Lab/UL + đùn + ép&khuôn (cho payback dòng tiền)
+  invested: 15966254000,         // ⚠ Excel v3.4: CHƯA gồm xây nhà xưởng + vốn lưu động (2 ô đang = 0)
+  sharedDeprec: 478500000,       // khấu hao Lab + UL setup (2.392,5 tr ÷ 5 năm)
+  cit: 0.20,                     // thuế thu nhập doanh nghiệp — ƯỚC TÍNH minh họa, chưa có trong Excel
   pipe: { yield:.9, pack:1500, kgPerHour:140, deprec:762580800, maint:200e6,
           laborPerShift:458185000, elecPerHour:254400, waterPerHour:212000,
           sharedAlloc:1168797614.020355, sharedRatio:0.9324272947908696, vfMarkup:.25 },
@@ -187,14 +201,18 @@ const C = {
           sharedAlloc:84702385.97964501, sharedRatio:0.06757270520913045, vfMarkup:.40 },
   dn: [ ['DN20',.29],['DN25',.41],['DN32',.62],['DN40',.82],['DN50',1.26],['DN65',1.84],['DN80',2.71],['DN100',4.304] ],
 };
+C.nonProdPerYear = C.operatingCostPerYear + C.financialCostPerYear;
+C.deprecTotal = C.sharedDeprec + C.pipe.deprec + C.fit.deprec; // cho dòng tiền thu hồi vốn
 // Lưu ý parity: khi quét bậc ca, PHÂN BỔ CHI PHÍ CHUNG giữ nguyên tại công suất
 // chuẩn (khớp fixture capacityTiers / mhrByCapacityTier — Excel không phân bổ lại).
 
 const st = { pipeShifts:3, fitShifts:1, fitUtil:0.6, marginMode:'markup', r:null };
 const fmt0 = new Intl.NumberFormat('vi-VN', {maximumFractionDigits:0});
 const fmt1 = new Intl.NumberFormat('vi-VN', {maximumFractionDigits:1, minimumFractionDigits:1});
+const fmt2 = new Intl.NumberFormat('vi-VN', {maximumFractionDigits:2});
 const d  = v => fmt0.format(v) + ' đ';
 const dk = v => fmt0.format(v) + ' đ/kg';
+const tr = v => fmt0.format(v/1e6) + ' triệu đ';
 const ty = v => fmt1.format(v/1e9) + ' tỷ đ';
 const pc = v => fmt1.format(v*100) + '%';
 const $  = id => document.getElementById(id);
@@ -202,10 +220,10 @@ const $  = id => document.getElementById(id);
 function setSeg(id, val){
   st[id] = val;
   [...$(id).children].forEach(b => b.classList.toggle('on',
-    b.textContent.replace('%','').trim() === (id==='fitUtil' ? String(val*100) : id==='marginMode' ? (val==='markup'?'Markup trên giá thành':'Margin trên giá bán') : val+' ca')));
+    b.textContent.replace('%','').trim() === (id==='fitUtil' ? String(val*100) : id==='marginMode' ? (val==='markup'?'Markup trên giá vốn':'Lãi trên giá bán') : val+' ca')));
   if (id==='marginMode') $('marginHint').textContent = val==='markup'
-    ? 'Markup 25%: giá bán = giá thành × 1,25 (cách Excel v3.4 đang dùng — lãi 20% trên giá bán).'
-    : 'Margin 20%: giá bán = giá thành ÷ (1 − 0,20) — lãi đúng 20% TRÊN GIÁ BÁN.';
+    ? 'Markup 25% trên giá vốn: giá bán = giá thành sản xuất × 1,25 (cách Excel v3.4 đang dùng — tương đương lãi gộp 20% trên giá bán).'
+    : 'Lãi 20% trên giá bán: giá bán = giá thành sản xuất ÷ (1 − 0,20) — lãi gộp đúng 20% tính trên giá bán.';
   onEdit();
 }
 function preset(p){
@@ -226,9 +244,18 @@ function readInputs(){
   for (const k in errs){ $(k).classList.toggle('bad',errs[k]); $(k+'Err').style.display = errs[k]?'block':'none'; }
   const bad = Object.values(errs).some(Boolean);
   $('runBtn').disabled = bad;
+  if (!bad) updateProcHints({rate,pUsd,fUsd,pM,fM});
   return bad ? null : {rate,pUsd,fUsd,pM,fM};
 }
 function onEdit(){ readInputs(); }
+
+// Chi phí sản xuất CHƯA GỒM NGUYÊN LIỆU — hiện ngay ở đầu bảng theo yêu cầu CEO
+function updateProcHints(inp){
+  const p = calcPipe(inp.pUsd, inp.rate, inp.pM, st.pipeShifts, 1);
+  const f = calcFit(inp.fUsd, inp.rate, inp.fM, st.fitShifts, st.fitUtil, 1);
+  $('pipeProcHint').innerHTML = `Chi phí sản xuất (chưa gồm nguyên liệu) tại ${st.pipeShifts} ca: <b>${fmt0.format(p.procPerKg + C.pipe.pack)} đ/kg</b> (gia công ${fmt0.format(p.procPerKg)} + bao bì ${fmt0.format(C.pipe.pack)})`;
+  $('fitProcHint').innerHTML  = `Chi phí sản xuất (chưa gồm nguyên liệu) tại ${st.fitShifts} ca × ${st.fitUtil*100}%: <b>${fmt0.format(f.procPerKg + C.fit.pack)} đ/kg</b> · chi phí 1 giờ máy ép: <b>${fmt0.format(f.mhr)} đ</b>`;
+}
 
 function applyMargin(cost, m){ return st.marginMode==='markup' ? cost*(1+m) : cost/(1-m); }
 
@@ -239,8 +266,10 @@ function calcPipe(usd, rate, m, shifts, otherRev){
   const cap   = p.kgPerHour*hours*p.yield;                           // 3 ca → 619.920 kg
   const landed = usd*C.taxFactor*rate, mat = landed/p.yield;
   const labor = p.laborPerShift*shifts;
-  const totalProc = p.deprec + p.maint + labor + p.elecPerHour*hours + p.waterPerHour*hours + p.sharedAlloc;
-  const fullCost = mat + p.pack + totalProc/cap;
+  const elec = p.elecPerHour*hours, water = p.waterPerHour*hours;
+  const totalProc = p.deprec + p.maint + labor + elec + water + p.sharedAlloc;
+  const procPerKg = totalProc/cap;
+  const fullCost = mat + p.pack + procPerKg;
   const price = applyMargin(fullCost, m);
   const variable = mat + p.pack + (p.elecPerHour + p.waterPerHour)/(p.kgPerHour*p.yield);
   const t2 = variable + (p.maint + labor + C.cashSharedTotal*p.sharedRatio)/cap;
@@ -250,7 +279,9 @@ function calcPipe(usd, rate, m, shifts, otherRev){
   const fixed = p.deprec + p.maint + labor + p.sharedAlloc;
   const cm = price - variable;
   const beKg = cm>0 ? fixed/cm : Infinity;
-  return { name:'Ống CPVC', unit:'kg', cap, hours, price, fullCost, variable,
+  return { name:'Ống CPVC', unit:'kg', shifts, cap, hours, price, fullCost, variable,
+    landed, mat, pack:p.pack, procPerKg, totalProc, labor, elec, water,
+    deprec:p.deprec, maint:p.maint, sharedAlloc:p.sharedAlloc,
     ladder:[variable,t2,fullCost,t4,vfRef], profit:(price-fullCost)*cap,
     revenue:price*cap, bePct: beKg/cap, marginOnPrice:(price-fullCost)/price,
     compoundNeedKg: cap/p.yield, share };
@@ -262,9 +293,11 @@ function calcFit(usd, rate, m, shifts, util, otherRev){
   const prod = mh*f.productivity;
   const landed = usd*C.taxFactor*rate, mat = landed/f.yield;
   const labor = f.laborPerShift*shifts;
-  const totalProc = f.deprec + f.moldMaint + labor + f.elecPerMH*mh + f.waterPerMH*mh + f.sharedAlloc;
+  const elec = f.elecPerMH*mh, water = f.waterPerMH*mh;
+  const totalProc = f.deprec + f.moldMaint + labor + elec + water + f.sharedAlloc;
   const mhr = totalProc/mh;
-  const fullCost = mat + f.pack + totalProc/prod;
+  const procPerKg = totalProc/prod;
+  const fullCost = mat + f.pack + procPerKg;
   const price = applyMargin(fullCost, m);
   const variable = mat + f.pack + (f.elecPerMH + f.waterPerMH)/f.productivity;
   const t2 = variable + (f.moldMaint + labor + C.cashSharedTotal*f.sharedRatio)/prod;
@@ -274,7 +307,9 @@ function calcFit(usd, rate, m, shifts, util, otherRev){
   const fixed = f.deprec + f.moldMaint + labor + f.sharedAlloc;
   const cm = price - variable;
   const beKg = cm>0 ? fixed/cm : Infinity;
-  return { name:'Phụ kiện', unit:'kg (tham chiếu)', cap:prod, hours:mh, mhr, price, fullCost, variable,
+  return { name:'Phụ kiện', unit:'kg (tham chiếu)', shifts, cap:prod, hours:mh, mhr, price, fullCost, variable,
+    landed, mat, pack:f.pack, procPerKg, totalProc, labor, elec, water,
+    deprec:f.deprec, maint:f.moldMaint, sharedAlloc:f.sharedAlloc,
     ladder:[variable,t2,fullCost,t4,vfRef], profit:(price-fullCost)*prod,
     revenue:price*prod, bePct: beKg/prod, marginOnPrice:(price-fullCost)/price,
     compoundNeedKg: prod/f.yield, share };
@@ -288,16 +323,21 @@ function compute(inp){
   const pipe = calcPipe(inp.pUsd, inp.rate, inp.pM, st.pipeShifts, fitVfRev);
   const fit  = calcFit (inp.fUsd, inp.rate, inp.fM, st.fitShifts, st.fitUtil, pipeVfRev);
   const revenue = pipe.revenue + fit.revenue;
-  const ebit = pipe.profit + fit.profit - C.nonProdPerYear;
-  const payback = ebit + C.deprecTotal > 0 ? C.invested/(ebit + C.deprecTotal) : Infinity;
-  return { pipe, fit, revenue, ebit, ebitMargin: ebit/revenue, payback, inp };
+  const grossProfit = pipe.profit + fit.profit;                 // lãi gộp = doanh thu − giá thành sản xuất
+  const ebit = grossProfit - C.nonProdPerYear;                  // lợi nhuận TRƯỚC THUẾ (đã trừ vận hành + lãi vay)
+  const citAmount = ebit > 0 ? ebit*C.cit : 0;                  // thuế TNDN 20% — ước tính minh họa
+  const netProfit = ebit - citAmount;
+  const cashPerYear = ebit + C.deprecTotal;                     // dòng tiền = LN trước thuế + khấu hao cộng lại
+  const payback = cashPerYear > 0 ? C.invested/cashPerYear : Infinity;
+  return { pipe, fit, revenue, grossProfit, ebit, citAmount, netProfit,
+    ebitMargin: ebit/revenue, cashPerYear, payback, inp };
 }
 
 const TIER_NAMES = ['1 · Sàn biến phí — RANH ĐỎ, dưới mức này lỗ tiền tươi từng kg',
   '2 · Hòa vốn tiền mặt (chưa gồm khấu hao)',
-  '3 · Giá thành đầy đủ',
-  '4 · Hòa vốn toàn DN (gồm vận hành + lãi vay)',
-  '5 · Giá mục tiêu markup VF chuẩn'];
+  '3 · Giá thành đầy đủ (giá vốn)',
+  '4 · Hòa vốn toàn doanh nghiệp (gồm vận hành + lãi vay)',
+  '5 · Giá mục tiêu markup chuẩn VF'];
 const TIER_COLORS = ['#DC2626','#ea7317','#ca9a04','#0e7490','#16A34A'];
 
 function ladderHtml(line){
@@ -312,23 +352,61 @@ function lineWarnings(line){
   if (line.price < t1) return `<div class="warn">⛔ Giá bán DƯỚI SÀN BIẾN PHÍ — mỗi kg bán ra lỗ ${dk(t1-line.price)} tiền tươi. Không ký.</div>`;
   if (line.price < t2) return `<div class="warn">⚠️ Giá trên sàn biến phí nhưng dưới hòa vốn tiền mặt — chỉ chấp nhận cho đơn dọn kho/giữ khách, có thời hạn.</div>`;
   if (line.price < t3) return `<div class="warn">⚠️ Giá chưa gánh đủ khấu hao (dưới giá thành đầy đủ) — chấp nhận được ngắn hạn khi dư công suất, không làm giá chuẩn.</div>`;
-  if (line.price < t4) return `<div class="warn">⚠️ Giá đủ giá thành sản xuất nhưng CHƯA gánh hết chi phí vận hành + lãi vay toàn DN nếu đây là giá cho toàn bộ sản lượng.</div>`;
-  return `<div class="ok-note">✅ Giá nằm trên mức hòa vốn toàn DN — vùng an toàn để đàm phán.</div>`;
+  if (line.price < t4) return `<div class="warn">⚠️ Giá đủ giá thành sản xuất nhưng CHƯA gánh hết chi phí vận hành + lãi vay toàn doanh nghiệp nếu đây là giá cho toàn bộ sản lượng.</div>`;
+  return `<div class="ok-note">✅ Giá nằm trên mức hòa vốn toàn doanh nghiệp — vùng an toàn để đàm phán.</div>`;
 }
 
-function lineCard(line){
+// Bảng chi tiết "làm sao ra giá thành" — CEO bấm xem từng khoản
+function costDetailHtml(line, inp){
+  const usd = line.name==='Ống CPVC' ? inp.pUsd : inp.fUsd;
+  const isFit = line.name==='Phụ kiện';
+  return `<details class="detail"><summary>Xem bảng chi tiết: làm sao ra giá thành ${fmt0.format(line.fullCost)} đ/kg?</summary><div class="inner">
+    <h3 style="margin-top:8px">1. Nguyên liệu (theo kg thành phẩm)</h3>
+    <table><tbody>
+      <tr><td>Giá compound CIF</td><td>${fmt2.format(usd)} USD/kg</td></tr>
+      <tr><td>+ Thuế nhập khẩu 6% + phí thông quan 1%</td><td>× 1,07</td></tr>
+      <tr><td>× Tỷ giá</td><td>× ${fmt0.format(inp.rate)}</td></tr>
+      <tr><td>= Giá compound về kho</td><td>${dk(line.landed)}</td></tr>
+      <tr><td>÷ Hiệu suất thu hồi 90% (hao hụt 10%)</td><td>÷ 0,9</td></tr>
+      <tr class="sum"><td>= Nguyên liệu cho 1 kg thành phẩm</td><td>${dk(line.mat)}</td></tr>
+    </tbody></table>
+    <h3 style="margin-top:14px">2. Chi phí sản xuất cả năm (chưa gồm nguyên liệu) — kịch bản ${line.shifts} ca</h3>
+    <table><tbody>
+      <tr><td>Khấu hao ${isFit?'máy ép + khuôn':'máy đùn + dàn kéo/cắt'}</td><td>${tr(line.deprec)}</td></tr>
+      <tr><td>${isFit?'Bảo trì khuôn':'Bảo trì máy'}</td><td>${tr(line.maint)}</td></tr>
+      <tr><td>Lương công nhân (${line.shifts} ca, gồm 23,5% bảo hiểm bắt buộc)</td><td>${tr(line.labor)}</td></tr>
+      <tr><td>Điện (${fmt0.format(line.hours)} giờ máy)</td><td>${tr(line.elec)}</td></tr>
+      <tr><td>Nước (${fmt0.format(line.hours)} giờ máy)</td><td>${tr(line.water)}</td></tr>
+      <tr><td>Chi phí chung phân bổ ${pc(isFit?C.fit.sharedRatio:C.pipe.sharedRatio)} (Lab, chứng nhận UL, tuân thủ, thuê đất)</td><td>${tr(line.sharedAlloc)}</td></tr>
+      <tr class="sum"><td>= Tổng chi phí sản xuất cả năm</td><td>${tr(line.totalProc)}</td></tr>
+      <tr><td>÷ Sản lượng cả năm ${fmt0.format(line.cap)} kg</td><td><b>${dk(line.procPerKg)}</b>${isFit?` · tương đương <b>${fmt0.format(line.mhr)} đ/giờ máy</b>`:''}</td></tr>
+    </tbody></table>
+    <h3 style="margin-top:14px">3. Cộng lại thành giá thành đầy đủ (giá vốn)</h3>
+    <table><tbody>
+      <tr><td>Nguyên liệu</td><td>${dk(line.mat)}</td></tr>
+      <tr><td>Chi phí sản xuất</td><td>${dk(line.procPerKg)}</td></tr>
+      <tr><td>Bao bì đóng gói</td><td>${dk(line.pack)}</td></tr>
+      <tr class="sum"><td>= GIÁ THÀNH ĐẦY ĐỦ</td><td>${dk(line.fullCost)}</td></tr>
+      <tr><td>× Markup của bạn</td><td><b>${dk(line.price)}</b></td></tr>
+    </tbody></table>
+    <div class="exp">Ghi chú parity: phân bổ chi phí chung giữ nguyên tại công suất chuẩn khi đổi bậc ca (đúng quy ước Excel v3.4 — không phân bổ lại).</div>
+  </div></details>`;
+}
+
+function lineCard(line, inp){
   return `<div class="card" style="background:#faf8f2">
     <h3>${line.name} — giá bán đề xuất</h3>
     <div class="big-price">${fmt0.format(line.price)} <span class="unit" style="font-size:14px">đ/${line.unit}</span></div>
-    <div style="font-size:12px;color:#777;margin-top:2px">Giá thành đầy đủ ${dk(line.fullCost)} · lãi thực ${pc(line.marginOnPrice)} trên giá bán${line.mhr?` · MHR ${fmt0.format(line.mhr)} đ/giờ máy`:''}</div>
+    <div class="cost-eq">Giá thành (giá vốn) <b>${fmt0.format(line.fullCost)} đ/kg</b> = nguyên liệu <b>${fmt0.format(line.mat)}</b> + chi phí sản xuất <b>${fmt0.format(line.procPerKg)}</b> + bao bì <b>${fmt0.format(line.pack)}</b> · lãi gộp <b>${pc(line.marginOnPrice)}</b> trên giá bán${line.mhr?` · chi phí 1 giờ máy ép <b>${fmt0.format(line.mhr)} đ</b>`:''}</div>
     ${lineWarnings(line)}
+    ${costDetailHtml(line, inp)}
     <h3 style="margin-top:14px">Sàn đàm phán (thang giá 5 bậc)</h3>
     ${ladderHtml(line)}
     <div class="kpi-row">
       <div class="kpi"><div class="k">Sản lượng cả năm</div><div class="v">${fmt0.format(line.cap)} <span class="unit">kg</span></div></div>
-      <div class="kpi"><div class="k">${line.mhr?'Giờ máy huy động':'Giờ chạy máy'}</div><div class="v">${fmt0.format(line.hours)} <span class="unit">giờ</span></div></div>
+      <div class="kpi"><div class="k">Giờ máy cả năm</div><div class="v">${fmt0.format(line.hours)} <span class="unit">giờ</span></div></div>
       <div class="kpi"><div class="k">Hòa vốn tại giá này</div><div class="v">${isFinite(line.bePct)?pc(line.bePct):'—'} <span class="unit">công suất</span></div></div>
-      <div class="kpi"><div class="k">Lãi dòng SP / năm</div><div class="v">${ty(line.profit)}</div></div>
+      <div class="kpi"><div class="k">Lãi gộp cả năm</div><div class="v">${ty(line.profit)}</div></div>
     </div>
   </div>`;
 }
@@ -337,11 +415,38 @@ function dnTableHtml(pipe, m){
   const rows = C.dn.map(([dn,w])=>{
     const be = pipe.fullCost*w, vf = applyMargin(be,m), tcg = vf*1.3;
     const list = Math.ceil(tcg/(1-.3)/100)*100, vat = Math.round(list*1.08);
-    return `<tr><td>${dn}</td><td>${fmt1.format(w).replace('.',',')} <span class="unit">kg/m</span></td><td>${fmt0.format(be)}</td><td>${fmt0.format(vf)}</td><td>${fmt0.format(tcg)}</td><td><b>${fmt0.format(vat)}</b></td></tr>`;
+    return `<tr><td>${dn}</td><td>${fmt2.format(w)} <span class="unit">kg/m</span></td><td>${fmt0.format(be)}</td><td>${fmt0.format(vf)}</td><td>${fmt0.format(tcg)}</td><td><b>${fmt0.format(vat)}</b></td></tr>`;
   }).join('');
   return `<details class="adv" style="margin-top:14px"><summary>Bảng giá ống theo DN (đ/m) — mang đi đàm phán</summary>
     <table style="margin-top:8px"><thead><tr><th>DN</th><th>Khối lượng</th><th>Giá thành /m</th><th>Giá VF /m</th><th>Giá TCG /m (+30%)</th><th>Niêm yết có VAT 8%</th></tr></thead><tbody>${rows}</tbody></table>
-    <div style="font-size:11px;color:#777;margin-top:6px">Chuỗi giá: giá thành × margin của bạn → TCG +30% → niêm yết ÷(1−30%), làm tròn lên trăm, +VAT 8% (đúng price-ladder.ts).</div></details>`;
+    <div style="font-size:11px;color:#777;margin-top:6px">Chuỗi giá: giá thành × markup của bạn → TCG +30% → niêm yết ÷(1−30%), làm tròn lên trăm, +VAT 8% (đúng price-ladder.ts).</div></details>`;
+}
+
+// Panel chi tiết: chứng minh phép tính thu hồi vốn + liệt kê chi phí đã trừ
+function paybackDetailHtml(r){
+  return `<details class="detail" style="background:#262626;border-color:#444"><summary style="color:#7dd3fc">Xem chi tiết: vì sao thu hồi vốn ${isFinite(r.payback)?fmt1.format(r.payback)+' năm (≈ '+fmt1.format(r.payback*12)+' tháng)':'—'}? Đã tính đủ khấu hao, điện nước, lương chưa?</summary><div class="inner" style="color:#ddd">
+    <h3 style="margin-top:8px;color:#fff">Các chi phí ĐÃ TRỪ trước khi ra lợi nhuận (cả năm, kịch bản này)</h3>
+    <table style="color:#ddd"><tbody>
+      <tr><td style="color:#ddd">Khấu hao máy đùn + dàn kéo/cắt (Ống)</td><td style="color:#ddd">${tr(C.pipe.deprec)}</td></tr>
+      <tr><td style="color:#ddd">Khấu hao máy ép + khuôn (Phụ kiện)</td><td style="color:#ddd">${tr(C.fit.deprec)}</td></tr>
+      <tr><td style="color:#ddd">Khấu hao Lab + chứng nhận UL (chi phí chung)</td><td style="color:#ddd">${tr(C.sharedDeprec)}</td></tr>
+      <tr><td style="color:#ddd">Lương công nhân 2 dòng (gồm 23,5% bảo hiểm)</td><td style="color:#ddd">${tr(r.pipe.labor + r.fit.labor)}</td></tr>
+      <tr><td style="color:#ddd">Điện + nước 2 dòng</td><td style="color:#ddd">${tr(r.pipe.elec + r.pipe.water + r.fit.elec + r.fit.water)}</td></tr>
+      <tr><td style="color:#ddd">Bảo trì máy + khuôn</td><td style="color:#ddd">${tr(C.pipe.maint + C.fit.moldMaint)}</td></tr>
+      <tr><td style="color:#ddd">Tuân thủ + thuê đất (chi phí chung tiền mặt)</td><td style="color:#ddd">${tr(C.cashSharedTotal)}</td></tr>
+      <tr><td style="color:#ddd">Chi phí vận hành ngoài sản xuất</td><td style="color:#ddd">${tr(C.operatingCostPerYear)}</td></tr>
+      <tr><td style="color:#ddd">Chi phí lãi vay</td><td style="color:#ddd">${tr(C.financialCostPerYear)}</td></tr>
+    </tbody></table>
+    <h3 style="margin-top:14px;color:#fff">Phép tính thu hồi vốn (theo dòng tiền)</h3>
+    <table style="color:#ddd"><tbody>
+      <tr><td style="color:#ddd">Lợi nhuận trước thuế</td><td style="color:#ddd">${ty(r.ebit)}</td></tr>
+      <tr><td style="color:#ddd">+ Cộng lại khấu hao (đã trừ trong giá thành nhưng không phải tiền chi ra hàng năm)</td><td style="color:#ddd">${ty(C.deprecTotal)}</td></tr>
+      <tr class="sum"><td style="color:#fff">= Tiền thu về mỗi năm</td><td style="color:#fff">${ty(r.cashPerYear)}</td></tr>
+      <tr><td style="color:#ddd">Vốn đầu tư đã ghi nhận (Excel v3.4)</td><td style="color:#ddd">${ty(C.invested)}</td></tr>
+      <tr class="sum"><td style="color:#fff">Thu hồi vốn = ${ty(C.invested)} ÷ ${ty(r.cashPerYear)}</td><td style="color:#fff">${isFinite(r.payback)?fmt1.format(r.payback)+' năm':'—'}</td></tr>
+    </tbody></table>
+    <div class="warn" style="margin-top:12px">⚠ Vì sao con số này NHANH BẤT THƯỜNG: vốn đầu tư trong Excel v3.4 mới ghi nhận máy móc + khuôn + Lab/UL (15,97 tỷ). Hai ô <b>chi phí xây nhà xưởng</b> và <b>vốn lưu động</b> đang để 0 — nghĩa là mẫu số đang THIẾU. Điền 2 số này vào Tham Số thì thời gian thu hồi vốn sẽ dài ra tương ứng. Đây là dữ liệu cần bổ sung, không phải lỗi công thức.</div>
+  </div></details>`;
 }
 
 function summaryHtml(r){
@@ -352,11 +457,14 @@ function summaryHtml(r){
     ${maxNote}
     <div class="kpi-row">
       <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Doanh thu</div><div class="v" style="color:#fff">${ty(r.revenue)}</div></div>
-      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">EBIT (sau vận hành + lãi vay)</div><div class="v" style="color:${r.ebit>=0?'#4ade80':'#f87171'}">${ty(r.ebit)}</div></div>
-      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Hiệu suất sinh lời (EBIT/DT)</div><div class="v" style="color:${r.ebitMargin>=0?'#4ade80':'#f87171'}">${pc(r.ebitMargin)}</div></div>
-      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Thu hồi vốn đầu tư</div><div class="v" style="color:#fff">${isFinite(r.payback)?fmt1.format(r.payback)+' năm':'—'}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Lãi gộp (doanh thu − giá thành)</div><div class="v" style="color:#fff">${ty(r.grossProfit)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Lợi nhuận trước thuế (sau vận hành ${tr(C.operatingCostPerYear)} + lãi vay ${tr(C.financialCostPerYear)})</div><div class="v" style="color:${r.ebit>=0?'#4ade80':'#f87171'}">${ty(r.ebit)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Lợi nhuận sau thuế TNDN 20% (ước tính)</div><div class="v" style="color:${r.netProfit>=0?'#4ade80':'#f87171'}">${ty(r.netProfit)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Tỷ suất lợi nhuận trước thuế / doanh thu</div><div class="v" style="color:${r.ebitMargin>=0?'#4ade80':'#f87171'}">${pc(r.ebitMargin)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Thu hồi vốn đầu tư</div><div class="v" style="color:#fff">${isFinite(r.payback)?fmt1.format(r.payback)+' năm <span class="unit" style="color:#999">≈ '+fmt1.format(r.payback*12)+' tháng</span>':'—'}</div></div>
     </div>
-    <div style="font-size:11.5px;color:#999;margin-top:10px">Nhu cầu compound cả năm: ống ${fmt0.format(r.pipe.compoundNeedKg)} kg · phụ kiện ${fmt0.format(r.fit.compoundNeedKg)} kg (hao hụt 10%). Payback theo dòng tiền = vốn đầu tư ${ty(C.invested)} ÷ (EBIT + khấu hao ${ty(C.deprecTotal)}).</div>
+    ${paybackDetailHtml(r)}
+    <div style="font-size:11.5px;color:#999;margin-top:10px">Nhu cầu compound cả năm: ống ${fmt0.format(r.pipe.compoundNeedKg)} kg · phụ kiện ${fmt0.format(r.fit.compoundNeedKg)} kg (hao hụt 10%). Thuế thu nhập doanh nghiệp 20% là ước tính minh họa — Excel v3.4 chưa có dòng thuế.</div>
   </div>`;
 }
 
@@ -371,7 +479,7 @@ function run(){
     $('resultsLoading').style.display='none';
     $('results').style.display='block';
     $('results').innerHTML =
-      `<div class="grid results-grid">${lineCard(st.r.pipe)}${lineCard(st.r.fit)}</div>`
+      `<div class="grid results-grid">${lineCard(st.r.pipe, inp)}${lineCard(st.r.fit, inp)}</div>`
       + summaryHtml(st.r) + dnTableHtml(st.r.pipe, inp.pM);
     $('aiBtn').disabled=false;
     $('aiEmpty').style.display='none';
@@ -384,17 +492,18 @@ function adviceFor(r){
   for (const line of [r.pipe, r.fit]){
     const [t1,t2,t3,t4] = line.ladder;
     if (line.price < t1) tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} đang DƯỚI sàn biến phí ${dk(t1)} — từ chối mức này; mỗi kg ký là mất tiền mặt thật.`);
-    else if (line.price < t4) tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} nằm giữa bậc ${line.price<t2?'1–2':line.price<t3?'2–3':'3–4'} của thang giá. Ranh giới nên nhớ khi bị ép giá: lùi tối đa về ${dk(t4)} (hòa vốn toàn DN) cho đơn thường, ${dk(t2)} (hòa vốn tiền mặt) chỉ cho đơn chiến lược có thời hạn.`);
-    else tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} trên hòa vốn toàn DN (${dk(t4)}) — dư địa nhượng bộ ${dk(line.price-t4)}/kg trước khi chạm vùng nguy hiểm.`);
-    if (isFinite(line.bePct)) tips.push(`<b>${line.name} — an toàn công suất:</b> chỉ cần chạy ${pc(line.bePct)} công suất kịch bản là hòa vốn${line.bePct<.3?' — biên an toàn rất dày, phần công suất còn lại toàn bộ là lãi biên':line.bePct>.7?' — biên an toàn MỎNG, một hợp đồng lớn rớt là lỗ; cân nhắc margin cao hơn':''}.`);
+    else if (line.price < t4) tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} nằm giữa bậc ${line.price<t2?'1–2':line.price<t3?'2–3':'3–4'} của thang giá. Ranh giới nên nhớ khi bị ép giá: lùi tối đa về ${dk(t4)} (hòa vốn toàn doanh nghiệp) cho đơn thường, ${dk(t2)} (hòa vốn tiền mặt) chỉ cho đơn chiến lược có thời hạn.`);
+    else tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} trên hòa vốn toàn doanh nghiệp (${dk(t4)}) — dư địa nhượng bộ ${dk(line.price-t4)}/kg trước khi chạm vùng nguy hiểm.`);
+    if (isFinite(line.bePct)) tips.push(`<b>${line.name} — an toàn công suất:</b> chỉ cần chạy ${pc(line.bePct)} công suất kịch bản là hòa vốn${line.bePct<.3?' — biên an toàn rất dày, phần công suất còn lại toàn bộ là lãi biên':line.bePct>.7?' — biên an toàn MỎNG, một hợp đồng lớn rớt là lỗ; cân nhắc markup cao hơn':''}.`);
   }
   const dCost = 0.1*C.taxFactor*r.inp.rate/C.pipe.yield;
   tips.push(`<b>Rủi ro giá nguyên liệu:</b> compound tăng 0,1 USD/kg → giá thành ống tăng ~${fmt0.format(dCost)} đ/kg. Cơ chế khóa bảng giá hiện đặt ngưỡng ±3% (ADR-004) — nếu hợp đồng bán dài hạn, hãy chốt song song hợp đồng mua compound hoặc cài điều khoản trượt giá.`);
   const days = 10000/(r.pipe.compoundNeedKg/365);
   tips.push(`<b>Tồn kho:</b> kho compound ống 10 tấn chỉ đủ ~${fmt1.format(days)} ngày chạy kịch bản này — ký đơn lớn phải đi kèm kế hoạch nhập nguyên liệu trước.`);
+  tips.push(`<b>Độ tin cậy số thu hồi vốn:</b> vốn đầu tư trong mô hình chưa gồm chi phí xây nhà xưởng và vốn lưu động (đang để 0) — số ${isFinite(r.payback)?fmt1.format(r.payback)+' năm':'—'} là CẬN DƯỚI lạc quan. Bổ sung 2 khoản này trước khi dùng nó ra quyết định đầu tư.`);
   tips.push(r.ebit>=0
-    ? `<b>Bức tranh năm:</b> EBIT ${ty(r.ebit)} (${pc(r.ebitMargin)} doanh thu), thu hồi vốn ${fmt1.format(r.payback)} năm — ${r.payback<1.5?'rất hấp dẫn để tăng tốc đầu tư thêm ca/khuôn':'ở mức chấp nhận được; ưu tiên đơn có margin cao hơn trước khi thêm công suất'}.`
-    : `<b>Bức tranh năm:</b> EBIT ÂM ${ty(r.ebit)} — mức margin này không nuôi nổi bộ máy; nâng margin hoặc tăng sản lượng cam kết trước khi ký.`);
+    ? `<b>Bức tranh năm:</b> lợi nhuận trước thuế ${ty(r.ebit)} (${pc(r.ebitMargin)} doanh thu), sau thuế thu nhập doanh nghiệp 20% còn ~${ty(r.netProfit)} — ${r.payback<1.5?'dòng tiền đủ hấp dẫn để cân nhắc tăng ca/thêm khuôn':'ở mức chấp nhận được; ưu tiên đơn có markup cao hơn trước khi thêm công suất'}.`
+    : `<b>Bức tranh năm:</b> LỖ trước thuế ${ty(r.ebit)} — mức markup này không nuôi nổi bộ máy; nâng markup hoặc tăng sản lượng cam kết trước khi ký.`);
   return tips;
 }
 function askAI(){
@@ -408,6 +517,7 @@ function askAI(){
     $('aiPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
   }, 1400);
 }
+onEdit(); // hiện ngay chi phí sản xuất chưa gồm nguyên liệu ở Bước 1
 </script>
 </body>
 </html>

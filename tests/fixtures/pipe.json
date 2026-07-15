@@ -1,7 +1,7 @@
 {
   "params": {
     "compoundReplacementPriceUsdPerKg": 3.03,
-    "extruderMaxCapacityKgPerHour": 200,
+    "extruderMaxCapacityKgPerHour": 250,
     "extruderActualCapacityKgPerHour": 140,
     "continuousRunDaysPerBatch": 5,
     "maintenanceDaysPerBatch": 2,

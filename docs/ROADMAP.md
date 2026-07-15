@@ -28,10 +28,18 @@
 - [ ] Đảm bảo UI khóa lại các nút "Lưu" hoặc "Chỉnh sửa" nếu User không có quyền.
 
 ### 3. Màn hình "Trợ Lý CEO" + nút AI tư vấn (yêu cầu user 2026-07-15)
-- [x] Pha 0-1: brief (`docs/briefs/BRIEF-2026-07-15-ceo-planner.md`) + prototype
-      (`prototype/ceo-planner.html`, số khớp fixture v3.4) — **CHỜ DUYỆT UI**.
-- [ ] Pha 2 (sau khi duyệt UI): ADR cho AI tư vấn — callable Cloud Function
-      `adviseScenario` gọi Claude API phía server (không key ở client) + contract dữ liệu gửi đi.
+- [x] Pha 0-1: brief + prototype (`prototype/ceo-planner.html`), đã qua **7 vòng
+      góp ý user cùng ngày** — toàn bộ quyết định đã chốt (markup trên giá vốn,
+      thuê mặt bằng 800tr/năm thay thuê đất 525, doanh thu VF không TCG/niêm yết,
+      không viết tắt, font Be Vietnam Pro, chọn dòng BlazeMaster/Corzan 1 nơi,
+      bảng giá 83 SKU phụ kiện theo cái) ghi tại
+      `docs/briefs/BRIEF-2026-07-15-ceo-planner.md` §"Quyết định đã chốt" —
+      **CHỜ USER GẬT ĐẦU CHỐT CỔNG PHA 1**.
+- [ ] Hỏi user khi chốt cổng: thuế TNDN 20% chuẩn hay ưu đãi? (hiện là ước tính minh họa)
+- [ ] Pha 2 (sau khi duyệt UI): (a) ADR AI tư vấn — callable Cloud Function
+      `adviseScenario` gọi Claude API phía server (không key ở client) + contract
+      dữ liệu gửi đi; (b) ADR + schema "thuê mặt bằng theo năm" thay
+      `sharedFixedCosts.annualLandRent` (cập nhật fixture trước, luật Excel→fixture→code).
 - [ ] Pha 3: code màn hình vào `src/features/ceo-planner/`, thay công thức nhúng bằng `src/engine/*`.
 
 ### 4. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)

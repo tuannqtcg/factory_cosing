@@ -176,6 +176,13 @@
       <button onclick="preset('max')">Chạy tối đa: 3 ca liên tục, số đợt tối đa/năm</button>
     </div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:#faf8f2;border-radius:8px">
+      <span style="font-size:12px;font-weight:600;color:#444">Dòng sản phẩm:</span>
+      <div class="seg" id="lineSeg">
+        <button class="on" onclick="setLine('bm')">BlazeMaster</button><button onclick="setLine('cz')">Corzan</button>
+      </div>
+      <span style="font-size:11.5px;color:#777;line-height:1.5;flex:1;min-width:240px" id="lineNote">Compound BlazeMaster Orange (ống 3,03 · phụ kiện 3,85 USD/kg mặc định) — thuế nhập khẩu 6% + phí thông quan 1%.</span>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px;padding:10px 12px;background:#faf8f2;border-radius:8px">
       <span style="font-size:12px;font-weight:600;color:#444">Cách tính markup:</span>
       <div class="seg" id="marginMode">
         <button class="on" onclick="setSeg('marginMode','markup')">Markup trên giá vốn</button><button onclick="setSeg('marginMode','margin')">Lãi trên giá bán</button>
@@ -185,12 +192,7 @@
     <div class="grid inputs-grid">
       <div>
         <h3>Ống CPVC <span class="unit">(đùn liên tục, theo kg)</span></h3>
-        <label>Dòng sản phẩm / nguyên liệu</label>
-        <div class="seg" id="pipeMatSeg">
-          <button class="on" onclick="setMat('pipe','bm')">BlazeMaster</button><button onclick="setMat('pipe','cz')">Corzan</button>
-        </div>
-        <div style="font-size:11px;color:#777;margin-top:4px" id="pipeMatNote">Compound BlazeMaster Orange — thuế nhập khẩu 6% + phí thông quan 1%.</div>
-        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế nhập khẩu</span></label>
+        <label>Giá compound ống <span class="unit">USD/kg, giá CIF trước thuế nhập khẩu — theo dòng sản phẩm đã chọn ở trên</span></label>
         <input type="number" id="pipeUsd" value="3.03" step="0.01" min="0" oninput="onEdit()">
         <div class="err-msg" id="pipeUsdErr">Giá phải là số dương.</div>
         <label>Markup mong muốn <span class="unit">%</span></label>
@@ -204,12 +206,7 @@
       </div>
       <div>
         <h3>Phụ kiện <span class="unit">(ép phun, theo giờ máy)</span></h3>
-        <label>Dòng sản phẩm / nguyên liệu</label>
-        <div class="seg" id="fitMatSeg">
-          <button class="on" onclick="setMat('fit','bm')">BlazeMaster</button><button onclick="setMat('fit','cz')">Corzan</button>
-        </div>
-        <div style="font-size:11px;color:#777;margin-top:4px" id="fitMatNote">Compound BlazeMaster — thuế nhập khẩu 6% + phí thông quan 1%.</div>
-        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế nhập khẩu</span></label>
+        <label>Giá compound phụ kiện <span class="unit">USD/kg, giá CIF trước thuế nhập khẩu — theo dòng sản phẩm đã chọn ở trên</span></label>
         <input type="number" id="fitUsd" value="3.85" step="0.01" min="0" oninput="onEdit()">
         <div class="err-msg" id="fitUsdErr">Giá phải là số dương.</div>
         <label>Markup mong muốn <span class="unit">%</span></label>
@@ -334,16 +331,20 @@ function setSeg(id, val){
     : 'Lãi 20% trên giá bán: giá bán = giá thành sản xuất ÷ (1 − 0,20) — lãi gộp đúng 20% tính trên giá bán.';
   onEdit();
 }
-function setMat(line, m){
-  st[line+'Mat'] = m;
-  const mat = MAT[line][m];
-  [...$(line+'MatSeg').children].forEach(b => b.classList.toggle('on', b.textContent.trim()===mat.name));
-  $(line+'MatNote').textContent = mat.note;
-  $(line==='pipe'?'pipeUsd':'fitUsd').value = mat.usd; // nạp giá mặc định của nguyên liệu
+// Dòng sản phẩm chọn 1 NƠI cho cả 2 line (góp ý user 2026-07-15: chọn ống
+// BlazeMaster thì phụ kiện nhảy theo BlazeMaster, Corzan cũng vậy)
+function setLine(m){
+  st.pipeMat = st.fitMat = m;
+  [...$('lineSeg').children].forEach(b => b.classList.toggle('on', b.textContent.trim()===MAT.pipe[m].name));
+  $('lineNote').textContent = m==='bm'
+    ? 'Compound BlazeMaster Orange (ống 3,03 · phụ kiện 3,85 USD/kg mặc định) — thuế nhập khẩu 6% + phí thông quan 1%.'
+    : 'Compound Corzan 3710 (ống 3,47 · phụ kiện 3,97 USD/kg mặc định) — thuế nhập khẩu 0% (AIFTA, C/O form AI) + phí 1%; đơn trọng ống +10% (ADR-012).';
+  $('pipeUsd').value = MAT.pipe[m].usd; // nạp giá mặc định của dòng cho CẢ 2 line
+  $('fitUsd').value  = MAT.fit[m].usd;
   onEdit();
 }
 function preset(p){
-  if (p==='excel'){ setMat('pipe','bm'); setMat('fit','bm'); $('pipeMargin').value=25; $('fitMargin').value=40; $('fxRate').value=26500;
+  if (p==='excel'){ setLine('bm'); $('pipeMargin').value=25; $('fitMargin').value=40; $('fxRate').value=26500;
     $('landRent').value=525; // Excel v3.4 gốc: thuê đất 525 triệu — chỉ để so số quen
     setSeg('pipeShifts',3); setSeg('fitShifts',1); setSeg('fitUtil',0.6); setSeg('marginMode','markup'); }
   if (p==='max'){ setSeg('pipeShifts',3); setSeg('fitShifts',3); setSeg('fitUtil',0.85); }

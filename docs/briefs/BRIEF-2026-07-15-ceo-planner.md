@@ -1,6 +1,7 @@
 # DESIGN BRIEF — Trợ Lý CEO (CEO Planner) + nút AI Tư Vấn
 
 Ngày: 2026-07-15 | Pha: 0 (brief) → 1 (prototype) | Trạng thái: CHỜ DUYỆT UI
+(đã qua 7 vòng góp ý cùng ngày — xem "Quyết định đã chốt" cuối file)
 Nguồn yêu cầu: user 2026-07-15 — "Đơn giản hóa cách sử dụng app… với giá nguyên
 liệu đầu vào X thì giá bán là bao nhiêu, nếu chạy liên tục 3 ca mỗi ngày và chạy
 số lần tối đa trong năm thì hiệu suất là bao nhiêu với giá bán đó… Tôi là CEO,
@@ -41,6 +42,32 @@ nhất kiểu "hỏi → trả lời", kèm nút AI tư vấn đọc kết quả
   dữ liệu thô ngoài phạm vi vai), có audit log.
 - KHÔNG tính ngược margin→biến vận hành ở màn này (đã có Target Costing).
 - Phụ kiện chỉ hiển thị giá THAM CHIẾU đ/kg + MHR — báo giá SKU lẻ vẫn ở Bảng Giá.
+
+## Quyết định ĐÃ CHỐT với user qua các vòng duyệt (2026-07-15) — nguồn chân lý cho phiên mới
+1. **Markup tính TRÊN GIÁ VỐN** (giá bán = giá thành × (1+markup)) — mặc định
+   25% ống / 40% phụ kiện; vẫn giữ lựa chọn phụ "lãi trên giá bán".
+2. **Không dùng từ viết tắt trong UI**: lãi gộp / lợi nhuận trước thuế /
+   lợi nhuận sau thuế TNDN / tỷ suất lợi nhuận / chi phí 1 giờ máy ép
+   (không EBIT, không MHR). Chú thích dài đặt CHỮ NHỎ DƯỚI giá trị, không ngoặc.
+3. **Tổng quan trước → chi tiết sau**: chi phí sản xuất (chưa gồm nguyên liệu)
+   hiện live ngay Bước 1; mỗi số lớn có nút "Xem bảng chi tiết" (giá thành
+   3 bảng: nguyên liệu → chi phí SX cả năm → cộng giá vốn; panel thu hồi vốn
+   liệt kê chi phí đã trừ + phép tính dòng tiền).
+4. **Vốn đầu tư**: chi phí xây nhà xưởng + vốn lưu động TẠM = 0 (mô hình ĐI
+   THUÊ). **Chi phí thuê mặt bằng 800 triệu đ/năm, đổi được từng năm** — thay
+   "thuê đất 525 triệu" của Excel v3.4 (Pha 2: schema mới + ADR, xem dưới).
+   Payback = 15,97 tỷ ÷ (lợi nhuận trước thuế + khấu hao 3.193,3 triệu).
+5. **Doanh thu trên màn CEO = doanh thu VF** (giá bán VF = giá thành + markup).
+   **Bỏ giá TCG và giá niêm yết** khỏi màn CEO (vẫn ở màn Bảng Giá cho sales).
+6. **Font Be Vietnam Pro** (nhúng data-URI, không CDN) hoặc sans-serif.
+7. **Dòng sản phẩm ghi rõ + chọn 1 NƠI cho cả 2 line**: BlazeMaster ↔ Corzan
+   (ADR-012: Corzan ống 3,47/phụ kiện 3,97 USD, thuế NK 0% AIFTA + phí 1%,
+   đơn trọng ống +10%, tồn kho 0). Chọn dòng → giá compound cả 2 line nhảy theo.
+8. **Bảng giá phụ kiện theo CÁI**: 83 SKU có khuôn (66 khuôn vật lý ADR-007,
+   8/91 SKU chưa khuôn tự ẩn), giá động theo nguyên liệu + bậc ca + markup,
+   11 SKU họ ren cộng đơn giá ren (ADR-008); có ô lọc tên/size.
+9. Thuế TNDN 20% là ƯỚC TÍNH minh họa — CHƯA được user xác nhận thuế suất
+   (còn treo, hỏi khi chốt cổng Pha 1).
 
 ## Ràng buộc kỹ thuật khi sang Pha 3
 - Toàn bộ công thức nhúng trong prototype PHẢI thay bằng `src/engine/*` (pipe,

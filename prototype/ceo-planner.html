@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trợ Lý CEO — Giá Bán & Hiệu Quả Năm (Prototype Pha 1)</title>
+<style>
+  /* PROTOTYPE PHA 1 — mock 100% client, không API/Firebase/localStorage.
+     Design tokens theo prototype hiện có (BlazeMaster): nền #ebe6d4, đen #1a1a1a,
+     đỏ thương hiệu #a8003b, cảnh báo #DC2626, OK #16A34A, 4px grid, bo 8px. */
+  * { box-sizing: border-box; margin: 0; }
+  body { background:#ebe6d4; color:#1a1a1a; font-family:Roboto,"Helvetica Neue",Arial,sans-serif; font-size:14px; }
+  .num { font-variant-numeric: tabular-nums; text-align:right; }
+  .unit { color:#8a8a8a; font-weight:400; font-size:.85em; }
+  .wrap { max-width:1366px; margin:0 auto; padding:20px 16px 60px; }
+  header.top { background:#1a1a1a; color:#fff; border-radius:8px; padding:16px 20px; display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; }
+  header.top .brand { color:#ff5c8a; font-size:10px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; width:100%; }
+  header.top h1 { font-size:20px; font-weight:700; letter-spacing:-.3px; }
+  header.top .sub { color:#aaa; font-size:12px; }
+  .badge-mock { background:#a8003b; color:#fff; font-size:10px; font-weight:700; letter-spacing:.08em; padding:3px 8px; border-radius:4px; text-transform:uppercase; }
+  .card { background:#fff; border-radius:8px; padding:16px 20px; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .step-label { font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:#a8003b; font-weight:700; margin-bottom:8px; }
+  h2 { font-size:16px; font-weight:700; margin-bottom:12px; }
+  h3 { font-size:13px; font-weight:700; margin-bottom:8px; }
+  .grid { display:grid; gap:12px; margin-top:12px; }
+  .inputs-grid { grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+  .results-grid { grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); }
+  label { display:block; font-size:12px; font-weight:600; color:#444; margin:10px 0 4px; }
+  input[type=number] { width:100%; padding:8px 10px; border:1px solid #ccc; border-radius:8px; font-size:15px; font-variant-numeric:tabular-nums; }
+  input[type=number]:focus { outline:2px solid #a8003b33; border-color:#a8003b; }
+  input.bad { border-color:#DC2626; background:#fef2f2; }
+  .err-msg { color:#DC2626; font-size:11px; margin-top:3px; display:none; }
+  .seg { display:inline-flex; border:1px solid #ccc; border-radius:8px; overflow:hidden; }
+  .seg button { border:0; background:#fff; padding:7px 12px; font-size:12px; cursor:pointer; color:#444; }
+  .seg button.on { background:#1a1a1a; color:#fff; font-weight:700; }
+  .preset { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px; }
+  .preset button { border:1px dashed #a8003b; background:#fff; color:#a8003b; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; }
+  .preset button:hover { background:#a8003b0d; }
+  .run-btn { margin-top:16px; width:100%; padding:13px; border:0; border-radius:8px; background:#a8003b; color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+  .run-btn:disabled { background:#c9c9c9; cursor:not-allowed; }
+  .big-price { font-size:30px; font-weight:800; letter-spacing:-.5px; font-variant-numeric:tabular-nums; }
+  .kpi-row { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+  .kpi { flex:1 1 130px; background:#faf8f2; border-radius:8px; padding:10px 12px; }
+  .kpi .k { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#777; font-weight:700; }
+  .kpi .v { font-size:17px; font-weight:700; margin-top:2px; font-variant-numeric:tabular-nums; }
+  table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; }
+  th { font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:#777; text-align:right; padding:6px 8px; border-bottom:1px solid #e5e0d0; }
+  th:first-child, td:first-child { text-align:left; }
+  td { padding:6px 8px; border-bottom:1px solid #f0ece0; text-align:right; font-size:13px; }
+  .ladder { margin-top:8px; }
+  .ladder .row { display:flex; align-items:center; gap:8px; padding:5px 8px; border-radius:6px; font-size:12.5px; }
+  .ladder .row .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .ladder .row .nm { flex:1; color:#555; }
+  .ladder .row .vl { font-weight:700; font-variant-numeric:tabular-nums; }
+  .ladder .row.you { background:#1a1a1a; color:#fff; font-weight:700; }
+  .ladder .row.you .nm { color:#fff; }
+  .empty { border:2px dashed #cfc8b0; border-radius:8px; padding:40px 20px; text-align:center; color:#8a8a8a; font-size:13px; }
+  .skeleton { height:120px; border-radius:8px; background:linear-gradient(90deg,#f0ece0 25%,#faf8f2 50%,#f0ece0 75%); background-size:200% 100%; animation:sh 1.1s infinite; }
+  @keyframes sh { to { background-position:-200% 0; } }
+  .warn { background:#fef2f2; border-left:3px solid #DC2626; color:#7f1d1d; padding:8px 12px; border-radius:0 8px 8px 0; font-size:12.5px; margin-top:8px; }
+  .ok-note { background:#f0fdf4; border-left:3px solid #16A34A; color:#14532d; padding:8px 12px; border-radius:0 8px 8px 0; font-size:12.5px; margin-top:8px; }
+  .ai-btn { margin-top:16px; width:100%; padding:14px; border:0; border-radius:8px; background:#1a1a1a; color:#fff; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .ai-btn:hover { background:#333; }
+  .ai-btn:disabled { background:#c9c9c9; cursor:wait; }
+  .ai-panel { margin-top:12px; border:1px solid #e5e0d0; border-radius:8px; padding:16px 18px; background:#fffdf7; }
+  .ai-panel h3 { display:flex; gap:8px; align-items:center; }
+  .ai-panel ul { margin:8px 0 0 18px; display:grid; gap:7px; font-size:13px; line-height:1.5; }
+  .mock-note { font-size:11px; color:#8a6d00; background:#fef9e7; border-radius:6px; padding:6px 10px; margin-top:10px; }
+  details.adv { margin-top:10px; } details.adv summary { font-size:12px; color:#777; cursor:pointer; }
+  footer.note { margin-top:24px; font-size:11.5px; color:#777; line-height:1.6; }
+  .spin { width:16px;height:16px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:rot .7s linear infinite;display:inline-block; }
+  @keyframes rot { to { transform:rotate(360deg); } }
+  @media (max-width:760px){ .big-price{font-size:24px;} .wrap{padding:12px 8px 40px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">BlazeMaster CPVC · Costing Engine · Model v3.4</div>
+    <h1>Trợ Lý CEO — Giá Bán &amp; Hiệu Quả Cả Năm</h1>
+    <span class="badge-mock">Prototype Pha 1 — Mock</span>
+    <span class="sub">Nhập giá nguyên liệu + margin mong muốn → giá bán, sàn đàm phán, hiệu quả khi chạy tối đa công suất.</span>
+  </header>
+
+  <!-- ═══ BƯỚC 1 — CÂU HỎI ═══ -->
+  <div class="card" style="margin-top:16px">
+    <div class="step-label">Bước 1 — Câu hỏi của bạn</div>
+    <div class="preset">
+      <span style="font-size:12px;color:#777;align-self:center">Kịch bản nhanh:</span>
+      <button onclick="preset('excel')">Chuẩn Excel v3.4 (số quen)</button>
+      <button onclick="preset('max')">Chạy tối đa: 3 ca liên tục, số đợt tối đa/năm</button>
+    </div>
+    <div class="grid inputs-grid">
+      <div>
+        <h3>Ống CPVC <span class="unit">(đùn liên tục, theo kg)</span></h3>
+        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế NK</span></label>
+        <input type="number" id="pipeUsd" value="3.03" step="0.01" min="0" oninput="onEdit()">
+        <div class="err-msg" id="pipeUsdErr">Giá phải là số dương.</div>
+        <label>Margin mong muốn <span class="unit">%</span></label>
+        <input type="number" id="pipeMargin" value="25" step="1" oninput="onEdit()">
+        <div class="err-msg" id="pipeMarginErr">Margin phải ≥ 0 (kiểu "trên giá bán" phải &lt; 95).</div>
+        <label>Số ca chạy / ngày</label>
+        <div class="seg" id="pipeShifts">
+          <button onclick="setSeg('pipeShifts',1)">1 ca</button><button onclick="setSeg('pipeShifts',2)">2 ca</button><button class="on" onclick="setSeg('pipeShifts',3)">3 ca</button>
+        </div>
+      </div>
+      <div>
+        <h3>Phụ kiện <span class="unit">(ép phun, theo giờ máy)</span></h3>
+        <label>Giá compound đầu vào X <span class="unit">USD/kg, giá CIF trước thuế NK</span></label>
+        <input type="number" id="fitUsd" value="3.85" step="0.01" min="0" oninput="onEdit()">
+        <div class="err-msg" id="fitUsdErr">Giá phải là số dương.</div>
+        <label>Margin mong muốn <span class="unit">%</span></label>
+        <input type="number" id="fitMargin" value="40" step="1" oninput="onEdit()">
+        <div class="err-msg" id="fitMarginErr">Margin phải ≥ 0 (kiểu "trên giá bán" phải &lt; 95).</div>
+        <label>Số ca chạy / ngày &nbsp;·&nbsp; Huy động giờ máy</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="seg" id="fitShifts">
+            <button class="on" onclick="setSeg('fitShifts',1)">1 ca</button><button onclick="setSeg('fitShifts',2)">2 ca</button><button onclick="setSeg('fitShifts',3)">3 ca</button>
+          </div>
+          <div class="seg" id="fitUtil">
+            <button class="on" onclick="setSeg('fitUtil',0.6)">60%</button><button onclick="setSeg('fitUtil',0.85)">85%</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>Cách hiểu margin</h3>
+        <div class="seg" id="marginMode" style="margin-top:6px">
+          <button class="on" onclick="setSeg('marginMode','markup')">Markup trên giá thành</button><button onclick="setSeg('marginMode','margin')">Margin trên giá bán</button>
+        </div>
+        <div style="font-size:11.5px;color:#777;margin-top:6px;line-height:1.5" id="marginHint">
+          Markup 25%: giá bán = giá thành × 1,25 (cách Excel v3.4 đang dùng — lãi 20% trên giá bán).
+        </div>
+        <details class="adv">
+          <summary>Tham số nâng cao (tỷ giá, thuế NK)</summary>
+          <label>Tỷ giá USD/VND</label>
+          <input type="number" id="fxRate" value="26500" step="100" oninput="onEdit()">
+          <div class="err-msg" id="fxRateErr">Tỷ giá phải là số dương.</div>
+          <div style="font-size:11.5px;color:#777;margin-top:6px">Thuế nhập khẩu 6% + phí thông quan/logistics 1% (cố định theo Assumptions v3.4).</div>
+        </details>
+      </div>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="run()">▶ Chạy số liệu</button>
+  </div>
+
+  <!-- ═══ BƯỚC 2 — TRẢ LỜI ═══ -->
+  <div class="card" style="margin-top:16px">
+    <div class="step-label">Bước 2 — Trả lời</div>
+    <div id="resultsEmpty" class="empty">Chưa có kết quả. Nhập giá nguyên liệu, margin mong muốn và bấm <b>Chạy số liệu</b>.</div>
+    <div id="resultsLoading" style="display:none" class="grid results-grid"><div class="skeleton"></div><div class="skeleton"></div></div>
+    <div id="results" style="display:none"></div>
+  </div>
+
+  <!-- ═══ BƯỚC 3 — AI TƯ VẤN ═══ -->
+  <div class="card" style="margin-top:16px">
+    <div class="step-label">Bước 3 — Hỏi ý kiến AI</div>
+    <div id="aiEmpty" style="font-size:13px;color:#8a8a8a">Chạy số liệu xong, bấm nút dưới để AI đọc kết quả và tư vấn trước khi bạn vào bàn đàm phán.</div>
+    <button class="ai-btn" id="aiBtn" onclick="askAI()" disabled>🤖 AI tư vấn ngay</button>
+    <div id="aiPanel" style="display:none" class="ai-panel"></div>
+  </div>
+
+  <footer class="note">
+    <b>Những gì là GIẢ trong prototype này (Pha 1):</b>
+    ① Toàn bộ công thức nhúng tại chỗ để demo — Pha 3 PHẢI thay bằng <code>src/engine/*</code> (pipe, fitting, price-ladder, cvp), cấm chép tay.
+    ② Nút AI tư vấn là mock rule-based chạy trong trình duyệt — bản thật là Cloud Function <code>adviseScenario</code> gọi Claude API phía server (không API key ở client, pattern ADR-010/013), cần ADR mới ở Pha 2.
+    ③ Chưa có phân quyền — màn hình này thuộc tầng chiến lược (admin/pricing, ADR-006).
+    Số mặc định lấy từ <code>tests/fixtures/</code> (Excel v3.4): giá ống 132.898,6 đ/kg · phụ kiện 252.845,8 đ/kg · EBIT 16,37 tỷ · payback 0,816 năm tại preset chuẩn.
+  </footer>
+</div>
+
+<script>
+'use strict';
+// ── HẰNG SỐ TỪ tests/fixtures/ (Excel v3.4) — SẼ THAY BẰNG ENGINE Ở PHA 3 ──
+const C = {
+  taxFactor: 1.07,               // 6% thuế NK + 1% phí thông quan (assumptions.json)
+  batches: 41, runDays: 5, hoursPerShift: 8, // 41 đợt/năm × 5 ngày chạy liên tục (287 ngày vận hành, 5+2 bảo trì)
+  nonProdPerYear: 640e6 + 2712e6,            // chi phí vận hành + lãi vay ngoài SX
+  cashSharedTotal: 250e6 + 525e6,            // tuân thủ + thuê đất (phần TIỀN MẶT của chi phí chung)
+  invested: 15966254000,
+  deprecTotal: 478500000 + 762580800 + 1952170000, // Lab/UL + đùn + ép&khuôn (cho payback dòng tiền)
+  pipe: { yield:.9, pack:1500, kgPerHour:140, deprec:762580800, maint:200e6,
+          laborPerShift:458185000, elecPerHour:254400, waterPerHour:212000,
+          sharedAlloc:1168797614.020355, sharedRatio:0.9324272947908696, vfMarkup:.25 },
+  fit:  { yield:.9, pack:2000, productivity:22.827948366365774, machines:2,
+          deprec:1952170000, moldMaint:100e6, laborPerShift:229092500,
+          elecPerMH:63600, waterPerMH:42400,
+          sharedAlloc:84702385.97964501, sharedRatio:0.06757270520913045, vfMarkup:.40 },
+  dn: [ ['DN20',.29],['DN25',.41],['DN32',.62],['DN40',.82],['DN50',1.26],['DN65',1.84],['DN80',2.71],['DN100',4.304] ],
+};
+// Lưu ý parity: khi quét bậc ca, PHÂN BỔ CHI PHÍ CHUNG giữ nguyên tại công suất
+// chuẩn (khớp fixture capacityTiers / mhrByCapacityTier — Excel không phân bổ lại).
+
+const st = { pipeShifts:3, fitShifts:1, fitUtil:0.6, marginMode:'markup', r:null };
+const fmt0 = new Intl.NumberFormat('vi-VN', {maximumFractionDigits:0});
+const fmt1 = new Intl.NumberFormat('vi-VN', {maximumFractionDigits:1, minimumFractionDigits:1});
+const d  = v => fmt0.format(v) + ' đ';
+const dk = v => fmt0.format(v) + ' đ/kg';
+const ty = v => fmt1.format(v/1e9) + ' tỷ đ';
+const pc = v => fmt1.format(v*100) + '%';
+const $  = id => document.getElementById(id);
+
+function setSeg(id, val){
+  st[id] = val;
+  [...$(id).children].forEach(b => b.classList.toggle('on',
+    b.textContent.replace('%','').trim() === (id==='fitUtil' ? String(val*100) : id==='marginMode' ? (val==='markup'?'Markup trên giá thành':'Margin trên giá bán') : val+' ca')));
+  if (id==='marginMode') $('marginHint').textContent = val==='markup'
+    ? 'Markup 25%: giá bán = giá thành × 1,25 (cách Excel v3.4 đang dùng — lãi 20% trên giá bán).'
+    : 'Margin 20%: giá bán = giá thành ÷ (1 − 0,20) — lãi đúng 20% TRÊN GIÁ BÁN.';
+  onEdit();
+}
+function preset(p){
+  if (p==='excel'){ $('pipeUsd').value=3.03; $('fitUsd').value=3.85; $('pipeMargin').value=25; $('fitMargin').value=40; $('fxRate').value=26500;
+    setSeg('pipeShifts',3); setSeg('fitShifts',1); setSeg('fitUtil',0.6); setSeg('marginMode','markup'); }
+  if (p==='max'){ setSeg('pipeShifts',3); setSeg('fitShifts',3); setSeg('fitUtil',0.85); }
+  run();
+}
+
+function readInputs(){
+  const rate = +$('fxRate').value, pUsd = +$('pipeUsd').value, fUsd = +$('fitUsd').value;
+  const pM = +$('pipeMargin').value/100, fM = +$('fitMargin').value/100;
+  const errs = {
+    pipeUsd: !(pUsd>0), fitUsd: !(fUsd>0), fxRate: !(rate>0),
+    pipeMargin: !(pM>=0) || (st.marginMode==='margin' && pM>=.95),
+    fitMargin:  !(fM>=0) || (st.marginMode==='margin' && fM>=.95),
+  };
+  for (const k in errs){ $(k).classList.toggle('bad',errs[k]); $(k+'Err').style.display = errs[k]?'block':'none'; }
+  const bad = Object.values(errs).some(Boolean);
+  $('runBtn').disabled = bad;
+  return bad ? null : {rate,pUsd,fUsd,pM,fM};
+}
+function onEdit(){ readInputs(); }
+
+function applyMargin(cost, m){ return st.marginMode==='markup' ? cost*(1+m) : cost/(1-m); }
+
+// ── ỐNG (công thức pipe.ts/cvp.ts/price-ladder.ts, nhúng để demo) ──
+function calcPipe(usd, rate, m, shifts, otherRev){
+  const p = C.pipe;
+  const hours = C.batches*C.runDays*C.hoursPerShift*shifts;         // 3 ca → 4.920 giờ
+  const cap   = p.kgPerHour*hours*p.yield;                           // 3 ca → 619.920 kg
+  const landed = usd*C.taxFactor*rate, mat = landed/p.yield;
+  const labor = p.laborPerShift*shifts;
+  const totalProc = p.deprec + p.maint + labor + p.elecPerHour*hours + p.waterPerHour*hours + p.sharedAlloc;
+  const fullCost = mat + p.pack + totalProc/cap;
+  const price = applyMargin(fullCost, m);
+  const variable = mat + p.pack + (p.elecPerHour + p.waterPerHour)/(p.kgPerHour*p.yield);
+  const t2 = variable + (p.maint + labor + C.cashSharedTotal*p.sharedRatio)/cap;
+  const vfRef = fullCost*(1+p.vfMarkup), ownRev = cap*vfRef;
+  const share = ownRev/(ownRev+otherRev);
+  const t4 = fullCost + C.nonProdPerYear*share/cap;
+  const fixed = p.deprec + p.maint + labor + p.sharedAlloc;
+  const cm = price - variable;
+  const beKg = cm>0 ? fixed/cm : Infinity;
+  return { name:'Ống CPVC', unit:'kg', cap, hours, price, fullCost, variable,
+    ladder:[variable,t2,fullCost,t4,vfRef], profit:(price-fullCost)*cap,
+    revenue:price*cap, bePct: beKg/cap, marginOnPrice:(price-fullCost)/price,
+    compoundNeedKg: cap/p.yield, share };
+}
+// ── PHỤ KIỆN (công thức fitting.ts/cvp.ts, nhúng để demo) ──
+function calcFit(usd, rate, m, shifts, util, otherRev){
+  const f = C.fit;
+  const mh = C.batches*C.runDays*C.hoursPerShift*shifts*f.machines*util;
+  const prod = mh*f.productivity;
+  const landed = usd*C.taxFactor*rate, mat = landed/f.yield;
+  const labor = f.laborPerShift*shifts;
+  const totalProc = f.deprec + f.moldMaint + labor + f.elecPerMH*mh + f.waterPerMH*mh + f.sharedAlloc;
+  const mhr = totalProc/mh;
+  const fullCost = mat + f.pack + totalProc/prod;
+  const price = applyMargin(fullCost, m);
+  const variable = mat + f.pack + (f.elecPerMH + f.waterPerMH)/f.productivity;
+  const t2 = variable + (f.moldMaint + labor + C.cashSharedTotal*f.sharedRatio)/prod;
+  const vfRef = fullCost*(1+f.vfMarkup), ownRev = prod*vfRef;
+  const share = ownRev/(ownRev+otherRev);
+  const t4 = fullCost + C.nonProdPerYear*share/prod;
+  const fixed = f.deprec + f.moldMaint + labor + f.sharedAlloc;
+  const cm = price - variable;
+  const beKg = cm>0 ? fixed/cm : Infinity;
+  return { name:'Phụ kiện', unit:'kg (tham chiếu)', cap:prod, hours:mh, mhr, price, fullCost, variable,
+    ladder:[variable,t2,fullCost,t4,vfRef], profit:(price-fullCost)*prod,
+    revenue:price*prod, bePct: beKg/prod, marginOnPrice:(price-fullCost)/price,
+    compoundNeedKg: prod/f.yield, share };
+}
+
+function compute(inp){
+  // vòng 1: doanh thu tham chiếu (giá VF markup chuẩn) để chia sẻ chi phí ngoài SX — đúng price-ladder.ts
+  const p0 = calcPipe(inp.pUsd, inp.rate, inp.pM, st.pipeShifts, 1);
+  const f0 = calcFit (inp.fUsd, inp.rate, inp.fM, st.fitShifts, st.fitUtil, 1);
+  const pipeVfRev = p0.cap*p0.ladder[4], fitVfRev = f0.cap*f0.ladder[4];
+  const pipe = calcPipe(inp.pUsd, inp.rate, inp.pM, st.pipeShifts, fitVfRev);
+  const fit  = calcFit (inp.fUsd, inp.rate, inp.fM, st.fitShifts, st.fitUtil, pipeVfRev);
+  const revenue = pipe.revenue + fit.revenue;
+  const ebit = pipe.profit + fit.profit - C.nonProdPerYear;
+  const payback = ebit + C.deprecTotal > 0 ? C.invested/(ebit + C.deprecTotal) : Infinity;
+  return { pipe, fit, revenue, ebit, ebitMargin: ebit/revenue, payback, inp };
+}
+
+const TIER_NAMES = ['1 · Sàn biến phí — RANH ĐỎ, dưới mức này lỗ tiền tươi từng kg',
+  '2 · Hòa vốn tiền mặt (chưa gồm khấu hao)',
+  '3 · Giá thành đầy đủ',
+  '4 · Hòa vốn toàn DN (gồm vận hành + lãi vay)',
+  '5 · Giá mục tiêu markup VF chuẩn'];
+const TIER_COLORS = ['#DC2626','#ea7317','#ca9a04','#0e7490','#16A34A'];
+
+function ladderHtml(line){
+  const rows = TIER_NAMES.map((nm,i)=>({nm, v:line.ladder[i], c:TIER_COLORS[i], you:false}));
+  rows.push({nm:'GIÁ CỦA BẠN', v:line.price, c:'#fff', you:true});
+  rows.sort((a,b)=>b.v-a.v);
+  return '<div class="ladder">' + rows.map(r =>
+    `<div class="row${r.you?' you':''}"><span class="dot" style="background:${r.c}"></span><span class="nm">${r.nm}</span><span class="vl">${dk(r.v)}</span></div>`).join('') + '</div>';
+}
+function lineWarnings(line){
+  const [t1,t2,t3,t4] = line.ladder;
+  if (line.price < t1) return `<div class="warn">⛔ Giá bán DƯỚI SÀN BIẾN PHÍ — mỗi kg bán ra lỗ ${dk(t1-line.price)} tiền tươi. Không ký.</div>`;
+  if (line.price < t2) return `<div class="warn">⚠️ Giá trên sàn biến phí nhưng dưới hòa vốn tiền mặt — chỉ chấp nhận cho đơn dọn kho/giữ khách, có thời hạn.</div>`;
+  if (line.price < t3) return `<div class="warn">⚠️ Giá chưa gánh đủ khấu hao (dưới giá thành đầy đủ) — chấp nhận được ngắn hạn khi dư công suất, không làm giá chuẩn.</div>`;
+  if (line.price < t4) return `<div class="warn">⚠️ Giá đủ giá thành sản xuất nhưng CHƯA gánh hết chi phí vận hành + lãi vay toàn DN nếu đây là giá cho toàn bộ sản lượng.</div>`;
+  return `<div class="ok-note">✅ Giá nằm trên mức hòa vốn toàn DN — vùng an toàn để đàm phán.</div>`;
+}
+
+function lineCard(line){
+  return `<div class="card" style="background:#faf8f2">
+    <h3>${line.name} — giá bán đề xuất</h3>
+    <div class="big-price">${fmt0.format(line.price)} <span class="unit" style="font-size:14px">đ/${line.unit}</span></div>
+    <div style="font-size:12px;color:#777;margin-top:2px">Giá thành đầy đủ ${dk(line.fullCost)} · lãi thực ${pc(line.marginOnPrice)} trên giá bán${line.mhr?` · MHR ${fmt0.format(line.mhr)} đ/giờ máy`:''}</div>
+    ${lineWarnings(line)}
+    <h3 style="margin-top:14px">Sàn đàm phán (thang giá 5 bậc)</h3>
+    ${ladderHtml(line)}
+    <div class="kpi-row">
+      <div class="kpi"><div class="k">Sản lượng cả năm</div><div class="v">${fmt0.format(line.cap)} <span class="unit">kg</span></div></div>
+      <div class="kpi"><div class="k">${line.mhr?'Giờ máy huy động':'Giờ chạy máy'}</div><div class="v">${fmt0.format(line.hours)} <span class="unit">giờ</span></div></div>
+      <div class="kpi"><div class="k">Hòa vốn tại giá này</div><div class="v">${isFinite(line.bePct)?pc(line.bePct):'—'} <span class="unit">công suất</span></div></div>
+      <div class="kpi"><div class="k">Lãi dòng SP / năm</div><div class="v">${ty(line.profit)}</div></div>
+    </div>
+  </div>`;
+}
+
+function dnTableHtml(pipe, m){
+  const rows = C.dn.map(([dn,w])=>{
+    const be = pipe.fullCost*w, vf = applyMargin(be,m), tcg = vf*1.3;
+    const list = Math.ceil(tcg/(1-.3)/100)*100, vat = Math.round(list*1.08);
+    return `<tr><td>${dn}</td><td>${fmt1.format(w).replace('.',',')} <span class="unit">kg/m</span></td><td>${fmt0.format(be)}</td><td>${fmt0.format(vf)}</td><td>${fmt0.format(tcg)}</td><td><b>${fmt0.format(vat)}</b></td></tr>`;
+  }).join('');
+  return `<details class="adv" style="margin-top:14px"><summary>Bảng giá ống theo DN (đ/m) — mang đi đàm phán</summary>
+    <table style="margin-top:8px"><thead><tr><th>DN</th><th>Khối lượng</th><th>Giá thành /m</th><th>Giá VF /m</th><th>Giá TCG /m (+30%)</th><th>Niêm yết có VAT 8%</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="font-size:11px;color:#777;margin-top:6px">Chuỗi giá: giá thành × margin của bạn → TCG +30% → niêm yết ÷(1−30%), làm tròn lên trăm, +VAT 8% (đúng price-ladder.ts).</div></details>`;
+}
+
+function summaryHtml(r){
+  const maxNote = (st.pipeShifts===3 && st.fitShifts===3 && st.fitUtil===0.85)
+    ? '<div class="ok-note">Đây là kịch bản CHẠY TỐI ĐA: 3 ca liên tục, 41 đợt × 5 ngày/đợt (giới hạn bảo trì 2 ngày/đợt, 287 ngày vận hành/năm), giờ máy ép huy động 85%.</div>' : '';
+  return `<div class="card" style="background:#1a1a1a;color:#fff;margin-top:12px">
+    <h3 style="color:#ff5c8a">Hiệu quả toàn nhà máy cả năm với giá bán này</h3>
+    ${maxNote}
+    <div class="kpi-row">
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Doanh thu</div><div class="v" style="color:#fff">${ty(r.revenue)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">EBIT (sau vận hành + lãi vay)</div><div class="v" style="color:${r.ebit>=0?'#4ade80':'#f87171'}">${ty(r.ebit)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Hiệu suất sinh lời (EBIT/DT)</div><div class="v" style="color:${r.ebitMargin>=0?'#4ade80':'#f87171'}">${pc(r.ebitMargin)}</div></div>
+      <div class="kpi" style="background:#262626"><div class="k" style="color:#999">Thu hồi vốn đầu tư</div><div class="v" style="color:#fff">${isFinite(r.payback)?fmt1.format(r.payback)+' năm':'—'}</div></div>
+    </div>
+    <div style="font-size:11.5px;color:#999;margin-top:10px">Nhu cầu compound cả năm: ống ${fmt0.format(r.pipe.compoundNeedKg)} kg · phụ kiện ${fmt0.format(r.fit.compoundNeedKg)} kg (hao hụt 10%). Payback theo dòng tiền = vốn đầu tư ${ty(C.invested)} ÷ (EBIT + khấu hao ${ty(C.deprecTotal)}).</div>
+  </div>`;
+}
+
+function run(){
+  const inp = readInputs();
+  if (!inp) return;
+  $('resultsEmpty').style.display='none'; $('results').style.display='none';
+  $('resultsLoading').style.display='grid';
+  $('aiPanel').style.display='none'; $('aiBtn').disabled=true;
+  setTimeout(()=>{ // giả lập tải — bản thật đọc outputs/* từ Firestore
+    st.r = compute(inp);
+    $('resultsLoading').style.display='none';
+    $('results').style.display='block';
+    $('results').innerHTML =
+      `<div class="grid results-grid">${lineCard(st.r.pipe)}${lineCard(st.r.fit)}</div>`
+      + summaryHtml(st.r) + dnTableHtml(st.r.pipe, inp.pM);
+    $('aiBtn').disabled=false;
+    $('aiEmpty').style.display='none';
+  }, 550);
+}
+
+// ── AI TƯ VẤN — MOCK rule-based (bản thật: Cloud Function adviseScenario → Claude API) ──
+function adviceFor(r){
+  const tips = [];
+  for (const line of [r.pipe, r.fit]){
+    const [t1,t2,t3,t4] = line.ladder;
+    if (line.price < t1) tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} đang DƯỚI sàn biến phí ${dk(t1)} — từ chối mức này; mỗi kg ký là mất tiền mặt thật.`);
+    else if (line.price < t4) tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} nằm giữa bậc ${line.price<t2?'1–2':line.price<t3?'2–3':'3–4'} của thang giá. Ranh giới nên nhớ khi bị ép giá: lùi tối đa về ${dk(t4)} (hòa vốn toàn DN) cho đơn thường, ${dk(t2)} (hòa vốn tiền mặt) chỉ cho đơn chiến lược có thời hạn.`);
+    else tips.push(`<b>${line.name}:</b> giá ${dk(line.price)} trên hòa vốn toàn DN (${dk(t4)}) — dư địa nhượng bộ ${dk(line.price-t4)}/kg trước khi chạm vùng nguy hiểm.`);
+    if (isFinite(line.bePct)) tips.push(`<b>${line.name} — an toàn công suất:</b> chỉ cần chạy ${pc(line.bePct)} công suất kịch bản là hòa vốn${line.bePct<.3?' — biên an toàn rất dày, phần công suất còn lại toàn bộ là lãi biên':line.bePct>.7?' — biên an toàn MỎNG, một hợp đồng lớn rớt là lỗ; cân nhắc margin cao hơn':''}.`);
+  }
+  const dCost = 0.1*C.taxFactor*r.inp.rate/C.pipe.yield;
+  tips.push(`<b>Rủi ro giá nguyên liệu:</b> compound tăng 0,1 USD/kg → giá thành ống tăng ~${fmt0.format(dCost)} đ/kg. Cơ chế khóa bảng giá hiện đặt ngưỡng ±3% (ADR-004) — nếu hợp đồng bán dài hạn, hãy chốt song song hợp đồng mua compound hoặc cài điều khoản trượt giá.`);
+  const days = 10000/(r.pipe.compoundNeedKg/365);
+  tips.push(`<b>Tồn kho:</b> kho compound ống 10 tấn chỉ đủ ~${fmt1.format(days)} ngày chạy kịch bản này — ký đơn lớn phải đi kèm kế hoạch nhập nguyên liệu trước.`);
+  tips.push(r.ebit>=0
+    ? `<b>Bức tranh năm:</b> EBIT ${ty(r.ebit)} (${pc(r.ebitMargin)} doanh thu), thu hồi vốn ${fmt1.format(r.payback)} năm — ${r.payback<1.5?'rất hấp dẫn để tăng tốc đầu tư thêm ca/khuôn':'ở mức chấp nhận được; ưu tiên đơn có margin cao hơn trước khi thêm công suất'}.`
+    : `<b>Bức tranh năm:</b> EBIT ÂM ${ty(r.ebit)} — mức margin này không nuôi nổi bộ máy; nâng margin hoặc tăng sản lượng cam kết trước khi ký.`);
+  return tips;
+}
+function askAI(){
+  const btn = $('aiBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> AI đang đọc số liệu…';
+  setTimeout(()=>{ // giả lập gọi Cloud Function
+    btn.disabled = false; btn.innerHTML = '🤖 AI tư vấn lại';
+    $('aiPanel').style.display='block';
+    $('aiPanel').innerHTML = `<h3>🤖 Nhận định của trợ lý AI</h3><ul>${adviceFor(st.r).map(t=>`<li>${t}</li>`).join('')}</ul>
+      <div class="mock-note">⚠ MOCK Pha 1 — nhận định sinh bằng luật cứng trong trình duyệt. Bản thật: Cloud Function <b>adviseScenario</b> gọi Claude API phía server (không API key ở client, chỉ gửi số liệu output, có audit log) — cần duyệt ADR ở Pha 2.</div>`;
+    $('aiPanel').scrollIntoView({behavior:'smooth', block:'nearest'});
+  }, 1400);
+}
+</script>
+</body>
+</html>

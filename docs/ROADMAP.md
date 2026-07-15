@@ -27,7 +27,14 @@
 - [ ] Viết chức năng hoặc Cloud Function để gán quyền cho các User thật.
 - [ ] Đảm bảo UI khóa lại các nút "Lưu" hoặc "Chỉnh sửa" nếu User không có quyền.
 
-### 3. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
+### 3. Màn hình "Trợ Lý CEO" + nút AI tư vấn (yêu cầu user 2026-07-15)
+- [x] Pha 0-1: brief (`docs/briefs/BRIEF-2026-07-15-ceo-planner.md`) + prototype
+      (`prototype/ceo-planner.html`, số khớp fixture v3.4) — **CHỜ DUYỆT UI**.
+- [ ] Pha 2 (sau khi duyệt UI): ADR cho AI tư vấn — callable Cloud Function
+      `adviseScenario` gọi Claude API phía server (không key ở client) + contract dữ liệu gửi đi.
+- [ ] Pha 3: code màn hình vào `src/features/ceo-planner/`, thay công thức nhúng bằng `src/engine/*`.
+
+### 4. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
 - [ ] Chờ danh mục ống SCH80 chuẩn từ nhà cung cấp để cập nhật lại Seed Data.
 - [ ] Kiểm tra lại toàn bộ quy trình từ khâu nhập Tồn kho -> Thay đổi định mức -> Tính giá thành -> Khóa giá -> Báo giá xem có bị khựng ở bước nào không.
 

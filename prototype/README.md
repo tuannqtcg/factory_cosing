@@ -1,5 +1,15 @@
 # Prototype — Pha 1 (mockup, chưa backend)
 
+## `ceo-planner.html` — Trợ Lý CEO (2026-07-15, CHỜ DUYỆT UI)
+Màn hình 1 trang cho vai admin/pricing (tầng chiến lược ADR-006): nhập giá
+compound X + margin mong muốn → giá bán đề xuất, vị trí trên thang giá 5 bậc
+(sàn đàm phán), hiệu quả cả năm khi chạy tối đa 3 ca × 41 đợt, kèm nút
+🤖 AI tư vấn (MOCK rule-based — bản thật là Cloud Function gọi Claude API,
+cần ADR ở Pha 2). Mở trực tiếp bằng trình duyệt, không cần build. Toàn bộ số
+mặc định khớp `tests/fixtures/` (đã kiểm chứng bằng script: 5 bậc ống + phụ
+kiện, EBIT 16,37 tỷ, payback 0,816 năm, 6 bậc MHR — khớp tuyệt đối).
+Brief: `docs/briefs/BRIEF-2026-07-15-ceo-planner.md`.
+
 `blazemaster-costing-app.dc.html` — mở trực tiếp bằng trình duyệt (không cần build/server).
 Toàn bộ state = `useState`-kiểu thuần trong file, KHÔNG gọi API/Firebase/localStorage,
 đúng luật skill `prototype`.

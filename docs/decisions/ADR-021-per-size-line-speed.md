@@ -6,7 +6,11 @@ DN20: 350 · DN25: 300 · DN32: 200 · DN40: 150 · DN50: 100 · DN65: 80 · DN8
 Độ tin cậy user tự đánh giá: **DN20–40 tương đối chính xác; DN50 trở lên cần xác nhận**;
 yêu cầu "hiệu chỉnh cập nhật sau" được trên app.
 
-## Phân tích đơn vị — số liệu là m/h, KHÔNG phải kg/h
+> **✅ USER XÁC NHẬN 14/07 (kèm ảnh bảng)**: "chính xác dữ liệu tôi đưa là 350 mét/giờ
+> với ống DN20, các sản phẩm khác lần lượt 300/200/150/100/80/60/50" — cách đọc m/h
+> dưới đây không còn là suy luận, đã là dữ liệu chốt.
+
+## Phân tích đơn vị — số liệu là m/h, KHÔNG phải kg/h (đã được xác nhận)
 Ba bằng chứng (script kiểm tra trong session log 14/07):
 1. Hiểu literal kg/h → DN20 = 350 kg/h **vượt max máy đùn 200 kg/h** (fixture v3.8) — bất khả thi.
 2. Hiểu là **m/h** → kg thành phẩm/h = m/h × đơn trọng: dải 101–215 kg/h, đơn điệu tăng

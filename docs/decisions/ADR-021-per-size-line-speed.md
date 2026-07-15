@@ -50,7 +50,36 @@ bằng tốc độ thật: DN20 2.000m = 5,7h; DN40 = 13,3h; DN65 = 6,2h; DN100 
    neo chuẩn chuyển dần về 4.920 giờ máy/năm thay vì 619.920 kg (ghi nhận,
    triển khai ở Pha 2 màn Plan).
 
+## Bổ sung 14/07 (chiều) — phân tích khả dĩ sau khi user KHẲNG ĐỊNH max 250 kg/h (ADR-022)
+User xác nhận: 350 kg/h cho DN20 bất khả thi, max 250 là chắc chắn; yêu cầu dùng
+hồi quy/giả lập/logic ngành đánh giá kg/h từng size để xây giá và chi phí hợp lý.
+
+**Mọi con số khớp thành một hệ nhất quán khi đọc bảng là m/h THÔ (kg nạp máy):**
+- kg/h thô = m/h × đơn trọng: 101,5 → 215,2; KHÔNG size nào vượt 250 (cao nhất 86%) ✓
+- Trung bình thô 140,3 = đúng số "140 kg/h thực tế" của app ✓
+- DN100 thành phẩm = 215,2 × 0,9 = **193,7 ≈ con số "190 kg/h" user từng được tư vấn** ✓
+→ Chốt cách đọc: `lineSpeedMPerHour` là tốc độ ĐÙN THÔ; kg thành phẩm = × yield 0,9.
+
+**Logic ngành — 3 vùng nút thắt & độ tin cậy:**
+| Vùng | kg/h thô | Nút thắt | Đánh giá |
+|---|---|---|---|
+| DN20 | 101,5 (41% max) | Kéo/định hình | User xác nhận — TIN CẬY |
+| DN25–50 | 123–126 (≈50% max) | Phẳng lỳ ở ~125 → nghi là TRẦN GIẢI NHIỆT của dàn làm nguội | Hợp lý về vật lý |
+| DN65–100 | 147–215 (59–86% max) | Vượt trần giải nhiệt nghi vấn ở trên → chỉ khả thi nếu chạy ống lớn có nối thêm bể làm nguội | RỦI RO SỐ LIỆU — trùng vùng user tự đánh dấu "cần xác nhận" |
+
+Giả lập chi phí gia công DN100 theo 3 kịch bản: bảng user (215) → 6.880 đ/kg;
+bảo thủ 75% max (187,5) → 7.896 đ/kg; trần giải nhiệt (126) → 11.750 đ/kg (= phẳng v3.8).
+
+**Chiến lược áp giá BẤT ĐỐI XỨNG (nguyên tắc: không bao giờ GIẢM giá trên số liệu chưa kiểm chứng):**
+1. Size nhỏ DN20–40 (số tin cậy, per-size làm giá TĂNG +0,3→+2,6%): áp dụng được ngay — an toàn.
+2. Size lớn DN65–100 (per-size làm giá GIẢM tới −4,5% nhưng số chưa kiểm chứng):
+   GIỮ bảng phẳng v3.8 (giá cao hơn = bảo thủ) cho tới khi đo thật; phần chênh coi là
+   dư địa đàm phán tiềm năng, không phải giá niêm yết mới.
+3. Đo thật qua vận hành bình thường (không cần chạy thử): HMI S7-1200 (m/h),
+   biến tần ACS580 (% tải motor), cân kg thành phẩm, công tơ kWh — mỗi nhóm die 1 đợt.
+   Có số đo → hồi quy lại bảng tốc độ → bộ số vàng v3.9 → mới đổi giá size lớn.
+
 ## Còn chờ chốt
-- Xác nhận tốc độ DN50–DN100 (user tự đánh dấu cần xác nhận).
-- m/h thành phẩm hay m/h đùn thô.
+- Số đo thật DN50–DN100 (phương pháp ở trên; đặc biệt DN100: 215 hay ~187 hay bị trần nguội ~126).
+- Cấu hình làm nguội khi chạy ống lớn (có nối thêm bể không) — quyết định trần kg/h vùng lớn.
 - Tốc độ Corzan có khác BlazeMaster không (tạm dùng chung).

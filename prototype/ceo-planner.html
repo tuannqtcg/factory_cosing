@@ -175,6 +175,13 @@
       <button onclick="preset('excel')">Chuẩn Excel v3.4 (số quen)</button>
       <button onclick="preset('max')">Chạy tối đa: 3 ca liên tục, số đợt tối đa/năm</button>
     </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px;padding:10px 12px;background:#faf8f2;border-radius:8px">
+      <span style="font-size:12px;font-weight:600;color:#444">Cách tính markup:</span>
+      <div class="seg" id="marginMode">
+        <button class="on" onclick="setSeg('marginMode','markup')">Markup trên giá vốn</button><button onclick="setSeg('marginMode','margin')">Lãi trên giá bán</button>
+      </div>
+      <span style="font-size:11.5px;color:#777;line-height:1.5;flex:1;min-width:240px" id="marginHint">Markup 25% trên giá vốn: giá bán = giá thành sản xuất × 1,25 (cách Excel v3.4 đang dùng — tương đương lãi gộp 20% trên giá bán).</span>
+    </div>
     <div class="grid inputs-grid">
       <div>
         <h3>Ống CPVC <span class="unit">(đùn liên tục, theo kg)</span></h3>
@@ -219,27 +226,24 @@
         </div>
         <div class="proc-hint" id="fitProcHint"></div>
       </div>
-      <div>
-        <h3>Cách tính markup</h3>
-        <div class="seg" id="marginMode" style="margin-top:6px">
-          <button class="on" onclick="setSeg('marginMode','markup')">Markup trên giá vốn</button><button onclick="setSeg('marginMode','margin')">Lãi trên giá bán</button>
-        </div>
-        <div style="font-size:11.5px;color:#777;margin-top:6px;line-height:1.5" id="marginHint">
-          Markup 25% trên giá vốn: giá bán = giá thành sản xuất × 1,25 (cách Excel v3.4 đang dùng — tương đương lãi gộp 20% trên giá bán).
-        </div>
-        <details class="adv">
-          <summary>Tham số nâng cao (tỷ giá, thuế nhập khẩu)</summary>
+    </div>
+    <details class="adv" style="margin-top:12px">
+      <summary>Tham số nâng cao (tỷ giá, thuê mặt bằng, thuế nhập khẩu)</summary>
+      <div class="grid inputs-grid" style="margin-top:4px">
+        <div>
           <label>Tỷ giá USD/VND</label>
           <input type="number" id="fxRate" value="26500" step="100" oninput="onEdit()">
           <div class="err-msg" id="fxRateErr">Tỷ giá phải là số dương.</div>
+          <div style="font-size:11.5px;color:#777;margin-top:6px">Thuế nhập khẩu theo nguyên liệu (ADR-012): BlazeMaster 6% + phí 1%; Corzan 0% (AIFTA, cần C/O form AI) + phí 1%.</div>
+        </div>
+        <div>
           <label>Chi phí thuê mặt bằng / năm <span class="unit">triệu đ — có thể đổi từng năm</span></label>
           <input type="number" id="landRent" value="800" step="50" min="0" oninput="onEdit()">
           <div class="err-msg" id="landRentErr">Chi phí thuê phải ≥ 0.</div>
           <div style="font-size:11.5px;color:#777;margin-top:6px">Quyết định 2026-07-15: KHÔNG xây nhà xưởng (vốn đầu tư không gồm xây dựng, vốn lưu động tạm = 0) — đi thuê mặt bằng 800 triệu đ/năm, thay số "thuê đất 525 triệu" của Excel v3.4. Preset "Chuẩn Excel" sẽ tạm đặt lại 525 để so số quen.</div>
-          <div style="font-size:11.5px;color:#777;margin-top:6px">Thuế nhập khẩu theo nguyên liệu (ADR-012): BlazeMaster 6% + phí 1%; Corzan 0% (AIFTA, cần C/O form AI) + phí 1%.</div>
-        </details>
+        </div>
       </div>
-    </div>
+    </details>
     <button class="run-btn" id="runBtn" onclick="run()">▶ Chạy số liệu</button>
   </div>
 
@@ -305,6 +309,10 @@ const MAT = {
 };
 // Lưu ý parity: khi quét bậc ca, PHÂN BỔ CHI PHÍ CHUNG giữ nguyên tại công suất
 // chuẩn (khớp fixture capacityTiers / mhrByCapacityTier — Excel không phân bổ lại).
+
+// ── 83 SKU PHỤ KIỆN có khuôn (66 khuôn vật lý, ADR-007; 8/91 SKU chưa có khuôn đã loại — mold-assets.json)
+// [tên, size, schedule, kg/cái, ren kim loại đ/cái (ADR-008, mua VND trong nước), giờ máy/cái]
+const SKUS = [["Tê đều","20","SCH40",0.055,0,0.0027006173],["Tê đều","25","SCH40",0.09,0,0.0030864198],["Tê đều","32","SCH40",0.14,0,0.0069444444],["Tê đều","40","SCH80",0.245,0,0.0077160494],["Tê đều","50","SCH80",0.4,0,0.0100308642],["Tê đều","65","SCH80",0.75,0,0.0277777778],["Tê đều","80","SCH80",1.12,0,0.037037037],["Tê đều","100","SCH80",2.5,0,0.049382716],["Tê giảm","25x20","SCH40",0.08,0,0.0030864198],["Tê giảm","32x20","SCH40",0.115,0,0.0069444444],["Tê giảm","32x25","SCH40",0.12,0,0.0069444444],["Tê giảm","40x20","SCH40",0.21,0,0.0077160494],["Tê giảm","40x25","SCH80",0.22,0,0.0077160494],["Tê giảm","40x32","SCH80",0.255,0,0.0077160494],["Tê giảm","50x20","SCH80",0.29,0,0.0100308642],["Tê giảm","50x25","SCH80",0.31,0,0.0100308642],["Tê giảm","50x32","SCH80",0.34,0,0.0100308642],["Tê giảm","65x25","SCH80",0.465,0,0.0277777778],["Tê giảm","65x32","SCH80",0.54,0,0.0277777778],["Tê giảm","65x40","SCH80",0.57,0,0.0277777778],["Tê giảm","65x50","SCH80",0.634,0,0.0277777778],["Tê giảm","80x50","SCH80",0.84,0,0.037037037],["Tê giảm","80x65","SCH80",1,0,0.037037037],["Tê giảm","100x80","SCH80",1.32,0,0.049382716],["Tê giảm","100x65","SCH80",1.24,0,0.049382716],["Tê giảm","100x50","SCH80",1.18,0,0.049382716],["Cút 90º","20","SCH40",0.045,0,0.0027006173],["Cút 90º","25","SCH40",0.065,0,0.0030864198],["Cút 90º","32","SCH40",0.115,0,0.0069444444],["Cút 90º","40","SCH80",0.205,0,0.0077160494],["Cút 90º","50","SCH80",0.305,0,0.0100308642],["Cút 90º","65","SCH80",0.585,0,0.0277777778],["Cút 90º","80","SCH80",0.91,0,0.037037037],["Cút 90º","100","SCH80",1.7,0,0.049382716],["Cút 45º","65","SCH40",0.4,0,0.0277777778],["Cút 45º","80","SCH80",0.58,0,0.037037037],["Cút 45º","100","SCH80",0.9,0,0.049382716],["Nối thẳng","20","SCH80",0.03,0,0.0027006173],["Nối thẳng","25","SCH80",0.07,0,0.0030864198],["Nối thẳng","32","SCH80",0.1,0,0.0069444444],["Nối thẳng","40","SCH80",0.125,0,0.0077160494],["Nối thẳng","50","SCH80",0.19,0,0.0100308642],["Nối thẳng","65","SCH40",0.325,0,0.0277777778],["Nối thẳng","80","SCH80",0.45,0,0.037037037],["Nối thẳng","100","SCH80",0.66,0,0.049382716],["Nối giảm","25x20","SCH80",0.035,0,0.0030864198],["Nối giảm","32x25","SCH80",0.08,0,0.0069444444],["Nối giảm","40x25","SCH80",0.105,0,0.0077160494],["Nối giảm","40x32","SCH80",0.115,0,0.0077160494],["Nối giảm","50x25","SCH80",0.172,0,0.0100308642],["Nối giảm","50x32","SCH40",0.165,0,0.0100308642],["Nối giảm","50x40","SCH40",0.165,0,0.0100308642],["Nối giảm","65x50","SCH80",0.29,0,0.0277777778],["Nối giảm","80x50","SCH80",0.39,0,0.037037037],["Nối giảm","80x65","SCH80",0.465,0,0.037037037],["Nối giảm","100x65","SCH80",0.74,0,0.049382716],["Nối giảm","100x80","SCH80",0.87,0,0.049382716],["Lơ thu","25x20","SCH80",0.023,0,0.0030864198],["Lơ thu","32x25","SCH80",0.041,0,0.0069444444],["Lơ thu","40x25","SCH80",0.071,0,0.0077160494],["Lơ thu","40x32","SCH80",0.043,0,0.0077160494],["Lơ thu","50x25","SCH80",0.16,0,0.0100308642],["Lơ thu","50x32","SCH40",0.13,0,0.0100308642],["Lơ thu","50x40","SCH80",0.1,0,0.0100308642],["Nối ren trong","20xPT15","SCH80",0.045,16200,0.0027006173],["Nối ren trong","25xPT15","SCH80",0.06,16200,0.0030864198],["Nối ren trong","25xPT20","SCH80",0.07,21100,0.0030864198],["Nối ren trong","25xPT25","SCH80",0.08,28800,0.0030864198],["Nối ren trong","32xPT32","SCH80",0.1,58100,0.0069444444],["Nối ren trong","40xPT40","SCH40",0.125,63800,0.0077160494],["Nối ren trong","50xPT50","SCH80",0.19,110000,0.0100308642],["Nối ren ngoài","25xPT25","SCH80",0.07,54400,0.0030864198],["Nối ren ngoài","32xPT32","SCH80",0.1,82100,0.0069444444],["Nối ren ngoài","40xPT40","SCH80",0.125,87300,0.0077160494],["Nối ren ngoài","50xPT50","SCH80",0.19,142600,0.0100308642],["Nắp bịt","20","SCH80",0.02,0,0.0027006173],["Nắp bịt","25","SCH80",0.045,0,0.0030864198],["Nắp bịt","32","SCH80",0.075,0,0.0069444444],["Nắp bịt","40","SCH80",0.1,0,0.0077160494],["Nắp bịt","50","SCH80",0.155,0,0.0100308642],["Mặt bích","65","SCH40",0.9,0,0.0277777778],["Mặt bích","80","SCH80",1.13,0,0.037037037],["Mặt bích","100","SCH80",1.6,0,0.049382716]];
 
 const st = { pipeShifts:3, fitShifts:1, fitUtil:0.6, marginMode:'markup', pipeMat:'bm', fitMat:'bm', r:null };
 const fmt0 = new Intl.NumberFormat('vi-VN', {maximumFractionDigits:0});
@@ -538,6 +546,29 @@ function dnTableHtml(pipe, m){
     <div style="font-size:11px;color:#777;margin-top:6px">Dòng sản phẩm: <b>ống ${pipe.matDef.name}</b>${wf>1?' — đơn trọng +10% so với BlazeMaster cùng DN (ADR-012)':''}. Giá bán VF = giá thành × markup của bạn, chưa gồm VAT. (Chuỗi giá TCG/niêm yết vẫn ở màn Bảng Giá cho đội sales.)</div></details>`;
 }
 
+// Bảng giá bán VF cho 83 SKU phụ kiện — giá/cái = (nguyên liệu+bao bì)×kg + ren + giờ máy×chi phí giờ máy, rồi markup
+function fitSkuRows(fit, m, filter){
+  const q = (filter||'').toLowerCase();
+  return SKUS.filter(s => !q || (s[0]+' '+s[1]).toLowerCase().includes(q)).map(s => {
+    const [name, size, sch, kg, ren, mh] = s;
+    const beCai = (fit.mat + C.fit.pack)*kg + ren + mh*fit.mhr;
+    const vfCai = applyMargin(beCai, m);
+    return `<tr><td>${name}${ren>0?' <span class="unit">(ren)</span>':''}</td><td>${size}</td><td>${sch}</td><td>${fmt2.format(kg)}</td><td>${ren>0?fmt0.format(ren):'—'}</td><td>${fmt0.format(beCai)}</td><td><b>${fmt0.format(vfCai)}</b></td></tr>`;
+  }).join('') || `<tr><td colspan="7" style="text-align:center;color:#8a8a8a">Không có SKU khớp từ khóa.</td></tr>`;
+}
+function filterSkus(v){
+  if (st.r) $('skuTbody').innerHTML = fitSkuRows(st.r.fit, st.r.inp.fM, v);
+}
+function fitSkuTableHtml(fit, m){
+  return `<details class="adv" style="margin-top:10px"><summary>Bảng giá bán VF — <b>83 phụ kiện ${fit.matDef.name}</b> theo từng cái (66 khuôn hiện có)</summary>
+    <input type="text" placeholder="Lọc theo tên/size — vd: Tê 25, Cút ren…" oninput="filterSkus(this.value)"
+      style="margin-top:8px;width:100%;max-width:340px;padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:13px">
+    <div style="max-height:340px;overflow:auto;margin-top:8px;border:1px solid #f0ece0;border-radius:8px">
+    <table><thead><tr><th style="position:sticky;top:0;background:#fff">Tên</th><th style="position:sticky;top:0;background:#fff">Size</th><th style="position:sticky;top:0;background:#fff">SCH</th><th style="position:sticky;top:0;background:#fff">Kg/cái</th><th style="position:sticky;top:0;background:#fff">Ren kim loại /cái</th><th style="position:sticky;top:0;background:#fff">Giá thành /cái</th><th style="position:sticky;top:0;background:#fff">Giá bán VF /cái</th></tr></thead>
+    <tbody id="skuTbody">${fitSkuRows(fit, m, '')}</tbody></table></div>
+    <div style="font-size:11px;color:#777;margin-top:6px">Giá/cái = (nguyên liệu ${fit.matDef.name} + bao bì) × kg + ren kim loại (11 SKU họ ren, mua trong nước — ADR-008) + giờ máy × chi phí giờ máy ${fmt0.format(fit.mhr)} đ (theo kịch bản ${fit.shifts} ca đang chọn) × markup của bạn, chưa VAT. 8/91 SKU chưa có khuôn không hiển thị (ADR-007) — tự hiện lại khi mua khuôn.</div></details>`;
+}
+
 // Panel chi tiết: chứng minh phép tính thu hồi vốn + liệt kê chi phí đã trừ
 function paybackDetailHtml(r){
   return `<details class="detail" style="background:#262626;border-color:#444"><summary style="color:#7dd3fc">Xem chi tiết: vì sao thu hồi vốn ${isFinite(r.payback)?fmt1.format(r.payback)+' năm (≈ '+fmt1.format(r.payback*12)+' tháng)':'—'}? Đã tính đủ khấu hao, điện nước, lương chưa?</summary><div class="inner" style="color:#ddd">
@@ -596,7 +627,7 @@ function run(){
     $('results').style.display='block';
     $('results').innerHTML =
       `<div class="grid results-grid">${lineCard(st.r.pipe, inp)}${lineCard(st.r.fit, inp)}</div>`
-      + summaryHtml(st.r) + dnTableHtml(st.r.pipe, inp.pM);
+      + summaryHtml(st.r) + dnTableHtml(st.r.pipe, inp.pM) + fitSkuTableHtml(st.r.fit, inp.fM);
     $('aiBtn').disabled=false;
     $('aiEmpty').style.display='none';
   }, 550);

@@ -10,6 +10,11 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-020 — Hợp nhất một view CEO**: bỏ điều hướng theo vai (role switcher +
+  lọc tab), sidebar chia 2 nhóm ĐIỀU HÀNH / CẤU HÌNH & DỮ LIỆU, tự đăng nhập vai
+  CEO. Backend theo vai giữ nguyên.
+- [x] **ADR-019 — Ổn định parity v3.7**: tái lập số vàng theo tham số Ống mới sau
+  "big update" (khấu hao khuôn kéo/cắt, 3 máy đùn). Suite 328/328 xanh.
 - [x] Tách tồn kho Ren Kim Loại ra khỏi Tồn Kho Hạt Nhựa để UI không bị rối.
 - [x] Sửa lỗi Focus Input khi nhập liệu trên bảng Sản Phẩm (Lỗi React re-render).
 - [x] Bổ sung các công cụ nạp nhanh (Seed) cho nguyên liệu Corzan và sản phẩm Ống Corzan SCH40.
@@ -22,9 +27,11 @@
 
 ## 🚀 Việc cần làm tiếp theo (Pha 4 & Vận hành thực tế)
 
-### 1. Kiểm thử & Phân quyền (Security UI) — việc treo từ 2026-07-13
-- [ ] Đăng nhập thử 4 vai trò thật (Admin, Pricing, Sales, Production) trên UI, xác nhận Sales không thấy chi phí/giá thành, Production chỉ thấy kế hoạch, nút Lưu/Sửa bị khóa đúng vai.
-- [ ] Chạy `npm run test:rules` + `npm run test:functions` (cần emulator) xác nhận rules khớp UI.
+### 1. Bảo mật backend (rules) — vẫn còn giá trị sau ADR-020
+> UI đã gộp thành một view CEO (ADR-020) nên không còn kiểm thử điều hướng 4 vai
+> trên UI. Nhưng rules theo vai vẫn giữ ở server để bảo vệ dữ liệu thật.
+- [ ] Chạy `npm run test:rules` + `npm run test:functions` (cần emulator) xác nhận rules/Cloud Function còn khớp và an toàn.
+- [ ] Siết đăng nhập production thật: thay auto sign-in demo admin bằng form login thật, tắt tài khoản demo (hoãn — ADR-020 §Hệ quả).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
 - [ ] Chờ danh mục ống SCH80 chuẩn từ nhà cung cấp để cập nhật lại Seed Data.

@@ -1,8 +1,9 @@
-// M12.5 — khung app (sidebar + tab) đúng prototype Pha 1 đã duyệt: brand,
-// khối "Xem Như Vai" (= đăng nhập user demo theo claim, xem lib/firebase.ts),
-// nav USER/ADMIN lọc theo ROLE_TAB_ACCESS (ADR-006), badge VAI dưới cùng.
-// Mới có tab `dashboard` (M12.5) — tab khác hiện placeholder trỏ milestone.
-import { useState } from 'react';
+// ADR-020 — một view CEO duy nhất: bỏ role switcher + lọc tab theo vai. Shell
+// tự đăng nhập vai `admin` (toàn quyền) và truyền cố định role='admin' xuống mọi
+// màn, nên canEdit/canSeeCostDetail tự bật hết. Backend theo vai (rules, custom
+// claim, ADR-006/017) giữ nguyên — chỉ gộp trải nghiệm client. Điều hướng chia 2
+// nhóm theo mục đích: ĐIỀU HÀNH (xem) và CẤU HÌNH & DỮ LIỆU (vào chi tiết sửa).
+import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/useAuth.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
@@ -15,25 +16,19 @@ import ProductionReport from '../production-report/ProductionReport.js';
 import InventoryScreen from '../inventory/InventoryScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import ProductsScreen from '../products/ProductsScreen.js';
-import type { AppRole } from '../../lib/firebase.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
+/** ADR-020: mọi màn chạy ở góc nhìn CEO = toàn quyền. */
+const CEO_ROLE = 'admin' as const;
 
-const ROLE_TAB_ACCESS: Record<AppRole, string[]> = {
-  // M12.9b: `config` mở cho pricing (resource.md — pricing sửa field KHÔNG
-  // khóa như số ca/ngày vận hành/lương/điện nước; field khóa disable trong form).
-  pricing: ['dashboard', 'pricelist', 'pricing-analytics', 'config', 'inventory', 'assumptions', 'products', 'ong', 'pk'],
-  sales: ['dashboard', 'pricelist'],
-  production: ['plan'],
-  admin: ['dashboard', 'pricelist', 'plan', 'pricing-analytics', 'inventory', 'config', 'assumptions', 'products', 'ong', 'pk'],
-};
-const USER_TABS = [
+// Điều hướng chia theo MỤC ĐÍCH, không theo quyền (ADR-020).
+const OPERATION_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'pricelist', label: 'Bảng Giá' },
   { id: 'plan', label: 'Kế Hoạch SX' },
   { id: 'pricing-analytics', label: 'Phân Tích Định Giá' },
 ];
-const ADMIN_TABS = [
+const CONFIG_TABS = [
   { id: 'inventory', label: 'Tồn Kho Compound' },
   { id: 'products', label: 'Danh Mục Sản Phẩm' },
   { id: 'config', label: 'Cấu Hình Nhà Máy' },
@@ -41,32 +36,27 @@ const ADMIN_TABS = [
   { id: 'ong', label: 'Ống CPVC' },
   { id: 'pk', label: 'Phụ Kiện' },
 ];
-const ROLE_DEFS: Array<{ id: AppRole; label: string; desc: string }> = [
-  { id: 'pricing', label: 'Quản Lý — Định Giá', desc: 'Thang giá · top-down · tồn kho · giả định' },
-  { id: 'sales', label: 'Bán Hàng', desc: 'Chỉ thang giá + bảng giá' },
-  { id: 'production', label: 'Sản Xuất', desc: 'Chỉ kế hoạch SX' },
-  { id: 'admin', label: 'Toàn Quyền', desc: 'Tất cả màn hình + cấu hình nhà máy' },
-];
 /** Kỳ kế hoạch mặc định của màn Kế Hoạch SX (đổi kỳ ngay trong form). */
 const DEFAULT_PLAN_PERIOD = '2026-Q3';
 
 
 export default function AppShell() {
   const authState = useAuth();
-  const [rawActiveTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [authError, setAuthError] = useState<string | null>(null);
 
-  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
-
   const role = authState.role;
-  const allowedTabs = role ? ROLE_TAB_ACCESS[role] : [];
-  const activeTab = allowedTabs.includes(rawActiveTab) ? rawActiveTab : (allowedTabs[0] ?? 'dashboard');
+
+  // ADR-020: tự đăng nhập vai CEO/admin — không bắt người dùng chọn vai.
+  useEffect(() => {
+    if (authState.status === 'signed-out') {
+      setAuthError(null);
+      void authState.switchRole(CEO_ROLE).then(setAuthError);
+    }
+  }, [authState.status]);
 
   const data = useScenarioData(SCENARIO_ID, role);
   const planData = usePlanData(SCENARIO_ID, DEFAULT_PLAN_PERIOD, role);
-
-  const userTabs = USER_TABS.filter((t) => allowedTabs.includes(t.id));
-  const adminTabs = ADMIN_TABS.filter((t) => allowedTabs.includes(t.id));
 
   const navItem = (t: { id: string; label: string }) => {
     const active = t.id === activeTab;
@@ -93,69 +83,37 @@ export default function AppShell() {
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-          {userTabs.length > 0 && (
-            <>
-              <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 4 }}>USER</div>
-              {userTabs.map(navItem)}
-            </>
-          )}
-          {adminTabs.length > 0 && (
-            <>
-              <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 8, borderTop: '1px solid rgba(255,255,255,.06)' }}>ADMIN</div>
-              {adminTabs.map(navItem)}
-            </>
-          )}
+          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 4 }}>Điều Hành</div>
+          {OPERATION_TABS.map(navItem)}
+          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 8, borderTop: '1px solid rgba(255,255,255,.06)' }}>Cấu Hình & Dữ Liệu</div>
+          {CONFIG_TABS.map(navItem)}
         </nav>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', position: 'relative' }}>
-          {isRoleMenuOpen && (
-            <div style={{ position: 'absolute', bottom: '100%', left: 8, right: 8, background: '#2a2a2a', borderRadius: 4, padding: 8, marginBottom: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', zIndex: 100 }}>
-              <div style={{ fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: '#888', fontWeight: 700, marginBottom: 6, paddingLeft: 4 }}>Chọn Vai</div>
-              {ROLE_DEFS.map((r) => {
-                const active = r.id === role;
-                return (
-                  <div
-                    key={r.id}
-                    onClick={() => {
-                      setAuthError(null);
-                      setIsRoleMenuOpen(false);
-                      void authState.switchRole(r.id).then(setAuthError);
-                    }}
-                    style={{ padding: '6px 8px', marginBottom: 2, borderRadius: 2, cursor: 'pointer', background: active ? '#a8003b' : 'transparent', border: `1px solid ${active ? '#a8003b' : 'transparent'}` }}
-                  >
-                    <div style={{ fontSize: 11, fontWeight: active ? 700 : 500, color: active ? '#fff' : '#ccc' }}>{r.label}</div>
-                  </div>
-                );
-              })}
-              {authError && <div style={{ fontSize: 9, color: '#f87171', marginTop: 5 }}>{authError}</div>}
-            </div>
-          )}
-          <div 
-            onClick={() => setIsRoleMenuOpen(!isRoleMenuOpen)}
-            style={{ padding: '12px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isRoleMenuOpen ? 'rgba(255,255,255,0.05)' : 'transparent' }}
-          >
-            <div>
-              <div style={{ display: 'inline-block', background: '#a8003b', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 3 }}>
-                VAI: {role ? ROLE_DEFS.find((r) => r.id === role)?.label.toUpperCase() : 'CHƯA ĐĂNG NHẬP'}
-              </div>
-              <div style={{ color: '#666', fontSize: 9 }}>Click để đổi vai trò</div>
-            </div>
-            <div style={{ color: '#888', transform: isRoleMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▲</div>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', padding: '12px 16px' }}>
+          <div style={{ display: 'inline-block', background: '#a8003b', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 3 }}>
+            GÓC NHÌN: ĐIỀU HÀNH (CEO)
           </div>
+          <div style={{ color: '#666', fontSize: 9 }}>{authState.user?.email ?? 'Toàn quyền · xem & sửa'}</div>
         </div>
       </aside>
 
       {/* ═══ MAIN ═══ */}
       <main style={{ flex: 1, overflow: 'auto', background: '#ebe6d4', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 1366, background: '#ebe6d4', minHeight: '100%' }}>
-        {authState.status === 'loading' && <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang kiểm tra đăng nhập…</div>}
-        {authState.status === 'signed-out' && (
-          <div style={{ padding: '32px 36px' }}>
-            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Chọn vai để bắt đầu</h1>
-            <p style={{ fontSize: 12, color: '#737373', maxWidth: 480 }}>
-              Chọn 1 vai ở khối "Xem Như Vai" bên trái — app đăng nhập bằng user demo tương ứng trên Auth Emulator (chạy{' '}
-              <code>npm run emulators</code> rồi <code>npm run seed:emulator</code> trước).
-            </p>
+        {(authState.status === 'loading' || authState.status === 'signed-out') && (
+          <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>
+            Đang mở Bảng điều khiển…
+            {authError && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ color: '#DC2626', marginBottom: 8 }}>{authError}</div>
+                <button
+                  onClick={() => { setAuthError(null); void authState.switchRole(CEO_ROLE).then(setAuthError); }}
+                  style={{ padding: '8px 16px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}
+                >
+                  Thử lại
+                </button>
+              </div>
+            )}
           </div>
         )}
         {authState.status === 'signed-in' && role && (

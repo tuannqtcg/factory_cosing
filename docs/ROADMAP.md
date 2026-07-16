@@ -10,6 +10,14 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-026 — Gọn về MỘT view CEO**: app chỉ phục vụ quyết định CEO. Bỏ 5 tab
+  vận hành của vai khác khỏi nav (Kế Hoạch SX/production; Ống CPVC + Phụ Kiện báo
+  cáo dây chuyền; Tồn Kho Compound; Danh Mục Sản Phẩm). Nav còn 2 nhóm: Phân Tích
+  & Quyết Định (Tổng Quan, Trợ Lý CEO, Giá Vốn Theo Lô, Bảng Giá VF, Bảng Giá NPP,
+  Phân Tích Định Giá) + Điều Chỉnh Tham Số (Tham Số, Cấu Hình Nhà Máy). Dọn guard
+  "chỉ dành cho vai X" chết (PricingAnalytics/TargetCosting/Tham Số/Cấu Hình);
+  GIỮ ranh giới bảo mật field-level (thresholdPct + strategic admin-only, khớp
+  rules). Engine/backend không đổi — suite 343/343, typecheck xanh.
 - [x] **ADR-025 — Bảng Giá neo theo giá VF + Bảng Giá NPP dẫn xuất**: Bảng Giá đổi
   từ niêm yết giá list (đã cộng markup nhà pp) sang **giá VF (xuất xưởng)** — cùng
   tầng với `targetPrice` màn Giá Vốn Theo Lô → 2 màn nhất quán, khóa giá (ADR-004)

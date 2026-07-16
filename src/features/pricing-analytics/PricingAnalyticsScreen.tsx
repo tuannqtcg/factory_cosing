@@ -16,17 +16,7 @@ export default function PricingAnalyticsScreen({
   internal: ScenarioOutput | null;
 }) {
   const [activeTab, setActiveTab] = useState<'what-if' | 'target-costing'>('what-if');
-
-  const canUse = role === 'pricing' || role === 'admin';
-
-  if (!canUse) {
-    return (
-      <div style={{ padding: '32px 36px' }}>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Phân Tích Định Giá</h1>
-        <p style={{ fontSize: 12, color: '#737373' }}>Màn hình này chỉ dành cho vai Định Giá / Toàn Quyền (ADR-006).</p>
-      </div>
-    );
-  }
+  // ADR-026 — bỏ guard "chỉ dành cho vai X": chỉ admin/pricing đăng nhập được (ADR-023).
 
   return (
     <div style={{ padding: '32px 36px', height: '100%', display: 'flex', flexDirection: 'column' }}>

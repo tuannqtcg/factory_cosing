@@ -1,8 +1,9 @@
-// ADR-020 + ADR-023 — một view CEO duy nhất, đăng nhập production thật. Người
-// dùng đăng nhập bằng email/mật khẩu (LoginScreen); cổng vào = vai admin/pricing
-// (tầng chiến lược ADR-006). Truyền vai THẬT xuống mọi màn (gating từng màn +
-// useScenarioData theo vai). Điều hướng chia 2 nhóm theo mục đích: ĐIỀU HÀNH
-// (xem) và CẤU HÌNH & DỮ LIỆU (vào chi tiết sửa). Backend theo vai giữ nguyên.
+// ADR-020 + ADR-023 + ADR-026 — MỘT view CEO duy nhất, đăng nhập production thật.
+// Người dùng đăng nhập bằng email/mật khẩu (LoginScreen); cổng vào = admin/pricing
+// (ADR-006). App này CHỈ phục vụ QUYẾT ĐỊNH của CEO: nhìn nhiều góc độ → điều chỉnh
+// tham số → xem thay đổi → quyết định. ADR-026 đã bỏ các tab vận hành của vai khác
+// (Kế Hoạch SX của production; báo cáo dây chuyền Ống/PK; nhập Tồn Kho; Danh Mục SP)
+// cho đỡ rối. Điều hướng chia 2 nhóm: PHÂN TÍCH & QUYẾT ĐỊNH và ĐIỀU CHỈNH.
 import { useState } from 'react';
 import { isEmulatorMode } from '../../lib/firebase.js';
 import { useAuth } from '../auth/useAuth.js';
@@ -11,39 +12,27 @@ import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
 import DistributorPriceList from '../price-list/DistributorPriceList.js';
-import PlanScreen from '../plan/PlanScreen.js';
-import { usePlanData } from '../plan/usePlanData.js';
 import PricingAnalyticsScreen from '../pricing-analytics/PricingAnalyticsScreen.js';
 import ConfigScreen from '../config/ConfigScreen.js';
-import ProductionReport from '../production-report/ProductionReport.js';
-import InventoryScreen from '../inventory/InventoryScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
-import ProductsScreen from '../products/ProductsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
-// Điều hướng chia theo MỤC ĐÍCH, không theo quyền (ADR-020).
+// Điều hướng chia theo MỤC ĐÍCH (ADR-020/026), không theo quyền.
 const OPERATION_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'ceo-planner', label: 'Trợ Lý CEO' },
   { id: 'lot-costing', label: 'Giá Vốn Theo Lô' },
   { id: 'pricelist', label: 'Bảng Giá (VF)' },
   { id: 'distributor-pricelist', label: 'Bảng Giá NPP' },
-  { id: 'plan', label: 'Kế Hoạch SX' },
   { id: 'pricing-analytics', label: 'Phân Tích Định Giá' },
 ];
 const CONFIG_TABS = [
-  { id: 'inventory', label: 'Tồn Kho Compound' },
-  { id: 'products', label: 'Danh Mục Sản Phẩm' },
-  { id: 'config', label: 'Cấu Hình Nhà Máy' },
   { id: 'assumptions', label: 'Tham Số' },
-  { id: 'ong', label: 'Ống CPVC' },
-  { id: 'pk', label: 'Phụ Kiện' },
+  { id: 'config', label: 'Cấu Hình Nhà Máy' },
 ];
-/** Kỳ kế hoạch mặc định của màn Kế Hoạch SX (đổi kỳ ngay trong form). */
-const DEFAULT_PLAN_PERIOD = '2026-Q3';
 
 
 export default function AppShell() {
@@ -55,7 +44,6 @@ export default function AppShell() {
   const hasAccess = role === 'admin' || role === 'pricing';
 
   const data = useScenarioData(SCENARIO_ID, role);
-  const planData = usePlanData(SCENARIO_ID, DEFAULT_PLAN_PERIOD, role);
 
   const navItem = (t: { id: string; label: string }) => {
     const active = t.id === activeTab;
@@ -103,9 +91,9 @@ export default function AppShell() {
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 4 }}>Điều Hành</div>
+          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 4 }}>Phân Tích & Quyết Định</div>
           {OPERATION_TABS.map(navItem)}
-          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 8, borderTop: '1px solid rgba(255,255,255,.06)' }}>Cấu Hình & Dữ Liệu</div>
+          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 8, borderTop: '1px solid rgba(255,255,255,.06)' }}>Điều Chỉnh Tham Số</div>
           {CONFIG_TABS.map(navItem)}
         </nav>
 
@@ -156,7 +144,6 @@ export default function AppShell() {
               <PricingAnalyticsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
             )}
             {activeTab === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
-            {activeTab === 'inventory' && <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'assumptions' && (
               <AssumptionsScreen
                 role={role}
@@ -165,23 +152,6 @@ export default function AppShell() {
                 scenario={data.scenario}
                 internal={data.internal}
               />
-            )}
-            {activeTab === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
-            {activeTab === 'ong' && <ProductionReport role={role} line="pipe" scenario={data.scenario} internal={data.internal} />}
-            {activeTab === 'pk' && <ProductionReport role={role} line="fitting" scenario={data.scenario} internal={data.internal} />}
-            {activeTab === 'plan' && (
-              <>
-                {planData.error && (
-                  <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{planData.error}</div>
-                )}
-                <PlanScreen
-                  catalog={planData.catalog}
-                  planResult={planData.planResult}
-                  savedInput={planData.savedInput}
-                  scenarioId={SCENARIO_ID}
-                  onSave={planData.savePlanInput}
-                />
-              </>
             )}
           </>
         )}

@@ -87,8 +87,8 @@ export default function TargetCosting({
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
 }) {
-  const canUse = role === 'pricing' || role === 'admin';
-  const { lastDoc, runTargetProfit, runTargetPrice } = useTargetCosting(scenarioId, canUse ? role : null);
+  // ADR-026 — bỏ guard "chỉ dành cho vai X": chỉ admin/pricing đăng nhập được (ADR-023).
+  const { lastDoc, runTargetProfit, runTargetPrice } = useTargetCosting(scenarioId, role);
 
   const [mode, setMode] = useState<'t2' | 't3'>('t2');
 
@@ -125,14 +125,6 @@ export default function TargetCosting({
   const t3MaterialIndex = scenario && t3SelectedSku ? scenario.materials.findIndex((m) => m.id === t3SelectedSku.productKey.materialId) : -1;
   const t3AvailableFreeVars = FREE_VAR_DEFS.filter((f) => !f.lineFilter || f.lineFilter === t3Line);
 
-  if (!canUse) {
-    return (
-      <div style={{ padding: '32px 36px' }}>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Định Giá Ngược</h1>
-        <p style={{ fontSize: 12, color: '#737373' }}>Màn hình này chỉ dành cho vai Định Giá / Toàn Quyền (ADR-006).</p>
-      </div>
-    );
-  }
   if (!scenario || !internal) {
     return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
   }

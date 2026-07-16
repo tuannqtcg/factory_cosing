@@ -10,10 +10,11 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
-- [x] **Trợ Lý CEO — DUYỆT Pha 1 + XONG Pha 2**: prototype `ceo-planner.html`
-  (giá X + margin → giá bán → hiệu quả năm + AI tư vấn) duyệt cổng Pha 1; đóng
-  băng schema `src/schemas/ceo-planner.ts` + `docs/contracts/ceo-planner.md` +
-  ADR-021 (planner) + ADR-022 (callable `adviseScenario` gọi Claude API server).
+- [x] **Trợ Lý CEO — XONG Pha 1→3**: prototype duyệt (Pha 1) → schema + ADR-021/022
+  (Pha 2) → **engine `ceo-planner.ts` (tái dùng calculateScenario, parity 7 test) +
+  màn `CeoPlannerScreen` gắn view CEO + callable `adviseScenario` (Claude API server,
+  fallback mock, audit)** (Pha 3). Verify thật trên emulator: giá 135.890/252.846 đ/kg,
+  LN trước thuế 16,7 tỷ, thu hồi vốn 1,2 năm. Suite 343/343.
 - [x] **ADR-020 — Hợp nhất một view CEO**: bỏ điều hướng theo vai (role switcher +
   lọc tab), sidebar chia 2 nhóm ĐIỀU HÀNH / CẤU HÌNH & DỮ LIỆU, tự đăng nhập vai
   CEO. Backend theo vai giữ nguyên.
@@ -31,12 +32,10 @@
 
 ## 🚀 Việc cần làm tiếp theo (Pha 4 & Vận hành thực tế)
 
-### 0. Trợ Lý CEO — Pha 3 (code thật) → Pha 4 (parity)
-- [ ] `src/engine/ceo-planner.ts`: orchestrate pipe/fitting/price-ladder/cvp — thay công thức nhúng prototype (cấm chép tay). Thuê mặt bằng thay `annualLandRent` khi tính.
-- [ ] Màn `src/features/ceo-planner/` gắn vào view CEO (AppShell, ĐIỀU HÀNH).
-- [ ] Callable `adviseScenario` (ADR-022): Claude API server-side, key qua Secret, fallback mock, audit log.
-- [ ] Parity Pha 4: preset "Chuẩn Excel v3.4" → ống 132.898,6 · phụ kiện 252.845,8 đ/kg · LN trước thuế 16,37 tỷ · payback 0,816 năm.
-- [ ] Thuế TNDN **20% (user xác nhận 2026-07-16)** — hết treo.
+### 0. Trợ Lý CEO — bật Claude API thật (Pha 3 đã xong)
+- [ ] Khi deploy: `firebase functions:secrets:set ANTHROPIC_API_KEY` để callable `adviseScenario` gọi Claude thật (hiện fallback mock rule-based, đã chạy end-to-end).
+- [x] Engine + màn + callable + parity 7 test — XONG (verify emulator, suite 343/343).
+- [ ] Ghi chú parity: số Ống brief (132.898,6 · payback 0,816) là tiền-v3.7; engine hiện cho 135.890 · 1,24 năm (đúng tham số v3.7 ADR-019). Không đuổi theo số cũ.
 
 ### 1. Bảo mật backend (rules) — vẫn còn giá trị sau ADR-020
 > UI đã gộp thành một view CEO (ADR-020) nên không còn kiểm thử điều hướng 4 vai

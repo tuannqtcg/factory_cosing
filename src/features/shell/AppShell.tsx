@@ -16,6 +16,7 @@ import ProductionReport from '../production-report/ProductionReport.js';
 import InventoryScreen from '../inventory/InventoryScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import ProductsScreen from '../products/ProductsScreen.js';
+import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 /** ADR-020: mọi màn chạy ở góc nhìn CEO = toàn quyền. */
@@ -24,6 +25,7 @@ const CEO_ROLE = 'admin' as const;
 // Điều hướng chia theo MỤC ĐÍCH, không theo quyền (ADR-020).
 const OPERATION_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
+  { id: 'ceo-planner', label: 'Trợ Lý CEO' },
   { id: 'pricelist', label: 'Bảng Giá' },
   { id: 'plan', label: 'Kế Hoạch SX' },
   { id: 'pricing-analytics', label: 'Phân Tích Định Giá' },
@@ -131,6 +133,7 @@ export default function AppShell() {
                 salesPriceLadder={data.priceList?.priceLadder ?? null}
               />
             )}
+            {activeTab === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
             {activeTab === 'pricing-analytics' && (
               <PricingAnalyticsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />

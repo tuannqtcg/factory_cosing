@@ -191,17 +191,25 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
       };
     });
 
+  // Giá ren kim loại đã KHÓA theo (renType, ptSize) — tái dùng từ output engine
+  // (ADR-008); ren/cái = insertQtyPerUnit × pricingPrice của loại ren SKU dùng.
+  const insertPriceByKey = new Map<string, number>();
+  for (const e of out.priceLock.metalInsertByCatalogEntry) {
+    insertPriceByKey.set(`${e.renType}|${e.ptSize}`, e.evaluation.pricingPrice);
+  }
   const fittingSkuPrices = out.skuPriceChains
     .filter((sku) => sku.productKey.productName !== undefined && sku.productKey.materialId === fitMat.id && sku.managementStatus === 'active')
     .map((sku) => {
       const product = fittingProducts.find((p) => p.productName === sku.productKey.productName && p.sizeLabel === sku.productKey.sizeLabel);
       const fullCostVndPerPiece = backoutFullCost(sku.chain.vfPricePerUnit, fitMat.markupVf);
+      const insert = product?.metalInsert;
+      const metalInsertVndPerPiece = insert ? insert.insertQtyPerUnit * (insertPriceByKey.get(`${insert.renType}|${insert.ptSize}`) ?? 0) : 0;
       return {
         productName: sku.productKey.productName!,
         sizeLabel: sku.productKey.sizeLabel ?? '',
         schedule: product?.schedule ?? '',
         unitWeightKg: product?.unitWeightKg ?? 0,
-        metalInsertVndPerPiece: 0, // ren kim loại đã nằm trong fullCost (ADR-008); cột hiển thị riêng để Pha 3.1
+        metalInsertVndPerPiece, // ADR-008 — ren tách riêng (đã gồm trong fullCost)
         fullCostVndPerPiece,
         sellingPriceVndPerPiece: applySellingPrice(fullCostVndPerPiece, request.fitting.desiredMargin, request.marginMode),
       };

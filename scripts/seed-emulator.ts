@@ -29,6 +29,10 @@ const db = getFirestore(app);
 const ROLES = ['admin', 'pricing', 'sales', 'production'] as const;
 const SCENARIO_ID = 'baseline-v3.4';
 
+// Chủ app (owner) mặc định — vai `admin` = toàn quyền (ADR-020 view CEO). Đăng
+// nhập bằng email/mật khẩu demo trên emulator; production dùng chính email này.
+const OWNER_EMAIL = 'tuannq6886@gmail.com';
+
 async function seedUsers(): Promise<void> {
   for (const role of ROLES) {
     const email = `${role}@demo.local`;
@@ -38,6 +42,11 @@ async function seedUsers(): Promise<void> {
     await auth.setCustomUserClaims(user.uid, { role });
     console.log(`✓ user ${email} (role=${role})`);
   }
+  // Owner app — role admin.
+  const owner = (await auth.getUserByEmail(OWNER_EMAIL).catch(() => null))
+    ?? (await auth.createUser({ uid: 'owner', email: OWNER_EMAIL, password: 'demo-password' }));
+  await auth.setCustomUserClaims(owner.uid, { role: 'admin' });
+  console.log(`✓ OWNER ${OWNER_EMAIL} (role=admin)`);
 }
 
 async function seedScenario(): Promise<void> {

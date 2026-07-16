@@ -41,7 +41,9 @@
 > UI đã gộp thành một view CEO (ADR-020) nên không còn kiểm thử điều hướng 4 vai
 > trên UI. Nhưng rules theo vai vẫn giữ ở server để bảo vệ dữ liệu thật.
 - [x] Chạy `test:rules` (61/61) + `test:functions` (16/16) — XANH; thêm rule + test `adviceAudit` (ADR-022 §6).
-- [ ] Siết đăng nhập production thật: thay auto sign-in demo admin bằng form login thật, tắt tài khoản demo (hoãn — ADR-020 §Hệ quả).
+- [x] **Đăng nhập production thật (ADR-023)**: form email/mật khẩu (LoginScreen), bỏ auto sign-in; cổng vào admin/pricing, chặn sales/production; nút Đăng xuất; lối tắt demo chỉ ở emulator. Verify: owner vào view CEO, sales bị chặn, sai mật khẩu báo lỗi.
+- [ ] (Tuỳ chọn) Thêm nút Google Sign-In cho owner (Gmail) — không đổi kiến trúc (ADR-023 §Hệ quả).
+- [ ] Vận hành: tắt/vô hiệu hoá tài khoản demo trên project thật (Firebase Console).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
 - [ ] Chờ danh mục ống SCH80 chuẩn từ nhà cung cấp để cập nhật lại Seed Data.

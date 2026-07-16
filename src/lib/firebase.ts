@@ -53,6 +53,12 @@ export async function signInAsRole(role: AppRole): Promise<User> {
   return credential.user;
 }
 
+/** ADR-023 — đăng nhập production thật bằng email/mật khẩu (owner + user thật). */
+export async function signInWithEmail(email: string, password: string): Promise<User> {
+  const credential = await signInWithEmailAndPassword(auth, email, password);
+  return credential.user;
+}
+
 export async function signOutCurrentUser(): Promise<void> {
   await signOut(auth);
 }

@@ -1,16 +1,31 @@
-// M12.5 — hook auth theo vai (custom claim `role`, firestore.rules M12.3).
-// Nút vai trên sidebar = đăng nhập user demo tương ứng (chế độ emulator, xem
-// src/lib/firebase.ts).
+// M12.5 / ADR-023 — hook auth theo vai (custom claim `role`, firestore.rules).
+// `signIn` = đăng nhập production thật (email/mật khẩu); `switchRole` = lối tắt
+// đăng nhập user demo (chỉ dùng ở emulator, xem src/lib/firebase.ts).
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth, roleOf, signInAsRole, type AppRole } from '../../lib/firebase.js';
+import { auth, roleOf, signInAsRole, signInWithEmail, signOutCurrentUser, type AppRole } from '../../lib/firebase.js';
 
 export interface AuthState {
   status: 'loading' | 'signed-out' | 'signed-in';
   user: User | null;
   role: AppRole | null;
-  /** Đăng nhập bằng user demo của vai (emulator). Lỗi (chưa seed) → trả message. */
+  /** ADR-023 — đăng nhập thật bằng email/mật khẩu. Lỗi → trả message tiếng Việt. */
+  signIn: (email: string, password: string) => Promise<string | null>;
+  /** Đăng xuất. */
+  signOut: () => Promise<void>;
+  /** Lối tắt đăng nhập user demo của vai (CHỈ emulator). Lỗi (chưa seed) → trả message. */
   switchRole: (role: AppRole) => Promise<string | null>;
+}
+
+function messageForAuthError(err: unknown): string {
+  const code = (err as { code?: string })?.code ?? '';
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+    return 'Email hoặc mật khẩu không đúng.';
+  }
+  if (code === 'auth/too-many-requests') return 'Đăng nhập sai quá nhiều lần — thử lại sau ít phút.';
+  if (code === 'auth/user-disabled') return 'Tài khoản đã bị vô hiệu hoá.';
+  if (code === 'auth/invalid-email') return 'Email không hợp lệ.';
+  return `Không đăng nhập được: ${err instanceof Error ? err.message : String(err)}`;
 }
 
 export function useAuth(): AuthState {
@@ -30,6 +45,19 @@ export function useAuth(): AuthState {
     });
   }, []);
 
+  const signIn = async (email: string, password: string): Promise<string | null> => {
+    try {
+      await signInWithEmail(email.trim(), password);
+      return null;
+    } catch (err) {
+      return messageForAuthError(err);
+    }
+  };
+
+  const signOut = async (): Promise<void> => {
+    await signOutCurrentUser();
+  };
+
   const switchRole = async (role: AppRole): Promise<string | null> => {
     try {
       await signInAsRole(role);
@@ -39,5 +67,5 @@ export function useAuth(): AuthState {
     }
   };
 
-  return { ...state, switchRole };
+  return { ...state, signIn, signOut, switchRole };
 }

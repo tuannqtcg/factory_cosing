@@ -1,10 +1,12 @@
-// ADR-020 — một view CEO duy nhất: bỏ role switcher + lọc tab theo vai. Shell
-// tự đăng nhập vai `admin` (toàn quyền) và truyền cố định role='admin' xuống mọi
-// màn, nên canEdit/canSeeCostDetail tự bật hết. Backend theo vai (rules, custom
-// claim, ADR-006/017) giữ nguyên — chỉ gộp trải nghiệm client. Điều hướng chia 2
-// nhóm theo mục đích: ĐIỀU HÀNH (xem) và CẤU HÌNH & DỮ LIỆU (vào chi tiết sửa).
-import { useEffect, useState } from 'react';
+// ADR-020 + ADR-023 — một view CEO duy nhất, đăng nhập production thật. Người
+// dùng đăng nhập bằng email/mật khẩu (LoginScreen); cổng vào = vai admin/pricing
+// (tầng chiến lược ADR-006). Truyền vai THẬT xuống mọi màn (gating từng màn +
+// useScenarioData theo vai). Điều hướng chia 2 nhóm theo mục đích: ĐIỀU HÀNH
+// (xem) và CẤU HÌNH & DỮ LIỆU (vào chi tiết sửa). Backend theo vai giữ nguyên.
+import { useState } from 'react';
+import { isEmulatorMode } from '../../lib/firebase.js';
 import { useAuth } from '../auth/useAuth.js';
+import LoginScreen from '../auth/LoginScreen.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
@@ -19,8 +21,6 @@ import ProductsScreen from '../products/ProductsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
-/** ADR-020: mọi màn chạy ở góc nhìn CEO = toàn quyền. */
-const CEO_ROLE = 'admin' as const;
 
 // Điều hướng chia theo MỤC ĐÍCH, không theo quyền (ADR-020).
 const OPERATION_TABS = [
@@ -45,17 +45,10 @@ const DEFAULT_PLAN_PERIOD = '2026-Q3';
 export default function AppShell() {
   const authState = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [authError, setAuthError] = useState<string | null>(null);
 
   const role = authState.role;
-
-  // ADR-020: tự đăng nhập vai CEO/admin — không bắt người dùng chọn vai.
-  useEffect(() => {
-    if (authState.status === 'signed-out') {
-      setAuthError(null);
-      void authState.switchRole(CEO_ROLE).then(setAuthError);
-    }
-  }, [authState.status]);
+  // ADR-023: cổng vào view CEO = tầng chiến lược (admin/pricing, ADR-006).
+  const hasAccess = role === 'admin' || role === 'pricing';
 
   const data = useScenarioData(SCENARIO_ID, role);
   const planData = usePlanData(SCENARIO_ID, DEFAULT_PLAN_PERIOD, role);
@@ -73,6 +66,27 @@ export default function AppShell() {
       </div>
     );
   };
+
+  // ── Trạng thái auth (ADR-023): loading → login → chặn vai → view CEO ──────
+  if (authState.status === 'loading') {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ebe6d4', fontSize: 12, color: '#737373', fontFamily: 'Roboto,sans-serif' }}>Đang kiểm tra đăng nhập…</div>;
+  }
+  if (authState.status === 'signed-out') {
+    return <LoginScreen onSignIn={authState.signIn} onDemoLogin={authState.switchRole} isEmulator={isEmulatorMode} />;
+  }
+  if (!hasAccess) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ebe6d4', fontFamily: 'Roboto,sans-serif' }}>
+        <div style={{ width: 360, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 28, textAlign: 'center' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Không có quyền truy cập</div>
+          <div style={{ fontSize: 12, color: '#737373', marginBottom: 18 }}>
+            Tài khoản <b>{authState.user?.email}</b> {role ? `(vai ${role})` : '(chưa được cấp vai)'} không có quyền vào bảng điều khiển quản trị. Liên hệ quản trị viên để được cấp quyền.
+          </div>
+          <button onClick={() => void authState.signOut()} style={{ padding: '9px 18px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Đăng xuất</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Roboto,Helvetica Neue,sans-serif', color: '#1a1a1a', background: '#ebe6d4' }}>
@@ -92,33 +106,23 @@ export default function AppShell() {
         </nav>
 
         <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', padding: '12px 16px' }}>
-          <div style={{ display: 'inline-block', background: '#a8003b', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 3 }}>
-            GÓC NHÌN: ĐIỀU HÀNH (CEO)
+          <div style={{ display: 'inline-block', background: '#a8003b', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
+            {role === 'admin' ? 'CHỦ / TOÀN QUYỀN' : 'ĐỊNH GIÁ'}
           </div>
-          <div style={{ color: '#666', fontSize: 9 }}>{authState.user?.email ?? 'Toàn quyền · xem & sửa'}</div>
+          <div style={{ color: '#888', fontSize: 9, marginBottom: 8, wordBreak: 'break-all' }}>{authState.user?.email}</div>
+          <button
+            onClick={() => void authState.signOut()}
+            style={{ width: '100%', padding: '6px 8px', background: 'transparent', color: '#b3b3b3', border: '1px solid rgba(255,255,255,.15)', borderRadius: 4, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
+          >
+            Đăng xuất
+          </button>
         </div>
       </aside>
 
       {/* ═══ MAIN ═══ */}
       <main style={{ flex: 1, overflow: 'auto', background: '#ebe6d4', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 1366, background: '#ebe6d4', minHeight: '100%' }}>
-        {(authState.status === 'loading' || authState.status === 'signed-out') && (
-          <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>
-            Đang mở Bảng điều khiển…
-            {authError && (
-              <div style={{ marginTop: 12 }}>
-                <div style={{ color: '#DC2626', marginBottom: 8 }}>{authError}</div>
-                <button
-                  onClick={() => { setAuthError(null); void authState.switchRole(CEO_ROLE).then(setAuthError); }}
-                  style={{ padding: '8px 16px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 11, fontWeight: 700 }}
-                >
-                  Thử lại
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-        {authState.status === 'signed-in' && role && (
+        {role && (
           <>
             {data.error && (
               <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{data.error}</div>

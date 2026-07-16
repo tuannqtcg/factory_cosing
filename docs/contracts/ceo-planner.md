@@ -56,4 +56,4 @@ Backend vẫn kiểm role ở callable (không tin client).
   suất chuẩn (khớp `capacityTiers`/`mhrByCapacityTier`).
 - Parity Pha 4 (preset "Chuẩn Excel v3.4", thuê 525 triệu): ống 132.898,6 · phụ
   kiện 252.845,8 đ/kg · LN trước thuế 16,37 tỷ · payback 0,816 năm.
-- Thuế TNDN 20% = ước tính minh họa, CHỜ user xác nhận (brief mục 9).
+- Thuế TNDN **20% — user xác nhận 2026-07-16** (giải tỏa treo brief mục 9); đọc từ 1 hằng số có tên rõ.

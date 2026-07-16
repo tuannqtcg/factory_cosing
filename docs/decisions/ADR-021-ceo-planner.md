@@ -54,10 +54,11 @@ Sau ADR-020 (một view CEO = vai admin), màn hiển thị trong view CEO. `sal
 `production` KHÔNG thấy (dữ liệu giá thành/đầu tư). Không có doc Firestore mới —
 kết quả tính tại client, không ghi ra ngoài.
 
-### 6. Thuế TNDN — field có, giá trị chờ xác nhận
+### 6. Thuế TNDN — 20% (user xác nhận 2026-07-16)
 `CeoFactorySummarySchema.corporateIncomeTaxVnd` giữ trong hợp đồng; thuế suất
-20% là ƯỚC TÍNH minh họa (brief mục 9) — **chưa được user xác nhận**. Pha 3 đọc
-từ 1 hằng số/tham số có ghi chú "ước tính", không hard-code rải rác.
+**20% — user XÁC NHẬN 2026-07-16** (thuế suất phổ thông VN; giải tỏa điểm treo
+brief mục 9). Pha 3 đọc từ 1 hằng số có tên rõ (vd `CIT_RATE = 0.20`), không
+hard-code rải rác; đổi thuế suất sau chỉ sửa 1 nơi.
 
 ## Hệ quả
 - Pha 3: viết `src/engine/ceo-planner.ts` + màn `src/features/ceo-planner/` gắn

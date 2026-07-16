@@ -68,8 +68,7 @@ nhất kiểu "hỏi → trả lời", kèm nút AI tư vấn đọc kết quả
 8. **Bảng giá phụ kiện theo CÁI**: 83 SKU có khuôn (66 khuôn vật lý ADR-007,
    8/91 SKU chưa khuôn tự ẩn), giá động theo nguyên liệu + bậc ca + markup,
    11 SKU họ ren cộng đơn giá ren (ADR-008); có ô lọc tên/size.
-9. Thuế TNDN 20% là ƯỚC TÍNH minh họa — CHƯA được user xác nhận thuế suất
-   (còn treo, hỏi khi chốt cổng Pha 1).
+9. Thuế TNDN **20% — user XÁC NHẬN 2026-07-16** (thuế suất phổ thông VN). Hết treo.
 
 ## Ràng buộc kỹ thuật khi sang Pha 3
 - Toàn bộ công thức nhúng trong prototype PHẢI thay bằng `src/engine/*` (pipe,

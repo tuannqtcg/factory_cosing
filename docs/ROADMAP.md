@@ -10,6 +10,14 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-025 — Bảng Giá neo theo giá VF + Bảng Giá NPP dẫn xuất**: Bảng Giá đổi
+  từ niêm yết giá list (đã cộng markup nhà pp) sang **giá VF (xuất xưởng)** — cùng
+  tầng với `targetPrice` màn Giá Vốn Theo Lô → 2 màn nhất quán, khóa giá (ADR-004)
+  áp trực tiếp. Thêm màn **Bảng Giá NPP** (`DistributorPriceList`) trình bày quy
+  trình dẫn xuất TỪ giá VF: VF → ×(1+markupTcg 30%) → TCG → ÷(1−biên NPP 30%) →
+  niêm yết → +VAT 8%. CHỈ đọc `PriceListDoc.chain` đã persist (vf/tcg/list) — không
+  schema/engine mới. Verify Playwright: Tê đều size20 VF 14.440 → NPP 26.900 (khớp
+  fixture). Suite 343/343, typecheck xanh.
 - [x] **ADR-024 — View "Giá Vốn Theo Lô"**: trả lời câu hỏi điều hành "5 lô khác
   giá → điều gì xảy ra → giá bán nào đúng?". Màn `LotCostingScreen` CHỈ đọc engine
   (giá vốn kép ADR-002 + khóa giá ADR-004) — mỗi nguyên liệu 1 thẻ: các lô → bình

@@ -10,6 +10,7 @@ import LoginScreen from '../auth/LoginScreen.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PriceList from '../price-list/PriceList.js';
+import DistributorPriceList from '../price-list/DistributorPriceList.js';
 import PlanScreen from '../plan/PlanScreen.js';
 import { usePlanData } from '../plan/usePlanData.js';
 import PricingAnalyticsScreen from '../pricing-analytics/PricingAnalyticsScreen.js';
@@ -28,7 +29,8 @@ const OPERATION_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'ceo-planner', label: 'Trợ Lý CEO' },
   { id: 'lot-costing', label: 'Giá Vốn Theo Lô' },
-  { id: 'pricelist', label: 'Bảng Giá' },
+  { id: 'pricelist', label: 'Bảng Giá (VF)' },
+  { id: 'distributor-pricelist', label: 'Bảng Giá NPP' },
   { id: 'plan', label: 'Kế Hoạch SX' },
   { id: 'pricing-analytics', label: 'Phân Tích Định Giá' },
 ];
@@ -142,6 +144,7 @@ export default function AppShell() {
             {activeTab === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
             {activeTab === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
+            {activeTab === 'distributor-pricelist' && <DistributorPriceList priceList={data.priceList} />}
             {activeTab === 'pricing-analytics' && (
               <PricingAnalyticsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
             )}

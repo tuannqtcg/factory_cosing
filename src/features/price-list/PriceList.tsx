@@ -1,8 +1,13 @@
-// M12.6 — màn hình Bảng Giá (tab `pricelist`), dựng ĐÚNG prototype Pha 1 đã
-// duyệt: search theo tên/kích cỡ + toggle Trước VAT/Có VAT + hàng nút lọc
-// loại SP + bảng 6 cột (STT/Sản phẩm/Kích cỡ/Quy cách/ĐVT/Giá). Sales-safe:
+// M12.6 + ADR-025 — màn hình Bảng Giá (tab `pricelist`). Niêm yết GIÁ VF (giá
+// XUẤT XƯỞNG của nhà máy) = `chain.vfPricePerUnit`, KHÔNG phải giá list đã cộng
+// markup nhà phân phối. Đây là tầng giá CEO thực sự chốt + cùng tầng với
+// `targetPrice` màn Giá Vốn Theo Lô (ADR-024) → 2 màn nhất quán, khóa giá
+// (ADR-004) áp trực tiếp. Bảng giá tới Nhà Phân Phối là bước DẪN XUẤT riêng
+// (tab `distributor-pricelist`, DistributorPriceList.tsx).
+// UI giữ nguyên prototype Pha 1: search theo tên/kích cỡ + toggle Trước VAT/Có
+// VAT + hàng nút lọc loại SP + bảng cột (STT/Sản phẩm/Kích cỡ/…/Giá). Sales-safe:
 // nguồn DUY NHẤT là `outputs/priceList` (PriceListDocSchema — không có field
-// giá vốn nào để lộ), dùng chung cho MỌI vai được xem tab này.
+// giá vốn nào để lộ; VF là GIÁ BÁN, không phải giá vốn).
 //
 // Khác prototype (2 chỗ, đều là prototype mock sai so với nguồn chân lý):
 // - 8 SKU chưa có khuôn ẨN bằng `managementStatus === 'pending_mold'` tính từ
@@ -39,6 +44,13 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
 
   // Dòng hiển thị: chỉ SKU active (pending_mold ẩn theo ADR-007/008), STT đánh
   // trên danh sách active ĐẦY ĐỦ (giữ nguyên khi search/filter — giống prototype).
+  // VAT suy từ chuỗi list đã persist (listWithVat/listBeforeVat) — ADR-025 áp
+  // đúng suất đó lên giá VF để ra bản "Có VAT" (giá VF chưa persist bản có VAT).
+  const vatRate = useMemo(() => {
+    const first = priceList?.skuPriceChains.find((s) => s.chain.listPriceBeforeVat > 0);
+    return first ? first.chain.listPriceWithVat / first.chain.listPriceBeforeVat - 1 : 0.08;
+  }, [priceList]);
+
   const rows = useMemo<Row[]>(() => {
     if (!priceList) return [];
     return priceList.skuPriceChains
@@ -55,11 +67,12 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
           unit: sku.unit,
           designationCode: sku.materialDesignationCode || '—',
           classificationCode: sku.materialClassificationCode || '—',
-          priceBeforeVat: sku.chain.listPriceBeforeVat,
-          priceWithVat: sku.chain.listPriceWithVat,
+          // ADR-025 — niêm yết GIÁ VF (xuất xưởng), không phải giá list nhà phân phối.
+          priceBeforeVat: sku.chain.vfPricePerUnit,
+          priceWithVat: Math.round(sku.chain.vfPricePerUnit * (1 + vatRate)),
         };
       });
-  }, [priceList]);
+  }, [priceList, vatRate]);
 
   const filteredRows = rows.filter((row) => {
     const q = searchQuery.toLowerCase();
@@ -71,8 +84,8 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
   });
 
   // Thuế suất VAT suy từ chính dữ liệu (sales không đọc được costPool) — chỉ để hiển thị nhãn.
-  const vatPctLabel = rows[0] ? Math.round((rows[0].priceWithVat / rows[0].priceBeforeVat - 1) * 100) : 8;
-  const colHeader = priceType === 'vat' ? `Đơn giá có VAT (đ)` : 'Đơn giá trước VAT (đ)';
+  const vatPctLabel = Math.round(vatRate * 100);
+  const colHeader = priceType === 'vat' ? `Giá VF có VAT (đ)` : 'Giá VF trước VAT (đ)';
 
   if (!priceList) {
     return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải bảng giá…</div>;
@@ -81,8 +94,11 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
   return (
     <div style={{ padding: '32px 36px' }}>
       <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Sản Phẩm</div>
+        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Xuất Xưởng (VF)</div>
         <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>BlazeMaster CPVC — {rows.length} SKU</h1>
+        <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
+          Giá bán xuất xưởng của nhà máy (VF) — ổn định theo khóa giá (ADR-004). Giá tới nhà phân phối xem tab <b>Bảng Giá NPP</b>.
+        </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11, gap: 12, flexWrap: 'wrap' }}>

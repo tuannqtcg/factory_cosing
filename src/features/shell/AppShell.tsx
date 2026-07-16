@@ -143,7 +143,14 @@ export default function AppShell() {
             )}
             {activeTab === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
             {activeTab === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} />}
-            {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
+            {activeTab === 'pricelist' && (
+              <PriceList
+                priceList={data.priceList}
+                scenario={data.scenario}
+                internal={data.internal}
+                onNavigate={setActiveTab}
+              />
+            )}
             {activeTab === 'distributor-pricelist' && <DistributorPriceList priceList={data.priceList} />}
             {activeTab === 'pricing-analytics' && (
               <PricingAnalyticsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />

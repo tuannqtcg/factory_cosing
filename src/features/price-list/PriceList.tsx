@@ -16,8 +16,8 @@
 //   không có; solvent550PricePerBox là vật tư phụ dùng chung trong CostPool
 //   (cost-pool.md), không phải SKU thương mại.
 import { useMemo, useState } from 'react';
-import { fmtVnd } from '../../lib/format.js';
-import type { PriceListDoc } from '../../schemas/scenario.js';
+import { fmtVnd, fmtPct } from '../../lib/format.js';
+import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Prototype đóng băng: 8 nút loại chính + Tất cả + Khác.
@@ -37,10 +37,38 @@ interface Row {
   priceWithVat: number;
 }
 
-export default function PriceList({ priceList }: { priceList: PriceListDoc | null }) {
+export default function PriceList({
+  priceList,
+  scenario = null,
+  internal = null,
+  onNavigate,
+}: {
+  priceList: PriceListDoc | null;
+  scenario?: ScenarioInput | null;
+  internal?: ScenarioOutput | null;
+  onNavigate?: (tab: string) => void;
+}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [priceType, setPriceType] = useState<'before' | 'vat'>('before');
   const [productFilter, setProductFilter] = useState<string>('all');
+
+  // ADR-025 §nối 2 màn — TÍN HIỆU QUYẾT ĐỊNH GIÁ cho CEO (KHÔNG phải kiểm tra tồn
+  // kho): nguyên liệu nào có giá thị trường (tái tạo) lệch khỏi baseline đã khóa
+  // quá ngưỡng → giá bán VF niêm yết có thể không còn phản ánh chi phí hiện tại →
+  // nên cân nhắc chốt lại giá. Chi tiết + quyết định nằm ở màn "Giá Vốn Theo Lô".
+  const staleMaterials = useMemo(() => {
+    if (!internal || !scenario) return [];
+    return internal.priceLock.byMaterial
+      .filter((e) => !e.evaluation.isLocked)
+      .map((e) => {
+        const mat = scenario.materials.find((m) => m.id === e.materialId);
+        return {
+          name: mat?.name ?? e.materialId,
+          deviationPct: e.evaluation.deviationPct,
+          thresholdPct: mat?.inventory.priceLock.thresholdPct ?? 0,
+        };
+      });
+  }, [internal, scenario]);
 
   // Dòng hiển thị: chỉ SKU active (pending_mold ẩn theo ADR-007/008), STT đánh
   // trên danh sách active ĐẦY ĐỦ (giữ nguyên khi search/filter — giống prototype).
@@ -100,6 +128,31 @@ export default function PriceList({ priceList }: { priceList: PriceListDoc | nul
           Giá bán xuất xưởng của nhà máy (VF) — ổn định theo khóa giá (ADR-004). Giá tới nhà phân phối xem tab <b>Bảng Giá NPP</b>.
         </div>
       </div>
+
+      {/* ADR-025 — tín hiệu QUYẾT ĐỊNH GIÁ (không phải kiểm kho): giá vật liệu lệch
+          quá ngưỡng → giá VF niêm yết có thể cũ → cân nhắc chốt lại. */}
+      {internal && (
+        staleMaterials.length > 0 ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14, padding: '11px 16px', borderRadius: 6, border: '1px solid #b45309', background: '#fffbeb', color: '#92400e' }}>
+            <div style={{ flex: 1, minWidth: 280, fontSize: 12, fontWeight: 600 }}>
+              ⚠ Chi phí vật liệu thị trường đã đổi:{' '}
+              {staleMaterials.map((m, i) => (
+                <span key={m.name}>{i > 0 ? ', ' : ''}{m.name} ({m.deviationPct >= 0 ? '+' : ''}{fmtPct(m.deviationPct)}, ngưỡng {fmtPct(m.thresholdPct)})</span>
+              ))}
+              . Giá bán VF đang niêm yết có thể không còn phản ánh chi phí hiện tại — cân nhắc <b>chốt lại giá</b>.
+            </div>
+            {onNavigate && (
+              <button onClick={() => onNavigate('lot-costing')} style={{ flexShrink: 0, padding: '7px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                Xem Giá Vốn Theo Lô →
+              </button>
+            )}
+          </div>
+        ) : (
+          <div style={{ marginBottom: 14, padding: '9px 16px', borderRadius: 6, border: '1px solid #16A34A', background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 600 }}>
+            ✅ Giá VF đang phản ánh đúng chi phí thị trường — mọi nguyên liệu còn trong ngưỡng, chưa cần điều chỉnh giá.
+          </div>
+        )
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11, gap: 12, flexWrap: 'wrap' }}>
         <input

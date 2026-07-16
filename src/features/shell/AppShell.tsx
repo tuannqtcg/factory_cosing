@@ -19,6 +19,7 @@ import InventoryScreen from '../inventory/InventoryScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import ProductsScreen from '../products/ProductsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
+import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
@@ -26,6 +27,7 @@ const SCENARIO_ID = 'baseline-v3.4';
 const OPERATION_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'ceo-planner', label: 'Trợ Lý CEO' },
+  { id: 'lot-costing', label: 'Giá Vốn Theo Lô' },
   { id: 'pricelist', label: 'Bảng Giá' },
   { id: 'plan', label: 'Kế Hoạch SX' },
   { id: 'pricing-analytics', label: 'Phân Tích Định Giá' },
@@ -138,6 +140,7 @@ export default function AppShell() {
               />
             )}
             {activeTab === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
+            {activeTab === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'pricelist' && <PriceList priceList={data.priceList} />}
             {activeTab === 'pricing-analytics' && (
               <PricingAnalyticsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />

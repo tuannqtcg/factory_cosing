@@ -10,6 +10,14 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-024 — View "Giá Vốn Theo Lô"**: trả lời câu hỏi điều hành "5 lô khác
+  giá → điều gì xảy ra → giá bán nào đúng?". Màn `LotCostingScreen` CHỈ đọc engine
+  (giá vốn kép ADR-002 + khóa giá ADR-004) — mỗi nguyên liệu 1 thẻ: các lô → bình
+  quân, giá tái tạo + lệch + trạng thái khóa, lãi/lỗ giữ kho (VAS-02 nếu lỗ), 2 giá
+  bán (sổ sách vs chính thức), khuyến nghị chốt lại/giữ giá. Tách riêng khỏi Trợ Lý
+  CEO ("câu hỏi khác"). KHÔNG ERP. Seed emulator làm giàu 3 lô Ống BM khác giá để
+  minh hoạ. Verify emulator: banner đúng dấu lãi/lỗ (sửa bug cảnh báo VAS-02 sai).
+  Suite 343/343.
 - [x] **Trợ Lý CEO — XONG Pha 1→3**: prototype duyệt (Pha 1) → schema + ADR-021/022
   (Pha 2) → **engine `ceo-planner.ts` (tái dùng calculateScenario, parity 7 test) +
   màn `CeoPlannerScreen` gắn view CEO + callable `adviseScenario` (Claude API server,

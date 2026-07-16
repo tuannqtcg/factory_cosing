@@ -51,8 +51,23 @@ async function seedUsers(): Promise<void> {
 
 async function seedScenario(): Promise<void> {
   const scenarioInput = ScenarioInputSchema.parse(buildCorzanScenarioInput());
+
+  // DEMO ONLY (không đụng fixture parity — tests dựng scenario riêng): làm giàu
+  // tồn kho nguyên liệu Ống BlazeMaster thành 3 lô KHÁC GIÁ + giá tái tạo LỆCH
+  // vượt ngưỡng, để màn "Giá Vốn Theo Lô" (ADR-024) minh hoạ đúng câu hỏi:
+  // 5 lô khác giá → giá vốn bình quân, lãi/lỗ giữ kho, có cần chốt lại giá không.
+  const bmPipe = scenarioInput.materials.find((m) => m.id === 'bm-orange-pipe');
+  if (bmPipe) {
+    bmPipe.inventory.lots = [
+      { tons: 10, priceUsdPerKg: 3.03 }, // lô cũ, giá thấp
+      { tons: 8, priceUsdPerKg: 2.80 }, // lô mua đáy
+      { tons: 6, priceUsdPerKg: 3.25 }, // lô gần đây
+    ];
+    bmPipe.inventory.replacementPriceUsdPerKg = 3.4; // giá thị trường hiện tại (lệch +12% so baseline 3.03)
+  }
+
   await db.doc(`scenarios/${SCENARIO_ID}`).set({ ...scenarioInput, id: SCENARIO_ID });
-  console.log(`✓ scenarios/${SCENARIO_ID} (Cloud Function sẽ tự tính outputs/*)`);
+  console.log(`✓ scenarios/${SCENARIO_ID} (demo 3 lô Ống BM khác giá — Cloud Function tự tính outputs/*)`);
 }
 
 await seedUsers();

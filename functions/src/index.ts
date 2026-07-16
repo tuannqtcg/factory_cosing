@@ -66,9 +66,11 @@ initializeApp();
 const firestoreDatabaseId = defineString('FIRESTORE_DATABASE_ID', { default: '(default)' });
 
 // ADR-022 — AI tư vấn CEO. Key Claude API qua Secret (KHÔNG ở client, AGENTS.md #3);
-// chưa set secret → callable rơi về mock rule-based. Model đổi qua param.
+// chưa set secret → callable rơi về mock rule-based. Model đọc thẳng process.env
+// (KHÔNG defineString — string param vắng trong .env sẽ hỏi tương tác, treo
+// emulators:exec), mặc định model Claude mới nhất phù hợp.
 const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
-const adviseModel = defineString('ADVISE_MODEL', { default: 'claude-opus-4-8' });
+const ADVISE_MODEL_DEFAULT = 'claude-opus-4-8';
 
 // M12.6 (bảng ADR-009 #8): thêm unit/spec hiển thị — sales không đọc được
 // scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
@@ -363,7 +365,7 @@ export const adviseScenario = onCall({ secrets: [anthropicApiKey] }, async (requ
         'thang giá 5 bậc, rủi ro giá nguyên liệu, độ tin cậy thu hồi vốn, bức tranh năm). ' +
         'Trả về DUY NHẤT một mảng JSON: [{"topic":"...","message":"..."}] — không văn bản ngoài JSON.';
       const msg = await client.messages.create({
-        model: adviseModel.value(),
+        model: process.env.ADVISE_MODEL ?? ADVISE_MODEL_DEFAULT,
         max_tokens: 2000,
         thinking: { type: 'adaptive' },
         system,

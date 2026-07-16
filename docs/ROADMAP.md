@@ -40,7 +40,7 @@
 ### 1. Bảo mật backend (rules) — vẫn còn giá trị sau ADR-020
 > UI đã gộp thành một view CEO (ADR-020) nên không còn kiểm thử điều hướng 4 vai
 > trên UI. Nhưng rules theo vai vẫn giữ ở server để bảo vệ dữ liệu thật.
-- [ ] Chạy `npm run test:rules` + `npm run test:functions` (cần emulator) xác nhận rules/Cloud Function còn khớp và an toàn.
+- [x] Chạy `test:rules` (61/61) + `test:functions` (16/16) — XANH; thêm rule + test `adviceAudit` (ADR-022 §6).
 - [ ] Siết đăng nhập production thật: thay auto sign-in demo admin bằng form login thật, tắt tài khoản demo (hoãn — ADR-020 §Hệ quả).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)

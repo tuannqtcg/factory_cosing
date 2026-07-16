@@ -85,8 +85,12 @@ function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['product
       return {
         productKey: sku.productKey,
         managementStatus: sku.managementStatus,
-        materialDesignationCode: material?.designationCode,
-        materialClassificationCode: material?.classificationCode,
+        // ADR-013: 2 mã optional — CHỈ đính khi có giá trị. Firestore từ chối
+        // ghi `undefined` (khác Zod .optional() bỏ qua), nên material thiếu mã
+        // mà set thẳng undefined sẽ làm cả onScenarioWrite văng → outputs không
+        // bao giờ ghi, UI kẹt loading. Bỏ key khi thiếu là đúng nghĩa optional.
+        ...(material?.designationCode !== undefined ? { materialDesignationCode: material.designationCode } : {}),
+        ...(material?.classificationCode !== undefined ? { materialClassificationCode: material.classificationCode } : {}),
         unit: product.kind === 'pipe' ? 'mét' : product.unit,
         spec: (product.kind === 'pipe' ? product.spec : product.schedule) ?? '',
         chain: {

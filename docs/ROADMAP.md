@@ -23,10 +23,12 @@
    + 12 màn (Tổng Quan, Trợ Lý CEO, Độ Nhạy, So Sánh Kịch Bản, Nhận Đơn, Product-mix, Giá
    Vốn Theo Lô, Bảng Giá VF/NPP, Phân Tích Định Giá, Target Costing, Tham Số, Cấu Hình +
    modal khuôn) + khung app/đăng nhập. Verify: typecheck xanh, 370/370, build OK, render-smoke.
-   🔜 Việc phụ khi cần: (a) tách ui component chung còn thiếu (Table, Select, Tabs, Tooltip,
-   Slider — hiện dựng bằng HTML thường + Tailwind); (b) rút gọn `src/design/tokens.ts` +
-   `primitives.tsx` (chỉ còn tồn tại, không màn nào import nữa); (c) 4 màn code-chết
-   (Products/Inventory/ProductionReport/Plan) — chỉ chuyển nếu định đưa lại vào nav.
+   ✅ (a) Đã tách 5 ui component chung (Table/Select/Tabs/Tooltip/Slider) + áp vào các màn.
+   ✅ (b) Đã xoá `src/design/tokens.ts` + `primitives.tsx` (nguồn màu duy nhất = CSS vars).
+   ✅ Fix kèm: hoist useState trước early-return ở WhatIfScreen (rules-of-hooks).
+   🔜 Còn ngỏ (chỉ làm nếu cần): (c) 4 màn code-chết (Products/Inventory/ProductionReport/
+   Plan) — chỉ chuyển nếu định đưa lại vào nav; (d) cân nhắc bản Radix cho Select/Tabs/
+   Tooltip/Slider nếu sau này cần combobox tìm kiếm / tab có nội dung động / tooltip định vị.
 2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
    luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
 3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`

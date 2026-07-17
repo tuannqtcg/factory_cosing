@@ -3,13 +3,41 @@
 > **Mục đích:** File này là điểm neo (Anchor) cho AI ở đầu mỗi phiên. AI đọc file này để hiểu tổng quan dự án đang ở giai đoạn nào, những gì đã hoàn tất, và những gì cần làm tiếp theo. Không cần đọc lại toàn bộ lịch sử chat.
 
 ## 🟢 Tóm tắt trạng thái hiện tại
-- **Pha 1 & 2:** Xong (Phân tích Excel v3.4, thiết kế Zod schemas, quy định kiến trúc không phụ thuộc mạng).
-- **Pha 3 (Engine & Tính toán):** Xong (pass 372+ assertion tests khớp hoàn toàn file Excel gốc, engine hoạt động pure chức năng toán học).
-- **M12 (Giao diện UI/UX):** Xong cơ bản (Dashboard, Bảng giá, Danh mục Sản phẩm, Kế hoạch Sản xuất, Tồn kho vật tư).
-  - Đã tích hợp tính năng đa nguyên liệu (Multi-material: Corzan & BlazeMaster).
-  - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
+- **Pha 1 & 2:** Xong. **Pha 3 (Engine):** Xong — **suite 370/370 test** (parity Excel).
+- **App = công cụ QUYẾT ĐỊNH của CEO** (ADR-020/026): MỘT view, đăng nhập production
+  (admin/pricing), nav 2 nhóm (Phân Tích & Quyết Định + Điều Chỉnh Tham Số). Đã bỏ
+  hết tab vận hành vai khác + guard vai chết.
+- **Bộ 4 công cụ if–then** (ADR-027→031): Độ Nhạy (tornado) · So Sánh Kịch Bản · Quyết
+  Định Nhận Đơn (+ khóa giá what-if) · Tối Ưu Product-mix (đa mẫu số + giá thị trường).
+  Tất cả tái dùng engine đóng băng, đồng bộ EBIT **giá-bán-cố-định** (nền `scenario-drivers.ts`).
+- **Định giá** (ADR-025): Bảng Giá neo giá **VF** + Bảng Giá **NPP** dẫn xuất + dải cảnh báo chốt giá.
+- **Design system** (ADR-033): tokens + primitives, phong cách **TỐI GIẢN ĐEN–TRẮNG**
+  (màu chỉ cho biểu đồ + ghi chú). ⚠ **MỚI DEMO 1 màn (Độ Nhạy)** — cần roll-out ~13 màn còn lại.
+
+## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
+1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 3
+   công cụ if–then còn lại, Bảng Giá VF/NPP, Lot-costing, Pricing-analytics, Tham Số,
+   Cấu Hình). Di trú lên `src/design/primitives.tsx` — thuần trình bày, KHÔNG đụng logic.
+   Gu đã user duyệt: đen/trắng/xám chủ đạo, màu chỉ cho biểu đồ/ghi chú. Sửa ở
+   `src/design/tokens.ts` là cả app đổi. (Font hiện Roboto; cân nhắc nạp Inter.)
+2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
+   luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
+3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`
+   gọi Claude thật (đang fallback mock).
+4. (Tuỳ chọn) Google Sign-In cho owner; tắt tài khoản demo trên production; SCH80 catalog;
+   trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-033 — Design system + phong cách đen–trắng**: `src/design/tokens.ts`
+  (nguồn chân lý màu/chữ/spacing) + `primitives.tsx` (Screen/Card/Banner/Stat/Segmented…).
+  Gu tối giản đen–trắng, màu chỉ cho biểu đồ + ghi chú. DEMO trên màn Độ Nhạy — CHỜ roll-out.
+- [x] **ADR-032 — Product-mix progressive disclosure**: tách "nhìn nhanh" (mặc định) vs
+  "phân tích sâu" (nút mở: vốn/ROIC + giá thị trường) — không nhồi vào flow chính.
+- [x] **ADR-031 — Product-mix độ mở**: đa mẫu số (kg/máy-giờ/đồng vốn-ROIC) + nhập giá
+  thị trường/dòng + chọn ràng buộc. Sửa hiểu lầm "dồn dòng biên cao" (theo thị trường → phụ kiện thắng).
+- [x] **ADR-029/030 — Quyết Định Nhận Đơn + Tối Ưu Product-mix**: sàn nhận đơn theo giá
+  thị trường (đơn mới mua NL mới) + khóa giá what-if; product-mix theo đóng góp/máy-giờ & vốn.
+- [x] **ADR-028 — So Sánh Kịch Bản**: đặt tên Base/Xấu/Tốt, EBIT cạnh nhau (nền `scenario-drivers`).
 - [x] **ADR-027 — Màn "Độ Nhạy" (tornado)**: công cụ if–then rủi ro — "biến nào bào
   EBIT mạnh nhất nếu lệch ±δ?". Engine `calculateSensitivity` giữ giá bán cố định,
   perturb 6 driver (compound, tỷ giá, lương, điện, chi phí ngoài SX, sản lượng), xếp

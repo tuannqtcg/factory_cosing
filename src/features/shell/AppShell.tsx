@@ -59,7 +59,7 @@ export default function AppShell() {
       <div
         key={t.id}
         onClick={() => setActiveTab(t.id)}
-        style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: active ? '#a8003b' : 'transparent', borderLeft: `3px solid ${active ? '#a8003b' : 'transparent'}` }}
+        style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: active ? '#2f6bff' : 'transparent', borderLeft: `3px solid ${active ? '#2f6bff' : 'transparent'}` }}
       >
         <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#fff' : '#555', flexShrink: 0 }} />
         <span style={{ color: active ? '#fff' : '#b3b3b3', fontSize: 12, fontWeight: active ? 600 : 400 }}>{t.label}</span>
@@ -69,31 +69,31 @@ export default function AppShell() {
 
   // ── Trạng thái auth (ADR-023): loading → login → chặn vai → view CEO ──────
   if (authState.status === 'loading') {
-    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ebe6d4', fontSize: 12, color: '#737373', fontFamily: 'Roboto,sans-serif' }}>Đang kiểm tra đăng nhập…</div>;
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f5f7', fontSize: 12, color: '#737373', fontFamily: 'Roboto,sans-serif' }}>Đang kiểm tra đăng nhập…</div>;
   }
   if (authState.status === 'signed-out') {
     return <LoginScreen onSignIn={authState.signIn} onDemoLogin={authState.switchRole} isEmulator={isEmulatorMode} />;
   }
   if (!hasAccess) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ebe6d4', fontFamily: 'Roboto,sans-serif' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f5f7', fontFamily: 'Roboto,sans-serif' }}>
         <div style={{ width: 360, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 28, textAlign: 'center' }}>
           <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Không có quyền truy cập</div>
           <div style={{ fontSize: 12, color: '#737373', marginBottom: 18 }}>
             Tài khoản <b>{authState.user?.email}</b> {role ? `(vai ${role})` : '(chưa được cấp vai)'} không có quyền vào bảng điều khiển quản trị. Liên hệ quản trị viên để được cấp quyền.
           </div>
-          <button onClick={() => void authState.signOut()} style={{ padding: '9px 18px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Đăng xuất</button>
+          <button onClick={() => void authState.signOut()} style={{ padding: '9px 18px', background: '#2f6bff', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Đăng xuất</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Roboto,Helvetica Neue,sans-serif', color: '#1a1a1a', background: '#ebe6d4' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Roboto,Helvetica Neue,sans-serif', color: '#10131a', background: '#f4f5f7' }}>
       {/* ═══ SIDEBAR ═══ */}
-      <aside style={{ width: 216, background: '#1a1a1a', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+      <aside style={{ width: 216, background: '#10131a', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-          <div style={{ color: '#a8003b', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
+          <div style={{ color: '#2f6bff', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
           <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, letterSpacing: '-.2px' }}>Costing Engine</div>
           <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>Model v3.7 · VN · 2026</div>
         </div>
@@ -106,7 +106,7 @@ export default function AppShell() {
         </nav>
 
         <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', padding: '12px 16px' }}>
-          <div style={{ display: 'inline-block', background: '#a8003b', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
+          <div style={{ display: 'inline-block', background: '#2f6bff', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
             {role === 'admin' ? 'CHỦ / TOÀN QUYỀN' : 'ĐỊNH GIÁ'}
           </div>
           <div style={{ color: '#888', fontSize: 9, marginBottom: 8, wordBreak: 'break-all' }}>{authState.user?.email}</div>
@@ -120,8 +120,8 @@ export default function AppShell() {
       </aside>
 
       {/* ═══ MAIN ═══ */}
-      <main style={{ flex: 1, overflow: 'auto', background: '#ebe6d4', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 1366, background: '#ebe6d4', minHeight: '100%' }}>
+      <main style={{ flex: 1, overflow: 'auto', background: '#f4f5f7', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 1366, background: '#f4f5f7', minHeight: '100%' }}>
         {role && (
           <>
             {data.error && (

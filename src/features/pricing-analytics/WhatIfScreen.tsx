@@ -18,6 +18,10 @@ export default function WhatIfScreen({
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
 }) {
+  // Hook PHẢI gọi vô điều kiện, TRƯỚC mọi early-return (rules-of-hooks) — nếu để
+  // sau `if (!scenario) return` thì lúc dữ liệu tải xong số hook đổi → React ném lỗi.
+  const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
+
   const pipeSimulations = useMemo(() => {
     if (!scenario) return [];
     return [1, 2, 3].map(shifts => {
@@ -56,8 +60,6 @@ export default function WhatIfScreen({
   const fittingResource = scenario.resources.fitting as MachineHourResource;
   const fittingProducts = scenario.products.filter(p => p.kind === 'fitting');
   const pipeProducts = scenario.products.filter(p => p.kind === 'pipe');
-
-  const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
 
   return (
     <div>

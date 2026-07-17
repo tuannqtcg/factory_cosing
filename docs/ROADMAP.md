@@ -12,14 +12,15 @@
   Tất cả tái dùng engine đóng băng, đồng bộ EBIT **giá-bán-cố-định** (nền `scenario-drivers.ts`).
 - **Định giá** (ADR-025): Bảng Giá neo giá **VF** + Bảng Giá **NPP** dẫn xuất + dải cảnh báo chốt giá.
 - **Design system** (ADR-033): tokens + primitives, phong cách **TỐI GIẢN ĐEN–TRẮNG**
-  (màu chỉ cho biểu đồ + ghi chú). ⚠ **MỚI DEMO 1 màn (Độ Nhạy)** — cần roll-out ~13 màn còn lại.
+  (màu chỉ cho biểu đồ + ghi chú). ⚠ **Đã di trú 2 màn (Độ Nhạy, So Sánh Kịch Bản)** — còn ~12 màn.
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
-1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 3
-   công cụ if–then còn lại, Bảng Giá VF/NPP, Lot-costing, Pricing-analytics, Tham Số,
-   Cấu Hình). Di trú lên `src/design/primitives.tsx` — thuần trình bày, KHÔNG đụng logic.
-   Gu đã user duyệt: đen/trắng/xám chủ đạo, màu chỉ cho biểu đồ/ghi chú. Sửa ở
-   `src/design/tokens.ts` là cả app đổi. (Font hiện Roboto; cân nhắc nạp Inter.)
+1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 2
+   công cụ if–then còn lại — Quyết Định Nhận Đơn, Tối Ưu Product-mix, Bảng Giá VF/NPP,
+   Lot-costing, Pricing-analytics, Tham Số, Cấu Hình). Di trú lên `src/design/primitives.tsx`
+   — thuần trình bày, KHÔNG đụng logic. Gu đã user duyệt: đen/trắng/xám chủ đạo, màu chỉ
+   cho biểu đồ/ghi chú. Sửa ở `src/design/tokens.ts` là cả app đổi. (Font hiện Roboto; cân
+   nhắc nạp Inter.) ✅ Đã di trú: Độ Nhạy (ADR-033 demo), So Sánh Kịch Bản.
 2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
    luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
 3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`

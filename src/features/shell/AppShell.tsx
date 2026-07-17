@@ -20,6 +20,7 @@ import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
 import SensitivityScreen from '../sensitivity/SensitivityScreen.js';
 import ScenarioCompareScreen from '../scenario-compare/ScenarioCompareScreen.js';
 import OrderAcceptanceScreen from '../order-acceptance/OrderAcceptanceScreen.js';
+import ProductMixScreen from '../product-mix/ProductMixScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
@@ -30,6 +31,7 @@ const OPERATION_TABS = [
   { id: 'sensitivity', label: 'Độ Nhạy' },
   { id: 'scenario-compare', label: 'So Sánh Kịch Bản' },
   { id: 'order-acceptance', label: 'Quyết Định Nhận Đơn' },
+  { id: 'product-mix', label: 'Tối Ưu Product-mix' },
   { id: 'lot-costing', label: 'Giá Vốn Theo Lô' },
   { id: 'pricelist', label: 'Bảng Giá (VF)' },
   { id: 'distributor-pricelist', label: 'Bảng Giá NPP' },
@@ -139,6 +141,7 @@ export default function AppShell() {
             {activeTab === 'sensitivity' && <SensitivityScreen scenario={data.scenario} />}
             {activeTab === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
             {activeTab === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} />}
+            {activeTab === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
             {activeTab === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'pricelist' && (
               <PriceList

@@ -18,6 +18,7 @@ import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
 import SensitivityScreen from '../sensitivity/SensitivityScreen.js';
+import ScenarioCompareScreen from '../scenario-compare/ScenarioCompareScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
@@ -26,6 +27,7 @@ const OPERATION_TABS = [
   { id: 'dashboard', label: 'Tổng Quan' },
   { id: 'ceo-planner', label: 'Trợ Lý CEO' },
   { id: 'sensitivity', label: 'Độ Nhạy' },
+  { id: 'scenario-compare', label: 'So Sánh Kịch Bản' },
   { id: 'lot-costing', label: 'Giá Vốn Theo Lô' },
   { id: 'pricelist', label: 'Bảng Giá (VF)' },
   { id: 'distributor-pricelist', label: 'Bảng Giá NPP' },
@@ -133,6 +135,7 @@ export default function AppShell() {
             )}
             {activeTab === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
             {activeTab === 'sensitivity' && <SensitivityScreen scenario={data.scenario} />}
+            {activeTab === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
             {activeTab === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} />}
             {activeTab === 'pricelist' && (
               <PriceList

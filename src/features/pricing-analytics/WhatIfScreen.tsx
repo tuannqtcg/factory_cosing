@@ -5,6 +5,8 @@ import { fmtVnd, fmtPct } from '../../lib/format.js';
 import { calculateMachineHoursPerUnit } from '../../engine/price-ladder.js';
 import type { MachineHourResource } from '../../schemas/resource.js';
 import { Card } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 export default function WhatIfScreen({
@@ -59,25 +61,20 @@ export default function WhatIfScreen({
 
   return (
     <div>
-      <div className="mb-6 flex gap-6 border-b border-border">
+      <TabsList className="mb-6">
         {[
           { id: 'pipe', label: 'ỐNG CPVC' },
           { id: 'fitting', label: 'PHỤ KIỆN' },
         ].map((t) => (
-          <button
+          <TabsTrigger
             key={t.id}
+            active={activeTab === t.id}
             onClick={() => setActiveTab(t.id as any)}
-            className={cn(
-              '-mb-px border-b-2 pb-3 text-xs font-bold uppercase tracking-[.06em] transition-colors',
-              activeTab === t.id
-                ? 'border-foreground text-foreground'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
           >
             {t.label}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
+      </TabsList>
 
       {activeTab === 'pipe' && (
         <>
@@ -87,63 +84,63 @@ export default function WhatIfScreen({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-right text-xs tabular-nums">
-                <thead>
-                  <tr className="bg-muted text-eyebrow uppercase text-muted-foreground">
-                    <th className="border-b px-3 py-2 text-left">Chỉ tiêu</th>
+              <Table className="text-right text-xs tabular-nums">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Chỉ tiêu</TableHead>
                     {pipeSimulations.map(sim => (
-                      <th key={sim.shifts} className={cn('border-b px-3 py-2', sim.shifts === 3 ? 'text-success' : 'text-foreground')}>
+                      <TableHead key={sim.shifts} className={cn('text-right', sim.shifts === 3 ? 'text-success' : 'text-foreground')}>
                         Chạy {sim.shifts} Ca{sim.shifts === 3 ? ' (Bình thường)' : ''}
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="px-3 py-2 text-left font-semibold">Sản lượng (kg/năm)</td>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-left font-semibold">Sản lượng (kg/năm)</TableCell>
                     {pipeSimulations.map(sim => (
-                      <td key={sim.shifts} className="px-3 py-2 font-semibold">{sim.output ? fmtVnd(sim.output.capacity.pipe.normalCapacityKgYear) : '—'}</td>
+                      <TableCell key={sim.shifts} className="font-semibold">{sim.output ? fmtVnd(sim.output.capacity.pipe.normalCapacityKgYear) : '—'}</TableCell>
                     ))}
-                  </tr>
-                  <tr className="border-b border-dashed text-muted-foreground">
-                    <td className="px-3 py-2 pl-6 text-left">Khấu hao & Phân bổ chung (định phí)</td>
+                  </TableRow>
+                  <TableRow className="border-dashed text-muted-foreground">
+                    <TableCell className="pl-6 text-left">Khấu hao & Phân bổ chung (định phí)</TableCell>
                     {pipeSimulations.map(sim => {
                       const cost = sim.output?.cvp.byLineMaterial.find(c => c.line === 'pipe')?.fixedCostPerYear || 0;
-                      return <td key={sim.shifts} className="px-3 py-2">{fmtVnd(cost)} đ</td>;
+                      return <TableCell key={sim.shifts}>{fmtVnd(cost)} đ</TableCell>;
                     })}
-                  </tr>
-                  <tr className="border-b border-dashed text-muted-foreground">
-                    <td className="px-3 py-2 pl-6 text-left">Biến phí tham chiếu (NVL, Điện nước/kg)</td>
+                  </TableRow>
+                  <TableRow className="border-dashed text-muted-foreground">
+                    <TableCell className="pl-6 text-left">Biến phí tham chiếu (NVL, Điện nước/kg)</TableCell>
                     {pipeSimulations.map(sim => {
                       const cost = sim.output?.cvp.byLineMaterial.find(c => c.line === 'pipe')?.variableCostPerKg || 0;
-                      return <td key={sim.shifts} className="px-3 py-2">{fmtVnd(cost)} đ/kg</td>;
+                      return <TableCell key={sim.shifts}>{fmtVnd(cost)} đ/kg</TableCell>;
                     })}
-                  </tr>
-                  <tr className="border-b border-dashed font-semibold text-foreground">
-                    <td className="px-3 py-2 pl-6 text-left">Tổng giá thành (Full Cost/kg)</td>
+                  </TableRow>
+                  <TableRow className="border-dashed font-semibold text-foreground">
+                    <TableCell className="pl-6 text-left">Tổng giá thành (Full Cost/kg)</TableCell>
                     {pipeSimulations.map(sim => {
                       const cost = sim.output?.priceLadder.byLineMaterial.find(c => c.line === 'pipe')?.ladder.breakEvenFullCost || 0;
-                      return <td key={sim.shifts} className="px-3 py-2">{fmtVnd(cost)} đ/kg</td>;
+                      return <TableCell key={sim.shifts}>{fmtVnd(cost)} đ/kg</TableCell>;
                     })}
-                  </tr>
-                  <tr className="border-b bg-muted">
-                    <td className="px-3 py-2 text-left font-bold text-foreground">ĐIỂM HÒA VỐN TẠI MỨC CA NÀY</td>
+                  </TableRow>
+                  <TableRow className="bg-muted">
+                    <TableCell className="text-left font-bold text-foreground">ĐIỂM HÒA VỐN TẠI MỨC CA NÀY</TableCell>
                     {pipeSimulations.map(sim => {
                       const bep = sim.output?.cvp.byLineMaterial.find(c => c.line === 'pipe')?.breakEvenKgYear || 0;
                       const cap = sim.output?.capacity.pipe.normalCapacityKgYear || 1;
                       const canBreakEven = cap >= bep;
                       return (
-                        <td key={sim.shifts} className="px-3 py-2">
+                        <TableCell key={sim.shifts}>
                           <div className="font-bold text-foreground">{fmtVnd(bep)} kg</div>
                           <div className={cn('mt-0.5 text-eyebrow', canBreakEven ? 'text-success' : 'text-destructive')}>
                             {canBreakEven ? `Đạt được (Cần ${fmtPct(bep/cap)} công suất)` : `⚠ LỖ CHẮC: Tối đa chỉ SX được ${fmtVnd(cap)} kg`}
                           </div>
-                        </td>
+                        </TableCell>
                       );
                     })}
-                  </tr>
-                </tbody>
-              </table>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           </Card>
 
@@ -153,38 +150,38 @@ export default function WhatIfScreen({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-right text-xs tabular-nums">
-                <thead>
-                  <tr className="bg-muted text-eyebrow uppercase text-muted-foreground">
-                    <th className="border-b px-3 py-2 text-left">Tên SP / Kích Cỡ</th>
+              <Table className="text-right text-xs tabular-nums">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên SP / Kích Cỡ</TableHead>
                     {pipeSimulations.map(sim => (
-                      <th key={sim.shifts} className="border-b px-3 py-2">
+                      <TableHead key={sim.shifts} className="text-right">
                         Giá Vốn 1m ({sim.shifts} Ca)
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {pipeProducts.map((p) => {
                     return (
-                      <tr key={`${p.dn}-${p.materialId}`} className="border-b">
-                        <td className="px-3 py-2 text-left font-medium">Ống CPVC DN{p.dn} - {p.spec}</td>
+                      <TableRow key={`${p.dn}-${p.materialId}`}>
+                        <TableCell className="text-left font-medium">Ống CPVC DN{p.dn} - {p.spec}</TableCell>
                         {pipeSimulations.map(sim => {
                           const chainData = sim.output?.skuPriceChains.find(
                             c => 'dn' in c.productKey && c.productKey.dn === p.dn && c.productKey.materialId === p.materialId
                           )?.chain;
                           const cost = (chainData?.materialCostPerUnit || 0) + (chainData?.processingCostPerUnit || 0);
                           return (
-                            <td key={sim.shifts} className="px-3 py-2">
+                            <TableCell key={sim.shifts}>
                               {fmtVnd(cost)} đ
-                            </td>
+                            </TableCell>
                           );
                         })}
-                      </tr>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
         </>
@@ -198,54 +195,54 @@ export default function WhatIfScreen({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-right text-xs tabular-nums">
-                <thead>
-                  <tr className="bg-muted text-eyebrow uppercase text-muted-foreground">
-                    <th className="border-b px-3 py-2 text-left">Chỉ tiêu</th>
+              <Table className="text-right text-xs tabular-nums">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Chỉ tiêu</TableHead>
                     {fittingSimulations.map(sim => (
-                      <th key={sim.util} className="border-b px-3 py-2">
+                      <TableHead key={sim.util} className="text-right">
                         Huy động {fmtPct(sim.util)}
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b">
-                    <td className="px-3 py-2 text-left font-semibold">Sản lượng ước tính (kg/năm)</td>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="text-left font-semibold">Sản lượng ước tính (kg/năm)</TableCell>
                     {fittingSimulations.map(sim => (
-                      <td key={sim.util} className="px-3 py-2 font-semibold">{sim.output ? fmtVnd(sim.output.capacity.fitting.estimatedProductionKgYear) : '—'}</td>
+                      <TableCell key={sim.util} className="font-semibold">{sim.output ? fmtVnd(sim.output.capacity.fitting.estimatedProductionKgYear) : '—'}</TableCell>
                     ))}
-                  </tr>
-                  <tr className="border-b border-dashed text-muted-foreground">
-                    <td className="px-3 py-2 pl-6 text-left">Giờ máy tiêu chuẩn</td>
+                  </TableRow>
+                  <TableRow className="border-dashed text-muted-foreground">
+                    <TableCell className="pl-6 text-left">Giờ máy tiêu chuẩn</TableCell>
                     {fittingSimulations.map(sim => (
-                       <td key={sim.util} className="px-3 py-2">{sim.output ? fmtVnd(sim.output.capacity.fitting.normalMachineHoursUtilized) : '—'} giờ</td>
+                       <TableCell key={sim.util}>{sim.output ? fmtVnd(sim.output.capacity.fitting.normalMachineHoursUtilized) : '—'} giờ</TableCell>
                     ))}
-                  </tr>
-                  <tr className="border-b border-dashed text-muted-foreground">
-                    <td className="px-3 py-2 pl-6 text-left">Đơn giá MHR (đ/giờ máy)</td>
+                  </TableRow>
+                  <TableRow className="border-dashed text-muted-foreground">
+                    <TableCell className="pl-6 text-left">Đơn giá MHR (đ/giờ máy)</TableCell>
                     {fittingSimulations.map(sim => (
-                       <td key={sim.util} className="px-3 py-2">{sim.output ? fmtVnd(sim.output.mhrPerMachineHour) : '—'} đ</td>
+                       <TableCell key={sim.util}>{sim.output ? fmtVnd(sim.output.mhrPerMachineHour) : '—'} đ</TableCell>
                     ))}
-                  </tr>
-                  <tr className="border-b bg-muted">
-                    <td className="px-3 py-2 text-left font-bold text-foreground">ĐIỂM HÒA VỐN GIỜ MÁY</td>
+                  </TableRow>
+                  <TableRow className="bg-muted">
+                    <TableCell className="text-left font-bold text-foreground">ĐIỂM HÒA VỐN GIỜ MÁY</TableCell>
                     {fittingSimulations.map(sim => {
                       const bep = sim.output?.cvp.byLineMaterial.find(c => c.line === 'fitting')?.breakEvenMachineHours || 0;
                       const cap = sim.output?.capacity.fitting.normalMachineHoursUtilized || 1;
                       const canBreakEven = cap >= bep;
                       return (
-                        <td key={sim.util} className="px-3 py-2">
+                        <TableCell key={sim.util}>
                           <div className="font-bold text-foreground">{fmtVnd(bep)} giờ</div>
                           <div className={cn('mt-0.5 text-eyebrow', canBreakEven ? 'text-success' : 'text-destructive')}>
                             {canBreakEven ? `Đạt được (Cần ${fmtPct(bep/cap)} công suất)` : `⚠ LỖ CHẮC: Tối đa chỉ có ${fmtVnd(cap)} giờ`}
                           </div>
-                        </td>
+                        </TableCell>
                       );
                     })}
-                  </tr>
-                </tbody>
-              </table>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </div>
           </Card>
 
@@ -255,19 +252,19 @@ export default function WhatIfScreen({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-right text-xs tabular-nums">
-                <thead>
-                  <tr className="bg-muted text-eyebrow uppercase text-muted-foreground">
-                    <th className="border-b px-3 py-2 text-left">Tên SP / Kích Cỡ</th>
-                    <th className="border-b px-3 py-2">Giờ Máy/SP</th>
+              <Table className="text-right text-xs tabular-nums">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tên SP / Kích Cỡ</TableHead>
+                    <TableHead className="text-right">Giờ Máy/SP</TableHead>
                     {fittingSimulations.map(sim => (
-                      <th key={sim.util} className="border-b px-3 py-2">
+                      <TableHead key={sim.util} className="text-right">
                         Giá Vốn 1 SP ({fmtPct(sim.util)})
-                      </th>
+                      </TableHead>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {fittingProducts.map((p) => {
                     const machineHours = calculateMachineHoursPerUnit(
                       p.cycleTimeSec || 0,
@@ -276,25 +273,25 @@ export default function WhatIfScreen({
                     );
 
                     return (
-                      <tr key={`${p.productName}-${p.sizeLabel}`} className="border-b">
-                        <td className="px-3 py-2 text-left font-medium">{p.productName} - {p.sizeLabel}</td>
-                        <td className="px-3 py-2">{machineHours.toFixed(5)}</td>
+                      <TableRow key={`${p.productName}-${p.sizeLabel}`}>
+                        <TableCell className="text-left font-medium">{p.productName} - {p.sizeLabel}</TableCell>
+                        <TableCell>{machineHours.toFixed(5)}</TableCell>
                         {fittingSimulations.map(sim => {
                           const chainData = sim.output?.skuPriceChains.find(
                             c => 'productName' in c.productKey && c.productKey.productName === p.productName && c.productKey.sizeLabel === p.sizeLabel
                           )?.chain;
                           const cost = (chainData?.materialCostPerUnit || 0) + (chainData?.processingCostPerUnit || 0);
                           return (
-                            <td key={sim.util} className="px-3 py-2">
+                            <TableCell key={sim.util}>
                               {fmtVnd(cost)} đ
-                            </td>
+                            </TableCell>
                           );
                         })}
-                      </tr>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
         </>

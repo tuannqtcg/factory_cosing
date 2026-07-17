@@ -7,6 +7,7 @@ import { fmtVnd } from '../../lib/format.js';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 interface MoldAssetModalProps {
   initialMolds: MoldAsset[];
@@ -46,20 +47,20 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
         </div>
 
         <div className="flex-1 overflow-y-auto p-6">
-          <table className="w-full border-collapse text-sm">
-            <thead className="sticky -top-6 z-10 bg-card">
-              <tr>
-                <th className="border-b-2 border-input px-3 py-2.5 text-left font-semibold text-muted-foreground">Tên Khuôn / Kích thước</th>
-                <th className="w-[80px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Số Cavity</th>
-                <th className="w-[160px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Nguyên giá (VND)</th>
-                <th className="w-[110px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Khấu hao (năm)</th>
-                <th className="w-[90px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Năm mua</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader className="sticky -top-6 z-10 bg-card">
+              <TableRow>
+                <TableHead>Tên Khuôn / Kích thước</TableHead>
+                <TableHead className="w-[80px] text-right">Số Cavity</TableHead>
+                <TableHead className="w-[160px] text-right">Nguyên giá (VND)</TableHead>
+                <TableHead className="w-[110px] text-right">Khấu hao (năm)</TableHead>
+                <TableHead className="w-[90px] text-right">Năm mua</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {molds.map((m, i) => (
-                <tr key={m.id} className="border-b border-border">
-                  <td className="px-3 py-2">
+                <TableRow key={m.id}>
+                  <TableCell>
                     <Input
                       type="text"
                       value={m.label}
@@ -68,8 +69,8 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
                       className="h-8 border-transparent bg-transparent px-2 font-medium text-foreground shadow-none focus-visible:border-input focus-visible:bg-card focus-visible:ring-0"
                     />
                     <div className="pl-2 text-eyebrow text-faint">Mã: {m.id}</div>
-                  </td>
-                  <td className="px-3 py-2 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Input
                       type="number"
                       value={m.cavity}
@@ -77,8 +78,8 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
                       onChange={(e) => handleChange(i, 'cavity', parseFloat(e.target.value) || 0)}
                       className="h-8 px-2 text-right tabular-nums"
                     />
-                  </td>
-                  <td className="px-3 py-2 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Input
                       type="number"
                       value={m.costVnd}
@@ -86,8 +87,8 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
                       onChange={(e) => handleChange(i, 'costVnd', parseFloat(e.target.value) || 0)}
                       className="h-8 px-2 text-right tabular-nums"
                     />
-                  </td>
-                  <td className="px-3 py-2 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Input
                       type="number"
                       value={m.usefulLifeYears}
@@ -95,8 +96,8 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
                       onChange={(e) => handleChange(i, 'usefulLifeYears', parseFloat(e.target.value) || 0)}
                       className="h-8 px-2 text-right tabular-nums"
                     />
-                  </td>
-                  <td className="px-3 py-2 text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <Input
                       type="number"
                       value={m.purchaseYear}
@@ -104,11 +105,11 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
                       onChange={(e) => handleChange(i, 'purchaseYear', parseFloat(e.target.value) || 0)}
                       className="h-8 px-2 text-right tabular-nums"
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         {canEdit ? (

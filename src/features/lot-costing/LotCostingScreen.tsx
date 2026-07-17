@@ -9,6 +9,7 @@ import { fmtVnd, fmtUsd, fmtPct } from '../../lib/format.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
 import { Card } from '@/components/ui/card';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e6) + ' triệu đ';
@@ -76,23 +77,23 @@ export default function LotCostingScreen({ scenario, internal }: { scenario: Sce
             <div className="mt-3 grid grid-cols-2 gap-5">
               <div>
                 <div className="mb-1.5 text-eyebrow font-bold uppercase text-muted-foreground">Các lô đang tồn (tối đa 5)</div>
-                <table className="w-full border-collapse text-xs">
-                  <thead><tr className="text-left text-eyebrow text-faint"><th>Lô</th><th className="text-right">Tồn (tấn)</th><th className="text-right">Giá (USD/kg)</th></tr></thead>
-                  <tbody>
+                <Table className="text-xs">
+                  <TableHeader><TableRow><TableHead>Lô</TableHead><TableHead className="text-right">Tồn (tấn)</TableHead><TableHead className="text-right">Giá (USD/kg)</TableHead></TableRow></TableHeader>
+                  <TableBody>
                     {c.lots.map((l, i) => (
-                      <tr key={i} className="border-t border-border">
-                        <td>Lô {i + 1}</td>
-                        <td className="text-right tabular-nums">{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(l.tons)}</td>
-                        <td className="text-right tabular-nums">{fmtUsd(l.priceUsdPerKg)}</td>
-                      </tr>
+                      <TableRow key={i}>
+                        <TableCell>Lô {i + 1}</TableCell>
+                        <TableCell className="text-right tabular-nums">{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(l.tons)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmtUsd(l.priceUsdPerKg)}</TableCell>
+                      </TableRow>
                     ))}
-                    <tr className="border-t-2 border-input font-bold">
-                      <td>Bình quân</td>
-                      <td className="text-right tabular-nums">{fmtVnd(c.totalKg)} kg</td>
-                      <td className="text-right tabular-nums text-foreground">{c.wAvg !== null ? fmtUsd(c.wAvg) : '—'}</td>
-                    </tr>
-                  </tbody>
-                </table>
+                    <TableRow className="border-t-2 border-input font-bold">
+                      <TableCell>Bình quân</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtVnd(c.totalKg)} kg</TableCell>
+                      <TableCell className="text-right tabular-nums text-foreground">{c.wAvg !== null ? fmtUsd(c.wAvg) : '—'}</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
               </div>
               <div className="grid grid-cols-2 content-start gap-3.5">
                 <Stat label="Giá tái tạo (mua mới)" value={`${fmtUsd(c.ev.replacement)} USD/kg`} sub={`Baseline khóa ${fmtUsd(c.mat.inventory.priceLock.baseline)} · lệch ${fmtPct(c.ev.deviationPct)}`} />

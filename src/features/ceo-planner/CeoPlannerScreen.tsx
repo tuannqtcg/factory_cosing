@@ -15,6 +15,7 @@ import { generateCeoAdviceMock } from '../../engine/ceo-advice-mock.js';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e9) + ' tỷ đ';
@@ -264,18 +265,18 @@ export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput
           {/* Bảng giá DN + SKU */}
           <details className="mt-3.5 rounded-lg border bg-card p-3.5">
             <summary className="cursor-pointer text-xs font-bold text-foreground">Bảng giá bán VF — ống {result.pipe.materialName} theo DN (đ/m) · mang đi đàm phán</summary>
-            <table className="mt-2.5 w-full border-collapse text-xs">
-              <thead><tr className="text-left text-eyebrow text-faint"><th className="font-semibold">DN</th><th className="font-semibold">Khối lượng</th><th className="text-right font-semibold">Giá thành /m</th><th className="text-right font-semibold">Giá bán VF /m</th></tr></thead>
-              <tbody>{result.pipeDnPrices.map((r) => <tr key={r.dn} className="border-t border-border"><td>{r.dn}</td><td>{fmt1(r.unitWeightKgPerM)} kg/m</td><td className="text-right tabular-nums">{fmtVnd(r.fullCostVndPerM)}</td><td className="text-right font-bold tabular-nums">{fmtVnd(r.sellingPriceVndPerM)}</td></tr>)}</tbody>
-            </table>
+            <Table className="mt-2.5 text-xs">
+              <TableHeader><TableRow><TableHead>DN</TableHead><TableHead>Khối lượng</TableHead><TableHead className="text-right">Giá thành /m</TableHead><TableHead className="text-right">Giá bán VF /m</TableHead></TableRow></TableHeader>
+              <TableBody>{result.pipeDnPrices.map((r) => <TableRow key={r.dn}><TableCell>{r.dn}</TableCell><TableCell>{fmt1(r.unitWeightKgPerM)} kg/m</TableCell><TableCell className="text-right tabular-nums">{fmtVnd(r.fullCostVndPerM)}</TableCell><TableCell className="text-right font-bold tabular-nums">{fmtVnd(r.sellingPriceVndPerM)}</TableCell></TableRow>)}</TableBody>
+            </Table>
           </details>
           <details className="mt-2.5 rounded-lg border bg-card p-3.5">
             <summary className="cursor-pointer text-xs font-bold text-foreground">Bảng giá bán VF — {result.fittingSkuPrices.length} phụ kiện {result.fitting.materialName} theo cái</summary>
             <div className="mt-2.5 max-h-80 overflow-auto">
-              <table className="w-full border-collapse text-xs">
-                <thead><tr className="text-left text-eyebrow text-faint"><th className="font-semibold">Tên</th><th className="font-semibold">Size</th><th className="font-semibold">SCH</th><th className="text-right font-semibold">Kg/cái</th><th className="text-right font-semibold">Ren KL /cái</th><th className="text-right font-semibold">Giá thành /cái</th><th className="text-right font-semibold">Giá bán VF /cái</th></tr></thead>
-                <tbody>{result.fittingSkuPrices.map((r, i) => <tr key={i} className="border-t border-border"><td>{r.productName}{r.metalInsertVndPerPiece > 0 ? <span className="text-[9px] text-faint"> (ren)</span> : ''}</td><td>{r.sizeLabel}</td><td>{r.schedule}</td><td className="text-right tabular-nums">{fmt1(r.unitWeightKg)}</td><td className="text-right tabular-nums">{r.metalInsertVndPerPiece > 0 ? fmtVnd(r.metalInsertVndPerPiece) : '—'}</td><td className="text-right tabular-nums">{fmtVnd(r.fullCostVndPerPiece)}</td><td className="text-right font-bold tabular-nums">{fmtVnd(r.sellingPriceVndPerPiece)}</td></tr>)}</tbody>
-              </table>
+              <Table className="text-xs">
+                <TableHeader><TableRow><TableHead>Tên</TableHead><TableHead>Size</TableHead><TableHead>SCH</TableHead><TableHead className="text-right">Kg/cái</TableHead><TableHead className="text-right">Ren KL /cái</TableHead><TableHead className="text-right">Giá thành /cái</TableHead><TableHead className="text-right">Giá bán VF /cái</TableHead></TableRow></TableHeader>
+                <TableBody>{result.fittingSkuPrices.map((r, i) => <TableRow key={i}><TableCell>{r.productName}{r.metalInsertVndPerPiece > 0 ? <span className="text-[9px] text-faint"> (ren)</span> : ''}</TableCell><TableCell>{r.sizeLabel}</TableCell><TableCell>{r.schedule}</TableCell><TableCell className="text-right tabular-nums">{fmt1(r.unitWeightKg)}</TableCell><TableCell className="text-right tabular-nums">{r.metalInsertVndPerPiece > 0 ? fmtVnd(r.metalInsertVndPerPiece) : '—'}</TableCell><TableCell className="text-right tabular-nums">{fmtVnd(r.fullCostVndPerPiece)}</TableCell><TableCell className="text-right font-bold tabular-nums">{fmtVnd(r.sellingPriceVndPerPiece)}</TableCell></TableRow>)}</TableBody>
+              </Table>
             </div>
           </details>
 

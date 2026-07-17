@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Segmented } from '@/components/ui/segmented';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 const fmtTr = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(v / 1e6) + ' tr';
@@ -67,7 +68,7 @@ export default function ProductMixScreen({ scenario }: { scenario: ScenarioInput
       ].map((s) => (
         <div key={s.label} className="mb-3 flex items-center gap-3">
           <span className="w-[90px] text-xs font-semibold text-foreground">{s.label}</span>
-          <input type="range" min={0} max={150} step={5} value={s.pct} onChange={(e) => s.set(Number(e.target.value))} className="flex-1 accent-foreground" />
+          <Slider value={s.pct} onValueChange={(v) => s.set(v)} min={0} max={150} step={5} className="flex-1 accent-foreground" />
           <span className="w-[52px] text-right text-[13px] font-bold tabular-nums text-foreground">{s.pct}%</span>
         </div>
       ))}

@@ -20,6 +20,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 function numField(
@@ -213,23 +214,23 @@ export default function AssumptionsScreen({
         <div className="text-eyebrow font-bold uppercase tracking-[.12em] text-foreground">Ngưỡng khóa giá ren kim loại</div>
       </div>
       <Card className="overflow-hidden p-0">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-muted">
+        <Table>
+          <TableHeader>
+            <TableRow>
               {['Loại ren', 'Size PT', 'Baseline', 'Ngưỡng (%)'].map((h, i) => (
-                <th key={h} className={cn('border-b px-2 py-2 text-eyebrow font-bold uppercase tracking-[.05em] text-muted-foreground', i < 2 ? 'text-left' : 'text-right')}>{h}</th>
+                <TableHead key={h} className={cn(i < 2 ? 'text-left' : 'text-right')}>{h}</TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {form.inventory.metalInsert.map((entry) => {
               const key = `${entry.renType}|${entry.ptSize}`;
               return (
-                <tr key={key}>
-                  <td className="border-b px-2 py-[7px] text-xs text-foreground">Ren {entry.renType}</td>
-                  <td className="border-b px-2 py-[7px] text-xs text-foreground">PT {entry.ptSize}</td>
-                  <td className="border-b px-2 py-[7px] text-right text-xs tabular-nums text-foreground">{fmtVnd(entry.priceLock.baseline)} đ</td>
-                  <td className="border-b px-2 py-[7px] text-right">
+                <TableRow key={key}>
+                  <TableCell className="text-xs text-foreground">Ren {entry.renType}</TableCell>
+                  <TableCell className="text-xs text-foreground">PT {entry.ptSize}</TableCell>
+                  <TableCell className="text-right text-xs tabular-nums text-foreground">{fmtVnd(entry.priceLock.baseline)} đ</TableCell>
+                  <TableCell className="text-right">
                     <Input
                       type="number"
                       step="0.01"
@@ -239,12 +240,12 @@ export default function AssumptionsScreen({
                       className="h-8 w-[70px] px-2 text-right text-xs tabular-nums disabled:bg-muted"
                     />{' '}
                     {!isAdmin && <span className="text-[10px] opacity-75">🔒</span>}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </Card>
 
       <div className="mt-4 rounded-md border bg-muted px-2.5 py-2 text-[10px] leading-relaxed text-muted-foreground">

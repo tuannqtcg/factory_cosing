@@ -26,6 +26,8 @@ import { Card as UICard } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Segmented } from '@/components/ui/segmented';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip as UITooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 const TIER_DEFS = [
@@ -142,12 +144,11 @@ function CardLabel({ children, tooltip }: { children: React.ReactNode; tooltip?:
     <div className="mb-[7px] flex items-center gap-1 text-eyebrow uppercase tracking-[.08em] text-muted-foreground">
       {children}
       {tooltip && (
-        <span
-          title={tooltip}
-          className="inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-border text-[9px] font-bold text-muted-foreground"
-        >
-          ?
-        </span>
+        <UITooltip content={tooltip}>
+          <span className="inline-flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-border text-[9px] font-bold text-muted-foreground">
+            ?
+          </span>
+        </UITooltip>
       )}
     </div>
   );
@@ -334,25 +335,18 @@ export default function Dashboard({
       </div>
 
       {/* Tabs Navigation */}
-      <div className="mb-6 flex gap-6 border-b">
+      <TabsList className="mb-6">
         {[
           { id: 'overview', label: 'TỔNG QUAN' },
           { id: 'manufacturing', label: 'SẢN XUẤT' },
           { id: 'investor', label: 'ĐẦU TƯ & TÀI CHÍNH' },
           { id: 'pricing', label: 'CHIẾN LƯỢC GIÁ' },
         ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id as any)}
-            className={cn(
-              '-mb-px cursor-pointer border-b-2 pb-3 text-[11px] font-bold uppercase tracking-[.06em] transition-colors',
-              activeTab === t.id ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
-          >
+          <TabsTrigger key={t.id} active={activeTab === t.id} onClick={() => setActiveTab(t.id as any)}>
             {t.label}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
+      </TabsList>
 
       {/* Overview Tab */}
       {activeTab === 'overview' && kpis && internal && scenario && (

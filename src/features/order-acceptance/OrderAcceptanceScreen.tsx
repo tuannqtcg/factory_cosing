@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2, signDisplay: 'exceptZero' }).format(v / 1e9) + ' tỷ';
@@ -138,7 +139,7 @@ export default function OrderAcceptanceScreen({ scenario }: { scenario: Scenario
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <span className="min-w-[130px] text-[11px] text-muted-foreground">Ngưỡng khóa giá (thử):</span>
-          <input type="range" min={0} max={30} step={1} value={Math.round(thr * 100)} onChange={(e) => setThresholdOverride(Number(e.target.value) / 100)} className="min-w-[180px] flex-1 accent-primary" />
+          <Slider value={Math.round(thr * 100)} onValueChange={(v) => setThresholdOverride(v / 100)} min={0} max={30} step={1} className="min-w-[180px] flex-1 accent-primary" />
           <span className="w-12 text-right text-[13px] font-bold tabular-nums text-foreground">{fmtPct(thr)}</span>
           {thresholdOverride != null && (
             <Button variant="outline" size="sm" onClick={() => setThresholdOverride(null)}>Về ngưỡng cấu hình</Button>

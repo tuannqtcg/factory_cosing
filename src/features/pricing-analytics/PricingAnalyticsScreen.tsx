@@ -3,7 +3,7 @@ import type { AppRole } from '../../lib/firebase.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TargetCosting from '../target-costing/TargetCosting.js';
 import WhatIfScreen from './WhatIfScreen.js';
-import { cn } from '@/lib/utils';
+import { TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function PricingAnalyticsScreen({
   role,
@@ -31,27 +31,22 @@ export default function PricingAnalyticsScreen({
         </h1>
 
         {/* Sub-tabs */}
-        <div className="flex border-b border-input">
+        <TabsList>
           {(
             [
               ['what-if', 'Mô phỏng Công suất (What-If)'],
               ['target-costing', 'Định Giá Ngược (Target Costing)'],
             ] as const
           ).map(([id, label]) => (
-            <button
+            <TabsTrigger
               key={id}
+              active={activeTab === id}
               onClick={() => setActiveTab(id)}
-              className={cn(
-                'border-b-2 px-4 py-2 text-[13px] transition-colors',
-                activeTab === id
-                  ? 'border-foreground font-bold text-foreground'
-                  : 'border-transparent font-medium text-muted-foreground hover:text-foreground',
-              )}
             >
               {label}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
+        </TabsList>
       </div>
 
       {/* Content Area */}

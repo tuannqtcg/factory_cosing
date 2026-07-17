@@ -18,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/ui/segmented';
+import { Select } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 type Line = 'pipe' | 'fitting';
@@ -173,8 +174,6 @@ export default function TargetCosting({
   const t3SkuLabel = (s: (typeof t3Skus)[number]) =>
     t3Line === 'pipe' ? s.productKey.dn! : `${s.productKey.productName} ${s.productKey.sizeLabel}`;
 
-  const selectCls =
-    'h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
   const fieldLabelCls = 'mb-1.5 block text-eyebrow font-semibold uppercase tracking-[.06em] text-faint';
 
   return (
@@ -326,14 +325,13 @@ export default function TargetCosting({
               </label>
               <label className="mb-3.5 block">
                 <span className={fieldLabelCls}>Chọn SKU</span>
-                <select
+                <Select
                   value={t3SkuKey ?? '0'}
                   onChange={(e) => {
                     setT3SkuKey(e.target.value);
                     const sku = t3Skus[parseInt(e.target.value, 10)];
                     if (sku) setT3TargetVnd(sku.chain.listPriceBeforeVat);
                   }}
-                  className={selectCls}
                 >
                   {t3Skus.map((s, i) => (
                     <option key={`${t3SkuLabel(s)}|${s.productKey.materialId}`} value={i}>
@@ -341,19 +339,18 @@ export default function TargetCosting({
                       {t3ShowMaterial ? ` · ${s.productKey.materialId}` : ''} — hiện tại {fmtVnd(s.chain.listPriceBeforeVat)} đ
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className="mb-3.5 block">
                 <span className={fieldLabelCls}>Biến dò (allowlist ADR-013)</span>
-                <select
+                <Select
                   value={t3FreeVar}
                   onChange={(e) => setT3FreeVar(e.target.value as FreeVarKind)}
-                  className={selectCls}
                 >
                   {t3AvailableFreeVars.map((f) => (
                     <option key={f.id} value={f.id}>{f.label}</option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className="mb-3.5 flex items-start gap-2 rounded-md border border-input bg-card px-2.5 py-2.5">
                 <input type="checkbox" checked={t3Penetration} onChange={(e) => setT3Penetration(e.target.checked)} className="mt-0.5" />

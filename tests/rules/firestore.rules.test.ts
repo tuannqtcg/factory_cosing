@@ -468,6 +468,27 @@ describe('roleAudit/{entryId} — ADR-017: audit log cấp/thu hồi custom clai
   });
 });
 
+describe('adviceAudit/{entryId} — ADR-022: dấu vết gọi AI tư vấn (chỉ Cloud Function ghi)', () => {
+  const entry = { uid: 'uid-pricing', email: 'pricing@demo.local', role: 'pricing', model: 'mock' };
+  it('admin/pricing đọc được dấu vết', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'scenarios/scn-1/adviceAudit/entry-1'), entry);
+    });
+    await assertSucceeds(getDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/adviceAudit/entry-1')));
+    await assertSucceeds(getDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1/adviceAudit/entry-1')));
+  });
+  it('sales/production KHÔNG đọc được (tầng chiến lược ADR-006)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'scenarios/scn-1/adviceAudit/entry-2'), entry);
+    });
+    await assertFails(getDoc(doc(ctxFor('sales').firestore(), 'scenarios/scn-1/adviceAudit/entry-2')));
+    await assertFails(getDoc(doc(ctxFor('production').firestore(), 'scenarios/scn-1/adviceAudit/entry-2')));
+  });
+  it('KHÔNG ai ghi trực tiếp được, kể cả admin (chỉ Cloud Function qua Admin SDK)', async () => {
+    await assertFails(setDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1/adviceAudit/entry-3'), entry));
+  });
+});
+
 describe('path không khai báo — mặc định từ chối', () => {
   it('admin cũng không đọc được path lạ', async () => {
     await assertFails(getDoc(doc(ctxFor('admin').firestore(), 'someOtherCollection/doc1')));

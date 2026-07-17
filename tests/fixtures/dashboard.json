@@ -1,27 +1,27 @@
 {
   "priceLadder5Tier": {
     "tier1_variableCostFloor": {
-      "pipe": 100663.420634921,
+      "pipe": 100663.42063492064,
       "fitting": 127939.81975261813,
       "label": "1. Sàn biến phí — RANH ĐỎ tuyệt đối"
     },
     "tier2_cashBreakEven": {
-      "pipe": 104369.037736261,
+      "pipe": 104239.9888267243,
       "fitting": 136430.8142965952,
       "label": "2. Hòa vốn tiền mặt (không gồm khấu hao)"
     },
     "tier3_breakEvenFullCost": {
-      "pipe": 106318.88168476634,
+      "pipe": 108711.86314473968,
       "fitting": 180604.1201344706,
       "label": "3. Giá thành đầy đủ tại CS bình thường"
     },
     "tier4_enterpriseBreakEven": {
-      "pipe": 111070.84489599193,
-      "fitting": 189644.95103490952,
+      "pipe": 113476.53477957769,
+      "fitting": 189469.58908938267,
       "label": "4. Hòa vốn toàn DN (gồm vận hành + lãi vay)"
     },
     "tier5_targetPrice": {
-      "pipe": 132898.60210595792,
+      "pipe": 135889.8289309246,
       "fitting": 252845.76818825884,
       "label": "5. Giá mục tiêu (markup VF)"
     }
@@ -30,41 +30,41 @@
     {
       "level": "1 ca",
       "pipeProductionKgYear": 206640,
-      "pipeCostPerKg": 113195.18318825182,
+      "pipeCostPerKg": 120374.12756817181,
       "fittingMhrAt60pct": 1308217.9298677056,
       "fittingMhrAt85pct": 954624.4210830864
     },
     {
       "level": "2 ca",
       "pipeProductionKgYear": 413280,
-      "pipeCostPerKg": 108037.95706063771,
+      "pipeCostPerKg": 111627.4292505977,
       "fittingMhrAt60pct": 765313.3602590561,
       "fittingMhrAt85pct": 571397.6660652161
     },
     {
       "level": "3 ca",
       "pipeProductionKgYear": 619920,
-      "pipeCostPerKg": 106318.88168476634,
+      "pipeCostPerKg": 108711.86314473968,
       "fittingMhrAt60pct": 584345.1703895063,
       "fittingMhrAt85pct": 443655.4143925926
     }
   ],
   "cvpAndCapacity": {
-    "pipeBreakEvenKgYear": 108761.08816605769,
-    "pipeBreakEvenPctNormal": 0.1754437478482025,
+    "pipeBreakEvenKgYear": 141637.7860258042,
+    "pipeBreakEvenPctNormal": 0.2284775229478065,
     "fittingBreakEvenMachineHours": 829.771075353462,
     "fittingBreakEvenPctUtilized": 0.4216316439804177,
-    "idleCapacityCostPerPlanPeriod": 3505933414.020355
+    "idleCapacityCostPerPlanPeriod": 4989390480.687022
   },
   "investment": {
-    "totalFixedCapitalInvested": 15966254000,
-    "enterpriseBreakEvenRevenuePerYear": 33784390805.018837,
-    "ebitAtNormalCapacityVfPrice": 16370785391.277641,
-    "paybackYears": 0.8161022523112248
+    "totalFixedCapitalInvested": 26718562000,
+    "enterpriseBreakEvenRevenuePerYear": 37291821434.239365,
+    "ebitAtNormalCapacityVfPrice": 16741649657.944305,
+    "paybackYears": 1.242818758103405
   },
   "dualCostingInventory": {
-    "pipeBookCostPerKg": 106318.88168476634,
-    "pipeReplacementCostPerKg": 106318.88168476634,
+    "pipeBookCostPerKg": 108711.86314473968,
+    "pipeReplacementCostPerKg": 108711.86314473968,
     "fittingBookOrReplacementCostPerKg": 180604.1201344706,
     "compoundHoldingGainLoss": 0,
     "provisionWarning": "Giá tái tạo ≥ bình quân kho — không cần dự phòng",

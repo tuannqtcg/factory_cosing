@@ -98,13 +98,13 @@ describe('pipe.ts — parity với tests/fixtures/pipe.json', () => {
     expect(cost.unitProcessingCostPerKg).toBeCloseTo(golden.unitProcessingCostPerKg, 6);
   });
 
-  it('fullCostPerKg (bậc 3 thang giá — breakEvenFullCost) khớp số vàng 106.318,88 (ADR-011, v3.7)', () => {
+  it('fullCostPerKg (bậc 3 thang giá — breakEvenFullCost) khớp số vàng 108.711,86 (ADR-011, ADR-019 v3.7)', () => {
     expect(cost.fullCostPerKg).toBeCloseTo(golden.fullCostPerKg, 6);
-    expect(cost.fullCostPerKg).toBeCloseTo(106318.88168476634, 3);
+    expect(cost.fullCostPerKg).toBeCloseTo(108711.86314473968, 3);
   });
 
-  it('vfPricePerKg (bậc 5 thang giá — targetPrice) khớp số vàng 132.898,60 (ADR-011, v3.7)', () => {
+  it('vfPricePerKg (bậc 5 thang giá — targetPrice) khớp số vàng 135.889,83 (ADR-011, ADR-019 v3.7)', () => {
     expect(cost.vfPricePerKg).toBeCloseTo(golden.vfPricePerKg, 6);
-    expect(cost.vfPricePerKg).toBeCloseTo(132898.60210595792, 3);
+    expect(cost.vfPricePerKg).toBeCloseTo(135889.8289309246, 3);
   });
 });

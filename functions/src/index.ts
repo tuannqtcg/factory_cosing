@@ -13,7 +13,7 @@
 // các function này chỉ làm auth + I/O Firestore + parse Zod 2 đầu.
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { defineString } from 'firebase-functions/params';
+import { defineString, defineSecret } from 'firebase-functions/params';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -40,6 +40,8 @@ import {
   RoleAuditEntryFieldsSchema,
   type AppRole,
 } from '../../src/schemas/role-management.js';
+import { CeoAdviceRequestSchema, CeoAdviceResultSchema, type CeoAdviceResult } from '../../src/schemas/ceo-planner.js';
+import { generateCeoAdviceMock } from '../../src/engine/ceo-advice-mock.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
 import { calculatePipeCapacity } from '../../src/engine/pipe.js';
@@ -63,6 +65,13 @@ initializeApp();
 // bộ test hiện có.
 const firestoreDatabaseId = defineString('FIRESTORE_DATABASE_ID', { default: '(default)' });
 
+// ADR-022 — AI tư vấn CEO. Key Claude API qua Secret (KHÔNG ở client, AGENTS.md #3);
+// chưa set secret → callable rơi về mock rule-based. Model đọc thẳng process.env
+// (KHÔNG defineString — string param vắng trong .env sẽ hỏi tương tác, treo
+// emulators:exec), mặc định model Claude mới nhất phù hợp.
+const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
+const ADVISE_MODEL_DEFAULT = 'claude-opus-4-8';
+
 // M12.6 (bảng ADR-009 #8): thêm unit/spec hiển thị — sales không đọc được
 // scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
 // calculateScenario() dựng bằng products.map() CÙNG THỨ TỰ → zip theo index,
@@ -85,8 +94,12 @@ function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['product
       return {
         productKey: sku.productKey,
         managementStatus: sku.managementStatus,
-        materialDesignationCode: material?.designationCode,
-        materialClassificationCode: material?.classificationCode,
+        // ADR-013: 2 mã optional — CHỈ đính khi có giá trị. Firestore từ chối
+        // ghi `undefined` (khác Zod .optional() bỏ qua), nên material thiếu mã
+        // mà set thẳng undefined sẽ làm cả onScenarioWrite văng → outputs không
+        // bao giờ ghi, UI kẹt loading. Bỏ key khi thiếu là đúng nghĩa optional.
+        ...(material?.designationCode !== undefined ? { materialDesignationCode: material.designationCode } : {}),
+        ...(material?.classificationCode !== undefined ? { materialClassificationCode: material.classificationCode } : {}),
         unit: product.kind === 'pipe' ? 'mét' : product.unit,
         spec: (product.kind === 'pipe' ? product.spec : product.schedule) ?? '',
         chain: {
@@ -317,4 +330,68 @@ export const setUserRole = onCall(async (request) => {
     oldRole,
     newRole: parsed.role,
   });
+});
+
+// ADR-022 — HTTPS Callable `adviseScenario`: AI tư vấn cho màn Trợ Lý CEO.
+// Gọi Claude API phía server (key qua Secret); chưa cấu hình key hoặc lỗi → mock
+// rule-based (nút không bao giờ chết). CHỈ nhận số liệu output đã tính, ghi audit.
+export const adviseScenario = onCall({ secrets: [anthropicApiKey] }, async (request) => {
+  const role = request.auth?.token?.role;
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Cần đăng nhập để hỏi AI tư vấn.');
+  }
+  if (role !== 'pricing' && role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Chỉ vai pricing/admin được dùng AI tư vấn (ADR-006/022).');
+  }
+
+  let parsed;
+  try {
+    parsed = CeoAdviceRequestSchema.parse(request.data);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', `Request không khớp CeoAdviceRequest: ${String(err)}`);
+  }
+
+  // Sinh nhận định: ưu tiên Claude API khi có secret; lỗi/hết quota/chưa cấu hình → mock.
+  let result: CeoAdviceResult;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (apiKey) {
+    try {
+      const { default: Anthropic } = await import('@anthropic-ai/sdk');
+      const client = new Anthropic({ apiKey });
+      const s = parsed.plannerResult.summary;
+      const system =
+        'Bạn là trợ lý tài chính cho CEO nhà máy CPVC. Đọc số liệu định giá + hiệu quả năm và ' +
+        'đưa 4-7 nhận định NGẮN GỌN bằng tiếng Việt để CEO cầm đi đàm phán (sàn giá lùi tới đâu theo ' +
+        'thang giá 5 bậc, rủi ro giá nguyên liệu, độ tin cậy thu hồi vốn, bức tranh năm). ' +
+        'Trả về DUY NHẤT một mảng JSON: [{"topic":"...","message":"..."}] — không văn bản ngoài JSON.';
+      const msg = await client.messages.create({
+        model: process.env.ADVISE_MODEL ?? ADVISE_MODEL_DEFAULT,
+        max_tokens: 2000,
+        thinking: { type: 'adaptive' },
+        system,
+        messages: [{ role: 'user', content: JSON.stringify({ pipe: parsed.plannerResult.pipe, fitting: parsed.plannerResult.fitting, summary: s }) }],
+      });
+      const text = msg.content.map((b) => (b.type === 'text' ? b.text : '')).join('');
+      const jsonStart = text.indexOf('[');
+      const jsonEnd = text.lastIndexOf(']');
+      const items = JSON.parse(text.slice(jsonStart, jsonEnd + 1)) as Array<{ topic: string; message: string }>;
+      result = CeoAdviceResultSchema.parse({ generatedByModel: msg.model, items, disclaimer: 'Thuế TNDN 20% là ước tính. Nhận định tham khảo, không thay quyết định của CEO.' });
+    } catch {
+      result = generateCeoAdviceMock(parsed.plannerResult); // fallback khi Claude lỗi
+    }
+  } else {
+    result = generateCeoAdviceMock(parsed.plannerResult);
+  }
+
+  // Audit: dấu vết ai gọi, khi nào, model gì (KHÔNG lưu nội dung nhạy cảm).
+  const db = getFirestore(firestoreDatabaseId.value());
+  await db.collection(`scenarios/${parsed.scenarioId}/adviceAudit`).add({
+    uid: request.auth.uid,
+    email: request.auth.token.email ?? null,
+    role,
+    model: result.generatedByModel,
+    at: FieldValue.serverTimestamp(),
+  });
+
+  return result;
 });

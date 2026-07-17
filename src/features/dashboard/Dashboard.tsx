@@ -175,7 +175,8 @@ export default function Dashboard({
   /** priceLadder từ outputs/priceList — nguồn duy nhất của vai sales (M12.6: PriceListDoc.priceLadder). */
   salesPriceLadder: ScenarioOutput['priceLadder'] | null;
 }) {
-  const canSeeCostDetail = role === 'admin' || role === 'pricing';
+  // ADR-026 — bỏ cờ `canSeeCostDetail` + nhánh view sales dự phòng (code chết:
+  // chỉ admin/pricing đăng nhập được — ADR-023). Dashboard chỉ còn luồng CEO.
   const [selectedShift, setSelectedShift] = useState(2);
   const [topDownPrice, setTopDownPrice] = useState(0);
   const [pipeMaterialId, setPipeMaterialId] = useState<string | null>(null);
@@ -209,7 +210,7 @@ export default function Dashboard({
   const fittingCvpEntry = internal?.cvp.byLineMaterial.find((e) => e.line === 'fitting' && e.materialId === activeFittingMatId) ?? null;
   const fittingCvp = fittingCvpEntry && fittingCvpEntry.line === 'fitting' ? fittingCvpEntry : null;
 
-  const kpis = useMemo(() => (canSeeCostDetail && scenario ? calculateDashboardKpis(scenario) : null), [canSeeCostDetail, scenario]);
+  const kpis = useMemo(() => (scenario ? calculateDashboardKpis(scenario) : null), [scenario]);
 
   const pipeCvpChartData = useMemo(() => {
     if (!pipeCvp || !pipeLadder || !kpis) return [];
@@ -250,10 +251,7 @@ export default function Dashboard({
     return result.feasible ? result.value : null;
   }, [scenario, topDownPrice, activePipeMatId]);
 
-  if (!canSeeCostDetail && !salesPriceLadder && !internal) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải bảng giá…</div>;
-  }
-  if (canSeeCostDetail && (!scenario || !internal)) {
+  if (!scenario || !internal) {
     return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
   }
 
@@ -318,53 +316,47 @@ export default function Dashboard({
         <div>
           <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Tổng Quan Quản Trị</div>
           <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, letterSpacing: '-.5px' }}>Bảng điều khiển (Dashboard)</h1>
-          {canSeeCostDetail && scenario && (
-            <div style={{ fontSize: 11, color: '#737373', marginTop: 6, display: 'flex', gap: 12 }}>
-              <span>Tỷ giá: <b>{fmtVnd(usdRate!)}</b></span>
-              <span>•</span>
-              <span>Nguyên liệu Ống: <b>{pipeRefMaterial?.name || '—'}</b> ({fmtUsd(pipeRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
-              <span>•</span>
-              <span>Nguyên liệu PK: <b>{fittingRefMaterial?.name || '—'}</b> ({fmtUsd(fittingRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
-            </div>
-          )}
-        </div>
-        {canSeeCostDetail && (
-          <div style={{ display: 'flex', gap: 12 }}>
-            <MaterialPicker label="Dòng Ống" materials={pipeMaterials} selectedId={activePipeMatId ?? ''} onSelect={setPipeMaterialId} />
-            <MaterialPicker label="Dòng Phụ kiện" materials={fittingMaterials} selectedId={activeFittingMatId ?? ''} onSelect={setFittingMaterialId} />
+          <div style={{ fontSize: 11, color: '#737373', marginTop: 6, display: 'flex', gap: 12 }}>
+            <span>Tỷ giá: <b>{fmtVnd(usdRate!)}</b></span>
+            <span>•</span>
+            <span>Nguyên liệu Ống: <b>{pipeRefMaterial?.name || '—'}</b> ({fmtUsd(pipeRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
+            <span>•</span>
+            <span>Nguyên liệu PK: <b>{fittingRefMaterial?.name || '—'}</b> ({fmtUsd(fittingRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
           </div>
-        )}
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <MaterialPicker label="Dòng Ống" materials={pipeMaterials} selectedId={activePipeMatId ?? ''} onSelect={setPipeMaterialId} />
+          <MaterialPicker label="Dòng Phụ kiện" materials={fittingMaterials} selectedId={activeFittingMatId ?? ''} onSelect={setFittingMaterialId} />
+        </div>
       </div>
 
       {/* Tabs Navigation */}
-      {canSeeCostDetail && (
-        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #e5e5e5', marginBottom: 24 }}>
-          {[
-            { id: 'overview', label: 'TỔNG QUAN' },
-            { id: 'manufacturing', label: 'SẢN XUẤT' },
-            { id: 'investor', label: 'ĐẦU TƯ & TÀI CHÍNH' },
-            { id: 'pricing', label: 'CHIẾN LƯỢC GIÁ' },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id as any)}
-              style={{
-                background: 'none', border: 'none', padding: '0 0 12px 0',
-                fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase',
-                color: activeTab === t.id ? '#a8003b' : '#737373',
-                borderBottom: `2px solid ${activeTab === t.id ? '#a8003b' : 'transparent'}`,
-                cursor: 'pointer',
-                marginBottom: -1
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      )}
+      <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #e5e5e5', marginBottom: 24 }}>
+        {[
+          { id: 'overview', label: 'TỔNG QUAN' },
+          { id: 'manufacturing', label: 'SẢN XUẤT' },
+          { id: 'investor', label: 'ĐẦU TƯ & TÀI CHÍNH' },
+          { id: 'pricing', label: 'CHIẾN LƯỢC GIÁ' },
+        ].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id as any)}
+            style={{
+              background: 'none', border: 'none', padding: '0 0 12px 0',
+              fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase',
+              color: activeTab === t.id ? '#a8003b' : '#737373',
+              borderBottom: `2px solid ${activeTab === t.id ? '#a8003b' : 'transparent'}`,
+              cursor: 'pointer',
+              marginBottom: -1
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
       {/* Overview Tab */}
-      {activeTab === 'overview' && canSeeCostDetail && kpis && internal && scenario && (
+      {activeTab === 'overview' && kpis && internal && scenario && (
         (() => {
           const shifts = scenario.resources.pipe.driverType === 'continuous_kg' ? scenario.resources.pipe.normalShifts : 3;
           return (
@@ -407,7 +399,7 @@ export default function Dashboard({
       )}
 
       {/* Lock bar — ADR-004, di chuyển vào Tab Pricing (Chiến lược giá) */}
-      {(activeTab === 'pricing' || !canSeeCostDetail) && lockRows.length > 0 && (
+      {activeTab === 'pricing' && lockRows.length > 0 && (
         <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
           {lockRows.map(([label, material, entry]) => {
             const ev = entry!.evaluation;
@@ -437,14 +429,14 @@ export default function Dashboard({
       )}
 
       {/* I. Thang giá - Chuyển vào Tab Pricing */}
-      {(activeTab === 'pricing' || !canSeeCostDetail) && pipeLadder && fittingLadder && (
+      {activeTab === 'pricing' && pipeLadder && fittingLadder && (
         <LadderSection
           pipeLadder={pipeLadder}
           fittingLadder={fittingLadder}
         />
       )}
 
-      {canSeeCostDetail && kpis && internal && pipeLadder && pipeCvp ? (
+      {kpis && internal && pipeLadder && pipeCvp && (
         <>
           {/* II. Sản xuất — 3 mức công suất Ống */}
           {activeTab === 'manufacturing' && (
@@ -678,12 +670,6 @@ export default function Dashboard({
             </div>
           )}
         </>
-      ) : (
-        !canSeeCostDetail && (
-          <div style={{ padding: '14px 16px', background: '#f5f5f3', border: '1px dashed #d8d8d8', borderRadius: 2, fontSize: 10, color: '#737373' }}>
-            Vai Bán Hàng chỉ xem thang giá + bảng giá (ADR-006, security-review) — công suất, phân tích ngược, cấu trúc chi phí và đầu tư không hiển thị ở đây.
-          </div>
-        )
       )}
     </div>
   );

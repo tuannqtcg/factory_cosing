@@ -201,7 +201,9 @@ export default function ConfigScreen({
   scenarioId: string;
   scenario: ScenarioInput | null;
 }) {
-  const canEdit = role === 'admin' || role === 'pricing';
+  // ADR-026 — bỏ guard "chỉ dành cho vai X" (chỉ admin/pricing đăng nhập được).
+  // GIỮ `pricingLocked`: field chiến lược (currency/markup) admin-only khớp
+  // firestore.rules — ranh giới bảo mật, không phải điều hướng theo vai.
   const pricingLocked = role !== 'admin'; // pricing thấy khóa 🔒, admin sửa hết
   const [form, setForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
@@ -214,14 +216,6 @@ export default function ConfigScreen({
     setForm(scenario);
   }
 
-  if (!canEdit) {
-    return (
-      <div style={{ padding: '32px 36px' }}>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Cấu Hình Nhà Máy</h1>
-        <p style={{ fontSize: 12, color: '#737373' }}>Màn hình này chỉ dành cho vai Toàn Quyền / Định Giá.</p>
-      </div>
-    );
-  }
   if (!form) {
     return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải cấu hình…</div>;
   }

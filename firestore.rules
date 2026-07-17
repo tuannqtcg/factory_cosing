@@ -159,6 +159,16 @@ service cloud.firestore {
         allow create: if isAdmin() || isPricing();
         allow update, delete: if false;
       }
+
+      // adviceAudit/{entryId} — ADR-022 §6: dấu vết ai gọi AI tư vấn, khi nào,
+      // model gì (KHÔNG lưu nội dung tư vấn/số liệu). Chỉ Cloud Function
+      // `adviseScenario` (Admin SDK) ghi — `allow write: if false` không chặn
+      // Admin SDK, chỉ chặn client. admin/pricing đọc được (đúng tầng chiến lược
+      // ADR-006, cùng 2 vai được dùng màn Trợ Lý CEO).
+      match /adviceAudit/{entryId} {
+        allow read: if isAdmin() || isPricing();
+        allow write: if false;
+      }
     }
 
     // roleAudit/{entryId} — ADR-017: audit log cấp/thu hồi custom claim

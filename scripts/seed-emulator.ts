@@ -29,6 +29,10 @@ const db = getFirestore(app);
 const ROLES = ['admin', 'pricing', 'sales', 'production'] as const;
 const SCENARIO_ID = 'baseline-v3.4';
 
+// Chủ app (owner) mặc định — vai `admin` = toàn quyền (ADR-020 view CEO). Đăng
+// nhập bằng email/mật khẩu demo trên emulator; production dùng chính email này.
+const OWNER_EMAIL = 'tuannq6886@gmail.com';
+
 async function seedUsers(): Promise<void> {
   for (const role of ROLES) {
     const email = `${role}@demo.local`;
@@ -38,12 +42,32 @@ async function seedUsers(): Promise<void> {
     await auth.setCustomUserClaims(user.uid, { role });
     console.log(`✓ user ${email} (role=${role})`);
   }
+  // Owner app — role admin.
+  const owner = (await auth.getUserByEmail(OWNER_EMAIL).catch(() => null))
+    ?? (await auth.createUser({ uid: 'owner', email: OWNER_EMAIL, password: 'demo-password' }));
+  await auth.setCustomUserClaims(owner.uid, { role: 'admin' });
+  console.log(`✓ OWNER ${OWNER_EMAIL} (role=admin)`);
 }
 
 async function seedScenario(): Promise<void> {
   const scenarioInput = ScenarioInputSchema.parse(buildCorzanScenarioInput());
+
+  // DEMO ONLY (không đụng fixture parity — tests dựng scenario riêng): làm giàu
+  // tồn kho nguyên liệu Ống BlazeMaster thành 3 lô KHÁC GIÁ + giá tái tạo LỆCH
+  // vượt ngưỡng, để màn "Giá Vốn Theo Lô" (ADR-024) minh hoạ đúng câu hỏi:
+  // 5 lô khác giá → giá vốn bình quân, lãi/lỗ giữ kho, có cần chốt lại giá không.
+  const bmPipe = scenarioInput.materials.find((m) => m.id === 'bm-orange-pipe');
+  if (bmPipe) {
+    bmPipe.inventory.lots = [
+      { tons: 10, priceUsdPerKg: 3.03 }, // lô cũ, giá thấp
+      { tons: 8, priceUsdPerKg: 2.80 }, // lô mua đáy
+      { tons: 6, priceUsdPerKg: 3.25 }, // lô gần đây
+    ];
+    bmPipe.inventory.replacementPriceUsdPerKg = 3.4; // giá thị trường hiện tại (lệch +12% so baseline 3.03)
+  }
+
   await db.doc(`scenarios/${SCENARIO_ID}`).set({ ...scenarioInput, id: SCENARIO_ID });
-  console.log(`✓ scenarios/${SCENARIO_ID} (Cloud Function sẽ tự tính outputs/*)`);
+  console.log(`✓ scenarios/${SCENARIO_ID} (demo 3 lô Ống BM khác giá — Cloud Function tự tính outputs/*)`);
 }
 
 await seedUsers();

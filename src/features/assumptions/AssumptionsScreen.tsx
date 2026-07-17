@@ -4,6 +4,9 @@
 // markupVFOng/markupVFPK cứng của prototype gốc). `thresholdPct` admin-only
 // theo TỪNG phần tử mảng (ADR-015, rules đã vá M12.9d) — field khóa client
 // khớp đúng enforcement server, không chỉ trang trí.
+// TRÌNH BÀY (ADR-033): Tailwind + shadcn/ui (Card/Input/Button/Badge), KHÔNG
+// inline-style hardcode — màu lấy từ CSS variables (src/index.css). Logic giữ
+// NGUYÊN; màu CHỈ dành cho DỮ LIỆU/trạng thái (KHÓA/MỞ KHÓA, % lệch, field admin-only).
 import { useRef, useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
@@ -13,43 +16,34 @@ import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '..
 import type { Material } from '../../schemas/material.js';
 import type { MetalInsertCatalogEntry } from '../../schemas/pricing-chain.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 function numField(
   label: string,
   value: number,
   onChange: (v: number) => void,
-  opts: { unit?: string; locked?: boolean; step?: string; accent?: string } = {},
+  opts: { unit?: string; locked?: boolean; step?: string } = {},
 ) {
   const disabled = !!opts.locked;
-  const accent = opts.accent ?? '#d8d8d8';
   return (
-    <label style={{ display: 'block' }}>
-      <span style={{ fontSize: 9, fontWeight: 700, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+    <label className="block">
+      <span className="mb-1.5 flex items-center justify-between gap-1 text-eyebrow font-semibold uppercase tracking-[.05em] text-foreground">
         <span>{label}</span>
-        {opts.locked && <span style={{ fontSize: 11, opacity: 0.75 }}>🔒</span>}
+        {opts.locked && <span className="text-[11px] opacity-75">🔒</span>}
       </span>
-      <input
+      <Input
         type="number"
         step={opts.step ?? '0.01'}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
-        style={{
-          width: '100%',
-          padding: '7px 9px',
-          borderRadius: 2,
-          fontSize: 12.5,
-          fontWeight: 600,
-          textAlign: 'right',
-          outline: 'none',
-          fontVariantNumeric: 'tabular-nums',
-          border: `1px solid ${disabled ? '#e5e5e5' : accent}`,
-          background: disabled ? '#f9f9f9' : '#fff',
-          opacity: disabled ? 0.65 : 1,
-          cursor: disabled ? 'not-allowed' : 'auto',
-        }}
+        className="h-9 text-right text-[13px] font-semibold tabular-nums disabled:bg-muted"
       />
-      {opts.unit && <div style={{ fontSize: 8.5, color: '#b3b3b3', marginTop: 3, textAlign: 'right' }}>{opts.unit}</div>}
+      {opts.unit && <div className="mt-1 text-right text-eyebrow text-faint">{opts.unit}</div>}
     </label>
   );
 }
@@ -88,7 +82,7 @@ export default function AssumptionsScreen({
   }
 
   if (!form || !internal) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
+    return <div className="px-9 py-8 text-sm text-muted-foreground">Đang tải kịch bản + kết quả tính…</div>;
   }
 
   const setMaterials = (updater: (materials: Material[]) => Material[]) =>
@@ -152,85 +146,78 @@ export default function AssumptionsScreen({
   };
 
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+    <div className="px-9 py-8">
+      <div className="mb-5">
+        <div className="mb-1.5 text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Quản Trị Dữ Liệu Gốc</div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Tham Số</h1>
-            <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>Giá tái tạo · khóa bảng giá (ADR-004) · markup VF · thuế NK/logistics — TỪNG nguyên liệu</div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Tham Số</h1>
+            <div className="mt-1 text-xs text-muted-foreground">Giá tái tạo · khóa bảng giá (ADR-004) · markup VF · thuế NK/logistics — TỪNG nguyên liệu</div>
           </div>
-          <button
-            onClick={() => void handleSave()}
-            disabled={saveState === 'saving'}
-            style={{ padding: '10px 22px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}
-          >
+          <Button onClick={() => void handleSave()} disabled={saveState === 'saving'} className="uppercase tracking-[.06em]">
             {saveState === 'saving' ? 'Đang lưu…' : 'Lưu & Cập Nhật'}
-          </button>
+          </Button>
         </div>
-        {saveState === 'saved' && <div style={{ fontSize: 11, color: '#16A34A', fontWeight: 600, marginTop: 6 }}>✓ Đã lưu — Cloud Function sẽ tự tính lại toàn bộ giá thành</div>}
-        {saveState === 'error' && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6 }}>{saveError}</div>}
+        {saveState === 'saved' && <div className="mt-1.5 text-xs font-semibold text-success">✓ Đã lưu — Cloud Function sẽ tự tính lại toàn bộ giá thành</div>}
+        {saveState === 'error' && <div className="mt-1.5 text-xs text-destructive">{saveError}</div>}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 11 }}>
-        <div style={{ width: 3, height: 14, background: '#a8003b', borderRadius: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color: '#a8003b' }}>Tham số theo từng nguyên liệu</div>
+      <div className="mb-3 flex items-center gap-2">
+        <div className="h-3.5 w-[3px] shrink-0 rounded-sm bg-primary" />
+        <div className="text-eyebrow font-bold uppercase tracking-[.12em] text-foreground">Tham số theo từng nguyên liệu</div>
       </div>
 
       {form.materials.map((m) => {
         const lockEntry = internal.priceLock.byMaterial.find((e) => e.materialId === m.id);
         const isLocked = lockEntry?.evaluation.isLocked ?? true;
         return (
-          <div key={m.id} style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflow: 'hidden', marginBottom: 14 }}>
-            <div style={{ padding: '12px 16px', background: '#f5f5f3', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+          <Card key={m.id} className="mb-3.5 overflow-hidden p-0">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 border-b bg-muted px-4 py-3">
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div>
-                <div style={{ fontSize: 9.5, color: '#737373', marginTop: 2 }}>{m.code} · {m.originLabel}</div>
+                <div className="text-[13px] font-bold text-foreground">{m.name}</div>
+                <div className="mt-0.5 text-eyebrow text-muted-foreground">{m.code} · {m.originLabel}</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? 'KHÓA' : 'MỞ KHÓA'}</span>
+              <div className="flex items-center gap-2">
+                <Badge variant={isLocked ? 'success' : 'destructive'}>{isLocked ? 'KHÓA' : 'MỞ KHÓA'}</Badge>
                 {!isLocked && (
-                  <button
-                    onClick={() => chotBaseline(m.id)}
-                    style={{ padding: '7px 14px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}
-                  >
+                  <Button size="sm" onClick={() => chotBaseline(m.id)} className="uppercase tracking-[.04em]">
                     Chốt Baseline Mới
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>
-            <div style={{ padding: 16 }}>
+            <div className="p-4">
               {lockEntry && (
-                <div style={{ fontSize: 10, color: '#737373', marginBottom: 12 }}>
-                  Lệch vs baseline: <b style={{ color: isLocked ? '#16A34A' : '#DC2626' }}>{fmtPct(lockEntry.evaluation.deviationPct)}</b>
+                <div className="mb-3 text-xs text-muted-foreground">
+                  Lệch vs baseline: <b className={cn('tabular-nums', isLocked ? 'text-success' : 'text-destructive')}>{fmtPct(lockEntry.evaluation.deviationPct)}</b>
                   {lockEntry.evaluation.stalenessWarning && <span> · ⚠ {lockEntry.evaluation.stalenessWarning}</span>}
                 </div>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12 }}>
-                {numField('Giá tái tạo (thị trường)', m.inventory.replacementPriceUsdPerKg, (v) => updateReplacement(m.id, v), { unit: 'USD/kg', accent: '#16A34A' })}
-                {numField('Baseline khóa giá', m.inventory.priceLock.baseline, (v) => updateBaseline(m.id, v), { unit: 'USD/kg', accent: '#2563eb' })}
+              <div className="grid grid-cols-4 gap-3">
+                {numField('Giá tái tạo (thị trường)', m.inventory.replacementPriceUsdPerKg, (v) => updateReplacement(m.id, v), { unit: 'USD/kg' })}
+                {numField('Baseline khóa giá', m.inventory.priceLock.baseline, (v) => updateBaseline(m.id, v), { unit: 'USD/kg' })}
                 {numField('Ngưỡng khóa', m.inventory.priceLock.thresholdPct, (v) => updateThreshold(m.id, v), { unit: 'tỷ lệ (0,03=3%)', locked: !isAdmin })}
                 {numField('Markup VF', m.markupVf, (v) => updateMaterialField(m.id, 'markupVf', v), { unit: 'tỷ lệ' })}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginTop: 10 }}>
+              <div className="mt-2.5 grid grid-cols-4 gap-3">
                 {numField('Thuế nhập khẩu', m.importTaxRate, (v) => updateMaterialField(m.id, 'importTaxRate', v), { unit: 'tỷ lệ' })}
                 {numField('Phí logistics/hải quan', m.customsLogisticsFeeRate, (v) => updateMaterialField(m.id, 'customsLogisticsFeeRate', v), { unit: 'tỷ lệ' })}
               </div>
             </div>
-          </div>
+          </Card>
         );
       })}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 11, marginTop: 24 }}>
-        <div style={{ width: 3, height: 14, background: '#2563eb', borderRadius: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color: '#2563eb' }}>Ngưỡng khóa giá ren kim loại</div>
+      <div className="mb-3 mt-6 flex items-center gap-2">
+        <div className="h-3.5 w-[3px] shrink-0 rounded-sm bg-primary" />
+        <div className="text-eyebrow font-bold uppercase tracking-[.12em] text-foreground">Ngưỡng khóa giá ren kim loại</div>
       </div>
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <Card className="overflow-hidden p-0">
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ background: '#f5f5f3' }}>
+            <tr className="bg-muted">
               {['Loại ren', 'Size PT', 'Baseline', 'Ngưỡng (%)'].map((h, i) => (
-                <th key={h} style={{ fontSize: 8.5, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '.05em', textAlign: i < 2 ? 'left' : 'right', padding: 8, borderBottom: '1px solid #f0f0f0' }}>{h}</th>
+                <th key={h} className={cn('border-b px-2 py-2 text-eyebrow font-bold uppercase tracking-[.05em] text-muted-foreground', i < 2 ? 'text-left' : 'text-right')}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -239,41 +226,29 @@ export default function AssumptionsScreen({
               const key = `${entry.renType}|${entry.ptSize}`;
               return (
                 <tr key={key}>
-                  <td style={{ padding: '7px 8px', fontSize: 11.5, borderBottom: '1px solid #f8f8f6' }}>Ren {entry.renType}</td>
-                  <td style={{ padding: '7px 8px', fontSize: 11.5, borderBottom: '1px solid #f8f8f6' }}>PT {entry.ptSize}</td>
-                  <td style={{ padding: '7px 8px', fontSize: 11.5, textAlign: 'right', borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(entry.priceLock.baseline)} đ</td>
-                  <td style={{ padding: '7px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                    <input
+                  <td className="border-b px-2 py-[7px] text-xs text-foreground">Ren {entry.renType}</td>
+                  <td className="border-b px-2 py-[7px] text-xs text-foreground">PT {entry.ptSize}</td>
+                  <td className="border-b px-2 py-[7px] text-right text-xs tabular-nums text-foreground">{fmtVnd(entry.priceLock.baseline)} đ</td>
+                  <td className="border-b px-2 py-[7px] text-right">
+                    <Input
                       type="number"
                       step="0.01"
                       value={entry.priceLock.thresholdPct}
                       disabled={!isAdmin}
                       onChange={(e) => updateInsertThreshold(key, parseFloat(e.target.value) || 0)}
-                      style={{
-                        width: 70,
-                        padding: '4px 6px',
-                        borderRadius: 2,
-                        fontSize: 11,
-                        textAlign: 'right',
-                        outline: 'none',
-                        fontVariantNumeric: 'tabular-nums',
-                        border: `1px solid ${!isAdmin ? '#e5e5e5' : '#d8d8d8'}`,
-                        background: !isAdmin ? '#f9f9f9' : '#fff',
-                        opacity: !isAdmin ? 0.65 : 1,
-                        cursor: !isAdmin ? 'not-allowed' : 'auto',
-                      }}
+                      className="h-8 w-[70px] px-2 text-right text-xs tabular-nums disabled:bg-muted"
                     />{' '}
-                    {!isAdmin && <span style={{ fontSize: 10, opacity: 0.75 }}>🔒</span>}
+                    {!isAdmin && <span className="text-[10px] opacity-75">🔒</span>}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
 
-      <div style={{ marginTop: 16, fontSize: 9.5, color: '#737373', lineHeight: 1.5, padding: '8px 10px', background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2 }}>
-        Đánh giá khóa bảng giá (KHÓA/MỞ KHÓA, % lệch, cảnh báo staleness) lấy THẲNG từ <code>outputs/internal.priceLock</code> — không tính lại ở client
+      <div className="mt-4 rounded-md border bg-muted px-2.5 py-2 text-[10px] leading-relaxed text-muted-foreground">
+        Đánh giá khóa bảng giá (KHÓA/MỞ KHÓA, % lệch, cảnh báo staleness) lấy THẲNG từ <code className="rounded bg-card px-1">outputs/internal.priceLock</code> — không tính lại ở client
         (ADR-004, luật "client không lắp lại công thức engine"). Trường thuế/phí/markup có thể khác giữa các nguyên liệu (BlazeMaster EU 6% vs Corzan AIFTA 0%).
       </div>
     </div>

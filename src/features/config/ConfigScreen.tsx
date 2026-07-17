@@ -20,6 +20,9 @@
 // KHÔNG hiển thị `avgProductivityKgPerMachineHour` (ADR-011: đổi giữa auto/ghi
 // đè thủ công là đổi CHÍNH SÁCH công suất, cần ADR riêng — không phải field
 // nhập tay thường, cố tình loại khỏi form này).
+//
+// ADR-033 — TRÌNH BÀY: Tailwind + shadcn/ui (Card/Input/Button), theme đen–trắng.
+// Logic/props/field-map/format số giữ NGUYÊN; màu chỉ dành cho TRẠNG THÁI (lưu/lỗi).
 import { useRef, useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
@@ -29,13 +32,15 @@ import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.
 import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
 import type { CostPool } from '../../schemas/cost-pool.js';
 import { MoldAssetModal } from './MoldAssetModal.js';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
-function SectionHeader({ title, color = '#a8003b', right }: { title: string; color?: string; right?: React.ReactNode }) {
+function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 3, height: 14, background: color, borderRadius: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color }}>{title}</div>
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
+        <div className="h-3.5 w-0.5 shrink-0 rounded-sm bg-foreground" />
+        <div className="text-eyebrow font-semibold uppercase tracking-[.12em] text-faint">{title}</div>
       </div>
       {right}
     </div>
@@ -55,47 +60,31 @@ function FieldGrid<T extends Record<string, unknown>>({
   onChange,
   fields,
   pricingLocked,
-  accent,
-  accentBg,
 }: {
   values: T;
   onChange: (key: keyof T & string, value: number) => void;
   fields: Array<FieldDef<T>>;
   pricingLocked: boolean;
-  accent: string;
-  accentBg: string;
 }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] overflow-hidden rounded-md border bg-card">
       {fields.map((f) => {
         const disabled = !!f.locked && pricingLocked;
         return (
-          <div key={f.key} style={{ padding: '14px 16px', borderRight: '1px solid #f2f2f2', borderBottom: '1px solid #f2f2f2' }}>
-            <div style={{ fontSize: 9, color: '#737373', marginBottom: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 4 }}>
+          <div key={f.key} className="border-b border-r border-border p-4">
+            <div className="mb-1.5 flex items-center justify-between gap-1 text-eyebrow text-muted-foreground">
               <span>{f.label}</span>
-              {f.locked && <span style={{ fontSize: 11, opacity: 0.7, flexShrink: 0 }}>🔒</span>}
+              {f.locked && <span className="shrink-0 opacity-70">🔒</span>}
             </div>
-            <input
+            <Input
               type="number"
               step={f.step}
               value={values[f.key] as number}
               disabled={disabled}
               onChange={(e) => onChange(f.key, parseFloat(e.target.value) || 0)}
-              style={{
-                width: '100%',
-                padding: '5px 8px',
-                borderRadius: 2,
-                fontSize: 13,
-                fontWeight: 700,
-                textAlign: 'right',
-                outline: 'none',
-                border: `1px solid ${disabled ? '#e5e5e5' : accent}`,
-                background: disabled ? '#f9f9f9' : accentBg,
-                opacity: disabled ? 0.65 : 1,
-                cursor: disabled ? 'not-allowed' : 'auto',
-              }}
+              className="h-8 px-2 text-right text-sm font-semibold tabular-nums"
             />
-            <div style={{ fontSize: 9, color: '#b3b3b3', marginTop: 3, textAlign: 'right' }}>{f.unit}</div>
+            <div className="mt-1 text-right text-eyebrow text-faint">{f.unit}</div>
           </div>
         );
       })}
@@ -217,7 +206,7 @@ export default function ConfigScreen({
   }
 
   if (!form) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải cấu hình…</div>;
+    return <div className="px-9 py-8 text-sm text-muted-foreground">Đang tải cấu hình…</div>;
   }
 
   const pipe = form.resources.pipe as ContinuousKgResource;
@@ -306,120 +295,110 @@ export default function ConfigScreen({
   };
 
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>
-          Cấu Hình Nguồn Lực Nhà Máy
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+    <div className="px-9 py-8">
+      <div className="mb-5">
+        <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Cấu Hình Nguồn Lực Nhà Máy</div>
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Cấu Hình Nhà Máy</h1>
-            <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>Chỉnh sửa tham số nguồn lực → toàn bộ giá thành, hòa vốn, MHR tự cập nhật theo</div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Cấu Hình Nhà Máy</h1>
+            <div className="mt-1 text-sm text-muted-foreground">Chỉnh sửa tham số nguồn lực → toàn bộ giá thành, hòa vốn, MHR tự cập nhật theo</div>
           </div>
-          <button
-            onClick={() => void handleSave()}
-            disabled={saveState === 'saving'}
-            style={{ padding: '10px 22px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}
-          >
+          <Button onClick={() => void handleSave()} disabled={saveState === 'saving'} className="uppercase tracking-[.06em]">
             {saveState === 'saving' ? 'Đang lưu…' : 'Lưu & Cập Nhật'}
-          </button>
+          </Button>
         </div>
-        {saveState === 'saved' && <div style={{ fontSize: 11, color: '#16A34A', fontWeight: 600, marginTop: 6 }}>✓ Đã lưu — Cloud Function sẽ tự tính lại toàn bộ giá thành</div>}
-        {saveState === 'error' && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6 }}>{saveError}</div>}
+        {saveState === 'saved' && <div className="mt-1.5 text-xs font-semibold text-success">✓ Đã lưu — Cloud Function sẽ tự tính lại toàn bộ giá thành</div>}
+        {saveState === 'error' && <div className="mt-1.5 text-xs text-destructive">{saveError}</div>}
       </div>
 
       {pricingLocked && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 2, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <div style={{ fontSize: 18, flexShrink: 0, marginTop: -2 }}>🔒</div>
+        <div className="mb-5 flex items-start gap-2.5 rounded-md border bg-muted px-4 py-3">
+          <div className="shrink-0 text-lg">🔒</div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#991b1b', marginBottom: 4 }}>Tham số cốt lõi bị khóa — Chỉ Admin mới có quyền sửa</div>
-            <div style={{ fontSize: 10, color: '#7f1d1d' }}>Các ô đánh dấu 🔒 (công suất, số máy, yield, giá máy, chi phí chung) không thể chỉnh sửa để đảm bảo tính toàn vẹn dữ liệu. Liên hệ Admin nếu cần thay đổi.</div>
+            <div className="mb-1 text-xs font-bold text-foreground">Tham số cốt lõi bị khóa — Chỉ Admin mới có quyền sửa</div>
+            <div className="text-xs text-muted-foreground">Các ô đánh dấu 🔒 (công suất, số máy, yield, giá máy, chi phí chung) không thể chỉnh sửa để đảm bảo tính toàn vẹn dữ liệu. Liên hệ Admin nếu cần thay đổi.</div>
           </div>
         </div>
       )}
 
-      <div style={{ marginBottom: 20 }}>
+      <div className="mb-5">
         <SectionHeader title="A. Ống CPVC — Biến số Vận hành & Thị trường" />
-        <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_OP_FIELDS} pricingLocked={pricingLocked} accent="#a8003b" accentBg="#fff7f7" />
-        
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 10, letterSpacing: '.05em', color: '#737373', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>Thông số Kỹ thuật & Đầu tư (Master Data)</div>
-          <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_MACHINE_FIELDS} pricingLocked={pricingLocked} accent="#d8d8d8" accentBg="#f5f5f3" />
+        <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_OP_FIELDS} pricingLocked={pricingLocked} />
+
+        <div className="mt-4">
+          <div className="mb-2 text-eyebrow font-semibold uppercase tracking-[.05em] text-faint">Thông số Kỹ thuật & Đầu tư (Master Data)</div>
+          <FieldGrid values={pipe} onChange={setPipe} fields={PIPE_MACHINE_FIELDS} pricingLocked={pricingLocked} />
         </div>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
+      <div className="mb-5">
         <SectionHeader
           title="B. Phụ Kiện — Máy ép phun"
-          color="#2563eb"
           right={
-            <div style={{ fontSize: 10, color: '#737373', textAlign: 'right' }}>
-              Tổng giá trị khuôn: <strong style={{ color: '#1a1a1a' }}>{fmtVnd(fitting.moldAssets.reduce((sum, m) => sum + m.costVnd, 0))} đ</strong> ({fitting.moldAssets.length} bộ)
-              <div style={{ marginTop: 4 }}>
-                <button 
-                  onClick={() => setShowMoldModal(true)}
-                  style={{ padding: '4px 8px', fontSize: 10, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}
-                >
+            <div className="text-right text-xs text-muted-foreground">
+              Tổng giá trị khuôn: <strong className="text-foreground tabular-nums">{fmtVnd(fitting.moldAssets.reduce((sum, m) => sum + m.costVnd, 0))} đ</strong> ({fitting.moldAssets.length} bộ)
+              <div className="mt-1">
+                <Button variant="outline" size="sm" onClick={() => setShowMoldModal(true)}>
                   Quản lý Danh Sách {fitting.moldAssets.length} Khuôn
-                </button>
+                </Button>
               </div>
             </div>
           }
         />
-        <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', marginBottom: 8 }}>
+        <div className="mb-2 grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] overflow-hidden rounded-md border bg-card">
           {fitting.machineTypes.map((m, i) => (
-            <div key={m.id} style={{ display: 'contents' }}>
-              <div style={{ padding: '14px 16px', borderRight: '1px solid #f2f2f2', borderBottom: '1px solid #f2f2f2' }}>
-                <div style={{ fontSize: 9, color: '#737373', marginBottom: 5, display: 'flex', justifyContent: 'space-between' }}>
+            <div key={m.id} className="contents">
+              <div className="border-b border-r border-border p-4">
+                <div className="mb-1.5 flex justify-between text-eyebrow text-muted-foreground">
                   <span>Đơn giá máy ép loại {m.id}</span>
-                  <span style={{ fontSize: 11, opacity: 0.7 }}>🔒</span>
+                  <span className="opacity-70">🔒</span>
                 </div>
-                <input
+                <Input
                   type="number"
                   value={m.priceVnd}
                   disabled={pricingLocked}
                   onChange={(e) => setMachineType(i, 'priceVnd', parseFloat(e.target.value) || 0)}
-                  style={{ width: '100%', padding: '5px 8px', borderRadius: 2, fontSize: 13, fontWeight: 700, textAlign: 'right', outline: 'none', border: `1px solid ${pricingLocked ? '#e5e5e5' : '#93c5fd'}`, background: pricingLocked ? '#f9f9f9' : '#eff6ff', opacity: pricingLocked ? 0.65 : 1, cursor: pricingLocked ? 'not-allowed' : 'auto' }}
+                  className="h-8 px-2 text-right text-sm font-semibold tabular-nums"
                 />
-                <div style={{ fontSize: 9, color: '#b3b3b3', marginTop: 3, textAlign: 'right' }}>đ/máy</div>
+                <div className="mt-1 text-right text-eyebrow text-faint">đ/máy</div>
               </div>
-              <div style={{ padding: '14px 16px', borderRight: '1px solid #f2f2f2', borderBottom: '1px solid #f2f2f2' }}>
-                <div style={{ fontSize: 9, color: '#737373', marginBottom: 5, display: 'flex', justifyContent: 'space-between' }}>
+              <div className="border-b border-r border-border p-4">
+                <div className="mb-1.5 flex justify-between text-eyebrow text-muted-foreground">
                   <span>Số máy loại {m.id}</span>
-                  <span style={{ fontSize: 11, opacity: 0.7 }}>🔒</span>
+                  <span className="opacity-70">🔒</span>
                 </div>
-                <input
+                <Input
                   type="number"
                   value={m.count}
                   disabled={pricingLocked}
                   onChange={(e) => setMachineType(i, 'count', parseFloat(e.target.value) || 0)}
-                  style={{ width: '100%', padding: '5px 8px', borderRadius: 2, fontSize: 13, fontWeight: 700, textAlign: 'right', outline: 'none', border: `1px solid ${pricingLocked ? '#e5e5e5' : '#93c5fd'}`, background: pricingLocked ? '#f9f9f9' : '#eff6ff', opacity: pricingLocked ? 0.65 : 1, cursor: pricingLocked ? 'not-allowed' : 'auto' }}
+                  className="h-8 px-2 text-right text-sm font-semibold tabular-nums"
                 />
-                <div style={{ fontSize: 9, color: '#b3b3b3', marginTop: 3, textAlign: 'right' }}>máy</div>
+                <div className="mt-1 text-right text-eyebrow text-faint">máy</div>
               </div>
             </div>
           ))}
         </div>
-        <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_OP_FIELDS} pricingLocked={pricingLocked} accent="#2563eb" accentBg="#eff6ff" />
+        <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_OP_FIELDS} pricingLocked={pricingLocked} />
 
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 10, letterSpacing: '.05em', color: '#737373', marginBottom: 8, textTransform: 'uppercase', fontWeight: 600 }}>Thông số Kỹ thuật & Đầu tư (Master Data)</div>
-          <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_MACHINE_FIELDS} pricingLocked={pricingLocked} accent="#d8d8d8" accentBg="#f5f5f3" />
+        <div className="mt-4">
+          <div className="mb-2 text-eyebrow font-semibold uppercase tracking-[.05em] text-faint">Thông số Kỹ thuật & Đầu tư (Master Data)</div>
+          <FieldGrid values={fitting} onChange={setFitting} fields={FITTING_MACHINE_FIELDS} pricingLocked={pricingLocked} />
         </div>
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        <SectionHeader title="C. Chi Phí Chung & Ngoài Sản Xuất" color="#737373" right={<span style={{ fontSize: 10, color: '#737373' }}>Toàn bộ khối này chỉ Admin ghi (cost-pool.md)</span>} />
-        <FieldGrid values={costPoolFlat} onChange={setCostPoolFlat} fields={COST_POOL_LOCKED_FIELDS} pricingLocked={pricingLocked} accent="#d8d8d8" accentBg="#f5f5f3" />
+      <div className="mb-5">
+        <SectionHeader title="C. Chi Phí Chung & Ngoài Sản Xuất" right={<span className="text-eyebrow text-muted-foreground">Toàn bộ khối này chỉ Admin ghi (cost-pool.md)</span>} />
+        <FieldGrid values={costPoolFlat} onChange={setCostPoolFlat} fields={COST_POOL_LOCKED_FIELDS} pricingLocked={pricingLocked} />
       </div>
 
       <div>
-        <SectionHeader title="D. Tỷ Giá & Chính Sách Markup" color="#16A34A" right={<span style={{ fontSize: 10, color: '#737373' }}>Mở cho Định Giá — biến chiến lược T2/T3</span>} />
-        <FieldGrid values={policyFlat} onChange={setPolicy} fields={POLICY_FIELDS} pricingLocked={false} accent="#16A34A" accentBg="#f0fdf4" />
+        <SectionHeader title="D. Tỷ Giá & Chính Sách Markup" right={<span className="text-eyebrow text-muted-foreground">Mở cho Định Giá — biến chiến lược T2/T3</span>} />
+        <FieldGrid values={policyFlat} onChange={setPolicy} fields={POLICY_FIELDS} pricingLocked={false} />
       </div>
 
       {showMoldModal && (
-        <MoldAssetModal 
+        <MoldAssetModal
           initialMolds={fitting.moldAssets}
           canEdit={!pricingLocked}
           onClose={() => setShowMoldModal(false)}

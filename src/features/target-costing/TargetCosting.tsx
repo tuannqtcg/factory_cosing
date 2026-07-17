@@ -5,48 +5,32 @@
 // Callable `computeTargetCosting` (M12.4c, ADR-013) chạy `solve()`/
 // `solveTargetProfit()` trên `calculateScenario()` thật; client KHÔNG lắp lại
 // công thức engine (đúng ranh giới đã giữ ở Plan/PriceList).
+// ADR-033 — TRÌNH BÀY: Tailwind + shadcn/ui (Card/Input/Button/Badge/Segmented),
+// KHÔNG inline-style hardcode. Logic/props/interface/exports giữ NGUYÊN; màu CHỈ
+// dành cho DỮ LIỆU/trạng thái (khả thi/không khả thi), chrome = đen–trắng–xám.
 import { useMemo, useState } from 'react';
 import { fmtVnd, fmtUsd, fmtPct } from '../../lib/format.js';
 import type { AppRole } from '../../lib/firebase.js';
 import type { ScenarioInput, ScenarioOutput, TargetProfitResult, TargetPriceResult } from '../../schemas/scenario.js';
 import { referenceMaterialOf } from '../../engine/scenario.js';
 import { useTargetCosting } from './useTargetCosting.js';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Segmented } from '@/components/ui/segmented';
+import { cn } from '@/lib/utils';
 
 type Line = 'pipe' | 'fitting';
 
 function SectionHeader({ title, note }: { title: string; note?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 11 }}>
-      <div style={{ width: 3, height: 14, background: '#a8003b', borderRadius: 1, flexShrink: 0 }} />
-      <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color: '#a8003b' }}>{title}</div>
-      {note && <div style={{ fontSize: 9, color: '#737373', marginLeft: 4 }}>{note}</div>}
+    <div className="mb-3 flex items-center gap-2">
+      <div className="h-3.5 w-[3px] shrink-0 rounded-sm bg-foreground" />
+      <div className="text-eyebrow font-semibold uppercase tracking-[.1em] text-foreground">{title}</div>
+      {note && <div className="ml-1 text-eyebrow text-muted-foreground">{note}</div>}
     </div>
   );
 }
-
-const segBtn = (active: boolean): React.CSSProperties => ({
-  flex: 1,
-  minWidth: 70,
-  padding: '7px 8px',
-  border: `1px solid ${active ? '#a8003b' : '#d8d8d8'}`,
-  background: active ? '#a8003b' : '#fff',
-  borderRadius: 2,
-  fontSize: 10,
-  fontWeight: 600,
-  color: active ? '#fff' : '#555',
-  cursor: 'pointer',
-});
-
-const pillBtn = (active: boolean): React.CSSProperties => ({
-  padding: '4px 12px',
-  borderRadius: 12,
-  border: `1px solid ${active ? '#a8003b' : '#d8d8d8'}`,
-  background: active ? '#a8003b' : '#fff',
-  fontSize: 10,
-  fontWeight: 600,
-  color: active ? '#fff' : '#555',
-  cursor: 'pointer',
-});
 
 // ── Allowlist biến dò T3 hiển thị (ADR-013 mục 3) — path build khớp
 //    TARGET_PRICE_FREE_VARS trong src/engine/target-costing.ts ─────────────
@@ -126,7 +110,7 @@ export default function TargetCosting({
   const t3AvailableFreeVars = FREE_VAR_DEFS.filter((f) => !f.lineFilter || f.lineFilter === t3Line);
 
   if (!scenario || !internal) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
+    return <div className="px-9 py-8 text-xs text-muted-foreground">Đang tải kịch bản + kết quả tính…</div>;
   }
 
   const handleT2Submit = async () => {
@@ -189,21 +173,23 @@ export default function TargetCosting({
   const t3SkuLabel = (s: (typeof t3Skus)[number]) =>
     t3Line === 'pipe' ? s.productKey.dn! : `${s.productKey.productName} ${s.productKey.sizeLabel}`;
 
+  const selectCls =
+    'h-9 w-full rounded-md border border-input bg-card px-3 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
+  const fieldLabelCls = 'mb-1.5 block text-eyebrow font-semibold uppercase tracking-[.06em] text-faint';
+
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>
-          Hoạch Định Chiến Lược · Tầng Top-Down
-        </div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Định Giá Ngược — Target Costing</h1>
-        <div style={{ fontSize: 11, color: '#737373', marginTop: 4, maxWidth: 720, lineHeight: 1.5 }}>
+    <div className="px-9 py-8">
+      <div className="mb-2">
+        <div className="text-eyebrow uppercase tracking-[.14em] text-faint">Hoạch Định Chiến Lược · Tầng Top-Down</div>
+        <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-foreground">Định Giá Ngược — Target Costing</h1>
+        <p className="mt-1 max-w-[720px] text-xs leading-relaxed text-muted-foreground">
           Nhập MỤC TIÊU (lợi nhuận kỳ vọng hoặc giá bán bị ép từ thị trường) → hệ thống giải ngược biến vận hành cần đạt
           bằng inverse solver (ADR-005) chạy XUÔI trên engine thật — mọi nghiệm đều được xác nhận lại bằng forward-verify.
-        </div>
+        </p>
       </div>
 
       {lastDoc && (
-        <div style={{ marginTop: 14, marginBottom: 4, padding: '8px 12px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 2, fontSize: 10, color: '#1d4ed8' }}>
+        <div className="mb-1 mt-3.5 rounded-md border bg-muted px-3 py-2 text-eyebrow text-muted-foreground">
           Lần chạy gần nhất: {lastDoc.kind === 'targetProfit' ? 'T2 · Lợi nhuận mục tiêu' : 'T3 · Giá bán mục tiêu'} —{' '}
           {lastDoc.kind === 'targetProfit'
             ? `dòng ${lastDoc.request.productLine === 'pipe' ? 'Ống' : 'Phụ kiện'}, mục tiêu ${fmtVnd(lastDoc.request.targetProfitVnd)} đ`
@@ -213,111 +199,103 @@ export default function TargetCosting({
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 0, margin: '18px 0 18px', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', width: 'fit-content', background: '#fff' }}>
-        {(
-          [
-            ['t2', 'T2 · Lợi Nhuận Mục Tiêu'],
-            ['t3', 'T3 · Giá Bán Mục Tiêu'],
-          ] as const
-        ).map(([id, label], i) => (
-          <button
-            key={id}
-            onClick={() => setMode(id)}
-            style={{
-              border: 'none',
-              borderRight: i === 0 ? '1px solid #d8d8d8' : 'none',
-              background: mode === id ? '#a8003b' : 'transparent',
-              color: mode === id ? '#fff' : '#737373',
-              padding: '11px 22px',
-              fontSize: 11,
-              fontWeight: 700,
-              cursor: 'pointer',
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        className="my-4"
+        options={[
+          { id: 't2', label: 'T2 · Lợi Nhuận Mục Tiêu' },
+          { id: 't3', label: 'T3 · Giá Bán Mục Tiêu' },
+        ]}
+        value={mode}
+        onChange={(v) => setMode(v)}
+      />
 
       {mode === 't2' && (
         <div>
           <SectionHeader title="Lợi nhuận mục tiêu → sản lượng cần đạt" note="Dạng đóng — CVP (M8), không cần bisection" />
-          <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '280px 1fr' }}>
-            <div style={{ padding: 20, borderRight: '1px solid #f0f0f0', background: '#f5f5f3' }}>
-              <label style={{ display: 'block', marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Dòng sản phẩm</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button style={segBtn(t2Line === 'pipe')} onClick={() => { setT2Line('pipe'); setT2MaterialId(null); }}>Ống CPVC</button>
-                  <button style={segBtn(t2Line === 'fitting')} onClick={() => { setT2Line('fitting'); setT2MaterialId(null); }}>Phụ Kiện</button>
-                </div>
+          <Card className="grid grid-cols-[280px_1fr] overflow-hidden p-0">
+            <div className="border-r bg-muted p-5">
+              <label className="mb-3.5 block">
+                <span className={fieldLabelCls}>Dòng sản phẩm</span>
+                <Segmented
+                  options={[
+                    { id: 'pipe', label: 'Ống CPVC' },
+                    { id: 'fitting', label: 'Phụ Kiện' },
+                  ]}
+                  value={t2Line}
+                  onChange={(v) => { setT2Line(v); setT2MaterialId(null); }}
+                />
               </label>
               {t2Materials.length > 1 && (
-                <label style={{ display: 'block', marginBottom: 14 }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Nguyên liệu (bỏ trống = tham chiếu)</span>
-                  <div style={{ display: 'flex', gap: 6 }}>
+                <label className="mb-3.5 block">
+                  <span className={fieldLabelCls}>Nguyên liệu (bỏ trống = tham chiếu)</span>
+                  <div className="flex flex-wrap gap-1.5">
                     {t2Materials.map((m) => (
-                      <button key={m.id} style={pillBtn(t2MaterialId === m.id)} onClick={() => setT2MaterialId(m.id)}>{m.name}</button>
+                      <Button
+                        key={m.id}
+                        variant={t2MaterialId === m.id ? 'default' : 'outline'}
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => setT2MaterialId(m.id)}
+                      >
+                        {m.name}
+                      </Button>
                     ))}
                   </div>
                 </label>
               )}
-              <label style={{ display: 'block', marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Lợi nhuận mục tiêu (đ/năm)</span>
-                <input
+              <label className="mb-3.5 block">
+                <span className={fieldLabelCls}>Lợi nhuận mục tiêu (đ/năm)</span>
+                <Input
                   type="number"
                   value={t2ProfitVnd}
                   step={100000000}
                   onChange={(e) => setT2ProfitVnd(parseFloat(e.target.value) || 0)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, outline: 'none' }}
+                  className="text-right font-semibold tabular-nums"
                 />
-                <div style={{ fontSize: 9, color: '#737373', marginTop: 4 }}>0 = tìm đúng sản lượng hòa vốn.</div>
+                <div className="mt-1 text-eyebrow text-muted-foreground">0 = tìm đúng sản lượng hòa vốn.</div>
               </label>
-              <button
+              <Button
                 onClick={() => void handleT2Submit()}
                 disabled={t2Loading}
-                style={{ width: '100%', padding: '10px 14px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, fontSize: 11, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}
+                className="w-full uppercase tracking-[.04em]"
               >
                 {t2Loading ? 'Đang tính…' : 'Tính'}
-              </button>
-              {t2Error && <div style={{ marginTop: 10, fontSize: 10, color: '#DC2626' }}>{t2Error}</div>}
+              </Button>
+              {t2Error && <div className="mt-2.5 text-eyebrow text-destructive">{t2Error}</div>}
             </div>
             <div>
               {!t2Result && !t2Loading && (
-                <div style={{ padding: '60px 24px', textAlign: 'center', color: '#b3b3b3', fontSize: 11 }}>Nhập lợi nhuận mục tiêu rồi bấm "Tính".</div>
+                <div className="px-6 py-16 text-center text-xs text-faint">Nhập lợi nhuận mục tiêu rồi bấm "Tính".</div>
               )}
-              {t2Loading && <div style={{ padding: '60px 24px', textAlign: 'center', color: '#737373', fontSize: 11 }}>Đang tính CVP…</div>}
+              {t2Loading && <div className="px-6 py-16 text-center text-xs text-muted-foreground">Đang tính CVP…</div>}
               {t2Result && !t2Loading && (
                 <>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)' }}>
-                    <div style={{ padding: 16, borderRight: '1px solid #f5f5f5' }}>
-                      <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Sản lượng cần đạt</div>
-                      <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(t2Result.requiredQtyKgOrMachineHours)}</div>
-                      <div style={{ fontSize: 9, color: '#737373', marginTop: 4 }}>{t2UnitLabel} · nguyên liệu {t2ResolvedMaterialName}</div>
+                  <div className="grid grid-cols-3">
+                    <div className="border-r p-4">
+                      <div className="mb-1.5 text-eyebrow uppercase tracking-[.08em] text-faint">Sản lượng cần đạt</div>
+                      <div className="text-xl font-bold tabular-nums text-foreground">{fmtVnd(t2Result.requiredQtyKgOrMachineHours)}</div>
+                      <div className="mt-1 text-eyebrow text-muted-foreground">{t2UnitLabel} · nguyên liệu {t2ResolvedMaterialName}</div>
                     </div>
-                    <div style={{ padding: 16, borderRight: '1px solid #f5f5f5' }}>
-                      <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Số ca cần</div>
-                      <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                    <div className="border-r p-4">
+                      <div className="mb-1.5 text-eyebrow uppercase tracking-[.08em] text-faint">Số ca cần</div>
+                      <div className="text-xl font-bold tabular-nums text-foreground">
                         {t2Result.requiredShifts.toLocaleString('vi-VN', { maximumFractionDigits: 2 })} ca
                       </div>
-                      <div style={{ fontSize: 9, color: '#737373', marginTop: 4 }}>CS bình thường {fmtVnd(t2Capacity)} {t2UnitLabel} tại 3 ca</div>
+                      <div className="mt-1 text-eyebrow text-muted-foreground">CS bình thường {fmtVnd(t2Capacity)} {t2UnitLabel} tại 3 ca</div>
                     </div>
-                    <div style={{ padding: 16 }}>
-                      <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Q hòa vốn (lợi nhuận=0)</div>
-                      <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{t2Cvp ? fmtVnd(t2Cvp.breakEvenKgYear) : '—'}</div>
-                      <div style={{ fontSize: 9, color: '#737373', marginTop: 4 }}>kg/năm · số vàng CVP (M8)</div>
+                    <div className="p-4">
+                      <div className="mb-1.5 text-eyebrow uppercase tracking-[.08em] text-faint">Q hòa vốn (lợi nhuận=0)</div>
+                      <div className="text-xl font-bold tabular-nums text-foreground">{t2Cvp ? fmtVnd(t2Cvp.breakEvenKgYear) : '—'}</div>
+                      <div className="mt-1 text-eyebrow text-muted-foreground">kg/năm · số vàng CVP (M8)</div>
                     </div>
                   </div>
                   <div
-                    style={{
-                      margin: 16,
-                      padding: '10px 14px',
-                      borderRadius: 2,
-                      border: `1px solid ${t2Result.feasibleWithinNormalCapacity ? '#16A34A' : '#DC2626'}`,
-                      background: t2Result.feasibleWithinNormalCapacity ? '#f0fdf4' : '#fef2f2',
-                      color: t2Result.feasibleWithinNormalCapacity ? '#16A34A' : '#DC2626',
-                      fontSize: 11,
-                      fontWeight: 700,
-                    }}
+                    className={cn(
+                      'm-4 rounded-md border px-3.5 py-2.5 text-xs font-bold',
+                      t2Result.feasibleWithinNormalCapacity
+                        ? 'border-success/25 bg-success-tint text-success'
+                        : 'border-destructive/25 bg-destructive-tint text-destructive',
+                    )}
                   >
                     {t2Result.feasibleWithinNormalCapacity
                       ? 'KHẢ THI trong công suất bình thường'
@@ -326,24 +304,28 @@ export default function TargetCosting({
                 </>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       )}
 
       {mode === 't3' && (
         <div>
           <SectionHeader title="Giá bán mục tiêu → biến vận hành cần đạt" note="Bisection trên forward function — nghiệm luôn forward-verify" />
-          <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflow: 'hidden', display: 'grid', gridTemplateColumns: '280px 1fr' }}>
-            <div style={{ padding: 20, borderRight: '1px solid #f0f0f0', background: '#f5f5f3' }}>
-              <label style={{ display: 'block', marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Dòng sản phẩm</span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button style={segBtn(t3Line === 'pipe')} onClick={() => { setT3Line('pipe'); setT3SkuKey(null); setT3FreeVar('compound'); }}>Ống CPVC</button>
-                  <button style={segBtn(t3Line === 'fitting')} onClick={() => { setT3Line('fitting'); setT3SkuKey(null); setT3FreeVar('compound'); }}>Phụ Kiện</button>
-                </div>
+          <Card className="grid grid-cols-[280px_1fr] overflow-hidden p-0">
+            <div className="border-r bg-muted p-5">
+              <label className="mb-3.5 block">
+                <span className={fieldLabelCls}>Dòng sản phẩm</span>
+                <Segmented
+                  options={[
+                    { id: 'pipe', label: 'Ống CPVC' },
+                    { id: 'fitting', label: 'Phụ Kiện' },
+                  ]}
+                  value={t3Line}
+                  onChange={(v) => { setT3Line(v); setT3SkuKey(null); setT3FreeVar('compound'); }}
+                />
               </label>
-              <label style={{ display: 'block', marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Chọn SKU</span>
+              <label className="mb-3.5 block">
+                <span className={fieldLabelCls}>Chọn SKU</span>
                 <select
                   value={t3SkuKey ?? '0'}
                   onChange={(e) => {
@@ -351,7 +333,7 @@ export default function TargetCosting({
                     const sku = t3Skus[parseInt(e.target.value, 10)];
                     if (sku) setT3TargetVnd(sku.chain.listPriceBeforeVat);
                   }}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, outline: 'none', background: '#fff' }}
+                  className={selectCls}
                 >
                   {t3Skus.map((s, i) => (
                     <option key={`${t3SkuLabel(s)}|${s.productKey.materialId}`} value={i}>
@@ -361,67 +343,67 @@ export default function TargetCosting({
                   ))}
                 </select>
               </label>
-              <label style={{ display: 'block', marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Biến dò (allowlist ADR-013)</span>
+              <label className="mb-3.5 block">
+                <span className={fieldLabelCls}>Biến dò (allowlist ADR-013)</span>
                 <select
                   value={t3FreeVar}
                   onChange={(e) => setT3FreeVar(e.target.value as FreeVarKind)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, outline: 'none', background: '#fff' }}
+                  className={selectCls}
                 >
                   {t3AvailableFreeVars.map((f) => (
                     <option key={f.id} value={f.id}>{f.label}</option>
                   ))}
                 </select>
               </label>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '9px 10px', background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, marginBottom: 14 }}>
-                <input type="checkbox" checked={t3Penetration} onChange={(e) => setT3Penetration(e.target.checked)} style={{ marginTop: 2 }} />
+              <label className="mb-3.5 flex items-start gap-2 rounded-md border border-input bg-card px-2.5 py-2.5">
+                <input type="checkbox" checked={t3Penetration} onChange={(e) => setT3Penetration(e.target.checked)} className="mt-0.5" />
                 <div>
-                  <div style={{ fontSize: 10.5, fontWeight: 600 }}>Giá bị ép từ thị trường / đấu thầu</div>
-                  <div style={{ fontSize: 9, color: '#737373', marginTop: 2, lineHeight: 1.4 }}>Chỉ khác nguồn gốc mục tiêu — dùng chung 1 cơ chế giải ngược (ADR-013 mục 5).</div>
+                  <div className="text-xs font-semibold text-foreground">Giá bị ép từ thị trường / đấu thầu</div>
+                  <div className="mt-0.5 text-eyebrow leading-relaxed text-muted-foreground">Chỉ khác nguồn gốc mục tiêu — dùng chung 1 cơ chế giải ngược (ADR-013 mục 5).</div>
                 </div>
               </label>
-              <label style={{ display: 'block', marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', display: 'block', marginBottom: 6 }}>Giá niêm yết mục tiêu (đ, trước VAT)</span>
-                <input
+              <label className="mb-3.5 block">
+                <span className={fieldLabelCls}>Giá niêm yết mục tiêu (đ, trước VAT)</span>
+                <Input
                   type="number"
                   value={t3TargetVnd}
                   step={1000}
                   onChange={(e) => setT3TargetVnd(parseFloat(e.target.value) || 0)}
-                  style={{ width: '100%', padding: '8px 10px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: 600, outline: 'none' }}
+                  className="text-right font-semibold tabular-nums"
                 />
               </label>
-              <button
+              <Button
                 onClick={() => void handleT3Submit()}
                 disabled={t3Loading || !t3SelectedSku}
-                style={{ width: '100%', padding: '10px 14px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, fontSize: 11, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}
+                className="w-full uppercase tracking-[.04em]"
               >
                 {t3Loading ? 'Đang giải ngược…' : 'Giải ngược'}
-              </button>
-              {t3Error && <div style={{ marginTop: 10, fontSize: 10, color: '#DC2626' }}>{t3Error}</div>}
+              </Button>
+              {t3Error && <div className="mt-2.5 text-eyebrow text-destructive">{t3Error}</div>}
             </div>
             <div>
               {!t3Result && !t3Loading && (
-                <div style={{ padding: '60px 24px', textAlign: 'center', color: '#b3b3b3', fontSize: 11 }}>Chọn SKU + biến dò rồi bấm "Giải ngược".</div>
+                <div className="px-6 py-16 text-center text-xs text-faint">Chọn SKU + biến dò rồi bấm "Giải ngược".</div>
               )}
-              {t3Loading && <div style={{ padding: '60px 24px', textAlign: 'center', color: '#737373', fontSize: 11 }}>Đang giải ngược (bisection trên engine thật)…</div>}
+              {t3Loading && <div className="px-6 py-16 text-center text-xs text-muted-foreground">Đang giải ngược (bisection trên engine thật)…</div>}
               {t3Result && !t3Loading && t3SelectedSku && (
                 t3Result.feasible ? (
                   <>
-                    <div style={{ margin: 16, padding: '10px 14px', borderRadius: 2, border: '1px solid #16A34A', background: '#f0fdf4', color: '#16A34A', fontSize: 11, fontWeight: 700 }}>
+                    <div className="m-4 rounded-md border border-success/25 bg-success-tint px-3.5 py-2.5 text-xs font-bold text-success">
                       KHẢ THI — nghiệm hội tụ trong dải cho phép
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)' }}>
-                      <div style={{ padding: '0 16px 16px', borderRight: '1px solid #f5f5f5' }}>
-                        <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>{FREE_VAR_DEFS.find((f) => f.id === t3FreeVar)?.label}</div>
-                        <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtFreeVarValue(t3FreeVar, t3Result.value)}</div>
+                    <div className="grid grid-cols-2">
+                      <div className="border-r px-4 pb-4">
+                        <div className="mb-1.5 text-eyebrow uppercase tracking-[.08em] text-faint">{FREE_VAR_DEFS.find((f) => f.id === t3FreeVar)?.label}</div>
+                        <div className="text-xl font-bold tabular-nums text-foreground">{fmtFreeVarValue(t3FreeVar, t3Result.value)}</div>
                       </div>
-                      <div style={{ padding: '0 16px 16px' }}>
-                        <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: 6 }}>Giá niêm yết mục tiêu</div>
-                        <div style={{ fontSize: 21, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(t3TargetVnd)} đ</div>
+                      <div className="px-4 pb-4">
+                        <div className="mb-1.5 text-eyebrow uppercase tracking-[.08em] text-faint">Giá niêm yết mục tiêu</div>
+                        <div className="text-xl font-bold tabular-nums text-foreground">{fmtVnd(t3TargetVnd)} đ</div>
                       </div>
                     </div>
-                    <div style={{ margin: '0 16px 16px', border: '1px dashed #d8d8d8', borderRadius: 2, padding: 14, background: '#fafaf8' }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: '#737373', marginBottom: 10 }}>
+                    <div className="mx-4 mb-4 rounded-md border border-dashed border-input bg-muted p-3.5">
+                      <div className="mb-2.5 text-eyebrow font-semibold uppercase tracking-[.08em] text-faint">
                         ✓ Forward-verify — chạy XUÔI lại calculateScenario() với nghiệm vừa tìm
                       </div>
                       {(() => {
@@ -431,20 +413,20 @@ export default function TargetCosting({
                             (t3Line === 'pipe' ? s.productKey.dn === t3SelectedSku.productKey.dn : s.productKey.productName === t3SelectedSku.productKey.productName && s.productKey.sizeLabel === t3SelectedSku.productKey.sizeLabel),
                         );
                         return (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 10 }}>
-                            <div style={{ padding: '6px 10px', border: '1px solid #d8d8d8', borderRadius: 2, background: '#fff' }}>
-                              <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase' }}>Biến đã set</div>
-                              <div style={{ fontWeight: 700, marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{fmtFreeVarValue(t3FreeVar, t3Result.value)}</div>
+                          <div className="flex flex-wrap items-center gap-1.5 text-eyebrow">
+                            <div className="rounded-md border border-input bg-card px-2.5 py-1.5">
+                              <div className="text-eyebrow uppercase text-faint">Biến đã set</div>
+                              <div className="mt-px font-bold tabular-nums text-foreground">{fmtFreeVarValue(t3FreeVar, t3Result.value)}</div>
                             </div>
-                            <span style={{ color: '#b3b3b3' }}>→</span>
-                            <div style={{ padding: '6px 10px', border: '1px solid #16A34A', background: '#f0fdf4', borderRadius: 2 }}>
-                              <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase' }}>listPriceBeforeVat ({t3SkuLabel(t3SelectedSku)})</div>
-                              <div style={{ fontWeight: 700, marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{verifySku ? fmtVnd(verifySku.chain.listPriceBeforeVat) : '—'} đ</div>
+                            <span className="text-faint">→</span>
+                            <div className="rounded-md border border-success/25 bg-success-tint px-2.5 py-1.5">
+                              <div className="text-eyebrow uppercase text-faint">listPriceBeforeVat ({t3SkuLabel(t3SelectedSku)})</div>
+                              <div className="mt-px font-bold tabular-nums text-success">{verifySku ? fmtVnd(verifySku.chain.listPriceBeforeVat) : '—'} đ</div>
                             </div>
-                            <span style={{ color: '#b3b3b3' }}>=?</span>
-                            <div style={{ padding: '6px 10px', border: '1px solid #d8d8d8', borderRadius: 2, background: '#fff' }}>
-                              <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase' }}>Mục tiêu</div>
-                              <div style={{ fontWeight: 700, marginTop: 1, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(t3TargetVnd)} đ</div>
+                            <span className="text-faint">=?</span>
+                            <div className="rounded-md border border-input bg-card px-2.5 py-1.5">
+                              <div className="text-eyebrow uppercase text-faint">Mục tiêu</div>
+                              <div className="mt-px font-bold tabular-nums text-foreground">{fmtVnd(t3TargetVnd)} đ</div>
                             </div>
                           </div>
                         );
@@ -453,10 +435,10 @@ export default function TargetCosting({
                   </>
                 ) : (
                   <>
-                    <div style={{ margin: 16, padding: '10px 14px', borderRadius: 2, border: '1px solid #DC2626', background: '#fef2f2', color: '#DC2626', fontSize: 11, fontWeight: 700 }}>
+                    <div className="m-4 rounded-md border border-destructive/25 bg-destructive-tint px-3.5 py-2.5 text-xs font-bold text-destructive">
                       KHÔNG KHẢ THI — mục tiêu ngoài dải đạt được của biến này
                     </div>
-                    <div style={{ margin: 16, padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 10.5, color: '#7f1d1d' }}>
+                    <div className="m-4 rounded-md border border-destructive/25 bg-destructive-tint px-3.5 py-2.5 text-xs text-destructive">
                       <b>Khoảng đạt được:</b> {fmtVnd(Math.min(...t3Result.achievableRange))} đ → {fmtVnd(Math.max(...t3Result.achievableRange))} đ.{' '}
                       {t3Result.reason}
                     </div>
@@ -464,10 +446,10 @@ export default function TargetCosting({
                 )
               )}
             </div>
-          </div>
-          <div style={{ marginTop: 12, fontSize: 9.5, color: '#737373', lineHeight: 1.5, padding: '8px 10px', background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2 }}>
-            Biến nguyên "số ca" (<code>shifts</code>) chưa vào allowlist v1 — hoãn tới khi có màn hình cần
-            <code> solveDiscrete()</code> (ADR-013 cuối mục).
+          </Card>
+          <div className="mt-3 rounded-md border bg-muted px-2.5 py-2 text-eyebrow leading-relaxed text-muted-foreground">
+            Biến nguyên "số ca" (<code className="rounded bg-background px-1 font-mono">shifts</code>) chưa vào allowlist v1 — hoãn tới khi có màn hình cần
+            <code className="rounded bg-background px-1 font-mono"> solveDiscrete()</code> (ADR-013 cuối mục).
           </div>
         </div>
       )}

@@ -12,21 +12,21 @@
   Tất cả tái dùng engine đóng băng, đồng bộ EBIT **giá-bán-cố-định** (nền `scenario-drivers.ts`).
 - **Định giá** (ADR-025): Bảng Giá neo giá **VF** + Bảng Giá **NPP** dẫn xuất + dải cảnh báo chốt giá.
 - **Design system** (ADR-033): phong cách **TỐI GIẢN ĐEN–TRẮNG** (màu chỉ cho biểu đồ +
-  ghi chú). Kênh trình bày MỚI = **Tailwind + shadcn/ui** (CSS variables ở `src/index.css`
-  là nguồn chân lý màu; component ở `src/components/ui/`) — KHÔNG inline-style hardcode nữa.
-  ⚠ Foundation shadcn XONG + **màn So Sánh Kịch Bản đã chuyển**; Độ Nhạy còn ở primitives cũ.
-  Các màn khác (~12) chờ chuyển. (Font: Inter qua Tailwind.)
+  ghi chú). Kênh trình bày = **Tailwind + shadcn/ui** (CSS variables ở `src/index.css` là
+  nguồn chân lý màu; component ở `src/components/ui/`) — KHÔNG inline-style hardcode.
+  ✅ **Đã chuyển TOÀN BỘ màn active** (12 màn + khung app/đăng nhập). Code chết đã gỡ khỏi
+  nav (Products/Inventory/ProductionReport/Plan — ADR-026) KHÔNG chuyển. (Font: Inter.)
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
-1. **Roll-out Tailwind + shadcn/ui đen–trắng** ra các màn còn lại (Dashboard, CEO Planner,
-   2 công cụ if–then — Quyết Định Nhận Đơn, Tối Ưu Product-mix, Bảng Giá VF/NPP, Lot-costing,
-   Pricing-analytics, Tham Số, Cấu Hình) + chuyển nốt màn Độ Nhạy từ primitives cũ sang shadcn.
-   Cách làm: dùng component `@/components/ui/*` + class Tailwind, KHÔNG inline-style hardcode;
-   màu lấy từ CSS variables ở `src/index.css` (sửa 1 chỗ đổi cả app). Thuần trình bày, KHÔNG
-   đụng logic. Gu user duyệt: đen/trắng/xám chủ đạo, màu chỉ cho biểu đồ/ghi chú/dữ liệu.
-   ✅ Foundation shadcn (tokens CSS vars, cn(), Card/Button/Badge/Input, alias `@`) + màn So
-   Sánh Kịch Bản đã chuyển. 🔜 Bổ sung ui component khi cần (ví dụ ToggleGroup cho Segmented ở
-   Độ Nhạy). Cân nhắc rút gọn `src/design/tokens.ts`+`primitives.tsx` khi hết màn dùng.
+1. ✅ **XONG — Roll-out Tailwind + shadcn/ui đen–trắng toàn bộ màn active.** Foundation
+   (CSS vars ở `src/index.css`, `cn()`, ui: Card/Button/Badge/Input/Segmented, alias `@`)
+   + 12 màn (Tổng Quan, Trợ Lý CEO, Độ Nhạy, So Sánh Kịch Bản, Nhận Đơn, Product-mix, Giá
+   Vốn Theo Lô, Bảng Giá VF/NPP, Phân Tích Định Giá, Target Costing, Tham Số, Cấu Hình +
+   modal khuôn) + khung app/đăng nhập. Verify: typecheck xanh, 370/370, build OK, render-smoke.
+   🔜 Việc phụ khi cần: (a) tách ui component chung còn thiếu (Table, Select, Tabs, Tooltip,
+   Slider — hiện dựng bằng HTML thường + Tailwind); (b) rút gọn `src/design/tokens.ts` +
+   `primitives.tsx` (chỉ còn tồn tại, không màn nào import nữa); (c) 4 màn code-chết
+   (Products/Inventory/ProductionReport/Plan) — chỉ chuyển nếu định đưa lại vào nav.
 2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
    luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
 3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`

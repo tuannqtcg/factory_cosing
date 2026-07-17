@@ -2,6 +2,8 @@
 // chạy số (engine ceo-planner client-side, KHÔNG chép công thức) → AI tư vấn
 // (callable adviseScenario, fallback mock cục bộ). Dựng theo prototype đã duyệt
 // Pha 1 (prototype/ceo-planner.html), số liệu THẬT từ scenario.
+// TRÌNH BÀY: Tailwind + shadcn/ui (Card/Input/Button) — ADR-033 TỐI GIẢN ĐEN–TRẮNG.
+// Logic/props/format giữ NGUYÊN; màu CHỈ cho DỮ LIỆU/trạng thái (sàn giá, lãi/lỗ).
 import { useMemo, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../../lib/firebase.js';
@@ -10,22 +12,36 @@ import type { ScenarioInput } from '../../schemas/scenario.js';
 import type { CeoPlannerRequest, CeoPlannerResult, CeoAdviceResult, MarginMode, CeoLineResult } from '../../schemas/ceo-planner.js';
 import { calculateCeoPlanner } from '../../engine/ceo-planner.js';
 import { generateCeoAdviceMock } from '../../engine/ceo-advice-mock.js';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e9) + ' tỷ đ';
 const fmt1 = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v);
+// Chấm màu thang giá 5 bậc = màu DỮ LIỆU (ranh sàn → mục tiêu), không trang trí UI.
 const TIER = [
-  { key: 'variableCostFloor', label: '1 · Sàn biến phí — RANH ĐỎ', color: '#DC2626' },
-  { key: 'cashBreakEven', label: '2 · Hòa vốn tiền mặt', color: '#ea7317' },
-  { key: 'fullCost', label: '3 · Giá thành đầy đủ (giá vốn)', color: '#ca9a04' },
-  { key: 'enterpriseBreakEven', label: '4 · Hòa vốn toàn doanh nghiệp', color: '#0e7490' },
-  { key: 'targetVf', label: '5 · Giá mục tiêu markup chuẩn VF', color: '#16A34A' },
+  { key: 'variableCostFloor', label: '1 · Sàn biến phí — RANH ĐỎ', dot: 'bg-destructive' },
+  { key: 'cashBreakEven', label: '2 · Hòa vốn tiền mặt', dot: 'bg-warning' },
+  { key: 'fullCost', label: '3 · Giá thành đầy đủ (giá vốn)', dot: 'bg-muted-foreground' },
+  { key: 'enterpriseBreakEven', label: '4 · Hòa vốn toàn doanh nghiệp', dot: 'bg-foreground' },
+  { key: 'targetVf', label: '5 · Giá mục tiêu markup chuẩn VF', dot: 'bg-success' },
 ] as const;
 
 function Seg<T extends string | number>({ options, value, onChange }: { options: { v: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
-    <div style={{ display: 'inline-flex', border: '1px solid #d8d8d8', borderRadius: 6, overflow: 'hidden' }}>
-      {options.map((o) => (
-        <button key={String(o.v)} onClick={() => onChange(o.v)} style={{ padding: '6px 12px', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: o.v === value ? '#1a1a1a' : '#fff', color: o.v === value ? '#fff' : '#555' }}>
+    <div className="inline-flex overflow-hidden rounded-md border border-input bg-card">
+      {options.map((o, i) => (
+        <button
+          key={String(o.v)}
+          type="button"
+          onClick={() => onChange(o.v)}
+          className={cn(
+            'px-3 py-1.5 text-xs font-semibold transition-colors',
+            i > 0 && 'border-l border-border',
+            o.v === value ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+          )}
+        >
           {o.label}
         </button>
       ))}
@@ -36,27 +52,27 @@ function Seg<T extends string | number>({ options, value, onChange }: { options:
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 4 }}>{label}</div>
+      <div className="mb-1 text-xs font-semibold text-foreground">{label}</div>
       {children}
-      {hint && <div style={{ fontSize: 9, color: '#737373', marginTop: 3 }}>{hint}</div>}
+      {hint && <div className="mt-0.5 text-[10px] text-faint">{hint}</div>}
     </div>
   );
 }
 
 function LadderRows({ line }: { line: CeoLineResult }) {
   const rows = [
-    ...TIER.map((t) => ({ label: t.label, v: line.ladder[t.key], color: t.color, you: false })),
-    { label: 'GIÁ CỦA BẠN', v: line.sellingPriceVndPerKg, color: '#1a1a1a', you: true },
+    ...TIER.map((t) => ({ label: t.label, v: line.ladder[t.key], dot: t.dot, you: false })),
+    { label: 'GIÁ CỦA BẠN', v: line.sellingPriceVndPerKg, dot: 'bg-primary-foreground', you: true },
   ].sort((a, b) => b.v - a.v);
   return (
-    <div style={{ marginTop: 8 }}>
+    <div className="mt-2">
       {rows.map((r, i) => (
-        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 8px', borderRadius: 3, background: r.you ? '#1a1a1a' : 'transparent', color: r.you ? '#fff' : '#1a1a1a', fontSize: 11, fontWeight: r.you ? 700 : 400 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: r.color, display: 'inline-block' }} />
+        <div key={i} className={cn('flex items-center justify-between rounded-sm px-2 py-1.5 text-[11px]', r.you ? 'bg-primary font-bold text-primary-foreground' : 'text-foreground')}>
+          <span className="flex items-center gap-1.5">
+            <span className={cn('inline-block h-2 w-2 rounded-full', r.dot)} />
             {r.label}
           </span>
-          <span style={{ fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(r.v)} đ/kg</span>
+          <span className="tabular-nums">{fmtVnd(r.v)} đ/kg</span>
         </div>
       ))}
     </div>
@@ -69,23 +85,23 @@ function LineCard({ line }: { line: CeoLineResult }) {
   const ok = line.sellingPriceVndPerKg >= t4;
   const below1 = line.sellingPriceVndPerKg < t1;
   return (
-    <div style={{ background: '#faf8f2', border: '1px solid #e5e0d0', borderRadius: 4, padding: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 700 }}>
-        {line.line === 'pipe' ? 'Ống CPVC' : 'Phụ kiện'} · <span style={{ color: '#a8003b' }}>{line.materialName}</span> — giá bán VF đề xuất
+    <Card className="bg-muted p-4">
+      <div className="text-[13px] font-bold text-foreground">
+        {line.line === 'pipe' ? 'Ống CPVC' : 'Phụ kiện'} · <span className="font-semibold">{line.materialName}</span> — giá bán VF đề xuất
       </div>
-      <div style={{ fontSize: 26, fontWeight: 700, fontVariantNumeric: 'tabular-nums', margin: '4px 0' }}>
-        {fmtVnd(line.sellingPriceVndPerKg)} <span style={{ fontSize: 13, color: '#737373' }}>đ/{line.line === 'pipe' ? 'kg' : 'kg (tham chiếu)'}</span>
+      <div className="my-1 text-[26px] font-bold tabular-nums text-foreground">
+        {fmtVnd(line.sellingPriceVndPerKg)} <span className="text-[13px] font-normal text-muted-foreground">đ/{line.line === 'pipe' ? 'kg' : 'kg (tham chiếu)'}</span>
       </div>
-      <div style={{ fontSize: 11, color: '#555' }}>
+      <div className="text-[11px] text-muted-foreground">
         Giá thành <b>{fmtVnd(line.fullCostVndPerKg)}</b> = nguyên liệu <b>{fmtVnd(line.materialCostVndPerKg)}</b> + gia công <b>{fmtVnd(line.processingCostVndPerKg)}</b> + bao bì <b>{fmtVnd(line.packagingCostVndPerKg)}</b> · lãi gộp <b>{fmt1(line.marginOnPricePct)}%</b>
         {line.machineHourCostVnd !== undefined ? ` · chi phí 1 giờ máy ép ${fmtVnd(line.machineHourCostVnd)} đ` : ''}
       </div>
-      <div style={{ marginTop: 8, padding: '6px 10px', borderRadius: 3, fontSize: 10, fontWeight: 600, background: below1 ? '#fef2f2' : ok ? '#f0fdf4' : '#fffbeb', color: below1 ? '#DC2626' : ok ? '#16A34A' : '#b45309' }}>
+      <div className={cn('mt-2 rounded-sm px-2.5 py-1.5 text-[10px] font-semibold', below1 ? 'bg-destructive-tint text-destructive' : ok ? 'bg-success-tint text-success' : 'bg-warning-tint text-warning')}>
         {below1 ? '⛔ Dưới sàn biến phí — lỗ tiền tươi từng kg' : ok ? '✅ Trên hòa vốn toàn doanh nghiệp — vùng an toàn đàm phán' : '⚠️ Chưa gánh hết chi phí toàn doanh nghiệp'}
       </div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: '#737373', textTransform: 'uppercase', marginTop: 12 }}>Sàn đàm phán (thang giá 5 bậc)</div>
+      <div className="mt-3 text-eyebrow font-semibold uppercase tracking-[.06em] text-faint">Sàn đàm phán (thang giá 5 bậc)</div>
       <LadderRows line={line} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 12 }}>
+      <div className="mt-3 grid grid-cols-4 gap-2">
         {[
           ['Sản lượng cả năm', `${fmtVnd(line.annualProductionKg)} kg`],
           ['Giờ máy cả năm', `${fmtVnd(line.annualMachineHours)} giờ`],
@@ -93,12 +109,12 @@ function LineCard({ line }: { line: CeoLineResult }) {
           ['Lãi gộp cả năm', fmtTy(line.annualGrossProfitVnd)],
         ].map(([k, v]) => (
           <div key={k}>
-            <div style={{ fontSize: 9, color: '#737373' }}>{k}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+            <div className="text-[9px] text-faint">{k}</div>
+            <div className="text-xs font-bold tabular-nums text-foreground">{v}</div>
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -174,21 +190,19 @@ export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput
     }
   };
 
-  if (!scenario) return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản…</div>;
-  if (!pipeMat || !fitMat || !defaults) return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Scenario chưa đủ nguyên liệu 2 dòng.</div>;
-
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
+  if (!scenario) return <div className="px-9 py-8 text-xs text-muted-foreground">Đang tải kịch bản…</div>;
+  if (!pipeMat || !fitMat || !defaults) return <div className="px-9 py-8 text-xs text-muted-foreground">Scenario chưa đủ nguyên liệu 2 dòng.</div>;
 
   return (
-    <div style={{ padding: '32px 36px', maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Trợ Lý CEO</div>
-      <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Giá Bán & Hiệu Quả Cả Năm</h1>
-      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>Nhập giá nguyên liệu + markup mong muốn → giá bán, sàn đàm phán, hiệu quả khi chạy tối đa công suất.</p>
+    <div className="mx-auto max-w-[1200px] px-9 py-8">
+      <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Trợ Lý CEO</div>
+      <h1 className="mb-0.5 mt-1 text-2xl font-bold tracking-tight text-foreground">Giá Bán & Hiệu Quả Cả Năm</h1>
+      <p className="text-xs text-muted-foreground">Nhập giá nguyên liệu + markup mong muốn → giá bán, sàn đàm phán, hiệu quả khi chạy tối đa công suất.</p>
 
       {/* ── BƯỚC 1 ── */}
-      <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 18, marginTop: 18 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: '#a8003b', textTransform: 'uppercase', marginBottom: 14 }}>Bước 1 — Câu hỏi của bạn</div>
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
+      <Card className="mt-4 p-5">
+        <div className="mb-3.5 text-eyebrow font-semibold uppercase tracking-[.1em] text-faint">Bước 1 — Câu hỏi của bạn</div>
+        <div className="mb-4 flex flex-wrap items-center gap-6">
           {pipeMaterials.length > 1 && (
             <Field label="Dòng sản phẩm">
               <Seg options={pipeMaterials.map((m, i) => ({ v: i, label: m.name.replace(/\s*\(.*\)/, '') }))} value={brandIdx} onChange={(i) => { setBrandIdx(i); setPipeUsd(''); setFitUsd(''); }} />
@@ -198,38 +212,38 @@ export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput
             <Seg options={[{ v: 'markup_on_cost' as MarginMode, label: 'Markup trên giá vốn' }, { v: 'margin_on_price' as MarginMode, label: 'Lãi trên giá bán' }]} value={marginMode} onChange={setMarginMode} />
           </Field>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="grid grid-cols-2 gap-6">
           {[
             { title: 'Ống CPVC (đùn liên tục)', usd: pipeUsd, setUsd: setPipeUsd, dUsd: defaults.pipeUsd, margin: pipeMargin, setMargin: setPipeMargin, dMargin: defaults.pipeMargin, shifts: pipeShifts, setShifts: setPipeShifts, isFit: false },
             { title: 'Phụ kiện (ép phun)', usd: fitUsd, setUsd: setFitUsd, dUsd: defaults.fitUsd, margin: fitMargin, setMargin: setFitMargin, dMargin: defaults.fitMargin, shifts: fitShifts, setShifts: setFitShifts, isFit: true },
           ].map((c) => (
-            <div key={c.title} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{c.title}</div>
-              <Field label="Giá compound (USD/kg, CIF trước thuế NK)"><input style={inputStyle} value={c.usd} placeholder={fmtUsd(c.dUsd)} onChange={(e) => c.setUsd(e.target.value)} /></Field>
-              <Field label="Markup mong muốn (%)"><input style={inputStyle} value={c.margin} placeholder={fmt1(c.dMargin)} onChange={(e) => c.setMargin(e.target.value)} /></Field>
+            <div key={c.title} className="flex flex-col gap-3">
+              <div className="text-xs font-bold text-foreground">{c.title}</div>
+              <Field label="Giá compound (USD/kg, CIF trước thuế NK)"><Input className="text-right tabular-nums" value={c.usd} placeholder={fmtUsd(c.dUsd)} onChange={(e) => c.setUsd(e.target.value)} /></Field>
+              <Field label="Markup mong muốn (%)"><Input className="text-right tabular-nums" value={c.margin} placeholder={fmt1(c.dMargin)} onChange={(e) => c.setMargin(e.target.value)} /></Field>
               <Field label="Số ca chạy / ngày"><Seg options={[1, 2, 3].map((v) => ({ v: v as 1 | 2 | 3, label: `${v} ca` }))} value={c.shifts} onChange={c.setShifts} /></Field>
               {c.isFit && <Field label="Huy động giờ máy ép"><Seg options={[{ v: 0.6, label: '60%' }, { v: 0.85, label: '85%' }]} value={fitUtil} onChange={setFitUtil} /></Field>}
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap' }}>
-          <Field label="Tỷ giá USD/VND"><input style={{ ...inputStyle, width: 140 }} value={fxRate} placeholder={fmtVnd(defaults.fx)} onChange={(e) => setFxRate(e.target.value)} /></Field>
-          <Field label="Thuê mặt bằng (triệu đ/năm)" hint="Mô hình đi thuê, đổi được từng năm (ADR-021)"><input style={{ ...inputStyle, width: 140 }} value={lease} placeholder={fmt1(defaults.lease)} onChange={(e) => setLease(e.target.value)} /></Field>
+        <div className="mt-4 flex flex-wrap gap-6">
+          <Field label="Tỷ giá USD/VND"><Input className="w-[140px] text-right tabular-nums" value={fxRate} placeholder={fmtVnd(defaults.fx)} onChange={(e) => setFxRate(e.target.value)} /></Field>
+          <Field label="Thuê mặt bằng (triệu đ/năm)" hint="Mô hình đi thuê, đổi được từng năm (ADR-021)"><Input className="w-[140px] text-right tabular-nums" value={lease} placeholder={fmt1(defaults.lease)} onChange={(e) => setLease(e.target.value)} /></Field>
         </div>
-        <button onClick={run} style={{ marginTop: 18, width: '100%', padding: '12px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>▶ Chạy số liệu</button>
-        {err && <div style={{ marginTop: 10, color: '#DC2626', fontSize: 11 }}>Lỗi tính: {err}</div>}
-      </div>
+        <Button size="lg" className="mt-4 w-full" onClick={run}>▶ Chạy số liệu</Button>
+        {err && <div className="mt-2.5 text-[11px] text-destructive">Lỗi tính: {err}</div>}
+      </Card>
 
       {/* ── BƯỚC 2 ── */}
       {result && (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+          <div className="mt-4 grid grid-cols-2 gap-4">
             <LineCard line={result.pipe} />
             <LineCard line={result.fitting} />
           </div>
-          <div style={{ background: '#1a1a1a', color: '#fff', borderRadius: 6, padding: 18, marginTop: 16 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#ff5c8a', marginBottom: 12 }}>Hiệu quả toàn nhà máy cả năm với giá bán này</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 12 }}>
+          <div className="mt-4 rounded-lg bg-primary p-[18px] text-primary-foreground">
+            <div className="mb-3 text-[13px] font-bold">Hiệu quả toàn nhà máy cả năm với giá bán này</div>
+            <div className="grid grid-cols-6 gap-3">
               {[
                 ['Doanh thu VF', fmtTy(result.summary.revenueVfVnd)],
                 ['Lãi gộp', fmtTy(result.summary.grossProfitVnd)],
@@ -238,47 +252,47 @@ export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput
                 ['Tỷ suất lợi nhuận', `${fmt1(result.summary.preTaxProfitMarginPct)}%`],
                 ['Thu hồi vốn', result.summary.paybackYears === null ? '—' : `${fmt1(result.summary.paybackYears)} năm`],
               ].map(([k, v], i) => (
-                <div key={k} style={{ background: '#262626', borderRadius: 4, padding: 12 }}>
-                  <div style={{ fontSize: 9, color: '#999' }}>{k}</div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: i >= 2 && i <= 4 && (result.summary.preTaxProfitVnd < 0) ? '#f87171' : '#fff', fontVariantNumeric: 'tabular-nums' }}>{v}</div>
+                <div key={k} className="rounded-md bg-primary-foreground/10 p-3">
+                  <div className="text-[9px] text-primary-foreground/60">{k}</div>
+                  <div className={cn('text-base font-bold tabular-nums', i >= 2 && i <= 4 && result.summary.preTaxProfitVnd < 0 ? 'text-destructive' : 'text-primary-foreground')}>{v}</div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 10, color: '#999', marginTop: 10 }}>Nhu cầu compound cả năm: ống {fmtVnd(result.pipe.compoundNeedKgPerYear)} kg · phụ kiện {fmtVnd(result.fitting.compoundNeedKgPerYear)} kg (hao hụt). Thuế TNDN 20% (ước tính). Vốn đầu tư {fmtTy(result.summary.totalInvestedVnd)}.</div>
+            <div className="mt-2.5 text-[10px] text-primary-foreground/60">Nhu cầu compound cả năm: ống {fmtVnd(result.pipe.compoundNeedKgPerYear)} kg · phụ kiện {fmtVnd(result.fitting.compoundNeedKgPerYear)} kg (hao hụt). Thuế TNDN 20% (ước tính). Vốn đầu tư {fmtTy(result.summary.totalInvestedVnd)}.</div>
           </div>
 
           {/* Bảng giá DN + SKU */}
-          <details style={{ marginTop: 14, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 14 }}>
-            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Bảng giá bán VF — ống {result.pipe.materialName} theo DN (đ/m) · mang đi đàm phán</summary>
-            <table style={{ width: '100%', marginTop: 10, fontSize: 12, borderCollapse: 'collapse' }}>
-              <thead><tr style={{ textAlign: 'left', color: '#737373', fontSize: 10 }}><th>DN</th><th>Khối lượng</th><th style={{ textAlign: 'right' }}>Giá thành /m</th><th style={{ textAlign: 'right' }}>Giá bán VF /m</th></tr></thead>
-              <tbody>{result.pipeDnPrices.map((r) => <tr key={r.dn} style={{ borderTop: '1px solid #f0ece0' }}><td>{r.dn}</td><td>{fmt1(r.unitWeightKgPerM)} kg/m</td><td style={{ textAlign: 'right' }}>{fmtVnd(r.fullCostVndPerM)}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtVnd(r.sellingPriceVndPerM)}</td></tr>)}</tbody>
+          <details className="mt-3.5 rounded-lg border bg-card p-3.5">
+            <summary className="cursor-pointer text-xs font-bold text-foreground">Bảng giá bán VF — ống {result.pipe.materialName} theo DN (đ/m) · mang đi đàm phán</summary>
+            <table className="mt-2.5 w-full border-collapse text-xs">
+              <thead><tr className="text-left text-eyebrow text-faint"><th className="font-semibold">DN</th><th className="font-semibold">Khối lượng</th><th className="text-right font-semibold">Giá thành /m</th><th className="text-right font-semibold">Giá bán VF /m</th></tr></thead>
+              <tbody>{result.pipeDnPrices.map((r) => <tr key={r.dn} className="border-t border-border"><td>{r.dn}</td><td>{fmt1(r.unitWeightKgPerM)} kg/m</td><td className="text-right tabular-nums">{fmtVnd(r.fullCostVndPerM)}</td><td className="text-right font-bold tabular-nums">{fmtVnd(r.sellingPriceVndPerM)}</td></tr>)}</tbody>
             </table>
           </details>
-          <details style={{ marginTop: 10, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 14 }}>
-            <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Bảng giá bán VF — {result.fittingSkuPrices.length} phụ kiện {result.fitting.materialName} theo cái</summary>
-            <div style={{ maxHeight: 320, overflow: 'auto', marginTop: 10 }}>
-              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-                <thead><tr style={{ textAlign: 'left', color: '#737373', fontSize: 10 }}><th>Tên</th><th>Size</th><th>SCH</th><th style={{ textAlign: 'right' }}>Kg/cái</th><th style={{ textAlign: 'right' }}>Ren KL /cái</th><th style={{ textAlign: 'right' }}>Giá thành /cái</th><th style={{ textAlign: 'right' }}>Giá bán VF /cái</th></tr></thead>
-                <tbody>{result.fittingSkuPrices.map((r, i) => <tr key={i} style={{ borderTop: '1px solid #f0ece0' }}><td>{r.productName}{r.metalInsertVndPerPiece > 0 ? <span style={{ color: '#9333ea', fontSize: 9 }}> (ren)</span> : ''}</td><td>{r.sizeLabel}</td><td>{r.schedule}</td><td style={{ textAlign: 'right' }}>{fmt1(r.unitWeightKg)}</td><td style={{ textAlign: 'right' }}>{r.metalInsertVndPerPiece > 0 ? fmtVnd(r.metalInsertVndPerPiece) : '—'}</td><td style={{ textAlign: 'right' }}>{fmtVnd(r.fullCostVndPerPiece)}</td><td style={{ textAlign: 'right', fontWeight: 700 }}>{fmtVnd(r.sellingPriceVndPerPiece)}</td></tr>)}</tbody>
+          <details className="mt-2.5 rounded-lg border bg-card p-3.5">
+            <summary className="cursor-pointer text-xs font-bold text-foreground">Bảng giá bán VF — {result.fittingSkuPrices.length} phụ kiện {result.fitting.materialName} theo cái</summary>
+            <div className="mt-2.5 max-h-80 overflow-auto">
+              <table className="w-full border-collapse text-xs">
+                <thead><tr className="text-left text-eyebrow text-faint"><th className="font-semibold">Tên</th><th className="font-semibold">Size</th><th className="font-semibold">SCH</th><th className="text-right font-semibold">Kg/cái</th><th className="text-right font-semibold">Ren KL /cái</th><th className="text-right font-semibold">Giá thành /cái</th><th className="text-right font-semibold">Giá bán VF /cái</th></tr></thead>
+                <tbody>{result.fittingSkuPrices.map((r, i) => <tr key={i} className="border-t border-border"><td>{r.productName}{r.metalInsertVndPerPiece > 0 ? <span className="text-[9px] text-faint"> (ren)</span> : ''}</td><td>{r.sizeLabel}</td><td>{r.schedule}</td><td className="text-right tabular-nums">{fmt1(r.unitWeightKg)}</td><td className="text-right tabular-nums">{r.metalInsertVndPerPiece > 0 ? fmtVnd(r.metalInsertVndPerPiece) : '—'}</td><td className="text-right tabular-nums">{fmtVnd(r.fullCostVndPerPiece)}</td><td className="text-right font-bold tabular-nums">{fmtVnd(r.sellingPriceVndPerPiece)}</td></tr>)}</tbody>
               </table>
             </div>
           </details>
 
           {/* ── BƯỚC 3 — AI ── */}
-          <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 18, marginTop: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: '#a8003b', textTransform: 'uppercase', marginBottom: 10 }}>Bước 3 — Hỏi ý kiến AI</div>
-            <button onClick={() => void askAi()} disabled={aiLoading} style={{ padding: '10px 18px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: aiLoading ? 'default' : 'pointer', opacity: aiLoading ? 0.6 : 1 }}>
+          <Card className="mt-4 p-5">
+            <div className="mb-2.5 text-eyebrow font-semibold uppercase tracking-[.1em] text-faint">Bước 3 — Hỏi ý kiến AI</div>
+            <Button onClick={() => void askAi()} disabled={aiLoading}>
               {aiLoading ? '🤖 AI đang đọc số liệu…' : advice ? '🤖 AI tư vấn lại' : '🤖 AI tư vấn ngay'}
-            </button>
+            </Button>
             {advice && (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>🤖 Nhận định của trợ lý AI {advice.generatedByModel === 'mock' ? '(mock)' : `(${advice.generatedByModel})`}</div>
-                <ul style={{ fontSize: 12, lineHeight: 1.5, marginTop: 8 }}>{advice.items.map((it, i) => <li key={i} style={{ marginBottom: 6 }}>{it.message}</li>)}</ul>
-                {advice.disclaimer && <div style={{ fontSize: 10, color: '#b45309', background: '#fffbeb', padding: '8px 12px', borderRadius: 4 }}>⚠ {advice.disclaimer}</div>}
+              <div className="mt-3.5">
+                <div className="text-[13px] font-bold text-foreground">🤖 Nhận định của trợ lý AI {advice.generatedByModel === 'mock' ? '(mock)' : `(${advice.generatedByModel})`}</div>
+                <ul className="mt-2 list-disc pl-5 text-xs leading-relaxed text-foreground">{advice.items.map((it, i) => <li key={i} className="mb-1.5">{it.message}</li>)}</ul>
+                {advice.disclaimer && <div className="rounded-md bg-warning-tint px-3 py-2 text-[10px] text-warning">⚠ {advice.disclaimer}</div>}
               </div>
             )}
-          </div>
+          </Card>
         </>
       )}
     </div>

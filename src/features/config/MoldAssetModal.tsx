@@ -1,6 +1,12 @@
+// ADR-033 — modal Quản lý Khuôn mẫu Phụ kiện. TRÌNH BÀY: Tailwind + shadcn/ui
+// (Card/Input/Button), overlay đen mờ, KHÔNG inline-style hardcode. Chrome đen–trắng;
+// nút Lưu = ĐEN (Button default). Logic/props/format số giữ NGUYÊN.
 import React, { useState } from 'react';
 import type { MoldAsset } from '../../schemas/resource.js';
 import { fmtVnd } from '../../lib/format.js';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 interface MoldAssetModalProps {
   initialMolds: MoldAsset[];
@@ -24,45 +30,80 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
   const totalCost = molds.reduce((sum, m) => sum + m.costVnd, 0);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 40 }}>
-      <div style={{ background: '#fff', borderRadius: 8, width: '100%', maxWidth: 900, maxHeight: '100%', display: 'flex', flexDirection: 'column', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e5e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <Card className="flex max-h-full w-full max-w-[900px] flex-col overflow-hidden p-0">
+        <div className="flex items-center justify-between border-b px-6 py-4">
           <div>
-            <h2 style={{ margin: 0, fontSize: 18, color: '#1a1a1a' }}>Quản lý Danh sách Khuôn mẫu Phụ kiện</h2>
-            <div style={{ fontSize: 13, color: '#737373', marginTop: 4 }}>Tổng cộng: <strong>{molds.length}</strong> bộ khuôn — Tổng giá trị: <strong>{fmtVnd(totalCost)} đ</strong></div>
+            <h2 className="text-lg font-bold text-foreground">Quản lý Danh sách Khuôn mẫu Phụ kiện</h2>
+            <div className="mt-1 text-sm text-muted-foreground">
+              Tổng cộng: <strong className="text-foreground">{molds.length}</strong> bộ khuôn — Tổng giá trị:{' '}
+              <strong className="text-foreground tabular-nums">{fmtVnd(totalCost)} đ</strong>
+            </div>
           </div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: '#a3a3a3' }}>&times;</button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Đóng" className="text-xl text-muted-foreground">
+            &times;
+          </Button>
         </div>
-        
-        <div style={{ flex: 1, overflowY: 'auto', padding: 24 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead style={{ position: 'sticky', top: -24, background: '#fff', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          <table className="w-full border-collapse text-sm">
+            <thead className="sticky -top-6 z-10 bg-card">
               <tr>
-                <th style={{ padding: '10px 12px', textAlign: 'left', borderBottom: '2px solid #e5e5e5' }}>Tên Khuôn / Kích thước</th>
-                <th style={{ padding: '10px 12px', textAlign: 'right', borderBottom: '2px solid #e5e5e5', width: 80 }}>Số Cavity</th>
-                <th style={{ padding: '10px 12px', textAlign: 'right', borderBottom: '2px solid #e5e5e5', width: 160 }}>Nguyên giá (VND)</th>
-                <th style={{ padding: '10px 12px', textAlign: 'right', borderBottom: '2px solid #e5e5e5', width: 110 }}>Khấu hao (năm)</th>
-                <th style={{ padding: '10px 12px', textAlign: 'right', borderBottom: '2px solid #e5e5e5', width: 90 }}>Năm mua</th>
+                <th className="border-b-2 border-input px-3 py-2.5 text-left font-semibold text-muted-foreground">Tên Khuôn / Kích thước</th>
+                <th className="w-[80px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Số Cavity</th>
+                <th className="w-[160px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Nguyên giá (VND)</th>
+                <th className="w-[110px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Khấu hao (năm)</th>
+                <th className="w-[90px] border-b-2 border-input px-3 py-2.5 text-right font-semibold text-muted-foreground">Năm mua</th>
               </tr>
             </thead>
             <tbody>
               {molds.map((m, i) => (
-                <tr key={m.id} style={{ borderBottom: '1px solid #f2f2f2' }}>
-                  <td style={{ padding: '8px 12px' }}>
-                    <input type="text" value={m.label} disabled={!canEdit} onChange={e => handleChange(i, 'label', e.target.value)} style={{ width: '100%', padding: '4px 8px', border: '1px solid transparent', background: 'transparent', fontWeight: 500, color: '#1a1a1a', outline: 'none' }} onFocus={e => canEdit && (e.target.style.border = '1px solid #d8d8d8', e.target.style.background = '#fff')} onBlur={e => (e.target.style.border = '1px solid transparent', e.target.style.background = 'transparent')} />
-                    <div style={{ fontSize: 11, color: '#a3a3a3', paddingLeft: 8 }}>Mã: {m.id}</div>
+                <tr key={m.id} className="border-b border-border">
+                  <td className="px-3 py-2">
+                    <Input
+                      type="text"
+                      value={m.label}
+                      disabled={!canEdit}
+                      onChange={(e) => handleChange(i, 'label', e.target.value)}
+                      className="h-8 border-transparent bg-transparent px-2 font-medium text-foreground shadow-none focus-visible:border-input focus-visible:bg-card focus-visible:ring-0"
+                    />
+                    <div className="pl-2 text-eyebrow text-faint">Mã: {m.id}</div>
                   </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    <input type="number" value={m.cavity} disabled={!canEdit} onChange={e => handleChange(i, 'cavity', parseFloat(e.target.value) || 0)} style={{ width: '100%', textAlign: 'right', padding: '4px 8px', border: '1px solid #d8d8d8', borderRadius: 4, outline: 'none' }} />
+                  <td className="px-3 py-2 text-right">
+                    <Input
+                      type="number"
+                      value={m.cavity}
+                      disabled={!canEdit}
+                      onChange={(e) => handleChange(i, 'cavity', parseFloat(e.target.value) || 0)}
+                      className="h-8 px-2 text-right tabular-nums"
+                    />
                   </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    <input type="number" value={m.costVnd} disabled={!canEdit} onChange={e => handleChange(i, 'costVnd', parseFloat(e.target.value) || 0)} style={{ width: '100%', textAlign: 'right', padding: '4px 8px', border: '1px solid #d8d8d8', borderRadius: 4, outline: 'none' }} />
+                  <td className="px-3 py-2 text-right">
+                    <Input
+                      type="number"
+                      value={m.costVnd}
+                      disabled={!canEdit}
+                      onChange={(e) => handleChange(i, 'costVnd', parseFloat(e.target.value) || 0)}
+                      className="h-8 px-2 text-right tabular-nums"
+                    />
                   </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    <input type="number" value={m.usefulLifeYears} disabled={!canEdit} onChange={e => handleChange(i, 'usefulLifeYears', parseFloat(e.target.value) || 0)} style={{ width: '100%', textAlign: 'right', padding: '4px 8px', border: '1px solid #d8d8d8', borderRadius: 4, outline: 'none' }} />
+                  <td className="px-3 py-2 text-right">
+                    <Input
+                      type="number"
+                      value={m.usefulLifeYears}
+                      disabled={!canEdit}
+                      onChange={(e) => handleChange(i, 'usefulLifeYears', parseFloat(e.target.value) || 0)}
+                      className="h-8 px-2 text-right tabular-nums"
+                    />
                   </td>
-                  <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    <input type="number" value={m.purchaseYear} disabled={!canEdit} onChange={e => handleChange(i, 'purchaseYear', parseFloat(e.target.value) || 0)} style={{ width: '100%', textAlign: 'right', padding: '4px 8px', border: '1px solid #d8d8d8', borderRadius: 4, outline: 'none' }} />
+                  <td className="px-3 py-2 text-right">
+                    <Input
+                      type="number"
+                      value={m.purchaseYear}
+                      disabled={!canEdit}
+                      onChange={(e) => handleChange(i, 'purchaseYear', parseFloat(e.target.value) || 0)}
+                      className="h-8 px-2 text-right tabular-nums"
+                    />
                   </td>
                 </tr>
               ))}
@@ -71,17 +112,17 @@ export function MoldAssetModal({ initialMolds, onSave, onClose, canEdit }: MoldA
         </div>
 
         {canEdit ? (
-          <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', display: 'flex', justifyContent: 'flex-end', gap: 12, background: '#f9f9f9', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
-            <button onClick={onClose} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #d8d8d8', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}>Hủy</button>
-            <button onClick={() => onSave(molds)} style={{ padding: '8px 16px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}>Lưu Thay Đổi</button>
+          <div className="flex justify-end gap-3 border-t bg-muted px-6 py-4">
+            <Button variant="outline" onClick={onClose}>Hủy</Button>
+            <Button onClick={() => onSave(molds)}>Lưu Thay Đổi</Button>
           </div>
         ) : (
-          <div style={{ padding: '16px 24px', borderTop: '1px solid #e5e5e5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f9f9f9', borderBottomLeftRadius: 8, borderBottomRightRadius: 8 }}>
-            <div style={{ fontSize: 12, color: '#737373' }}>Bạn không có quyền chỉnh sửa tài sản khuôn. Vui lòng liên hệ Admin.</div>
-            <button onClick={onClose} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #d8d8d8', borderRadius: 4, cursor: 'pointer', fontWeight: 500 }}>Đóng</button>
+          <div className="flex items-center justify-between border-t bg-muted px-6 py-4">
+            <div className="text-xs text-muted-foreground">Bạn không có quyền chỉnh sửa tài sản khuôn. Vui lòng liên hệ Admin.</div>
+            <Button variant="outline" onClick={onClose}>Đóng</Button>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import type { AppRole } from '../../lib/firebase.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TargetCosting from '../target-costing/TargetCosting.js';
 import WhatIfScreen from './WhatIfScreen.js';
+import { cn } from '@/lib/utils';
 
 export default function PricingAnalyticsScreen({
   role,
@@ -19,18 +20,18 @@ export default function PricingAnalyticsScreen({
   // ADR-026 — bỏ guard "chỉ dành cho vai X": chỉ admin/pricing đăng nhập được (ADR-023).
 
   return (
-    <div style={{ padding: '32px 36px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div className="flex h-full flex-col px-9 py-8">
       {/* Header & Tabs */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>
+      <div className="mb-6">
+        <div className="mb-1.5 text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">
           Hoạch Định Chiến Lược · Tầng Management
         </div>
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, letterSpacing: '-.3px', marginBottom: 16 }}>
+        <h1 className="mb-4 text-2xl font-bold tracking-tight text-foreground">
           Phân Tích Định Giá
         </h1>
-        
+
         {/* Sub-tabs */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid #d8d8d8' }}>
+        <div className="flex border-b border-input">
           {(
             [
               ['what-if', 'Mô phỏng Công suất (What-If)'],
@@ -40,17 +41,12 @@ export default function PricingAnalyticsScreen({
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                borderBottom: `2px solid ${activeTab === id ? '#a8003b' : 'transparent'}`,
-                color: activeTab === id ? '#a8003b' : '#737373',
-                padding: '8px 16px',
-                fontSize: 13,
-                fontWeight: activeTab === id ? 700 : 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              className={cn(
+                'border-b-2 px-4 py-2 text-[13px] transition-colors',
+                activeTab === id
+                  ? 'border-foreground font-bold text-foreground'
+                  : 'border-transparent font-medium text-muted-foreground hover:text-foreground',
+              )}
             >
               {label}
             </button>
@@ -59,12 +55,12 @@ export default function PricingAnalyticsScreen({
       </div>
 
       {/* Content Area */}
-      <div style={{ flex: 1, overflow: 'auto' }}>
+      <div className="flex-1 overflow-auto">
         {activeTab === 'what-if' && (
           <WhatIfScreen scenarioId={scenarioId} scenario={scenario} internal={internal} />
         )}
         {activeTab === 'target-costing' && (
-          <div style={{ marginTop: -32, marginLeft: -36, marginRight: -36 }}>
+          <div className="-mx-9 -mt-8">
             {/* Embed TargetCosting directly, negative margin to offset its internal padding */}
             <TargetCosting role={role} scenarioId={scenarioId} scenario={scenario} internal={internal} />
           </div>

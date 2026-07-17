@@ -15,14 +15,23 @@
 // - Không có dòng "Dung môi 550": PriceList Excel (99 dòng, nguồn chân lý)
 //   không có; solvent550PricePerBox là vật tư phụ dùng chung trong CostPool
 //   (cost-pool.md), không phải SKU thương mại.
+// ADR-033 — TRÌNH BÀY: Tailwind + shadcn/ui (Card/Input/Button/Segmented/Badge);
+// chrome đen–trắng, màu CHỈ cho DỮ LIỆU/trạng thái (dải cảnh báo chốt giá).
 import { useMemo, useState } from 'react';
 import { fmtVnd, fmtPct } from '../../lib/format.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Segmented } from '@/components/ui/segmented';
+import { cn } from '@/lib/utils';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Prototype đóng băng: 8 nút loại chính + Tất cả + Khác.
 const MAIN_CATEGORIES = [PIPE_LABEL, 'Tê đều', 'Tê giảm', 'Cút 90°', 'Cút 45°', 'Nối thẳng', 'Nối giảm', 'Lơ thu'];
 const CAT_LIST = ['all', ...MAIN_CATEGORIES, 'khác'] as const;
+
+const GRID = 'grid grid-cols-[36px_1.5fr_70px_72px_100px_70px_52px_130px] gap-2 px-4';
 
 interface Row {
   stt: number;
@@ -116,15 +125,15 @@ export default function PriceList({
   const colHeader = priceType === 'vat' ? `Giá VF có VAT (đ)` : 'Giá VF trước VAT (đ)';
 
   if (!priceList) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải bảng giá…</div>;
+    return <div className="px-9 py-8 text-sm text-muted-foreground">Đang tải bảng giá…</div>;
   }
 
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Xuất Xưởng (VF)</div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>BlazeMaster CPVC — {rows.length} SKU</h1>
-        <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
+    <div className="px-9 py-8">
+      <div className="mb-[18px]">
+        <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Bảng Giá Xuất Xưởng (VF)</div>
+        <h1 className="mt-1 text-xl font-bold tracking-tight text-foreground">BlazeMaster CPVC — {rows.length} SKU</h1>
+        <div className="mt-1 text-xs text-muted-foreground">
           Giá bán xuất xưởng của nhà máy (VF) — ổn định theo khóa giá (ADR-004). Giá tới nhà phân phối xem tab <b>Bảng Giá NPP</b>.
         </div>
       </div>
@@ -133,8 +142,8 @@ export default function PriceList({
           quá ngưỡng → giá VF niêm yết có thể cũ → cân nhắc chốt lại. */}
       {internal && (
         staleMaterials.length > 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14, padding: '11px 16px', borderRadius: 6, border: '1px solid #b45309', background: '#fffbeb', color: '#92400e' }}>
-            <div style={{ flex: 1, minWidth: 280, fontSize: 12, fontWeight: 600 }}>
+          <div className="mb-3.5 flex flex-wrap items-center gap-3 rounded-md border border-warning/40 bg-warning-tint px-4 py-2.5 text-warning">
+            <div className="min-w-[280px] flex-1 text-xs font-semibold">
               ⚠ Chi phí vật liệu thị trường đã đổi:{' '}
               {staleMaterials.map((m, i) => (
                 <span key={m.name}>{i > 0 ? ', ' : ''}{m.name} ({m.deviationPct >= 0 ? '+' : ''}{fmtPct(m.deviationPct)}, ngưỡng {fmtPct(m.thresholdPct)})</span>
@@ -142,82 +151,76 @@ export default function PriceList({
               . Giá bán VF đang niêm yết có thể không còn phản ánh chi phí hiện tại — cân nhắc <b>chốt lại giá</b>.
             </div>
             {onNavigate && (
-              <button onClick={() => onNavigate('lot-costing')} style={{ flexShrink: 0, padding: '7px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => onNavigate('lot-costing')}>
                 Xem Giá Vốn Theo Lô →
-              </button>
+              </Button>
             )}
           </div>
         ) : (
-          <div style={{ marginBottom: 14, padding: '9px 16px', borderRadius: 6, border: '1px solid #16A34A', background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 600 }}>
+          <div className="mb-3.5 rounded-md border border-success/40 bg-success-tint px-4 py-2.5 text-xs font-semibold text-success">
             ✅ Giá VF đang phản ánh đúng chi phí thị trường — mọi nguyên liệu còn trong ngưỡng, chưa cần điều chỉnh giá.
           </div>
         )
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11, gap: 12, flexWrap: 'wrap' }}>
-        <input
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Tìm theo tên, kích cỡ..."
-          style={{ padding: '7px 12px', border: '1px solid #b3b3b3', borderRadius: 2, fontSize: 12, background: '#fff', outline: 'none', minWidth: 200, maxWidth: 260, width: '100%' }}
+          className="h-8 w-full min-w-[200px] max-w-[260px]"
         />
-        <div style={{ display: 'flex', border: '1px solid #b3b3b3', borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
-          {(
-            [
-              ['before', 'Trước VAT'],
-              ['vat', `Có VAT (${vatPctLabel}%)`],
-            ] as const
-          ).map(([id, label]) => (
-            <div
-              key={id}
-              onClick={() => setPriceType(id)}
-              style={{ padding: '6px 14px', cursor: 'pointer', background: priceType === id ? '#a8003b' : '#fff', color: priceType === id ? '#fff' : '#1a1a1a', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', borderRight: '1px solid #d8d8d8' }}
-            >
-              {label}
-            </div>
-          ))}
-        </div>
+        <Segmented
+          value={priceType}
+          onChange={setPriceType}
+          options={[
+            { id: 'before', label: 'Trước VAT' },
+            { id: 'vat', label: `Có VAT (${vatPctLabel}%)` },
+          ]}
+        />
       </div>
 
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 11 }}>
+      <div className="mb-3 flex flex-wrap gap-1.5">
         {CAT_LIST.map((c) => {
           const active = productFilter === c;
           return (
-            <div
+            <Button
               key={c}
+              variant={active ? 'default' : 'outline'}
+              size="sm"
+              className="font-medium"
               onClick={() => setProductFilter(c)}
-              style={{ padding: '4px 10px', cursor: 'pointer', border: `1px solid ${active ? '#a8003b' : '#b3b3b3'}`, background: active ? '#a8003b' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}
             >
               {c === 'all' ? 'Tất cả' : c === 'khác' ? 'Khác' : c}
-            </div>
+            </Button>
           );
         })}
       </div>
 
-      <div style={{ fontSize: 10, color: '#737373', marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
+      <div className="mb-2.5 text-[10px] text-muted-foreground">Hiển thị {filteredRows.length} sản phẩm</div>
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
+      <Card className="overflow-hidden p-0">
+        <div className={cn(GRID, 'border-b bg-muted py-2.5')}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'Mã định danh', 'Phân lớp', 'ĐVT'].map((h) => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
+            <div key={h} className="text-eyebrow font-bold uppercase text-faint">{h}</div>
           ))}
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{colHeader}</div>
+          <div className="text-right text-eyebrow font-bold uppercase text-faint">{colHeader}</div>
         </div>
         {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center' }}>
-            <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
-            <div style={{ fontSize: 12, fontWeight: 500 }}>{row.name}</div>
-            <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
-            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.spec}</div>
-            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.designationCode}</div>
-            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.classificationCode}</div>
-            <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+          <div key={row.key} className={cn(GRID, 'items-center border-b border-muted py-2')}>
+            <div className="text-[10px] tabular-nums text-faint">{row.stt}</div>
+            <div className="text-xs font-medium text-foreground">{row.name}</div>
+            <div className="text-[11px] tabular-nums text-muted-foreground">{row.size}</div>
+            <div className="text-[10px] text-faint">{row.spec}</div>
+            <div className="text-[10px] text-faint">{row.designationCode}</div>
+            <div className="text-[10px] text-faint">{row.classificationCode}</div>
+            <div className="text-[11px] text-muted-foreground">{row.unit}</div>
+            <div className="text-right text-[13px] font-bold tabular-nums text-foreground">
               {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}
             </div>
           </div>
         ))}
-      </div>
+      </Card>
     </div>
   );
 }

@@ -1,10 +1,12 @@
-// ADR-027 + ADR-033 — màn "Độ Nhạy" (tornado). Bản DEMO hệ design mới (tokens +
-// primitives): analytics/fintech cao cấp. Logic giữ nguyên (calculateSensitivity,
-// EBIT giá-bán-cố-định). Trình bày qua src/design/primitives.tsx.
+// ADR-027 + ADR-033 — màn "Độ Nhạy" (tornado). Logic giữ NGUYÊN (calculateSensitivity,
+// EBIT giá-bán-cố-định). TRÌNH BÀY: Tailwind + shadcn/ui (Card/Segmented), KHÔNG inline-style
+// hardcode màu — màu lấy từ CSS variables (src/index.css). Màu CHỈ dành cho DỮ LIỆU (EBIT
+// xấu/tốt, biên độ tornado); phần width % của thanh tornado là DỮ LIỆU nên giữ inline style.
 import { useMemo, useState } from 'react';
 import type { ScenarioInput } from '../../schemas/scenario.js';
 import { calculateSensitivity } from '../../engine/sensitivity.js';
-import { Screen, PageHeader, Card, Banner, Segmented, tk, sp, ft, tnum, rd } from '../../design/primitives.js';
+import { Card } from '@/components/ui/card';
+import { Segmented } from '@/components/ui/segmented';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2, signDisplay: 'exceptZero' }).format(v / 1e9) + ' tỷ';
 const fmtTyAbs = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(v / 1e9) + ' tỷ đ';
@@ -17,91 +19,93 @@ export default function SensitivityScreen({ scenario }: { scenario: ScenarioInpu
   const result = useMemo(() => (scenario ? calculateSensitivity(scenario, deltaPct) : null), [scenario, deltaPct]);
 
   if (!scenario || !result) {
-    return <Screen><div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Đang tải kịch bản…</div></Screen>;
+    return <div className="mx-auto max-w-[1040px] px-9 py-8 text-sm text-muted-foreground">Đang tải kịch bản…</div>;
   }
 
   const base = result.baseEbitVnd;
   const maxExtent = Math.max(...result.drivers.map((d) => Math.max(Math.abs(d.downsideVnd), Math.abs(d.upsideVnd))), 1);
   const top = result.drivers[0];
-  const colGrid = '196px 64px 1fr 64px';
 
   return (
-    <Screen>
-      <PageHeader
-        eyebrow="Phân tích độ nhạy"
-        title="Điều gì bào lợi nhuận của tôi mạnh nhất?"
-        subtitle={`Giữ nguyên giá bán hiện hành, cho từng yếu tố lệch ±${fmtPct1(deltaPct)} → đo lợi nhuận trước thuế (EBIT) đổi bao nhiêu. Thanh dài nhất = rủi ro số 1 cần canh.`}
-        right={
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: ft.size.eyebrow, letterSpacing: '.06em', textTransform: 'uppercase', color: tk.inkFaint }}>EBIT hiện tại</div>
-            <div style={{ fontSize: ft.size.xxl, fontWeight: ft.weight.bold, ...tnum, color: tk.ink }}>{fmtTyAbs(base)}</div>
-          </div>
-        }
-      />
+    <div className="mx-auto max-w-[1040px] px-9 py-8">
+      {/* Page header */}
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <div className="text-eyebrow font-semibold uppercase tracking-[.13em] text-faint">Phân tích độ nhạy</div>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Điều gì bào lợi nhuận của tôi mạnh nhất?</h1>
+          <p className="mt-1.5 max-w-[720px] text-sm leading-relaxed text-muted-foreground">
+            {`Giữ nguyên giá bán hiện hành, cho từng yếu tố lệch ±${fmtPct1(deltaPct)} → đo lợi nhuận trước thuế (EBIT) đổi bao nhiêu. Thanh dài nhất = rủi ro số 1 cần canh.`}
+          </p>
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-eyebrow uppercase tracking-[.06em] text-faint">EBIT hiện tại</div>
+          <div className="text-2xl font-bold tabular-nums text-foreground">{fmtTyAbs(base)}</div>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: sp[3], flexWrap: 'wrap', marginBottom: sp[4] }}>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         {top && (
-          <Banner tone="warning">
-            <b>Rủi ro số 1: {top.label}</b> — lệch ±{fmtPct1(deltaPct)} làm EBIT đổi tới <b>{fmtTyAbs(top.maxAbsSwingVnd)}</b> ({fmtPct1(top.maxAbsSwingVnd / Math.abs(base))} EBIT). Cần theo dõi / phòng hộ trước tiên.
-          </Banner>
+          <div className="flex items-center gap-4 rounded-md border border-warning/40 bg-warning-tint px-4 py-3 text-sm text-warning">
+            <div>
+              <b>Rủi ro số 1: {top.label}</b> — lệch ±{fmtPct1(deltaPct)} làm EBIT đổi tới <b>{fmtTyAbs(top.maxAbsSwingVnd)}</b> ({fmtPct1(top.maxAbsSwingVnd / Math.abs(base))} EBIT). Cần theo dõi / phòng hộ trước tiên.
+            </div>
+          </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: sp[2] }}>
-          <span style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>Biên độ lệch</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Biên độ lệch</span>
           <Segmented options={DELTAS.map((d) => ({ id: String(d), label: `±${fmtPct1(d)}` }))} value={String(deltaPct)} onChange={(v) => setDeltaPct(Number(v))} />
         </div>
       </div>
 
       {/* Tornado */}
-      <Card>
-        <div style={{ ...({ fontSize: ft.size.eyebrow, letterSpacing: '.06em', textTransform: 'uppercase' as const }), color: tk.inkMuted, fontWeight: ft.weight.semibold, marginBottom: sp[4] }}>
+      <Card className="p-5">
+        <div className="mb-4 text-eyebrow font-semibold uppercase tracking-[.06em] text-muted-foreground">
           Biểu đồ tornado — EBIT lệch bao nhiêu quanh mức hiện tại
         </div>
         {result.drivers.map((d, i) => {
           const leftFrac = Math.abs(d.downsideVnd) / maxExtent;
           const rightFrac = Math.abs(d.upsideVnd) / maxExtent;
+          const isLast = i === result.drivers.length - 1;
           return (
-            <div key={d.key} style={{ display: 'grid', gridTemplateColumns: colGrid, gap: sp[2], alignItems: 'center', marginBottom: i === result.drivers.length - 1 ? 0 : sp[2] }}>
-              <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.semibold, textAlign: 'right', color: tk.ink }}>{d.label}</div>
-              <div style={{ textAlign: 'right', fontSize: ft.size.xs, fontWeight: ft.weight.bold, color: tk.danger, ...tnum }}>{fmtTy(d.downsideVnd)}</div>
-              <div style={{ position: 'relative', height: 22 }}>
-                <div style={{ position: 'absolute', left: '50%', top: -3, bottom: -3, width: 1, background: tk.borderStrong }} />
-                <div style={{ position: 'absolute', top: 1, height: 20, right: '50%', width: `${leftFrac * 50}%`, background: tk.danger, borderRadius: '4px 0 0 4px', opacity: 0.9 }} />
-                <div style={{ position: 'absolute', top: 1, height: 20, left: '50%', width: `${rightFrac * 50}%`, background: tk.success, borderRadius: '0 4px 4px 0', opacity: 0.9 }} />
+            <div key={d.key} className={`grid grid-cols-[196px_64px_1fr_64px] items-center gap-2 ${isLast ? '' : 'mb-2'}`}>
+              <div className="text-right text-sm font-semibold text-foreground">{d.label}</div>
+              <div className="text-right text-xs font-bold tabular-nums text-destructive">{fmtTy(d.downsideVnd)}</div>
+              <div className="relative h-[22px]">
+                <div className="absolute -top-[3px] -bottom-[3px] left-1/2 w-px bg-input" />
+                <div className="absolute top-px h-5 rounded-l bg-destructive opacity-90" style={{ right: '50%', width: `${leftFrac * 50}%` }} />
+                <div className="absolute top-px h-5 rounded-r bg-success opacity-90" style={{ left: '50%', width: `${rightFrac * 50}%` }} />
               </div>
-              <div style={{ textAlign: 'left', fontSize: ft.size.xs, fontWeight: ft.weight.bold, color: tk.success, ...tnum }}>{fmtTy(d.upsideVnd)}</div>
+              <div className="text-left text-xs font-bold tabular-nums text-success">{fmtTy(d.upsideVnd)}</div>
             </div>
           );
         })}
-        <div style={{ display: 'flex', gap: sp[4], marginTop: sp[3], fontSize: ft.size.xs, color: tk.inkFaint }}>
-          <span><span style={{ display: 'inline-block', width: 9, height: 9, background: tk.danger, borderRadius: 2, marginRight: 5, verticalAlign: 'middle' }} />Kịch bản xấu (EBIT giảm)</span>
-          <span><span style={{ display: 'inline-block', width: 9, height: 9, background: tk.success, borderRadius: 2, marginRight: 5, verticalAlign: 'middle' }} />Kịch bản tốt (EBIT tăng)</span>
+        <div className="mt-3 flex gap-4 text-xs text-faint">
+          <span><span className="mr-[5px] inline-block h-[9px] w-[9px] rounded-[2px] bg-destructive align-middle" />Kịch bản xấu (EBIT giảm)</span>
+          <span><span className="mr-[5px] inline-block h-[9px] w-[9px] rounded-[2px] bg-success align-middle" />Kịch bản tốt (EBIT tăng)</span>
         </div>
       </Card>
 
       {/* Bảng chi tiết */}
-      <Card style={{ marginTop: sp[4], padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 0.8fr', gap: sp[2], padding: `10px ${sp[4]}px`, background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}` }}>
+      <Card className="mt-4 overflow-hidden p-0">
+        <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_0.8fr] gap-2 border-b bg-muted px-4 py-2.5">
           {['Yếu tố', 'EBIT xấu', 'EBIT tốt', 'Biên độ', '% EBIT'].map((h, i) => (
-            <div key={h} style={{ fontSize: ft.size.eyebrow, letterSpacing: '.05em', textTransform: 'uppercase', color: tk.inkFaint, fontWeight: ft.weight.semibold, textAlign: i === 0 ? 'left' : 'right' }}>{h}</div>
+            <div key={h} className={`text-eyebrow font-semibold uppercase tracking-[.05em] text-faint ${i === 0 ? 'text-left' : 'text-right'}`}>{h}</div>
           ))}
         </div>
         {result.drivers.map((d) => (
-          <div key={d.key} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 0.8fr', gap: sp[2], padding: `9px ${sp[4]}px`, borderBottom: `1px solid ${tk.surfaceMuted}`, alignItems: 'center' }}>
-            <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>{d.label}</div>
-            <div style={{ fontSize: ft.size.sm, textAlign: 'right', color: tk.danger, ...tnum }}>{fmtTyAbs(base + d.downsideVnd)}</div>
-            <div style={{ fontSize: ft.size.sm, textAlign: 'right', color: tk.success, ...tnum }}>{fmtTyAbs(base + d.upsideVnd)}</div>
-            <div style={{ fontSize: ft.size.sm, textAlign: 'right', fontWeight: ft.weight.bold, color: tk.ink, ...tnum }}>{fmtTyAbs(d.maxAbsSwingVnd)}</div>
-            <div style={{ fontSize: ft.size.sm, textAlign: 'right', color: tk.inkMuted, ...tnum }}>{fmtPct1(d.maxAbsSwingVnd / Math.abs(base))}</div>
+          <div key={d.key} className="grid grid-cols-[1.6fr_1fr_1fr_1fr_0.8fr] items-center gap-2 border-b border-muted px-4 py-2.5">
+            <div className="text-sm font-medium text-foreground">{d.label}</div>
+            <div className="text-right text-sm tabular-nums text-destructive">{fmtTyAbs(base + d.downsideVnd)}</div>
+            <div className="text-right text-sm tabular-nums text-success">{fmtTyAbs(base + d.upsideVnd)}</div>
+            <div className="text-right text-sm font-bold tabular-nums text-foreground">{fmtTyAbs(d.maxAbsSwingVnd)}</div>
+            <div className="text-right text-sm tabular-nums text-muted-foreground">{fmtPct1(d.maxAbsSwingVnd / Math.abs(base))}</div>
           </div>
         ))}
       </Card>
 
-      <p style={{ fontSize: ft.size.xs, color: tk.inkFaint, marginTop: sp[3], lineHeight: 1.5 }}>
+      <p className="mt-3 text-xs leading-relaxed text-faint">
         EBIT ở đây giữ giá bán cố định để đo rủi ro nén biên (khác EBIT tự-định-giá-lại theo cost-plus). Mỗi yếu tố lệch độc lập, giữ nguyên các yếu tố còn lại.
       </p>
-      <div style={{ marginTop: sp[2], display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: ft.size.eyebrow, letterSpacing: '.06em', textTransform: 'uppercase', color: tk.brand, fontWeight: ft.weight.bold, background: tk.brandTint, padding: '3px 9px', borderRadius: rd.pill }}>
-        ✦ Bản xem thử hệ giao diện mới
-      </div>
-    </Screen>
+    </div>
   );
 }

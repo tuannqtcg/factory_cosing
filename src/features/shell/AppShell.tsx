@@ -5,6 +5,9 @@
 // (Kế Hoạch SX của production; báo cáo dây chuyền Ống/PK; nhập Tồn Kho; Danh Mục SP)
 // cho đỡ rối. Điều hướng chia 2 nhóm: PHÂN TÍCH & QUYẾT ĐỊNH và ĐIỀU CHỈNH.
 import { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { isEmulatorMode } from '../../lib/firebase.js';
 import { useAuth } from '../auth/useAuth.js';
 import LoginScreen from '../auth/LoginScreen.js';
@@ -59,73 +62,77 @@ export default function AppShell() {
       <div
         key={t.id}
         onClick={() => setActiveTab(t.id)}
-        style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: active ? '#1c1c1c' : 'transparent', borderLeft: `3px solid ${active ? '#fff' : 'transparent'}` }}
+        className={cn(
+          'flex cursor-pointer items-center gap-2 border-l-2 px-4 py-[9px]',
+          active ? 'border-white bg-neutral-900' : 'border-transparent',
+        )}
       >
-        <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#fff' : '#555', flexShrink: 0 }} />
-        <span style={{ color: active ? '#fff' : '#a3a3a3', fontSize: 12, fontWeight: active ? 600 : 400 }}>{t.label}</span>
+        <div className={cn('h-1 w-1 shrink-0 rounded-full', active ? 'bg-white' : 'bg-neutral-600')} />
+        <span className={cn('text-xs', active ? 'font-semibold text-white' : 'text-neutral-400')}>{t.label}</span>
       </div>
     );
   };
 
   // ── Trạng thái auth (ADR-023): loading → login → chặn vai → view CEO ──────
   if (authState.status === 'loading') {
-    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f6f6f6', fontSize: 12, color: '#737373', fontFamily: 'Roboto,sans-serif' }}>Đang kiểm tra đăng nhập…</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-background text-xs text-muted-foreground">Đang kiểm tra đăng nhập…</div>;
   }
   if (authState.status === 'signed-out') {
     return <LoginScreen onSignIn={authState.signIn} onDemoLogin={authState.switchRole} isEmulator={isEmulatorMode} />;
   }
   if (!hasAccess) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f6f6f6', fontFamily: 'Roboto,sans-serif' }}>
-        <div style={{ width: 360, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 28, textAlign: 'center' }}>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Không có quyền truy cập</div>
-          <div style={{ fontSize: 12, color: '#737373', marginBottom: 18 }}>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Card className="w-[360px] p-7 text-center">
+          <div className="mb-1.5 text-[15px] font-bold text-foreground">Không có quyền truy cập</div>
+          <div className="mb-[18px] text-xs text-muted-foreground">
             Tài khoản <b>{authState.user?.email}</b> {role ? `(vai ${role})` : '(chưa được cấp vai)'} không có quyền vào bảng điều khiển quản trị. Liên hệ quản trị viên để được cấp quyền.
           </div>
-          <button onClick={() => void authState.signOut()} style={{ padding: '9px 18px', background: '#0a0a0a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>Đăng xuất</button>
-        </div>
+          <Button onClick={() => void authState.signOut()}>Đăng xuất</Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Roboto,Helvetica Neue,sans-serif', color: '#0a0a0a', background: '#f6f6f6' }}>
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* ═══ SIDEBAR ═══ */}
-      <aside style={{ width: 216, background: '#0a0a0a', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-          <div style={{ color: '#a3a3a3', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
-          <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, letterSpacing: '-.2px' }}>Costing Engine</div>
-          <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>Model v3.7 · VN · 2026</div>
+      <aside className="sticky top-0 flex h-screen w-[216px] shrink-0 flex-col bg-neutral-950">
+        <div className="border-b border-white/10 px-4 pb-3.5 pt-[18px]">
+          <div className="mb-1 text-[9px] font-bold uppercase tracking-[.14em] text-neutral-400">BlazeMaster CPVC</div>
+          <div className="text-sm font-bold tracking-[-.2px] text-white">Costing Engine</div>
+          <div className="mt-0.5 text-[10px] text-neutral-600">Model v3.7 · VN · 2026</div>
         </div>
 
-        <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 4 }}>Phân Tích & Quyết Định</div>
+        <nav className="flex-1 overflow-y-auto pb-2">
+          <div className="mt-1 px-4 pb-1 pt-2.5 text-[8px] font-bold uppercase tracking-[.14em] text-neutral-500">Phân Tích & Quyết Định</div>
           {OPERATION_TABS.map(navItem)}
-          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 8, borderTop: '1px solid rgba(255,255,255,.06)' }}>Điều Chỉnh Tham Số</div>
+          <div className="mt-2 border-t border-white/[.06] px-4 pb-1 pt-2.5 text-[8px] font-bold uppercase tracking-[.14em] text-neutral-500">Điều Chỉnh Tham Số</div>
           {CONFIG_TABS.map(navItem)}
         </nav>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', padding: '12px 16px' }}>
-          <div style={{ display: 'inline-block', background: '#fff', color: '#0a0a0a', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
+        <div className="border-t border-white/10 px-4 py-3">
+          <div className="mb-1 inline-block rounded-[2px] bg-white px-1.5 py-0.5 text-[8px] font-bold tracking-[.06em] text-neutral-950">
             {role === 'admin' ? 'CHỦ / TOÀN QUYỀN' : 'ĐỊNH GIÁ'}
           </div>
-          <div style={{ color: '#888', fontSize: 9, marginBottom: 8, wordBreak: 'break-all' }}>{authState.user?.email}</div>
-          <button
+          <div className="mb-2 break-all text-[9px] text-neutral-500">{authState.user?.email}</div>
+          <Button
+            variant="outline"
             onClick={() => void authState.signOut()}
-            style={{ width: '100%', padding: '6px 8px', background: 'transparent', color: '#b3b3b3', border: '1px solid rgba(255,255,255,.15)', borderRadius: 4, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
+            className="h-auto w-full border-white/15 bg-transparent px-2 py-1.5 text-[10px] font-semibold text-neutral-300 hover:bg-white/10 hover:text-white"
           >
             Đăng xuất
-          </button>
+          </Button>
         </div>
       </aside>
 
       {/* ═══ MAIN ═══ */}
-      <main style={{ flex: 1, overflow: 'auto', background: '#f6f6f6', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-        <div style={{ width: '100%', maxWidth: 1366, background: '#f6f6f6', minHeight: '100%' }}>
+      <main className="min-w-0 flex-1 overflow-auto bg-background">
+        <div className="mx-auto min-h-full w-full max-w-[1366px]">
         {role && (
           <>
             {data.error && (
-              <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{data.error}</div>
+              <div className="mx-9 mt-4 rounded-sm border border-destructive/40 bg-destructive-tint px-3.5 py-2.5 text-[11px] text-destructive">{data.error}</div>
             )}
             {activeTab === 'dashboard' && (
               <Dashboard

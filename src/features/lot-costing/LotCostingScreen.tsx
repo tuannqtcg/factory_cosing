@@ -2,25 +2,30 @@
 // thì điều gì xảy ra, giá bán nào là đúng?". CHỈ ĐỌC output engine (giá vốn kép
 // ADR-002 + khóa giá ADR-004) — không engine mới, không sửa dữ liệu (nhập/sửa lô
 // ở màn Tồn Kho admin). Mỗi nguyên liệu 1 thẻ.
+// ADR-033 — TRÌNH BÀY: Tailwind + shadcn/ui (Card), KHÔNG inline-style hardcode —
+// màu lấy từ CSS variables (src/index.css). Logic giữ NGUYÊN; màu CHỈ dành cho DỮ
+// LIỆU/trạng thái (lãi/lỗ giữ kho, cảnh báo VAS-02, khóa/mở giá).
 import { fmtVnd, fmtUsd, fmtPct } from '../../lib/format.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
+import { Card } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e6) + ' triệu đ';
 
-function Stat({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+function Stat({ label, value, sub, valueCls }: { label: string; value: string; sub?: string; valueCls?: string }) {
   return (
     <div>
-      <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
-      {sub && <div style={{ fontSize: 9, color: '#999', marginTop: 1 }}>{sub}</div>}
+      <div className="text-eyebrow font-semibold uppercase tracking-[.06em] text-faint">{label}</div>
+      <div className={cn('text-base font-bold tabular-nums text-foreground', valueCls)}>{value}</div>
+      {sub && <div className="mt-px text-eyebrow text-faint">{sub}</div>}
     </div>
   );
 }
 
 export default function LotCostingScreen({ scenario, internal }: { scenario: ScenarioInput | null; internal: ScenarioOutput | null }) {
   if (!scenario || !internal) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
+    return <div className="mx-auto max-w-[1100px] px-9 py-8 text-sm text-muted-foreground">Đang tải kịch bản + kết quả tính…</div>;
   }
 
   const cards = internal.dualCosting.byMaterial.map((dc) => {
@@ -38,10 +43,10 @@ export default function LotCostingScreen({ scenario, internal }: { scenario: Sce
   }).filter((x): x is NonNullable<typeof x> => x !== null);
 
   return (
-    <div style={{ padding: '32px 36px', maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Giá Vốn Theo Lô</div>
-      <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>5 lô khác giá → giá bán nào là đúng?</h1>
-      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
+    <div className="mx-auto max-w-[1100px] px-9 py-8">
+      <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Giá Vốn Theo Lô</div>
+      <h1 className="mb-0.5 mt-1 text-2xl font-bold tracking-tight text-foreground">5 lô khác giá → giá bán nào là đúng?</h1>
+      <p className="mt-1.5 max-w-[760px] text-sm leading-relaxed text-muted-foreground">
         Giá vốn bình quân (hàng đang có) vs giá tái tạo (mua mới) → lãi/lỗ giữ kho → giá bán theo sổ sách vs giá chính thức, và có cần chốt lại giá không (khóa giá ±ngưỡng, ADR-004).
       </p>
 
@@ -51,70 +56,73 @@ export default function LotCostingScreen({ scenario, internal }: { scenario: Sce
         // mô tả kể cả khi OK — không dùng truthiness).
         const loss = c.dc.holdingGainLossVnd < 0;
         const reprice = !c.ev.isLocked;
-        const bannerColor = loss ? '#DC2626' : reprice ? '#b45309' : '#16A34A';
-        const bannerBg = loss ? '#fef2f2' : reprice ? '#fffbeb' : '#f0fdf4';
+        const bannerCls = loss
+          ? 'border-destructive/30 bg-destructive-tint text-destructive'
+          : reprice
+            ? 'border-warning/30 bg-warning-tint text-warning'
+            : 'border-success/30 bg-success-tint text-success';
         const bannerText = loss
           ? `⚠ LỖ giữ kho — hàng tồn đắt hơn giá thị trường hiện tại, cần dự phòng giảm giá tồn kho (VAS-02).${c.dc.provisionWarning ? ' ' + c.dc.provisionWarning : ''}`
           : reprice
             ? `⚠ Giá tái tạo lệch ${fmtPct(Math.abs(c.ev.deviationPct))} (vượt ngưỡng ${fmtPct(c.mat.inventory.priceLock.thresholdPct)}) → NÊN CHỐT LẠI giá bán theo giá tái tạo (giá chính thức bên phải đã dùng giá tái tạo).`
             : `✅ Giá tái tạo còn trong ngưỡng ±${fmtPct(c.mat.inventory.priceLock.thresholdPct)} — giữ nguyên giá bán hiện hành.`;
         return (
-          <div key={`${c.mat.id}-${c.line}`} style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 18, marginTop: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>
-              {c.mat.name} <span style={{ fontSize: 11, color: '#737373' }}>· {c.line === 'pipe' ? 'Ống CPVC' : 'Phụ kiện'}</span>
+          <Card key={`${c.mat.id}-${c.line}`} className="mt-4 p-[18px]">
+            <div className="text-sm font-bold text-foreground">
+              {c.mat.name} <span className="text-[11px] font-normal text-muted-foreground">· {c.line === 'pipe' ? 'Ống CPVC' : 'Phụ kiện'}</span>
             </div>
 
             {/* Bảng lô */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 12 }}>
+            <div className="mt-3 grid grid-cols-2 gap-5">
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: '#737373', textTransform: 'uppercase', marginBottom: 6 }}>Các lô đang tồn (tối đa 5)</div>
-                <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ textAlign: 'left', color: '#999', fontSize: 10 }}><th>Lô</th><th style={{ textAlign: 'right' }}>Tồn (tấn)</th><th style={{ textAlign: 'right' }}>Giá (USD/kg)</th></tr></thead>
+                <div className="mb-1.5 text-eyebrow font-bold uppercase text-muted-foreground">Các lô đang tồn (tối đa 5)</div>
+                <table className="w-full border-collapse text-xs">
+                  <thead><tr className="text-left text-eyebrow text-faint"><th>Lô</th><th className="text-right">Tồn (tấn)</th><th className="text-right">Giá (USD/kg)</th></tr></thead>
                   <tbody>
                     {c.lots.map((l, i) => (
-                      <tr key={i} style={{ borderTop: '1px solid #f0ece0' }}>
+                      <tr key={i} className="border-t border-border">
                         <td>Lô {i + 1}</td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(l.tons)}</td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtUsd(l.priceUsdPerKg)}</td>
+                        <td className="text-right tabular-nums">{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(l.tons)}</td>
+                        <td className="text-right tabular-nums">{fmtUsd(l.priceUsdPerKg)}</td>
                       </tr>
                     ))}
-                    <tr style={{ borderTop: '2px solid #e5e0d0', fontWeight: 700 }}>
+                    <tr className="border-t-2 border-input font-bold">
                       <td>Bình quân</td>
-                      <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(c.totalKg)} kg</td>
-                      <td style={{ textAlign: 'right', color: '#a8003b' }}>{c.wAvg !== null ? fmtUsd(c.wAvg) : '—'}</td>
+                      <td className="text-right tabular-nums">{fmtVnd(c.totalKg)} kg</td>
+                      <td className="text-right tabular-nums text-foreground">{c.wAvg !== null ? fmtUsd(c.wAvg) : '—'}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignContent: 'start' }}>
+              <div className="grid grid-cols-2 content-start gap-3.5">
                 <Stat label="Giá tái tạo (mua mới)" value={`${fmtUsd(c.ev.replacement)} USD/kg`} sub={`Baseline khóa ${fmtUsd(c.mat.inventory.priceLock.baseline)} · lệch ${fmtPct(c.ev.deviationPct)}`} />
-                <Stat label="Trạng thái khóa giá" value={c.ev.isLocked ? 'ĐANG KHÓA' : 'MỞ KHÓA'} color={c.ev.isLocked ? '#16A34A' : '#DC2626'} sub={c.ev.stalenessWarning ?? undefined} />
-                <Stat label="Lãi/lỗ giữ kho" value={fmtTy(c.dc.holdingGainLossVnd)} color={c.dc.holdingGainLossVnd >= 0 ? '#16A34A' : '#DC2626'} sub={c.dc.holdingGainLossVnd >= 0 ? 'Giữ hàng rẻ hơn thị trường' : 'Hàng đắt hơn thị trường'} />
+                <Stat label="Trạng thái khóa giá" value={c.ev.isLocked ? 'ĐANG KHÓA' : 'MỞ KHÓA'} valueCls={c.ev.isLocked ? 'text-success' : 'text-destructive'} sub={c.ev.stalenessWarning ?? undefined} />
+                <Stat label="Lãi/lỗ giữ kho" value={fmtTy(c.dc.holdingGainLossVnd)} valueCls={c.dc.holdingGainLossVnd >= 0 ? 'text-success' : 'text-destructive'} sub={c.dc.holdingGainLossVnd >= 0 ? 'Giữ hàng rẻ hơn thị trường' : 'Hàng đắt hơn thị trường'} />
                 <Stat label="Giá thành sổ sách" value={`${fmtVnd(c.dc.bookCostPerKg)} đ/kg`} sub="Theo bình quân lô đang có" />
               </div>
             </div>
 
             {/* 2 giá bán */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
-              <div style={{ background: '#faf8f2', border: '1px solid #e5e0d0', borderRadius: 6, padding: 14 }}>
-                <div style={{ fontSize: 10, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em' }}>Giá bán theo giá vốn kho (sổ sách)</div>
-                <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(c.bookSalePrice)} <span style={{ fontSize: 11, color: '#999' }}>đ/kg</span></div>
-                <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>= giá thành sổ sách × (1 + markup {fmtPct(c.mat.markupVf)})</div>
+            <div className="mt-3.5 grid grid-cols-2 gap-3.5">
+              <div className="rounded-md border bg-muted p-3.5">
+                <div className="text-eyebrow uppercase tracking-[.06em] text-muted-foreground">Giá bán theo giá vốn kho (sổ sách)</div>
+                <div className="text-xl font-bold tabular-nums text-foreground">{fmtVnd(c.bookSalePrice)} <span className="text-[11px] font-normal text-faint">đ/kg</span></div>
+                <div className="mt-0.5 text-eyebrow text-faint">= giá thành sổ sách × (1 + markup {fmtPct(c.mat.markupVf)})</div>
               </div>
-              <div style={{ background: '#1a1a1a', color: '#fff', borderRadius: 6, padding: 14 }}>
-                <div style={{ fontSize: 10, color: '#ff9db8', textTransform: 'uppercase', letterSpacing: '.06em' }}>Giá bán chính thức (theo khóa giá)</div>
-                <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(c.officialSalePrice)} <span style={{ fontSize: 11, color: '#999' }}>đ/kg</span></div>
-                <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>
+              <div className="rounded-md bg-primary p-3.5 text-primary-foreground">
+                <div className="text-eyebrow uppercase tracking-[.06em] text-primary-foreground/60">Giá bán chính thức (theo khóa giá)</div>
+                <div className="text-xl font-bold tabular-nums">{fmtVnd(c.officialSalePrice)} <span className="text-[11px] font-normal text-primary-foreground/50">đ/kg</span></div>
+                <div className="mt-0.5 text-eyebrow text-primary-foreground/60">
                   {c.ev.isLocked ? 'Dùng giá vốn baseline (còn trong ngưỡng)' : 'Dùng giá vốn tái tạo (đã vượt ngưỡng)'} · chênh {fmtVnd(c.officialSalePrice - c.bookSalePrice)} đ/kg vs sổ sách
                 </div>
               </div>
             </div>
 
             {/* Khuyến nghị */}
-            <div style={{ marginTop: 12, padding: '9px 14px', borderRadius: 6, border: `1px solid ${bannerColor}`, background: bannerBg, color: bannerColor, fontSize: 11, fontWeight: 600 }}>
+            <div className={cn('mt-3 rounded-md border px-3.5 py-2 text-[11px] font-semibold', bannerCls)}>
               {bannerText}
             </div>
-          </div>
+          </Card>
         );
       })}
     </div>

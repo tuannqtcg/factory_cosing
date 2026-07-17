@@ -5,14 +5,20 @@
 //   Giá VF → ×(1+markupTcg) = Giá TCG → ROUNDUP(TCG/(1−biên NPP)) = niêm yết NPP
 //           → ×(1+VAT) = giá có VAT.
 // markupTcg / biên NPP suy ngược per-SKU từ chuỗi đã persist (đồng nhất toàn cục).
+// ADR-033 — TRÌNH BÀY: Tailwind + shadcn/ui (Card/Input); chrome đen–trắng, bỏ hex trang trí.
 import { useMemo, useState } from 'react';
 import { fmtVnd } from '../../lib/format.js';
 import type { PriceListDoc } from '../../schemas/scenario.js';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Suất quy trình là chính sách số tròn (markupTcg/biên NPP/VAT) — hiển thị tròn %
 // để tránh nhiễu do làm-tròn-lên-trăm của giá list; số per-SKU vẫn chính xác tuyệt đối.
 const pctWhole = (r: number) => `${Math.round(r * 100)}%`;
+
+const GRID = 'grid grid-cols-[36px_1.4fr_70px_52px_1fr_1fr_1fr_1fr] gap-2 px-4';
 
 interface Row {
   stt: number;
@@ -67,68 +73,66 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
   });
 
   if (!priceList) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải bảng giá…</div>;
+    return <div className="px-9 py-8 text-sm text-muted-foreground">Đang tải bảng giá…</div>;
   }
 
-  const Step = ({ n, title, formula, color }: { n: string; title: string; formula: string; color: string }) => (
-    <div style={{ flex: 1, minWidth: 150, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: '10px 12px' }}>
-      <div style={{ fontSize: 9, color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>{n}. {title}</div>
-      <div style={{ fontSize: 11, color: '#555', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>{formula}</div>
-    </div>
+  const Step = ({ n, title, formula }: { n: string; title: string; formula: string }) => (
+    <Card className="min-w-[150px] flex-1 px-3 py-2.5">
+      <div className="text-eyebrow font-bold uppercase tracking-[.06em] text-faint">{n}. {title}</div>
+      <div className="mt-1 text-[11px] tabular-nums text-muted-foreground">{formula}</div>
+    </Card>
   );
 
-  const cols = '36px 1.4fr 70px 52px 1fr 1fr 1fr 1fr';
-
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Nhà Phân Phối</div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Từ giá VF → giá tới nhà phân phối</h1>
-        <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
+    <div className="px-9 py-8">
+      <div className="mb-3.5">
+        <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Bảng Giá Nhà Phân Phối</div>
+        <h1 className="mt-1 text-xl font-bold tracking-tight text-foreground">Từ giá VF → giá tới nhà phân phối</h1>
+        <div className="mt-1 text-xs text-muted-foreground">
           Dẫn xuất từ <b>Giá Xuất Xưởng (VF)</b> — bảng này tự đổi theo VF, không nhập tay. VF ổn định theo khóa giá (ADR-004) nên giá NPP cũng ổn định theo.
         </div>
       </div>
 
       {/* Quy trình 4 bước */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, alignItems: 'stretch' }}>
-        <Step n="1" title="Giá VF (xuất xưởng)" formula="Giá gốc — tab Bảng Giá" color="#a8003b" />
-        <Step n="2" title="Markup TCG" formula={`× (1 + ${pctWhole(rates.markupTcg)})`} color="#b45309" />
-        <Step n="3" title="Biên nhà phân phối" formula={`÷ (1 − ${pctWhole(rates.listMargin)}), làm tròn lên trăm`} color="#b45309" />
-        <Step n="4" title="Giá niêm yết NPP" formula={`+ VAT ${pctWhole(rates.vat)}`} color="#16A34A" />
+      <div className="mb-4 flex flex-wrap items-stretch gap-2">
+        <Step n="1" title="Giá VF (xuất xưởng)" formula="Giá gốc — tab Bảng Giá" />
+        <Step n="2" title="Markup TCG" formula={`× (1 + ${pctWhole(rates.markupTcg)})`} />
+        <Step n="3" title="Biên nhà phân phối" formula={`÷ (1 − ${pctWhole(rates.listMargin)}), làm tròn lên trăm`} />
+        <Step n="4" title="Giá niêm yết NPP" formula={`+ VAT ${pctWhole(rates.vat)}`} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11, gap: 12, flexWrap: 'wrap' }}>
-        <input
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Tìm theo tên, kích cỡ..."
-          style={{ padding: '7px 12px', border: '1px solid #b3b3b3', borderRadius: 2, fontSize: 12, background: '#fff', outline: 'none', minWidth: 200, maxWidth: 260, width: '100%' }}
+          className="h-8 w-full min-w-[200px] max-w-[260px]"
         />
-        <div style={{ fontSize: 10, color: '#737373' }}>Hiển thị {filteredRows.length} sản phẩm</div>
+        <div className="text-[10px] text-muted-foreground">Hiển thị {filteredRows.length} sản phẩm</div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
+      <Card className="overflow-hidden p-0">
+        <div className={cn(GRID, 'border-b bg-muted py-2.5')}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'ĐVT'].map((h) => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
+            <div key={h} className="text-eyebrow font-bold uppercase text-faint">{h}</div>
           ))}
           {[`Giá VF (đ)`, `Giá TCG (đ)`, `Niêm yết NPP (đ)`, `Có VAT (đ)`].map((h) => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{h}</div>
+            <div key={h} className="text-right text-eyebrow font-bold uppercase text-faint">{h}</div>
           ))}
         </div>
         {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center' }}>
-            <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
-            <div style={{ fontSize: 12, fontWeight: 500 }}>{row.name}</div>
-            <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
-            <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: '#a8003b', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.vf)}</div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.tcg)}</div>
-            <div style={{ fontSize: 13, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.listBeforeVat)}</div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.listWithVat)}</div>
+          <div key={row.key} className={cn(GRID, 'items-center border-b border-muted py-2')}>
+            <div className="text-[10px] tabular-nums text-faint">{row.stt}</div>
+            <div className="text-xs font-medium text-foreground">{row.name}</div>
+            <div className="text-[11px] tabular-nums text-muted-foreground">{row.size}</div>
+            <div className="text-[11px] text-muted-foreground">{row.unit}</div>
+            <div className="text-right text-xs font-semibold tabular-nums text-foreground">{fmtVnd(row.vf)}</div>
+            <div className="text-right text-xs tabular-nums text-muted-foreground">{fmtVnd(row.tcg)}</div>
+            <div className="text-right text-[13px] font-bold tabular-nums text-foreground">{fmtVnd(row.listBeforeVat)}</div>
+            <div className="text-right text-xs tabular-nums text-muted-foreground">{fmtVnd(row.listWithVat)}</div>
           </div>
         ))}
-      </div>
+      </Card>
     </div>
   );
 }

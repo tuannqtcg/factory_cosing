@@ -3,11 +3,19 @@
 // phỏng mix. VỐN/ROIC + GIÁ THỊ TRƯỜNG nhập tay dời sang chế độ "Phân tích sâu" —
 // CEO chỉ mở khi thực sự muốn đào sâu (lựa chọn của CEO, không nhồi vào flow chính).
 // Đọc engine đã đóng băng (calculateProductMixProfile + calculateMixEbit).
+// ADR-033 — TRÌNH BÀY: Tailwind + shadcn/ui (Card/Button/Badge/Input/Segmented),
+// KHÔNG inline-style hardcode; màu CHỈ dành cho DỮ LIỆU (winner, Δ, trạng thái).
 import { useMemo, useState } from 'react';
 import type { ScenarioInput } from '../../schemas/scenario.js';
 import { calculateProductMixProfile, calculateMixEbit } from '../../engine/product-mix.js';
 import type { LineMixMetrics, MarketPriceOverride } from '../../schemas/product-mix.js';
 import { fmtVnd, fmtPct } from '../../lib/format.js';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Segmented } from '@/components/ui/segmented';
+import { cn } from '@/lib/utils';
 
 const fmtTr = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(v / 1e6) + ' tr';
 const fmtTyAbs = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2 }).format(v / 1e9) + ' tỷ đ';
@@ -41,7 +49,7 @@ export default function ProductMixScreen({ scenario }: { scenario: ScenarioInput
   const mix = useMemo(() => (scenario ? calculateMixEbit(scenario, pipePct / 100, fittingPct / 100, override) : null), [scenario, pipePct, fittingPct, override]);
 
   if (!scenario || !profile || !baseMix || !mix) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản…</div>;
+    return <div className="mx-auto max-w-[1000px] px-9 py-8 text-xs text-muted-foreground">Đang tải kịch bản…</div>;
   }
 
   const pipe = profile.lines.find((l) => l.line === 'pipe')!;
@@ -51,68 +59,68 @@ export default function ProductMixScreen({ scenario }: { scenario: ScenarioInput
   const mixDelta = mix.ebitVnd - baseMix.ebitVnd;
 
   const simulator = (
-    <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 18, marginTop: 16 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#737373', textTransform: 'uppercase', marginBottom: 14 }}>Mô phỏng — chạy mỗi dòng bao nhiêu % công suất bình thường</div>
+    <Card className="mt-4 p-[18px]">
+      <div className="mb-3.5 text-eyebrow font-bold uppercase text-faint">Mô phỏng — chạy mỗi dòng bao nhiêu % công suất bình thường</div>
       {[
-        { label: 'Ống CPVC', pct: pipePct, set: setPipePct, accent: '#a8003b' },
-        { label: 'Phụ kiện', pct: fittingPct, set: setFittingPct, accent: '#2563eb' },
+        { label: 'Ống CPVC', pct: pipePct, set: setPipePct },
+        { label: 'Phụ kiện', pct: fittingPct, set: setFittingPct },
       ].map((s) => (
-        <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, width: 90 }}>{s.label}</span>
-          <input type="range" min={0} max={150} step={5} value={s.pct} onChange={(e) => s.set(Number(e.target.value))} style={{ flex: 1, accentColor: s.accent }} />
-          <span style={{ fontSize: 13, fontWeight: 700, width: 52, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{s.pct}%</span>
+        <div key={s.label} className="mb-3 flex items-center gap-3">
+          <span className="w-[90px] text-xs font-semibold text-foreground">{s.label}</span>
+          <input type="range" min={0} max={150} step={5} value={s.pct} onChange={(e) => s.set(Number(e.target.value))} className="flex-1 accent-foreground" />
+          <span className="w-[52px] text-right text-[13px] font-bold tabular-nums text-foreground">{s.pct}%</span>
         </div>
       ))}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginTop: 8, paddingTop: 14, borderTop: '1px solid #e5e0d0' }}>
-        <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Doanh thu</div><div style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtTyAbs(mix.revenueVnd)}</div></div>
-        <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>EBIT</div><div style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtTyAbs(mix.ebitVnd)}</div></div>
-        <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Δ so với 100/100</div><div style={{ fontSize: 16, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: mixDelta < 0 ? '#DC2626' : mixDelta > 0 ? '#16A34A' : '#999' }}>{Math.abs(mixDelta) < 1e6 ? '—' : fmtTySigned(mixDelta)}</div></div>
+      <div className="mt-2 grid grid-cols-3 gap-3 border-t border-border pt-3.5">
+        <div><div className="text-eyebrow uppercase text-faint">Doanh thu</div><div className="text-base font-bold tabular-nums text-foreground">{fmtTyAbs(mix.revenueVnd)}</div></div>
+        <div><div className="text-eyebrow uppercase text-faint">EBIT</div><div className="text-base font-bold tabular-nums text-foreground">{fmtTyAbs(mix.ebitVnd)}</div></div>
+        <div><div className="text-eyebrow uppercase text-faint">Δ so với 100/100</div><div className={cn('text-base font-bold tabular-nums', mixDelta < 0 ? 'text-destructive' : mixDelta > 0 ? 'text-success' : 'text-faint')}>{Math.abs(mixDelta) < 1e6 ? '—' : fmtTySigned(mixDelta)}</div></div>
       </div>
-    </div>
+    </Card>
   );
 
   // ── Chế độ NHÌN NHANH (mặc định, đơn giản) ─────────────────────────────────
   if (mode === 'quick') {
     const quickCard = (l: LineMixMetrics) => (
-      <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 16 }}>
-        <div style={{ fontSize: 15, fontWeight: 700 }}>{l.label} <span style={{ fontSize: 10, color: '#999' }}>· {l.materialName}</span></div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Biên VF</div><div style={{ fontSize: 17, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtPct(l.marginPct)}</div></div>
-          <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Đóng góp / kg</div><div style={{ fontSize: 17, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: l === kgWinner ? '#16A34A' : '#1a1a1a' }}>{fmtVnd(l.marginPerKgVnd)} đ</div></div>
-          <div style={{ gridColumn: '1 / 3', borderTop: '1px dashed #e5e0d0', paddingTop: 10 }}>
-            <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Đóng góp / máy-giờ</div>
-            <div style={{ fontSize: 20, fontWeight: 800, fontVariantNumeric: 'tabular-nums', color: l === hourWinner ? '#16A34A' : '#1a1a1a' }}>{fmtTr(l.contributionPerMachineHourVnd)} đ</div>
+      <Card className="p-4">
+        <div className="text-[15px] font-bold text-foreground">{l.label} <span className="text-[10px] text-faint">· {l.materialName}</span></div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div><div className="text-eyebrow uppercase text-faint">Biên VF</div><div className="text-[17px] font-bold tabular-nums text-foreground">{fmtPct(l.marginPct)}</div></div>
+          <div><div className="text-eyebrow uppercase text-faint">Đóng góp / kg</div><div className={cn('text-[17px] font-bold tabular-nums', l === kgWinner ? 'text-success' : 'text-foreground')}>{fmtVnd(l.marginPerKgVnd)} đ</div></div>
+          <div className="col-span-2 border-t border-dashed border-border pt-2.5">
+            <div className="text-eyebrow uppercase text-faint">Đóng góp / máy-giờ</div>
+            <div className={cn('text-xl font-extrabold tabular-nums', l === hourWinner ? 'text-success' : 'text-foreground')}>{fmtTr(l.contributionPerMachineHourVnd)} đ</div>
           </div>
-          <div style={{ gridColumn: '1 / 3', display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#737373' }}>
+          <div className="col-span-2 flex justify-between text-[10px] text-muted-foreground">
             <span>Sản lượng: <b>{fmtTons(l.annualVolumeKg)}</b></span>
             <span>Giờ máy: <b>{fmtH(l.annualMachineHours)}</b></span>
           </div>
         </div>
-      </div>
+      </Card>
     );
     return (
-      <div style={{ padding: '32px 36px', maxWidth: 1000, margin: '0 auto' }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Tối Ưu Product-mix</div>
-        <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Dồn công suất vào dòng nào lãi hơn?</h1>
-        <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>Nhìn nhanh hiệu quả 2 dòng theo mỗi kg và mỗi máy-giờ. Biên % cao chưa chắc lãi hơn theo giờ máy.</p>
+      <div className="mx-auto max-w-[1000px] px-9 py-8">
+        <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Tối Ưu Product-mix</div>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground">Dồn công suất vào dòng nào lãi hơn?</h1>
+        <p className="mt-1 text-xs text-muted-foreground">Nhìn nhanh hiệu quả 2 dòng theo mỗi kg và mỗi máy-giờ. Biên % cao chưa chắc lãi hơn theo giờ máy.</p>
 
-        <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, border: '1px solid #b45309', background: '#fffbeb', color: '#92400e', fontSize: 12, fontWeight: 600 }}>
+        <div className="mt-4 rounded-lg border border-warning/25 bg-warning-tint px-4 py-3 text-xs font-semibold text-warning">
           ⚖ <b>{kgWinner.label}</b> lãi hơn trên mỗi <b>kg</b> ({fmtVnd(kgWinner.marginPerKgVnd)} vs {fmtVnd((kgWinner.line === pipe.line ? fitting : pipe).marginPerKgVnd)} đ),
           nhưng <b>{hourWinner.label}</b> lãi hơn trên mỗi <b>máy-giờ</b> ({fmtTr(hourWinner.contributionPerMachineHourVnd)} vs {fmtTr((hourWinner.line === pipe.line ? fitting : pipe).contributionPerMachineHourVnd)} đ).
           Kết luận tuỳ <b>ràng buộc thật</b> của anh.
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+        <div className="mt-4 grid grid-cols-2 gap-3">
           {quickCard(pipe)}
           {quickCard(fitting)}
         </div>
 
         {simulator}
 
-        <button onClick={() => setMode('deep')} style={{ marginTop: 16, padding: '10px 16px', background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+        <Button onClick={() => setMode('deep')} className="mt-4">
           Phân tích sâu: vốn đầu tư & giá thị trường →
-        </button>
-        <div style={{ fontSize: 10, color: '#999', marginTop: 6 }}>Để trả lời "đầu tư vào dòng nào" theo vốn/ROIC và giá thị trường thật — mở khi cần, không bắt buộc.</div>
+        </Button>
+        <div className="mt-1.5 text-[10px] text-faint">Để trả lời "đầu tư vào dòng nào" theo vốn/ROIC và giá thị trường thật — mở khi cần, không bắt buộc.</div>
       </div>
     );
   }
@@ -124,62 +132,58 @@ export default function ProductMixScreen({ scenario }: { scenario: ScenarioInput
   const fmtByConstraint = (l: LineMixMetrics) =>
     constraint === 'machineHour' ? `${fmtTr(l.contributionPerMachineHourVnd)} đ/máy-giờ` : constraint === 'fixedCapital' ? `${fmtPct(l.contributionPerCapital)}/năm (ROIC)` : `${fmtVnd(l.marginPerKgVnd)} đ/kg`;
   const priceInput = (val: number | '', set: (v: number | '') => void, vf: number) => (
-    <input type="number" value={val} placeholder={String(Math.round(vf))} onChange={(e) => set(e.target.value === '' ? '' : Number(e.target.value) || 0)}
-      style={{ width: 100, padding: '4px 7px', fontSize: 12, textAlign: 'right', border: '1px solid #d8d8d8', borderRadius: 3, outline: 'none', fontVariantNumeric: 'tabular-nums' }} />
+    <Input type="number" value={val} placeholder={String(Math.round(vf))} onChange={(e) => set(e.target.value === '' ? '' : Number(e.target.value) || 0)}
+      className="h-7 w-[100px] px-1.5 text-right text-xs tabular-nums" />
   );
   const deepCard = (l: LineMixMetrics, isPrio: boolean, priceVal: number | '', setPrice: (v: number | '') => void) => (
-    <div style={{ background: '#fff', border: `1px solid ${isPrio ? '#16A34A' : '#e5e0d0'}`, borderRadius: 8, padding: 16, position: 'relative' }}>
-      {isPrio && <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 9, fontWeight: 700, color: '#fff', background: '#16A34A', padding: '2px 7px', borderRadius: 3 }}>ƯU TIÊN</div>}
-      <div style={{ fontSize: 15, fontWeight: 700 }}>{l.label} <span style={{ fontSize: 10, color: '#999' }}>· {l.materialName}</span></div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 11, color: '#737373' }}>
+    <Card className={cn('relative p-4', isPrio && 'border-success')}>
+      {isPrio && <Badge variant="success" className="absolute right-3 top-3">ƯU TIÊN</Badge>}
+      <div className="text-[15px] font-bold text-foreground">{l.label} <span className="text-[10px] text-faint">· {l.materialName}</span></div>
+      <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
         Giá thị trường: {priceInput(priceVal, setPrice, l.vfPriceVndPerKg)} đ/kg
-        {priceVal === '' && <span style={{ fontSize: 10, color: '#bbb' }}>(mặc định VF {fmtVnd(l.vfPriceVndPerKg)})</span>}
+        {priceVal === '' && <span className="text-[10px] text-faint">(mặc định VF {fmtVnd(l.vfPriceVndPerKg)})</span>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 12 }}>
-        <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Biên</div><div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtPct(l.marginPct)}</div></div>
-        <div><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Đóng góp/kg</div><div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(l.marginPerKgVnd)} đ</div></div>
-        <div style={{ background: constraint === 'machineHour' ? '#f0fdf4' : 'transparent', borderRadius: 4, padding: constraint === 'machineHour' ? '2px 4px' : 0 }}><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>/ Máy-giờ</div><div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtTr(l.contributionPerMachineHourVnd)} đ</div></div>
-        <div style={{ background: constraint === 'fixedCapital' ? '#f0fdf4' : 'transparent', borderRadius: 4, padding: constraint === 'fixedCapital' ? '2px 4px' : 0 }}><div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>/ Đồng vốn (ROIC)</div><div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtPct(l.contributionPerCapital)}</div></div>
-        <div style={{ gridColumn: '1 / 3', borderTop: '1px dashed #e5e0d0', paddingTop: 8, display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#737373' }}>
+      <div className="mt-3 grid grid-cols-2 gap-2.5">
+        <div><div className="text-eyebrow uppercase text-faint">Biên</div><div className="text-[15px] font-bold tabular-nums text-foreground">{fmtPct(l.marginPct)}</div></div>
+        <div><div className="text-eyebrow uppercase text-faint">Đóng góp/kg</div><div className="text-[15px] font-bold tabular-nums text-foreground">{fmtVnd(l.marginPerKgVnd)} đ</div></div>
+        <div className={cn('rounded', constraint === 'machineHour' && 'bg-success-tint px-1 py-0.5')}><div className="text-eyebrow uppercase text-faint">/ Máy-giờ</div><div className="text-[15px] font-bold tabular-nums text-foreground">{fmtTr(l.contributionPerMachineHourVnd)} đ</div></div>
+        <div className={cn('rounded', constraint === 'fixedCapital' && 'bg-success-tint px-1 py-0.5')}><div className="text-eyebrow uppercase text-faint">/ Đồng vốn (ROIC)</div><div className="text-[15px] font-bold tabular-nums text-foreground">{fmtPct(l.contributionPerCapital)}</div></div>
+        <div className="col-span-2 flex justify-between border-t border-dashed border-border pt-2 text-[10px] text-muted-foreground">
           <span>Vốn cố định: <b>{fmtTyAbs(l.fixedCapitalVnd)}</b></span>
           <span>Sản lượng: <b>{fmtTons(l.annualVolumeKg)}</b></span>
           <span>Giờ máy: <b>{fmtH(l.annualMachineHours)}</b></span>
         </div>
       </div>
-    </div>
+    </Card>
   );
   return (
-    <div style={{ padding: '32px 36px', maxWidth: 1000, margin: '0 auto' }}>
-      <button onClick={() => setMode('quick')} style={{ fontSize: 11, padding: '5px 10px', border: '1px solid #d8d8d8', borderRadius: 5, background: '#fff', cursor: 'pointer', color: '#555', marginBottom: 12 }}>← Về nhìn nhanh</button>
-      <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Product-mix · Phân Tích Sâu</div>
-      <h1 style={{ margin: '4px 0 2px', fontSize: 22, fontWeight: 700 }}>Đầu tư vào dòng nào — theo vốn & giá thị trường thật</h1>
-      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
+    <div className="mx-auto max-w-[1000px] px-9 py-8">
+      <Button variant="outline" size="sm" onClick={() => setMode('quick')} className="mb-3">← Về nhìn nhanh</Button>
+      <div className="text-eyebrow font-semibold uppercase tracking-[.14em] text-faint">Product-mix · Phân Tích Sâu</div>
+      <h1 className="mt-1 text-xl font-bold tracking-tight text-foreground">Đầu tư vào dòng nào — theo vốn & giá thị trường thật</h1>
+      <p className="mt-1 text-xs text-muted-foreground">
         Chọn <b>ràng buộc thật</b> của anh và nhập <b>giá thị trường thật</b> (mặc định = giá VF cost+markup, thường cao hơn giá ống commodity thực tế). Ống là commodity nên nhập giá thật mới ra kết luận đúng.
       </p>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11, color: '#737373' }}>Ràng buộc lớn nhất:</span>
-        <div style={{ display: 'flex', border: '1px solid #b3b3b3', borderRadius: 2, overflow: 'hidden' }}>
-          {CONSTRAINTS.map((c) => (
-            <div key={c.id} onClick={() => setConstraint(c.id)} title={c.hint} style={{ padding: '6px 14px', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: constraint === c.id ? '#a8003b' : '#fff', color: constraint === c.id ? '#fff' : '#1a1a1a', borderRight: '1px solid #d8d8d8' }}>{c.label}</div>
-          ))}
-        </div>
-        <span style={{ fontSize: 10, color: '#999' }}>{CONSTRAINTS.find((c) => c.id === constraint)!.hint}</span>
+      <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <span className="text-[11px] text-muted-foreground">Ràng buộc lớn nhất:</span>
+        <Segmented value={constraint} onChange={setConstraint} options={CONSTRAINTS.map((c) => ({ id: c.id, label: c.label, title: c.hint }))} />
+        <span className="text-[10px] text-faint">{CONSTRAINTS.find((c) => c.id === constraint)!.hint}</span>
       </div>
 
-      <div style={{ marginTop: 12, padding: '12px 16px', borderRadius: 8, border: '1px solid #16A34A', background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 600 }}>
+      <div className="mt-3 rounded-lg border border-success/25 bg-success-tint px-4 py-3 text-xs font-semibold text-success">
         ✅ Theo ràng buộc <b>{CONSTRAINTS.find((c) => c.id === constraint)!.label}</b>: ưu tiên <b>{prio.label}</b> — {fmtByConstraint(prio)} so với {other.label} {fmtByConstraint(other)}.
         {constraint === 'volumeKg' && ' (Khi thị trường quyết định — thường đúng với ngành ống/phụ kiện — phụ kiện/van biên cao thắng.)'}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 16 }}>
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {deepCard(pipe, winner === 'pipe', marketPipe, setMarketPipe)}
         {deepCard(fitting, winner === 'fitting', marketFitting, setMarketFitting)}
       </div>
 
       {simulator}
 
-      <p style={{ fontSize: 10, color: '#999', marginTop: 12 }}>
+      <p className="mt-3 text-[10px] text-faint">
         ROIC = đóng góp năm ÷ vốn cố định dòng (đùn+khuôn kéo/cắt vs máy ép+khuôn; chưa gồm vốn dùng chung/lưu động — bổ sung khi cần). EBIT mô phỏng giữ giá (thị trường nếu nhập, mặc định VF) cố định.
       </p>
     </div>

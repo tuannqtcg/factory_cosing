@@ -1,6 +1,9 @@
 // ADR-023 — màn đăng nhập production (email/mật khẩu). Lối tắt đăng nhập demo
 // theo vai CHỈ hiện ở emulator (isEmulatorMode) — tiện dev, không lộ production.
 import { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import type { AppRole } from '../../lib/firebase.js';
 
 const DEMO_ROLES: Array<{ role: AppRole; label: string }> = [
@@ -34,49 +37,49 @@ export default function LoginScreen({
     setBusy(false);
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 14, outline: 'none', boxSizing: 'border-box' };
-
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ebe6d4', fontFamily: 'Roboto,Helvetica Neue,sans-serif' }}>
-      <div style={{ width: 360, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, boxShadow: '0 8px 30px rgba(0,0,0,.08)', overflow: 'hidden' }}>
-        <div style={{ background: '#1a1a1a', padding: '22px 24px' }}>
-          <div style={{ color: '#a8003b', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
-          <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>Costing Engine</div>
-          <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>Đăng nhập để vào bảng điều khiển</div>
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Card className="w-[360px] overflow-hidden p-0 shadow-lg">
+        <div className="bg-neutral-900 px-6 py-[22px]">
+          <div className="mb-1 text-[9px] font-bold uppercase tracking-[.14em] text-neutral-400">BlazeMaster CPVC</div>
+          <div className="text-lg font-bold text-white">Costing Engine</div>
+          <div className="mt-0.5 text-[10px] text-neutral-500">Đăng nhập để vào bảng điều khiển</div>
         </div>
-        <div style={{ padding: 24 }}>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 5 }}>Email</div>
-            <input style={inputStyle} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="ban@congty.com" />
+        <div className="p-6">
+          <div className="mb-3">
+            <div className="mb-1.5 text-[11px] font-semibold text-foreground">Email</div>
+            <Input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="ban@congty.com" />
           </div>
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 5 }}>Mật khẩu</div>
-            <input style={inputStyle} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="••••••••" />
+          <div className="mb-4">
+            <div className="mb-1.5 text-[11px] font-semibold text-foreground">Mật khẩu</div>
+            <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="••••••••" />
           </div>
-          {error && <div style={{ color: '#DC2626', fontSize: 11, marginBottom: 12 }}>{error}</div>}
-          <button onClick={() => void submit()} disabled={busy} style={{ width: '100%', padding: '11px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+          {error && <div className="mb-3 text-[11px] text-destructive">{error}</div>}
+          <Button onClick={() => void submit()} disabled={busy} className="h-auto w-full py-2.5 text-sm">
             {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
-          </button>
+          </Button>
 
           {isEmulator && (
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px dashed #e0dcc8' }}>
-              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#999', fontWeight: 700, marginBottom: 8 }}>Lối tắt demo (chỉ emulator)</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <div className="mt-5 border-t border-dashed border-border pt-4">
+              <div className="mb-2 text-[9px] font-bold uppercase tracking-[.1em] text-faint">Lối tắt demo (chỉ emulator)</div>
+              <div className="flex flex-wrap gap-1.5">
                 {DEMO_ROLES.map((d) => (
-                  <button
+                  <Button
                     key={d.role}
+                    variant="outline"
+                    size="sm"
                     onClick={async () => { setBusy(true); setError(await onDemoLogin(d.role)); setBusy(false); }}
                     disabled={busy}
-                    style={{ flex: '1 0 45%', padding: '7px 10px', background: '#fff', color: '#555', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                    className="flex-[1_0_45%]"
                   >
                     {d.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

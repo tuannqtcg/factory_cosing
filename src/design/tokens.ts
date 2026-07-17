@@ -3,36 +3,41 @@
 // rải rác → nhất quán, đổi một chỗ đổi cả app, hết "trông như AI làm". Phong cách:
 // analytics/fintech cao cấp — nền mát, mực gần đen, hairline border, bóng nhẹ, MỘT
 // accent xanh dùng tiết chế; màu semantic (ok/cảnh báo/nguy) chỉ cho DỮ LIỆU.
+// Phong cách: TỐI GIẢN ĐEN–TRẮNG (user 2026-07-17). Đen/trắng/xám là chủ đạo;
+// accent tương tác = ĐEN (không màu). Màu CHỈ dành cho BIỂU ĐỒ (success/danger…)
+// và GHI CHÚ CẦN THIẾT (banner cảnh báo) — không dùng màu cho trang trí UI.
 export const color = {
-  canvas: '#f4f5f7', // nền trang
+  canvas: '#f6f6f6', // nền trang (xám cực nhạt để thẻ trắng nổi)
   surface: '#ffffff', // mặt thẻ
-  surfaceMuted: '#f8f9fb', // ô nền nhạt
-  surfaceInk: '#0d0f14', // thẻ nền tối (giá chính thức…)
+  surfaceMuted: '#f4f4f4', // ô nền nhạt
+  surfaceInk: '#0a0a0a', // thẻ nền đen (điểm nhấn)
 
-  border: '#e7e9ee', // hairline
-  borderStrong: '#d3d7df',
+  border: '#e6e6e6', // hairline
+  borderStrong: '#d4d4d4',
 
-  ink: '#0f1524', // chữ chính (gần đen)
-  inkMuted: '#5b6472', // chữ phụ
-  inkFaint: '#98a1b0', // nhãn mờ
+  ink: '#0a0a0a', // chữ chính (đen)
+  inkMuted: '#525252', // chữ phụ
+  inkFaint: '#a3a3a3', // nhãn mờ
   inkInverse: '#ffffff',
 
-  brand: '#2f6bff', // accent tương tác/CTA/active — dùng TIẾT CHẾ
-  brandHover: '#1f57e6',
-  brandTint: '#eef3ff',
-  brandInk: '#1b46b8',
+  // "brand" = accent tương tác = ĐEN (active/CTA/segmented) — KHÔNG dùng màu.
+  brand: '#0a0a0a',
+  brandHover: '#262626',
+  brandTint: '#f2f2f2',
+  brandInk: '#0a0a0a',
 
-  success: '#12915b', successTint: '#e9f7ef', successInk: '#0a6d43',
-  danger: '#e5484d', dangerTint: '#fdecec', dangerInk: '#b4232a',
-  warning: '#c8790f', warningTint: '#fdf3e4', warningInk: '#95590a',
+  // Màu CHỈ cho biểu đồ + ghi chú cần thiết:
+  success: '#1f9d57', successTint: '#eef8f1', successInk: '#137a41',
+  danger: '#dc2f34', dangerTint: '#fdeded', dangerInk: '#b01f24',
+  warning: '#b7791f', warningTint: '#fbf4e6', warningInk: '#8a5a12',
 
-  // Sidebar tối tinh
-  sidebar: '#10131a',
-  sidebarElevated: '#161a23',
-  sidebarBorder: 'rgba(255,255,255,.07)',
-  sidebarText: '#9aa3b2',
+  // Sidebar đen tuyền
+  sidebar: '#0a0a0a',
+  sidebarElevated: '#1c1c1c',
+  sidebarBorder: 'rgba(255,255,255,.09)',
+  sidebarText: '#a3a3a3',
   sidebarTextActive: '#ffffff',
-  sidebarMuted: '#5a6273',
+  sidebarMuted: '#6b6b6b',
 } as const;
 
 export const space = { 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 7: 28, 8: 32, 10: 40 } as const;

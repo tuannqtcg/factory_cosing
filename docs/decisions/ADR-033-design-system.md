@@ -11,9 +11,9 @@ tokens+primitives, demo 1 màn để duyệt "gu", + đổi sang PHONG CÁCH M�
 
 ## Quyết định (bước demo)
 - **`src/design/tokens.ts`** — nguồn chân lý: màu/chữ/spacing/bo góc/bóng. Phong cách
-  mới: analytics/fintech cao cấp — nền mát #f4f5f7, mực gần đen #0f1524, hairline
-  border, bóng nhẹ, MỘT accent xanh #2f6bff (thay burgundy) dùng tiết chế; semantic
-  ok/cảnh báo/nguy chỉ cho dữ liệu; sidebar slate #10131a.
+  mới: TỐI GIẢN ĐEN–TRẮNG (user chốt 2026-07-17). Đen/trắng/xám chủ đạo, accent
+  tương tác = ĐEN (không màu); MÀU CHỈ dành cho BIỂU ĐỒ (tornado đỏ/xanh) và GHI CHÚ
+  CẦN THIẾT (banner cảnh báo). Nền #f6f6f6, mực #0a0a0a, hairline, sidebar đen #0a0a0a.
 - **`src/design/primitives.tsx`** — Screen, PageHeader, Card, Stat, Badge, Banner,
   Button, Segmented, NumberField, TableRow — dựng TỪ tokens.
 - **Demo màn Độ Nhạy** rebuild hoàn toàn bằng primitives + tokens; retheme chrome

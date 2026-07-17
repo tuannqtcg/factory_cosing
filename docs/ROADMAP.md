@@ -11,16 +11,22 @@
   Định Nhận Đơn (+ khóa giá what-if) · Tối Ưu Product-mix (đa mẫu số + giá thị trường).
   Tất cả tái dùng engine đóng băng, đồng bộ EBIT **giá-bán-cố-định** (nền `scenario-drivers.ts`).
 - **Định giá** (ADR-025): Bảng Giá neo giá **VF** + Bảng Giá **NPP** dẫn xuất + dải cảnh báo chốt giá.
-- **Design system** (ADR-033): tokens + primitives, phong cách **TỐI GIẢN ĐEN–TRẮNG**
-  (màu chỉ cho biểu đồ + ghi chú). ⚠ **Đã di trú 2 màn (Độ Nhạy, So Sánh Kịch Bản)** — còn ~12 màn.
+- **Design system** (ADR-033): phong cách **TỐI GIẢN ĐEN–TRẮNG** (màu chỉ cho biểu đồ +
+  ghi chú). Kênh trình bày MỚI = **Tailwind + shadcn/ui** (CSS variables ở `src/index.css`
+  là nguồn chân lý màu; component ở `src/components/ui/`) — KHÔNG inline-style hardcode nữa.
+  ⚠ Foundation shadcn XONG + **màn So Sánh Kịch Bản đã chuyển**; Độ Nhạy còn ở primitives cũ.
+  Các màn khác (~12) chờ chuyển. (Font: Inter qua Tailwind.)
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
-1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 2
-   công cụ if–then còn lại — Quyết Định Nhận Đơn, Tối Ưu Product-mix, Bảng Giá VF/NPP,
-   Lot-costing, Pricing-analytics, Tham Số, Cấu Hình). Di trú lên `src/design/primitives.tsx`
-   — thuần trình bày, KHÔNG đụng logic. Gu đã user duyệt: đen/trắng/xám chủ đạo, màu chỉ
-   cho biểu đồ/ghi chú. Sửa ở `src/design/tokens.ts` là cả app đổi. (Font hiện Roboto; cân
-   nhắc nạp Inter.) ✅ Đã di trú: Độ Nhạy (ADR-033 demo), So Sánh Kịch Bản.
+1. **Roll-out Tailwind + shadcn/ui đen–trắng** ra các màn còn lại (Dashboard, CEO Planner,
+   2 công cụ if–then — Quyết Định Nhận Đơn, Tối Ưu Product-mix, Bảng Giá VF/NPP, Lot-costing,
+   Pricing-analytics, Tham Số, Cấu Hình) + chuyển nốt màn Độ Nhạy từ primitives cũ sang shadcn.
+   Cách làm: dùng component `@/components/ui/*` + class Tailwind, KHÔNG inline-style hardcode;
+   màu lấy từ CSS variables ở `src/index.css` (sửa 1 chỗ đổi cả app). Thuần trình bày, KHÔNG
+   đụng logic. Gu user duyệt: đen/trắng/xám chủ đạo, màu chỉ cho biểu đồ/ghi chú/dữ liệu.
+   ✅ Foundation shadcn (tokens CSS vars, cn(), Card/Button/Badge/Input, alias `@`) + màn So
+   Sánh Kịch Bản đã chuyển. 🔜 Bổ sung ui component khi cần (ví dụ ToggleGroup cho Segmented ở
+   Độ Nhạy). Cân nhắc rút gọn `src/design/tokens.ts`+`primitives.tsx` khi hết màn dùng.
 2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
    luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
 3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`

@@ -1,3 +1,85 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ADR-033 — Design tokens dưới dạng CSS variables (shadcn/ui convention).
+   NGUỒN CHÂN LÝ màu/bo góc của toàn app: sửa ở ĐÂY là cả app đổi. Phong cách
+   TỐI GIẢN ĐEN–TRẮNG: đen/trắng/xám chủ đạo, accent tương tác = ĐEN (--primary).
+   Màu semantic (success/warning/destructive) CHỈ cho DỮ LIỆU + ghi chú, không
+   trang trí UI. Giá trị khớp src/design/tokens.ts (còn dùng cho các màn chưa di trú). */
+@layer base {
+  :root {
+    --background: 0 0% 96.5%; /* canvas #f6f6f6 */
+    --foreground: 0 0% 3.9%; /* ink #0a0a0a */
+
+    --card: 0 0% 100%; /* surface #ffffff */
+    --card-foreground: 0 0% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+
+    --primary: 0 0% 3.9%; /* brand = đen #0a0a0a */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 95.7%; /* surfaceMuted #f4f4f4 */
+    --secondary-foreground: 0 0% 3.9%;
+
+    --muted: 0 0% 95.7%; /* surfaceMuted #f4f4f4 */
+    --muted-foreground: 0 0% 32.2%; /* inkMuted #525252 */
+
+    --accent: 0 0% 95.7%;
+    --accent-foreground: 0 0% 3.9%;
+
+    --faint: 0 0% 63.9%; /* inkFaint #a3a3a3 */
+
+    --border: 0 0% 90.2%; /* border #e6e6e6 */
+    --input: 0 0% 83.1%; /* borderStrong #d4d4d4 */
+    --ring: 0 0% 3.9%;
+
+    /* Màu DỮ LIỆU — chỉ dùng cho số/biểu đồ/trạng thái, KHÔNG trang trí UI. */
+    --destructive: 358 71% 52%; /* danger #dc2f34 */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-tint: 358 80% 96%; /* dangerTint #fdeded */
+
+    --success: 147 67% 37%; /* success #1f9d57 */
+    --success-foreground: 0 0% 100%;
+    --success-tint: 141 45% 95%; /* successTint #eef8f1 */
+
+    --warning: 36 71% 42%; /* warning #b7791f */
+    --warning-foreground: 0 0% 100%;
+    --warning-tint: 41 60% 94%; /* warningTint #fbf4e6 */
+
+    --radius: 0.875rem; /* 14px — khớp radius.lg tokens.ts */
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 3.9%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 98%;
+    --faint: 0 0% 45%;
+    --border: 0 0% 16%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 83.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+}

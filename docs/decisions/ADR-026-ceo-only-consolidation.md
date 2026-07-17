@@ -34,5 +34,7 @@ trong PricingAnalytics/TargetCosting/Tham Số/Cấu Hình — vô nghĩa vì ch
 - Engine/schema/backend KHÔNG đổi (chỉ gỡ UI) — parity 343/343 giữ nguyên.
 - Cloud Functions vận hành (onPlanInputWrite, productCatalog…) vẫn còn ở backend,
   không gây rối UI; có thể dọn sau nếu muốn.
-- Dashboard còn cờ `canSeeCostDetail` (luôn true) + nhánh sales dự phòng: giữ nguyên
-  lần này vì gỡ trọn là refactor rủi ro trên màn dùng nhiều nhất; dọn sau nếu cần.
+- Dashboard: ĐÃ gỡ trọn cờ `canSeeCostDetail` (luôn true) + nhánh view sales dự
+  phòng (~12 điểm rẽ nhánh + khối "Vai Bán Hàng chỉ xem…") → chỉ còn luồng CEO.
+  Verify Playwright 4 tab (Tổng Quan/Sản Xuất/Đầu Tư/Chiến Lược Giá) render đúng,
+  không lỗi. `role` giữ lại cho audit-write gate (changedByRole, khớp rules).

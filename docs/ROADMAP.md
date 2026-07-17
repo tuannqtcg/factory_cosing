@@ -10,6 +10,12 @@
   - Đã chuẩn hoá giao diện Desktop (Max-width 1366px, căn giữa).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-027 — Màn "Độ Nhạy" (tornado)**: công cụ if–then rủi ro — "biến nào bào
+  EBIT mạnh nhất nếu lệch ±δ?". Engine `calculateSensitivity` giữ giá bán cố định,
+  perturb 6 driver (compound, tỷ giá, lương, điện, chi phí ngoài SX, sản lượng), xếp
+  theo swing. Base EBIT khớp KPI Dashboard (parity). UI tornado + bảng + chọn ±5/10/20%.
+  Phát hiện: tỷ giá USD & compound mỗi cái ±77,5% EBIT (nguyên liệu định giá USD).
+  +7 test, suite 350/350, verify Playwright.
 - [x] **ADR-026 — Gọn về MỘT view CEO**: app chỉ phục vụ quyết định CEO. Bỏ 5 tab
   vận hành của vai khác khỏi nav (Kế Hoạch SX/production; Ống CPVC + Phụ Kiện báo
   cáo dây chuyền; Tồn Kho Compound; Danh Mục Sản Phẩm). Nav còn 2 nhóm: Phân Tích

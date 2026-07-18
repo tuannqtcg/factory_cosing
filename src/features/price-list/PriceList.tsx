@@ -35,6 +35,9 @@ interface Row {
   classificationCode: string;
   priceBeforeVat: number;
   priceWithVat: number;
+  materialId: string;
+  // Bản sales-safe (chỉ giá bán); các bậc GIÁ VỐN tra từ `internal` lúc mở dòng.
+  chain: PriceListDoc['skuPriceChains'][number]['chain'];
 }
 
 export default function PriceList({
@@ -51,6 +54,9 @@ export default function PriceList({
   const [searchQuery, setSearchQuery] = useState('');
   const [priceType, setPriceType] = useState<'before' | 'vat'>('before');
   const [productFilter, setProductFilter] = useState<string>('all');
+  // ADR-035 — bấm vào dòng để mở "Giá này từ đâu ra?": truy nguyên từng bậc giá
+  // của đúng SKU đó, số lấy từ chuỗi giá đã lưu, không tính lại ở client.
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   // ADR-025 §nối 2 màn — TÍN HIỆU QUYẾT ĐỊNH GIÁ cho CEO (KHÔNG phải kiểm tra tồn
   // kho): nguyên liệu nào có giá thị trường (tái tạo) lệch khỏi baseline đã khóa
@@ -98,6 +104,8 @@ export default function PriceList({
           // ADR-025 — niêm yết GIÁ VF (xuất xưởng), không phải giá list nhà phân phối.
           priceBeforeVat: sku.chain.vfPricePerUnit,
           priceWithVat: Math.round(sku.chain.vfPricePerUnit * (1 + vatRate)),
+          materialId: sku.productKey.materialId,
+          chain: sku.chain,
         };
       });
   }, [priceList, vatRate]);
@@ -125,7 +133,8 @@ export default function PriceList({
         <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Xuất Xưởng (VF)</div>
         <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>BlazeMaster CPVC — {rows.length} SKU</h1>
         <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
-          Giá bán xuất xưởng của nhà máy (VF) — ổn định theo khóa giá (ADR-004). Giá tới nhà phân phối xem tab <b>Bảng Giá NPP</b>.
+          Giá bán xuất xưởng của nhà máy (VF) = giá thành đầy đủ + phần lời của nhà máy, giữ ổn định theo cơ chế khóa giá.
+          Giá tới nhà phân phối là bước suy tiếp tự động — xem tab <b>Bảng giá NPP</b>. <b>Bấm vào từng dòng</b> để xem giá đó từ đâu ra.
         </div>
       </div>
 
@@ -203,20 +212,80 @@ export default function PriceList({
           ))}
           <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{colHeader}</div>
         </div>
-        {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center' }}>
-            <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
-            <div style={{ fontSize: 12, fontWeight: 500 }}>{row.name}</div>
-            <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
-            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.spec}</div>
-            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.designationCode}</div>
-            <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.classificationCode}</div>
-            <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-              {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}
+        {filteredRows.map((row) => {
+          const expanded = expandedKey === row.key;
+          const mat = scenario?.materials.find((m) => m.id === row.materialId);
+          const lock = internal?.priceLock.byMaterial.find((e) => e.materialId === row.materialId);
+          // Các bậc giá vốn nằm ở bản đầy đủ trong `internal` (bản priceList là
+          // sales-safe, cố ý không chứa giá vốn) — tra theo cùng khóa SKU.
+          const full = internal?.skuPriceChains.find(
+            (s) =>
+              s.productKey.materialId === row.materialId &&
+              (s.productKey.dn !== undefined
+                ? s.productKey.dn === row.size
+                : s.productKey.productName === row.name && s.productKey.sizeLabel === row.size),
+          )?.chain;
+          const markupImplied = full && full.breakEvenPerUnit > 0 ? full.vfPricePerUnit / full.breakEvenPerUnit - 1 : null;
+          const priceStep = (label: string, value: string, note?: string, strong?: boolean) => (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: '6px 0', borderBottom: '1px dashed #ece8dc' }}>
+              <div>
+                <span style={{ fontSize: 12, fontWeight: strong ? 700 : 500 }}>{label}</span>
+                {note && <span style={{ fontSize: 10, color: '#999' }}> — {note}</span>}
+              </div>
+              <div style={{ fontSize: strong ? 14 : 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{value}</div>
             </div>
-          </div>
-        ))}
+          );
+          return (
+            <div key={row.key}>
+              <div
+                onClick={() => setExpandedKey(expanded ? null : row.key)}
+                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? '#faf9f4' : '#fff' }}
+              >
+                <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
+                <div style={{ fontSize: 12, fontWeight: 500 }}>{expanded ? '▾ ' : '▸ '}{row.name}</div>
+                <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
+                <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.spec}</div>
+                <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.designationCode}</div>
+                <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.classificationCode}</div>
+                <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                  {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}
+                </div>
+              </div>
+              {expanded && (
+                <div style={{ padding: '14px 20px 16px', background: '#faf9f4', borderBottom: '1px solid #e5e0d0' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#a8003b', marginBottom: 8 }}>
+                    Giá này từ đâu ra? — {row.name} {row.size} (đ/{row.unit})
+                  </div>
+                  <div style={{ maxWidth: 560 }}>
+                    {full && (
+                      <>
+                        {priceStep('① Tiền nguyên liệu', fmtVnd(full.materialCostPerUnit), `${mat?.name ?? ''} theo giá mua mới hôm nay`)}
+                        {priceStep('② Tiền sản xuất & chi phí chung phân bổ', fmtVnd(full.processingCostPerUnit), 'lương, điện, khấu hao máy/khuôn, quản lý')}
+                        {priceStep('③ = Giá thành đầy đủ (điểm hoà vốn)', fmtVnd(full.breakEvenPerUnit), 'bán đúng mức này thì không lãi không lỗ')}
+                        {priceStep(`④ + Phần lời của nhà máy${markupImplied !== null ? ` (${fmtPct(markupImplied)})` : ''}`, fmtVnd(full.vfPricePerUnit - full.breakEvenPerUnit), 'chỉnh ở màn Tham Số (markup VF)')}
+                      </>
+                    )}
+                    {priceStep('= GIÁ VF — giá xuất xưởng đang niêm yết', fmtVnd(row.chain.vfPricePerUnit), undefined, true)}
+                    {priceStep('⑤ Suy tiếp cho kênh phân phối: giá TCG', fmtVnd(row.chain.tcgPricePerUnit), 'cộng lãi khâu thương mại')}
+                    {priceStep('⑥ Giá niêm yết tới nhà phân phối', fmtVnd(row.chain.listPriceBeforeVat), `có VAT: ${fmtVnd(row.chain.listPriceWithVat)}`)}
+                  </div>
+                  {mat && lock && (
+                    <div style={{ marginTop: 10, fontSize: 11, fontWeight: 600, color: lock.evaluation.isLocked ? '#15803d' : '#b45309' }}>
+                      {lock.evaluation.isLocked
+                        ? `✅ Giá đang ổn định: ${mat.name} ngoài thị trường lệch ${fmtPct(Math.abs(lock.evaluation.deviationPct))} so với lúc chốt giá — còn trong ngưỡng cho phép ±${fmtPct(mat.inventory.priceLock.thresholdPct)}, giữ nguyên giá bán.`
+                        : `⚠ ${mat.name} ngoài thị trường đã lệch ${fmtPct(Math.abs(lock.evaluation.deviationPct))} — vượt ngưỡng ±${fmtPct(mat.inventory.priceLock.thresholdPct)}, giá trên đây đã tính theo giá mới; cân nhắc công bố lại bảng giá.`}
+                    </div>
+                  )}
+                  <div style={{ marginTop: 8, fontSize: 10.5, color: '#737373', lineHeight: 1.5 }}>
+                    Vì sao chốt ở giá VF? Đây là tầng giá duy nhất nhà máy kiểm soát được — các tầng sau (TCG, nhà phân phối, VAT)
+                    chỉ là phép nhân theo chính sách phân phối, tự tính, không chốt tay từng tầng.
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

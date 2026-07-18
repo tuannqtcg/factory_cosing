@@ -28,6 +28,12 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-035 — "Giải thích tại chỗ"**: nút ⓘ mọi màn (câu hỏi màn trả lời /
+  số từ đâu ra / khi nào hành động / màn liên quan, ngôn ngữ CEO); Bảng Giá bấm
+  từng SKU ra thác nước truy nguyên giá (NVL→SX→hoà vốn→+lời→VF→TCG→NPP) + trạng
+  thái khóa giá; vá món nợ ADR-026: Tồn Kho (nhập/sửa lô) gắn lại vào Giá Vốn
+  Theo Lô (`lot-costing:edit`); what-if ngưỡng ở Nhận Đơn có nút "Chốt ở Tham Số".
+  CÒN TREO: Nhận đơn theo SKU + đơn vị thương mại (cây/cái) — bài UX riêng.
 - [x] **ADR-034 — Sidebar theo tình huống CEO**: 4 nhóm (Hằng Ngày / Khi Có Việc /
   Hoạch Định / Thiết Lập) + caption 1 dòng mỗi mục; gộp 3 tab giá thành hub
   "Bảng Giá" (VF | NPP | Phân tích, `PricingHub.tsx`) → 12 mục còn 9; 3 link chéo

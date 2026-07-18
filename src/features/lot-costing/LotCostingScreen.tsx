@@ -48,7 +48,17 @@ export default function LotCostingScreen({
 
   return (
     <div style={{ padding: '32px 36px', maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Giá Vốn Theo Lô</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Giá Vốn Theo Lô</div>
+        {onNavigate && (
+          <button
+            onClick={() => onNavigate('lot-costing:edit')}
+            style={{ flexShrink: 0, padding: '8px 16px', background: '#0a0a0a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ✎ Cập nhật lô hàng (nhập kho / sửa lô)
+          </button>
+        )}
+      </div>
       <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>5 lô khác giá → giá bán nào là đúng?</h1>
       <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
         Giá vốn bình quân (hàng đang có) vs giá tái tạo (mua mới) → lãi/lỗ giữ kho → giá bán theo sổ sách vs giá chính thức, và có cần chốt lại giá không (khóa giá ±ngưỡng, ADR-004).

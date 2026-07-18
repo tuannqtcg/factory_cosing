@@ -10,6 +10,8 @@ import LoginScreen from '../auth/LoginScreen.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PricingHub, { type PricingSub } from '../price-list/PricingHub.js';
+import InventoryScreen from '../inventory/InventoryScreen.js';
+import ExplainPanel from './ExplainPanel.js';
 import ConfigScreen from '../config/ConfigScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
@@ -84,12 +86,12 @@ export default function AppShell() {
       <div
         key={t.id}
         onClick={() => go(t.id)}
-        style={{ padding: '7px 16px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 8, background: active ? '#1c1c1c' : 'transparent', borderLeft: `3px solid ${active ? '#fff' : 'transparent'}` }}
+        style={{ padding: '7px 16px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 8, background: active ? '#f2f2f2' : 'transparent', borderLeft: `3px solid ${active ? '#0a0a0a' : 'transparent'}` }}
       >
-        <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#fff' : '#555', flexShrink: 0, marginTop: 6 }} />
+        <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#0a0a0a' : '#c9c9c9', flexShrink: 0, marginTop: 6 }} />
         <div style={{ minWidth: 0 }}>
-          <div style={{ color: active ? '#fff' : '#a3a3a3', fontSize: 12, fontWeight: active ? 600 : 400 }}>{t.label}</div>
-          <div style={{ color: active ? '#8a8a8a' : '#5c5c5c', fontSize: 9, marginTop: 1 }}>{t.caption}</div>
+          <div style={{ color: active ? '#0a0a0a' : '#555', fontSize: 12, fontWeight: active ? 700 : 400 }}>{t.label}</div>
+          <div style={{ color: active ? '#737373' : '#a3a3a3', fontSize: 9, marginTop: 1 }}>{t.caption}</div>
         </div>
       </div>
     );
@@ -119,17 +121,17 @@ export default function AppShell() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Roboto,Helvetica Neue,sans-serif', color: '#0a0a0a', background: '#f6f6f6' }}>
       {/* ═══ SIDEBAR ═══ */}
-      <aside style={{ width: 216, background: '#0a0a0a', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
-        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-          <div style={{ color: '#a3a3a3', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
-          <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, letterSpacing: '-.2px' }}>Costing Engine</div>
-          <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>Model v3.7 · VN · 2026</div>
+      <aside style={{ width: 216, background: '#fff', borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+        <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid #ececec' }}>
+          <div style={{ color: '#999', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
+          <div style={{ color: '#0a0a0a', fontSize: 14, fontWeight: 700, letterSpacing: '-.2px' }}>Costing Engine</div>
+          <div style={{ color: '#b3b3b3', fontSize: 10, marginTop: 2 }}>Model v3.7 · VN · 2026</div>
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
           {NAV_GROUPS.map((g, gi) => (
             <div key={g.title}>
-              <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: gi === 0 ? 4 : 8, borderTop: gi === 0 ? 'none' : '1px solid rgba(255,255,255,.06)' }}>
+              <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#b3b3b3', fontWeight: 700, marginTop: gi === 0 ? 4 : 8, borderTop: gi === 0 ? 'none' : '1px solid #f2f2f2' }}>
                 {g.title}
               </div>
               {g.tabs.map(navItem)}
@@ -137,14 +139,14 @@ export default function AppShell() {
           ))}
         </nav>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', padding: '12px 16px' }}>
-          <div style={{ display: 'inline-block', background: '#fff', color: '#0a0a0a', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
+        <div style={{ borderTop: '1px solid #ececec', padding: '12px 16px' }}>
+          <div style={{ display: 'inline-block', background: '#0a0a0a', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
             {role === 'admin' ? 'CHỦ / TOÀN QUYỀN' : 'ĐỊNH GIÁ'}
           </div>
-          <div style={{ color: '#888', fontSize: 9, marginBottom: 8, wordBreak: 'break-all' }}>{authState.user?.email}</div>
+          <div style={{ color: '#999', fontSize: 9, marginBottom: 8, wordBreak: 'break-all' }}>{authState.user?.email}</div>
           <button
             onClick={() => void authState.signOut()}
-            style={{ width: '100%', padding: '6px 8px', background: 'transparent', color: '#b3b3b3', border: '1px solid rgba(255,255,255,.15)', borderRadius: 4, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
+            style={{ width: '100%', padding: '6px 8px', background: 'transparent', color: '#737373', border: '1px solid #d8d8d8', borderRadius: 4, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}
           >
             Đăng xuất
           </button>
@@ -152,6 +154,7 @@ export default function AppShell() {
       </aside>
 
       {/* ═══ MAIN ═══ */}
+      <ExplainPanel tabId={tabId} onNavigate={go} />
       <main style={{ flex: 1, overflow: 'auto', background: '#f6f6f6', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 1366, background: '#f6f6f6', minHeight: '100%' }}>
         {role && (
@@ -174,7 +177,24 @@ export default function AppShell() {
             {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
             {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} onNavigate={go} />}
             {tabId === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
-            {tabId === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />}
+            {tabId === 'lot-costing' && tabSub !== 'edit' && (
+              <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />
+            )}
+            {tabId === 'lot-costing' && tabSub === 'edit' && (
+              <div>
+                {/* ADR-035 — đường nhập/sửa lô (màn Tồn Kho) gắn lại vào Giá Vốn Theo Lô;
+                    ADR-026 từng gỡ khỏi menu mà không chừa lối vào thay thế. */}
+                <div style={{ padding: '18px 36px 0' }}>
+                  <button
+                    onClick={() => setActiveTab('lot-costing')}
+                    style={{ padding: '7px 14px', background: '#fff', color: '#0a0a0a', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ← Quay lại Giá Vốn Theo Lô
+                  </button>
+                </div>
+                <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
+              </div>
+            )}
             {tabId === 'pricing' && (
               <PricingHub
                 sub={(tabSub as PricingSub | undefined) ?? 'vf'}

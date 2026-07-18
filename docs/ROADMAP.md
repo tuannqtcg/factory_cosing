@@ -31,7 +31,8 @@
 - [x] **ADR-038 — Danh Mục Sản Phẩm mở lại + khuôn dùng chung + phiếu giá 3 tầng**:
   tạo SKU mới trọn vòng (khai chuẩn/kích thước/đơn trọng → gán khuôn chung/chờ
   khuôn → lưu → tự lên Bảng Giá); phiếu giá phân biệt rõ nguyên liệu + tiêu chuẩn.
-  Còn treo: mở quyền sửa danh mục cho vai pricing (đổi rules, cần ADR riêng).
+  ĐÃ XONG tiếp (ADR-039): rules mở products[] cho pricing; moldAssets giữ khóa
+  admin — quy trình 2 nhịp (pricing tạo SKU "chờ khuôn" → admin gán khuôn).
 - [x] **ADR-036 — Phiếu giá + Nhận đơn thương mại**: Bảng Giá thêm dạng "Phiếu
   giá từng sản phẩm" (chọn SP + size → 1 phiếu chi tiết: VF trước/có VAT cỡ lớn,
   TCG/NPP, truy nguyên giá) song song dạng danh sách; Nhận Đơn nhập theo SKU cụ

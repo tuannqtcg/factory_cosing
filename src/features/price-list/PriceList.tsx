@@ -156,14 +156,38 @@ export default function PriceList({
           Giá này từ đâu ra? — {row.name} {row.size} (đ/{row.unit})
         </div>
         <div style={{ maxWidth: 560 }}>
-          {full && (
-            <>
-              {priceStep('① Tiền nguyên liệu', fmtVnd(full.materialCostPerUnit), `${mat?.name ?? ''} theo giá mua mới hôm nay`)}
-              {priceStep('② Tiền sản xuất & chi phí chung phân bổ', fmtVnd(full.processingCostPerUnit), 'lương, điện, khấu hao máy/khuôn, quản lý')}
-              {priceStep('③ = Giá thành đầy đủ (điểm hoà vốn)', fmtVnd(full.breakEvenPerUnit), 'bán đúng mức này thì không lãi không lỗ')}
-              {priceStep(`④ + Phần lời của nhà máy${markupImplied !== null ? ` (${fmtPct(markupImplied)})` : ''}`, fmtVnd(full.vfPricePerUnit - full.breakEvenPerUnit), 'chỉnh ở màn Tham Số (markup VF)')}
-            </>
-          )}
+          {full && (() => {
+            // Ống: mô hình gốc không tách "nguyên liệu/chế biến" theo SKU (chế
+            // biến = 0 trong chuỗi) — hiển thị cặp đó sẽ gây hiểu lầm "chi phí
+            // sản xuất = 0". Thay bằng phân rã biến phí / định phí phân bổ từ
+            // thang giá đ/kg đã persist, quy về đơn vị theo đơn trọng ẩn
+            // (= hoà vốn per-unit ÷ full cost per-kg). Phụ kiện giữ cặp
+            // nguyên liệu / giờ máy vì chuỗi có tách thật.
+            const isPipe = full.processingCostPerUnit === 0;
+            const ladder = isPipe
+              ? internal?.priceLadder.byLineMaterial.find((e) => e.line === 'pipe' && e.materialId === row.materialId)?.ladder
+              : null;
+            if (isPipe && ladder && ladder.breakEvenFullCost > 0) {
+              const w = full.breakEvenPerUnit / ladder.breakEvenFullCost; // kg/đơn vị
+              const varPerUnit = ladder.variableCostFloor * w;
+              return (
+                <>
+                  {priceStep('① Chi phí biến đổi', fmtVnd(Math.round(varPerUnit)), `${mat?.name ?? 'nguyên liệu'} theo giá mua mới + điện, nước, bao bì`)}
+                  {priceStep('② Chi phí cố định phân bổ', fmtVnd(Math.round(full.breakEvenPerUnit - varPerUnit)), 'khấu hao máy/khuôn, lương, chi phí chung')}
+                  {priceStep('③ = Giá thành đầy đủ (điểm hoà vốn)', fmtVnd(Math.round(full.breakEvenPerUnit)), 'bán đúng mức này thì không lãi không lỗ')}
+                  {priceStep(`④ + Phần lời của nhà máy${markupImplied !== null ? ` (${fmtPct(markupImplied)})` : ''}`, fmtVnd(Math.round(full.vfPricePerUnit - full.breakEvenPerUnit)), 'chỉnh ở màn Tham Số (markup VF)')}
+                </>
+              );
+            }
+            return (
+              <>
+                {priceStep('① Tiền nguyên liệu', fmtVnd(Math.round(full.materialCostPerUnit)), `${mat?.name ?? ''} theo giá mua mới hôm nay${full.processingCostPerUnit > 0 ? ' (+ ren kim loại nếu có)' : ''}`)}
+                {priceStep('② Tiền sản xuất (giờ máy ép)', fmtVnd(Math.round(full.processingCostPerUnit)), 'lương, điện, khấu hao máy/khuôn, quản lý — theo giờ máy')}
+                {priceStep('③ = Giá thành đầy đủ (điểm hoà vốn)', fmtVnd(Math.round(full.breakEvenPerUnit)), 'bán đúng mức này thì không lãi không lỗ')}
+                {priceStep(`④ + Phần lời của nhà máy${markupImplied !== null ? ` (${fmtPct(markupImplied)})` : ''}`, fmtVnd(Math.round(full.vfPricePerUnit - full.breakEvenPerUnit)), 'chỉnh ở màn Tham Số (markup VF)')}
+              </>
+            );
+          })()}
           {priceStep('= GIÁ VF — giá xuất xưởng đang niêm yết', fmtVnd(row.chain.vfPricePerUnit), undefined, true)}
           {priceStep('⑤ Suy tiếp cho kênh phân phối: giá TCG', fmtVnd(row.chain.tcgPricePerUnit), 'cộng lãi khâu thương mại')}
           {priceStep('⑥ Giá niêm yết tới nhà phân phối', fmtVnd(row.chain.listPriceBeforeVat), `có VAT: ${fmtVnd(row.chain.listPriceWithVat)}`)}

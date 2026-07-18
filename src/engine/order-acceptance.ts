@@ -29,8 +29,12 @@ function costsAtBasis(
 }
 
 export function decideOrder(baseline: ScenarioInput, request: OrderDecisionRequest): OrderDecisionResult {
-  const mat = referenceMaterialOf(baseline.materials, baseline.products, request.line);
-  if (!mat) throw new Error(`Thiếu nguyên liệu tham chiếu cho dòng ${request.line}`);
+  // ADR-037 — chỉ định nguyên liệu theo dòng đơn (đơn nhiều dòng trộn
+  // BlazeMaster/Corzan); bỏ trống = nguyên liệu tham chiếu (hành vi ADR-029).
+  const mat = request.materialId
+    ? baseline.materials.find((m) => m.id === request.materialId)
+    : referenceMaterialOf(baseline.materials, baseline.products, request.line);
+  if (!mat) throw new Error(`Thiếu nguyên liệu ${request.materialId ?? `tham chiếu cho dòng ${request.line}`}`);
 
   const baselineUsd = mat.inventory.priceLock.baseline;
   const replacementUsd = mat.inventory.replacementPriceUsdPerKg;

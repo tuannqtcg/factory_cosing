@@ -72,3 +72,28 @@ describe('decideOrder — sàn thị trường tách sàn khóa khi giá lệch'
     expect(stayLocked.lock.appliedPricingUsdPerKg).toBeCloseTo(stayLocked.lock.baselineUsdPerKg, 6);
   });
 });
+
+// ADR-037 — chỉ định nguyên liệu theo dòng đơn (đơn nhiều dòng BlazeMaster/Corzan).
+describe('decideOrder — materialId chỉ định (ADR-037)', () => {
+  it('materialId trùng nguyên liệu tham chiếu ⇒ kết quả giống hệt khi bỏ trống (tương thích cũ)', () => {
+    const refMat = referenceMaterialOf(baseline.materials, baseline.products, 'pipe')!;
+    const implicit = decideOrder(baseline, { line: 'pipe', quantityTons: 10, offeredPriceVndPerKg: 140000 });
+    const explicit = decideOrder(baseline, { line: 'pipe', materialId: refMat.id, quantityTons: 10, offeredPriceVndPerKg: 140000 });
+    expect(explicit).toEqual(implicit);
+  });
+
+  it('materialId khác (nếu dòng có ≥2 nguyên liệu) ⇒ sàn tính theo đúng nguyên liệu đó', () => {
+    const pipeMatIds = [...new Set(baseline.products.filter((p) => p.kind === 'pipe').map((p) => p.materialId))];
+    if (pipeMatIds.length < 2) return; // fixture chỉ có 1 nguyên liệu ống — không có gì để so
+    const [a, b] = pipeMatIds as [string, string];
+    const ra = decideOrder(baseline, { line: 'pipe', materialId: a, quantityTons: 10, offeredPriceVndPerKg: 140000 });
+    const rb = decideOrder(baseline, { line: 'pipe', materialId: b, quantityTons: 10, offeredPriceVndPerKg: 140000 });
+    expect(ra.materialId).toBe(a);
+    expect(rb.materialId).toBe(b);
+    expect(ra.marketVariableFloorVndPerKg).not.toBe(rb.marketVariableFloorVndPerKg);
+  });
+
+  it('materialId không tồn tại ⇒ báo lỗi rõ ràng', () => {
+    expect(() => decideOrder(baseline, { line: 'pipe', materialId: 'khong-ton-tai', quantityTons: 1, offeredPriceVndPerKg: 100000 })).toThrow();
+  });
+});

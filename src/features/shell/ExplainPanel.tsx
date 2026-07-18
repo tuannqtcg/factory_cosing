@@ -124,6 +124,23 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
     action: ['Kết quả chỉ đổi khi anh nhập giá thị trường thật của từng dòng — số này càng sát, kết luận càng đáng tin.'],
     related: [{ tab: 'order-acceptance', label: 'Quyết Định Nhận Đơn — áp dụng cho một đơn cụ thể' }],
   },
+  products: {
+    question: 'Danh mục sản phẩm gốc: tên, tiêu chuẩn, kích thước, đơn trọng, và khuôn nào sản xuất SKU nào.',
+    source: [
+      'Đây là dữ liệu gốc nuôi Bảng Giá: đơn trọng quyết định giá mỗi mét/cái; chu kỳ ép + số lòng khuôn quyết định chi phí giờ máy của phụ kiện.',
+      'Phụ kiện chỉ LÊN BẢNG GIÁ khi đã gán khuôn — SKU chưa có khuôn ở trạng thái "chờ khuôn" và tự ẩn. Nhiều SKU dùng chung một khuôn là bình thường (cùng khuôn, khác nguyên liệu compound).',
+      'Mỗi cặp (kích cỡ, nguyên liệu) chỉ khai một dòng — hệ thống tự chặn khai trùng.',
+      'Chỉ vai Toàn Quyền lưu được thay đổi danh mục; vai Định Giá xem để đối chiếu.',
+    ],
+    action: [
+      'Sản phẩm mới: bấm "+ Thêm" → khai tiêu chuẩn, kích thước, đơn trọng, nguyên liệu → gán khuôn (dùng chung hoặc chờ khuôn mới) → Lưu. Bảng Giá tự tính và hiện SKU mới.',
+      'Mua khuôn mới: khai tài sản khuôn ở Cấu Hình Nhà Máy (khấu hao tự vào giá thành).',
+    ],
+    related: [
+      { tab: 'pricing', label: 'Bảng Giá — xem SKU mới sau khi lưu' },
+      { tab: 'config', label: 'Cấu Hình Nhà Máy — tài sản khuôn' },
+    ],
+  },
   assumptions: {
     question: 'Các con số đầu vào theo từng nguyên liệu: giá thị trường, phần lời của nhà máy, ngưỡng khóa giá.',
     source: [

@@ -11,6 +11,7 @@ import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PricingHub, { type PricingSub } from '../price-list/PricingHub.js';
 import InventoryScreen from '../inventory/InventoryScreen.js';
+import ProductsScreen from '../products/ProductsScreen.js';
 import ExplainPanel from './ExplainPanel.js';
 import ConfigScreen from '../config/ConfigScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
@@ -58,6 +59,7 @@ const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
   {
     title: 'Thiết Lập',
     tabs: [
+      { id: 'products', label: 'Danh Mục Sản Phẩm', caption: 'tạo/sửa SP · chuẩn · đơn trọng · khuôn' },
       { id: 'assumptions', label: 'Tham Số', caption: 'giá compound · tỷ giá · ngưỡng' },
       { id: 'config', label: 'Cấu Hình Nhà Máy', caption: 'máy · ca · lương · CAPEX' },
     ],
@@ -207,6 +209,7 @@ export default function AppShell() {
                 internal={data.internal}
               />
             )}
+            {tabId === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {tabId === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {tabId === 'assumptions' && (
               <AssumptionsScreen

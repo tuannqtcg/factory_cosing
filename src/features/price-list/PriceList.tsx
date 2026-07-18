@@ -36,6 +36,7 @@ interface Row {
   priceBeforeVat: number;
   priceWithVat: number;
   materialId: string;
+  matName: string;
   // Bản sales-safe (chỉ giá bán); các bậc GIÁ VỐN tra từ `internal` lúc mở dòng.
   chain: PriceListDoc['skuPriceChains'][number]['chain'];
 }
@@ -59,8 +60,12 @@ export default function PriceList({
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   // ADR-036 — 2 dạng xem: 'list' (liệt kê gọn) | 'card' (phiếu giá từng SKU).
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
+  // Phiếu giá chọn 3 tầng: Nguyên liệu → Sản phẩm → Kích cỡ.
+  const [cardMaterial, setCardMaterial] = useState<string | null>(null);
   const [cardGroup, setCardGroup] = useState<string | null>(null);
   const [cardKey, setCardKey] = useState<string | null>(null);
+  // Dạng danh sách: lọc theo nguyên liệu (chỉ hiện khi có ≥2 nguyên liệu).
+  const [materialFilter, setMaterialFilter] = useState<string>('all');
 
   // ADR-025 §nối 2 màn — TÍN HIỆU QUYẾT ĐỊNH GIÁ cho CEO (KHÔNG phải kiểm tra tồn
   // kho): nguyên liệu nào có giá thị trường (tái tạo) lệch khỏi baseline đã khóa
@@ -109,19 +114,22 @@ export default function PriceList({
           priceBeforeVat: sku.chain.vfPricePerUnit,
           priceWithVat: Math.round(sku.chain.vfPricePerUnit * (1 + vatRate)),
           materialId: sku.productKey.materialId,
+          matName: scenario?.materials.find((m) => m.id === sku.productKey.materialId)?.name ?? sku.productKey.materialId,
           chain: sku.chain,
         };
       });
-  }, [priceList, vatRate]);
+  }, [priceList, vatRate, scenario]);
 
   const filteredRows = rows.filter((row) => {
     const q = searchQuery.toLowerCase();
-    const matchesSearch = !q || row.name.toLowerCase().includes(q) || row.size.toLowerCase().includes(q);
+    const matchesSearch = !q || row.name.toLowerCase().includes(q) || row.size.toLowerCase().includes(q) || row.matName.toLowerCase().includes(q);
     const matchesFilter =
       productFilter === 'all' ||
       (productFilter === 'khác' ? !MAIN_CATEGORIES.includes(row.name) : row.name === productFilter);
-    return matchesSearch && matchesFilter;
+    const matchesMaterial = materialFilter === 'all' || row.materialId === materialFilter;
+    return matchesSearch && matchesFilter && matchesMaterial;
   });
+  const allMaterials = [...new Map(rows.map((r) => [r.materialId, r.matName])).entries()];
 
   // Thuế suất VAT suy từ chính dữ liệu (sales không đọc được costPool) — chỉ để hiển thị nhãn.
   const vatPctLabel = Math.round(vatRate * 100);
@@ -261,17 +269,39 @@ export default function PriceList({
       </div>
 
       {viewMode === 'card' ? (() => {
-        const cardGroups = [...new Set(rows.map((r) => r.name))];
+        // Tầng 1: nguyên liệu (compound) — phân biệt rõ BlazeMaster / Corzan.
+        const cardMaterials = [...new Map(rows.map((r) => [r.materialId, r.matName])).entries()];
+        const activeMatId = cardMaterial && cardMaterials.some(([id]) => id === cardMaterial) ? cardMaterial : cardMaterials[0]?.[0] ?? '';
+        const matRows = rows.filter((r) => r.materialId === activeMatId);
+        // Tầng 2: sản phẩm trong nguyên liệu đó. Tầng 3: kích cỡ (kèm tiêu chuẩn).
+        const cardGroups = [...new Set(matRows.map((r) => r.name))];
         const activeCardGroup = cardGroup && cardGroups.includes(cardGroup) ? cardGroup : cardGroups[0] ?? '';
-        const cardRows = rows.filter((r) => r.name === activeCardGroup);
+        const cardRows = matRows.filter((r) => r.name === activeCardGroup);
         const cardRow = cardRows.find((r) => r.key === cardKey) ?? cardRows[0];
         if (!cardRow) return <div style={{ fontSize: 12, color: '#737373' }}>Chưa có sản phẩm.</div>;
         return (
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
-            {/* Chọn sản phẩm + kích cỡ */}
+            {/* Chọn 3 tầng: Nguyên liệu → Sản phẩm → Kích cỡ */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>① Nguyên liệu (compound)</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {cardMaterials.map(([id, name]) => {
+                  const active = id === activeMatId;
+                  return (
+                    <div
+                      key={id}
+                      onClick={() => { setCardMaterial(id); setCardGroup(null); setCardKey(null); }}
+                      style={{ padding: '8px 20px', cursor: 'pointer', border: `2px solid ${active ? '#a8003b' : '#d8d8d8'}`, background: active ? '#a8003b' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 6, fontSize: 13, fontWeight: 700 }}
+                    >
+                      {name}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>Sản phẩm</div>
+                <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>② Sản phẩm</div>
                 <select
                   value={activeCardGroup}
                   onChange={(e) => { setCardGroup(e.target.value); setCardKey(null); }}
@@ -281,7 +311,7 @@ export default function PriceList({
                 </select>
               </div>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>Kích cỡ</div>
+                <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>③ Kích cỡ · tiêu chuẩn</div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                   {cardRows.map((r) => {
                     const active = r.key === cardRow.key;
@@ -291,7 +321,7 @@ export default function PriceList({
                         onClick={() => setCardKey(r.key)}
                         style={{ padding: '5px 12px', cursor: 'pointer', border: `1px solid ${active ? '#0a0a0a' : '#b3b3b3'}`, background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
                       >
-                        {r.size}
+                        {r.size}{r.spec ? ` · ${r.spec}` : ''}
                       </div>
                     );
                   })}
@@ -304,13 +334,15 @@ export default function PriceList({
               <div style={{ background: '#0a0a0a', padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <div style={{ color: '#a3a3a3', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700 }}>Phiếu giá xuất xưởng (VF)</div>
-                  <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>{cardRow.name} {cardRow.size}</div>
+                  <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>
+                    {cardRow.name} — {cardRow.matName}{cardRow.spec ? ` — ${cardRow.spec}` : ''} — {cardRow.size}
+                  </div>
                 </div>
-                <div style={{ color: '#a3a3a3', fontSize: 10 }}>BlazeMaster CPVC · Model v3.7</div>
+                <div style={{ color: '#a3a3a3', fontSize: 10 }}>Model v3.7</div>
               </div>
               <div style={{ padding: '18px 22px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 16 }}>
-                  {([['Quy cách', cardRow.spec || '—'], ['Đơn vị tính', cardRow.unit], ['Mã định danh', cardRow.designationCode], ['Phân lớp', cardRow.classificationCode]] as const).map(([l, val]) => (
+                  {([['Nguyên liệu', cardRow.matName], ['Tiêu chuẩn', cardRow.spec || '—'], ['Đơn vị tính', cardRow.unit], ['Mã định danh', cardRow.designationCode], ['Phân lớp', cardRow.classificationCode]] as const).map(([l, val]) => (
                     <div key={l}>
                       <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '.05em' }}>{l}</div>
                       <div style={{ fontSize: 12, fontWeight: 600 }}>{val}</div>
@@ -366,6 +398,23 @@ export default function PriceList({
         </div>
       </div>
 
+      {allMaterials.length > 1 && (
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, color: '#999', marginRight: 4 }}>Nguyên liệu:</span>
+          {[['all', 'Tất cả'] as [string, string], ...allMaterials].map(([id, name]) => {
+            const active = materialFilter === id;
+            return (
+              <div
+                key={id}
+                onClick={() => setMaterialFilter(id)}
+                style={{ padding: '4px 12px', cursor: 'pointer', border: `1px solid ${active ? '#0a0a0a' : '#b3b3b3'}`, background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 11, fontWeight: 600 }}
+              >
+                {name}
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 11 }}>
         {CAT_LIST.map((c) => {
           const active = productFilter === c;

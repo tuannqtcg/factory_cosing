@@ -68,12 +68,13 @@ export default function OrderAcceptanceScreen({
     const opts: SkuOption[] = [];
     for (const p of scenario.products) {
       if (p.kind === 'pipe') {
-        const dup = scenario.products.some((q) => q.kind === 'pipe' && q.dn === p.dn && q.materialId !== p.materialId);
         opts.push({
           key: `pipe|${p.materialId}|${p.dn}`,
           line: 'pipe',
           group: 'Ống CPVC',
-          sizeLabel: dup ? `${p.dn} · ${matName(p.materialId)}` : p.dn,
+          // Luôn hiện đủ tiêu chuẩn + nguyên liệu — DN20 SDR 13.5 BlazeMaster
+          // và DN20 SCH40 Corzan là 2 sản phẩm khác hẳn nhau.
+          sizeLabel: `DN${p.dn.replace(/^DN/i, '')} · ${p.spec} · ${matName(p.materialId)}`,
           weightKgPerUnit: p.unitWeightKgPerM,
           unitLabel: 'mét',
           materialId: p.materialId,
@@ -81,14 +82,11 @@ export default function OrderAcceptanceScreen({
         });
       } else {
         if (managementStatusOf(p, moldAssets) !== 'active') continue;
-        const dup = scenario.products.some(
-          (q) => q.kind === 'fitting' && q.productName === p.productName && q.sizeLabel === p.sizeLabel && q.materialId !== p.materialId,
-        );
         opts.push({
           key: `fit|${p.materialId}|${p.productName}|${p.sizeLabel}`,
           line: 'fitting',
           group: p.productName,
-          sizeLabel: dup ? `${p.sizeLabel} · ${matName(p.materialId)}` : p.sizeLabel,
+          sizeLabel: `${p.sizeLabel}${p.schedule ? ` · ${p.schedule}` : ''} · ${matName(p.materialId)}`,
           weightKgPerUnit: p.unitWeightKg,
           unitLabel: 'cái',
           materialId: p.materialId,

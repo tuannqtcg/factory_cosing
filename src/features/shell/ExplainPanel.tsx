@@ -35,6 +35,7 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
   'order-acceptance': {
     question: 'Khách chào một đơn giá X — nhận thì lãi hay lỗ, và nên nhận không?',
     source: [
+      'Nhập đơn đúng cách khách đặt: chọn sản phẩm cụ thể, số mét (ống) hoặc số cái (phụ kiện), giá chào theo mét/cái — máy tự quy về kg bằng đơn trọng trong danh mục và ghi rõ phép quy đổi.',
       'Giá chào của khách được so với 2 mức sàn. Sàn thứ nhất — "sàn tiền tươi": tiền nguyên liệu MUA MỚI theo giá thị trường + chi phí biến đổi. Bán dưới mức này là mất tiền mặt ngay lập tức.',
       'Sàn thứ hai — giá thành đầy đủ (đã gánh cả khấu hao, lương, chi phí chung). Trên mức này là đơn có lãi thật.',
       'Vì sao tính theo giá mua MỚI dù kho còn hàng? Vì nguyên liệu dùng cho đơn này rồi sẽ phải mua bù theo giá hiện tại — giá nhập kho cũ là chuyện đã rồi, lãi/lỗ của kho được tách riêng ở màn Giá Vốn Theo Lô, không được phép làm nhiễu quyết định nhận đơn.',
@@ -71,7 +72,8 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       'Từ giá VF suy tiếp một chiều: cộng lãi khâu thương mại ra giá TCG, rồi cộng biên của nhà phân phối ra giá niêm yết, cuối cùng cộng VAT. Các tầng sau là phép nhân tự động — muốn đổi giá, đổi ở gốc VF.',
       'Vì sao neo ở VF? Đó là tầng duy nhất nhà máy kiểm soát được; các tầng sau là chính sách phân phối.',
       'Giá VF được giữ ỔN ĐỊNH: giá nguyên liệu thị trường dao động trong ngưỡng cho phép thì giá bán không đổi; vượt ngưỡng mới đề nghị chốt lại — khách hàng không bị đổi giá liên tục.',
-      'Bấm vào bất kỳ dòng sản phẩm nào để xem đường đi của chính con số giá đó, từng bước một.',
+      'Hai dạng xem: DANH SÁCH để tra nhanh cả bảng; PHIẾU GIÁ để xem một sản phẩm thật chi tiết — chọn ống size nào ra phiếu size đó, phụ kiện cũng vậy.',
+      'Ở dạng danh sách, bấm vào bất kỳ dòng nào để xem đường đi của chính con số giá đó, từng bước một.',
     ],
     action: [
       'Muốn tăng/giảm mặt bằng giá → sửa "phần lời của nhà máy" (markup VF) ở Tham Số, giá toàn bảng tự tính lại.',

@@ -145,6 +145,19 @@ export default function OrderAcceptanceScreen({
             <button onClick={() => setThresholdOverride(null)} style={{ fontSize: 10, padding: '4px 8px', border: '1px solid #d8d8d8', borderRadius: 4, background: '#fff', cursor: 'pointer', color: '#555' }}>Về ngưỡng cấu hình</button>
           )}
         </div>
+        {thresholdOverride != null && onNavigate && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 8, padding: '8px 12px', background: '#fffbeb', border: '1px solid #b45309', borderRadius: 6 }}>
+            <span style={{ flex: 1, minWidth: 260, fontSize: 11, color: '#92400e', fontWeight: 600 }}>
+              Đây mới là con số THỬ — chưa có hiệu lực. Thấy ngưỡng {fmtPct(thr)} là đúng và muốn áp dụng chính thức?
+            </span>
+            <button
+              onClick={() => onNavigate('assumptions')}
+              style={{ flexShrink: 0, padding: '6px 12px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            >
+              → Chốt ở màn Tham Số
+            </button>
+          </div>
+        )}
         <div style={{ fontSize: 11, color: '#404040', marginTop: 10, padding: '9px 12px', background: '#faf8f2', borderRadius: 6 }}>
           Ở ngưỡng {fmtPct(thr)}: giá niêm yết áp dụng ={' '}
           <b>{fmtUsd(result.lock.appliedPricingUsdPerKg)} USD/kg</b>{' '}

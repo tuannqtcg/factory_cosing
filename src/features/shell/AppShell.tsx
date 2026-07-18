@@ -10,6 +10,8 @@ import LoginScreen from '../auth/LoginScreen.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PricingHub, { type PricingSub } from '../price-list/PricingHub.js';
+import InventoryScreen from '../inventory/InventoryScreen.js';
+import ExplainPanel from './ExplainPanel.js';
 import ConfigScreen from '../config/ConfigScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
@@ -152,6 +154,7 @@ export default function AppShell() {
       </aside>
 
       {/* ═══ MAIN ═══ */}
+      <ExplainPanel tabId={tabId} onNavigate={go} />
       <main style={{ flex: 1, overflow: 'auto', background: '#f6f6f6', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 1366, background: '#f6f6f6', minHeight: '100%' }}>
         {role && (
@@ -174,7 +177,24 @@ export default function AppShell() {
             {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
             {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} onNavigate={go} />}
             {tabId === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
-            {tabId === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />}
+            {tabId === 'lot-costing' && tabSub !== 'edit' && (
+              <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />
+            )}
+            {tabId === 'lot-costing' && tabSub === 'edit' && (
+              <div>
+                {/* ADR-035 — đường nhập/sửa lô (màn Tồn Kho) gắn lại vào Giá Vốn Theo Lô;
+                    ADR-026 từng gỡ khỏi menu mà không chừa lối vào thay thế. */}
+                <div style={{ padding: '18px 36px 0' }}>
+                  <button
+                    onClick={() => setActiveTab('lot-costing')}
+                    style={{ padding: '7px 14px', background: '#fff', color: '#0a0a0a', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    ← Quay lại Giá Vốn Theo Lô
+                  </button>
+                </div>
+                <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
+              </div>
+            )}
             {tabId === 'pricing' && (
               <PricingHub
                 sub={(tabSub as PricingSub | undefined) ?? 'vf'}

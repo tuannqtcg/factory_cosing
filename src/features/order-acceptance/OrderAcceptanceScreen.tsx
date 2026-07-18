@@ -25,7 +25,14 @@ function Num({ label, value, unit, color, strong }: { label: string; value: stri
   );
 }
 
-export default function OrderAcceptanceScreen({ scenario }: { scenario: ScenarioInput | null }) {
+export default function OrderAcceptanceScreen({
+  scenario,
+  onNavigate,
+}: {
+  scenario: ScenarioInput | null;
+  /** ADR-034 — link chéo theo mạch làm việc (đơn dính lô giá lệch → xem Giá Vốn Theo Lô). */
+  onNavigate?: (tab: string) => void;
+}) {
   const [line, setLine] = useState<'pipe' | 'fitting'>('pipe');
   const [quantityTons, setQuantityTons] = useState(50);
   const [offeredPrice, setOfferedPrice] = useState(130000);
@@ -58,6 +65,14 @@ export default function OrderAcceptanceScreen({ scenario }: { scenario: Scenario
       <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Đơn này có nên nhận không?</h1>
       <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
         So giá chào với sàn tiền tươi + giá thành đầy đủ. <b>Đơn mới phải mua nguyên liệu mới</b> → sàn chuẩn tính theo <b>giá thị trường (tái tạo)</b>, không phải giá vốn cũ đã khóa.
+        {onNavigate && (
+          <>
+            {' '}Kho đang lãi/lỗ giữ bao nhiêu so với giá thị trường —{' '}
+            <span onClick={() => onNavigate('lot-costing')} style={{ color: '#a8003b', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+              xem Giá Vốn Theo Lô →
+            </span>
+          </>
+        )}
       </p>
 
       {/* Nhập đơn */}

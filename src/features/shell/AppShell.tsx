@@ -9,9 +9,7 @@ import { useAuth } from '../auth/useAuth.js';
 import LoginScreen from '../auth/LoginScreen.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
-import PriceList from '../price-list/PriceList.js';
-import DistributorPriceList from '../price-list/DistributorPriceList.js';
-import PricingAnalyticsScreen from '../pricing-analytics/PricingAnalyticsScreen.js';
+import PricingHub, { type PricingSub } from '../price-list/PricingHub.js';
 import ConfigScreen from '../config/ConfigScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
@@ -23,22 +21,45 @@ import ProductMixScreen from '../product-mix/ProductMixScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
-// Điều hướng chia theo MỤC ĐÍCH (ADR-020/026), không theo quyền.
-const OPERATION_TABS = [
-  { id: 'dashboard', label: 'Tổng Quan' },
-  { id: 'ceo-planner', label: 'Trợ Lý CEO' },
-  { id: 'sensitivity', label: 'Độ Nhạy' },
-  { id: 'scenario-compare', label: 'So Sánh Kịch Bản' },
-  { id: 'order-acceptance', label: 'Quyết Định Nhận Đơn' },
-  { id: 'product-mix', label: 'Tối Ưu Product-mix' },
-  { id: 'lot-costing', label: 'Giá Vốn Theo Lô' },
-  { id: 'pricelist', label: 'Bảng Giá (VF)' },
-  { id: 'distributor-pricelist', label: 'Bảng Giá NPP' },
-  { id: 'pricing-analytics', label: 'Phân Tích Định Giá' },
-];
-const CONFIG_TABS = [
-  { id: 'assumptions', label: 'Tham Số' },
-  { id: 'config', label: 'Cấu Hình Nhà Máy' },
+// ADR-034 — điều hướng theo TÌNH HUỐNG của CEO (hằng ngày / khi có việc /
+// hoạch định / thiết lập), không theo loại công cụ. Mỗi mục kèm chú thích
+// 1 dòng = câu hỏi màn đó trả lời, để không phải nhớ tên màn.
+// Mục 'pricing' gộp 3 tab cũ (pricelist / distributor-pricelist /
+// pricing-analytics) thành hub sub-tab (PricingHub) — id dạng 'pricing:vf'.
+interface NavTab {
+  id: string;
+  label: string;
+  caption: string;
+}
+const NAV_GROUPS: Array<{ title: string; tabs: NavTab[] }> = [
+  {
+    title: 'Hằng Ngày',
+    tabs: [{ id: 'dashboard', label: 'Tổng Quan', caption: 'nhà máy đang thế nào?' }],
+  },
+  {
+    title: 'Khi Có Việc',
+    tabs: [
+      { id: 'order-acceptance', label: 'Quyết Định Nhận Đơn', caption: 'đơn này nhận không?' },
+      { id: 'lot-costing', label: 'Giá Vốn Theo Lô', caption: 'lô mới về — chốt lại giá?' },
+      { id: 'pricing', label: 'Bảng Giá', caption: 'chốt giá VF · bảng NPP · phân tích' },
+    ],
+  },
+  {
+    title: 'Hoạch Định',
+    tabs: [
+      { id: 'ceo-planner', label: 'Trợ Lý CEO', caption: 'kịch bản ca/biên → lợi nhuận' },
+      { id: 'sensitivity', label: 'Độ Nhạy', caption: 'biến nào bào EBIT mạnh nhất?' },
+      { id: 'scenario-compare', label: 'So Sánh Kịch Bản', caption: 'xấu · base · tốt' },
+      { id: 'product-mix', label: 'Tối Ưu Product-mix', caption: 'dồn lực vào dòng nào?' },
+    ],
+  },
+  {
+    title: 'Thiết Lập',
+    tabs: [
+      { id: 'assumptions', label: 'Tham Số', caption: 'giá compound · tỷ giá · ngưỡng' },
+      { id: 'config', label: 'Cấu Hình Nhà Máy', caption: 'máy · ca · lương · CAPEX' },
+    ],
+  },
 ];
 
 
@@ -52,16 +73,24 @@ export default function AppShell() {
 
   const data = useScenarioData(SCENARIO_ID, role);
 
-  const navItem = (t: { id: string; label: string }) => {
-    const active = t.id === activeTab;
+  // 'pricing:vf' → màn 'pricing', sub 'vf'. Các màn khác không có sub.
+  const [tabId, tabSub] = activeTab.split(':') as [string, string | undefined];
+  // Điều hướng dùng chung cho sidebar + nút link chéo trong màn.
+  const go = (tab: string) => setActiveTab(tab === 'pricing' ? 'pricing:vf' : tab);
+
+  const navItem = (t: NavTab) => {
+    const active = t.id === tabId;
     return (
       <div
         key={t.id}
-        onClick={() => setActiveTab(t.id)}
-        style={{ padding: '9px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8, background: active ? '#1c1c1c' : 'transparent', borderLeft: `3px solid ${active ? '#fff' : 'transparent'}` }}
+        onClick={() => go(t.id)}
+        style={{ padding: '7px 16px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 8, background: active ? '#1c1c1c' : 'transparent', borderLeft: `3px solid ${active ? '#fff' : 'transparent'}` }}
       >
-        <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#fff' : '#555', flexShrink: 0 }} />
-        <span style={{ color: active ? '#fff' : '#a3a3a3', fontSize: 12, fontWeight: active ? 600 : 400 }}>{t.label}</span>
+        <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#fff' : '#555', flexShrink: 0, marginTop: 6 }} />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ color: active ? '#fff' : '#a3a3a3', fontSize: 12, fontWeight: active ? 600 : 400 }}>{t.label}</div>
+          <div style={{ color: active ? '#8a8a8a' : '#5c5c5c', fontSize: 9, marginTop: 1 }}>{t.caption}</div>
+        </div>
       </div>
     );
   };
@@ -98,10 +127,14 @@ export default function AppShell() {
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 4 }}>Phân Tích & Quyết Định</div>
-          {OPERATION_TABS.map(navItem)}
-          <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: 8, borderTop: '1px solid rgba(255,255,255,.06)' }}>Điều Chỉnh Tham Số</div>
-          {CONFIG_TABS.map(navItem)}
+          {NAV_GROUPS.map((g, gi) => (
+            <div key={g.title}>
+              <div style={{ padding: '10px 16px 4px', fontSize: 8, letterSpacing: '.14em', textTransform: 'uppercase', color: '#555', fontWeight: 700, marginTop: gi === 0 ? 4 : 8, borderTop: gi === 0 ? 'none' : '1px solid rgba(255,255,255,.06)' }}>
+                {g.title}
+              </div>
+              {g.tabs.map(navItem)}
+            </div>
+          ))}
         </nav>
 
         <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', padding: '12px 16px' }}>
@@ -126,7 +159,7 @@ export default function AppShell() {
             {data.error && (
               <div style={{ margin: '16px 36px 0', padding: '10px 14px', background: '#fef2f2', border: '1px solid #DC2626', borderRadius: 2, fontSize: 11, color: '#DC2626' }}>{data.error}</div>
             )}
-            {activeTab === 'dashboard' && (
+            {tabId === 'dashboard' && (
               <Dashboard
                 role={role}
                 user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
@@ -136,26 +169,26 @@ export default function AppShell() {
                 salesPriceLadder={data.priceList?.priceLadder ?? null}
               />
             )}
-            {activeTab === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
-            {activeTab === 'sensitivity' && <SensitivityScreen scenario={data.scenario} />}
-            {activeTab === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
-            {activeTab === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} />}
-            {activeTab === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
-            {activeTab === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} />}
-            {activeTab === 'pricelist' && (
-              <PriceList
+            {tabId === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
+            {tabId === 'sensitivity' && <SensitivityScreen scenario={data.scenario} onNavigate={go} />}
+            {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
+            {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} onNavigate={go} />}
+            {tabId === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
+            {tabId === 'lot-costing' && <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />}
+            {tabId === 'pricing' && (
+              <PricingHub
+                sub={(tabSub as PricingSub | undefined) ?? 'vf'}
+                onSubChange={(s) => setActiveTab(`pricing:${s}`)}
+                onNavigate={go}
+                role={role}
+                scenarioId={SCENARIO_ID}
                 priceList={data.priceList}
                 scenario={data.scenario}
                 internal={data.internal}
-                onNavigate={setActiveTab}
               />
             )}
-            {activeTab === 'distributor-pricelist' && <DistributorPriceList priceList={data.priceList} />}
-            {activeTab === 'pricing-analytics' && (
-              <PricingAnalyticsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
-            )}
-            {activeTab === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
-            {activeTab === 'assumptions' && (
+            {tabId === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
+            {tabId === 'assumptions' && (
               <AssumptionsScreen
                 role={role}
                 user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}

@@ -12,7 +12,14 @@ const fmtPct1 = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionD
 
 const DELTAS = [0.05, 0.1, 0.2] as const;
 
-export default function SensitivityScreen({ scenario }: { scenario: ScenarioInput | null }) {
+export default function SensitivityScreen({
+  scenario,
+  onNavigate,
+}: {
+  scenario: ScenarioInput | null;
+  /** ADR-034 — link chéo theo mạch làm việc (thấy rủi ro → dựng kịch bản xấu/tốt). */
+  onNavigate?: (tab: string) => void;
+}) {
   const [deltaPct, setDeltaPct] = useState<number>(0.1);
   const result = useMemo(() => (scenario ? calculateSensitivity(scenario, deltaPct) : null), [scenario, deltaPct]);
 
@@ -48,6 +55,14 @@ export default function SensitivityScreen({ scenario }: { scenario: ScenarioInpu
         <div style={{ display: 'flex', alignItems: 'center', gap: sp[2] }}>
           <span style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>Biên độ lệch</span>
           <Segmented options={DELTAS.map((d) => ({ id: String(d), label: `±${fmtPct1(d)}` }))} value={String(deltaPct)} onChange={(v) => setDeltaPct(Number(v))} />
+          {onNavigate && (
+            <button
+              onClick={() => onNavigate('scenario-compare')}
+              style={{ padding: '6px 12px', background: 'transparent', color: tk.ink, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
+            >
+              → Dựng kịch bản xấu/tốt
+            </button>
+          )}
         </div>
       </div>
 

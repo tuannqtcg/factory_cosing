@@ -6,6 +6,9 @@ import { z } from 'zod';
 
 export const OrderDecisionRequestSchema = z.object({
   line: z.enum(['pipe', 'fitting']),
+  /** ADR-037 — nguyên liệu của dòng đơn (BlazeMaster/Corzan…). Bỏ trống = nguyên
+   * liệu tham chiếu của dòng SP (tương thích hành vi cũ ADR-029). */
+  materialId: z.string().optional(),
   quantityTons: z.number().nonnegative(),
   offeredPriceVndPerKg: z.number().nonnegative(),
   /** Ngưỡng khóa giá THỬ (thập phân, 0.1 = 10%). Bỏ trống = ngưỡng cấu hình hiện tại. */

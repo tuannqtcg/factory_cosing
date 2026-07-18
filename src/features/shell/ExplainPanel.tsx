@@ -35,7 +35,8 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
   'order-acceptance': {
     question: 'Khách chào một đơn giá X — nhận thì lãi hay lỗ, và nên nhận không?',
     source: [
-      'Nhập đơn đúng cách khách đặt: chọn sản phẩm cụ thể, số mét (ống) hoặc số cái (phụ kiện), giá chào theo mét/cái — máy tự quy về kg bằng đơn trọng trong danh mục và ghi rõ phép quy đổi.',
+      'Nhập đơn đúng cách khách đặt: NHIỀU dòng sản phẩm trong một đơn (ống và phụ kiện, BlazeMaster lẫn Corzan), mỗi dòng số mét/cái + giá chào theo mét/cái — máy tự quy về kg bằng đơn trọng danh mục, tính sàn theo đúng nguyên liệu từng dòng.',
+      'Kết luận có 2 tầng: từng dòng (dòng nào đang kéo cả đơn xuống thì mặc cả đúng dòng đó) và cả đơn (cộng tổng mọi dòng).',
       'Giá chào của khách được so với 2 mức sàn. Sàn thứ nhất — "sàn tiền tươi": tiền nguyên liệu MUA MỚI theo giá thị trường + chi phí biến đổi. Bán dưới mức này là mất tiền mặt ngay lập tức.',
       'Sàn thứ hai — giá thành đầy đủ (đã gánh cả khấu hao, lương, chi phí chung). Trên mức này là đơn có lãi thật.',
       'Vì sao tính theo giá mua MỚI dù kho còn hàng? Vì nguyên liệu dùng cho đơn này rồi sẽ phải mua bù theo giá hiện tại — giá nhập kho cũ là chuyện đã rồi, lãi/lỗ của kho được tách riêng ở màn Giá Vốn Theo Lô, không được phép làm nhiễu quyết định nhận đơn.',

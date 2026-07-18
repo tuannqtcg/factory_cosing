@@ -10,6 +10,7 @@ import { managementStatusOf } from '../../schemas/product.js';
 import { decideOrder } from '../../engine/order-acceptance.js';
 import type { OrderDecisionResult } from '../../schemas/order-acceptance.js';
 import { fmtVnd, fmtUsd, fmtPct } from '../../lib/format.js';
+import TermInfo from '../shell/TermInfo.js';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2, signDisplay: 'exceptZero' }).format(v / 1e9) + ' tỷ';
 const fmtNum = (v: number, digits = 1) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: digits }).format(v);
@@ -176,8 +177,12 @@ export default function OrderAcceptanceScreen({
       {/* Các dòng đơn */}
       <div style={{ marginTop: 16, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 90px 120px 110px 110px 96px 30px', gap: 8, padding: '9px 14px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5' }}>
-          {['Sản phẩm', 'Kích cỡ', 'Số lượng', 'Giá chào (đ/đv)', 'Sàn tiền tươi', 'Giá thành đủ', 'Kết luận', ''].map((h, i) => (
-            <div key={i} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase', textAlign: i >= 2 && i <= 5 ? 'right' : 'left' }}>{h}</div>
+          {(['Sản phẩm', 'Kích cỡ', 'Số lượng', 'Giá chào (đ/đv)', 'Sàn tiền tươi', 'Giá thành đủ', 'Kết luận', ''] as const).map((h, i) => (
+            <div key={i} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase', textAlign: i >= 2 && i <= 5 ? 'right' : 'left', display: 'flex', justifyContent: i >= 2 && i <= 5 ? 'flex-end' : 'flex-start', gap: 4, alignItems: 'center' }}>
+              {h}
+              {h === 'Sàn tiền tươi' && <TermInfo term="cash-floor" />}
+              {h === 'Giá thành đủ' && <TermInfo term="full-cost" />}
+            </div>
           ))}
         </div>
         {rows.map(({ item, group, groupOpts, sku, offered, result }) => {
@@ -225,8 +230,9 @@ export default function OrderAcceptanceScreen({
           >
             + Thêm dòng sản phẩm
           </button>
-          <div style={{ fontSize: 11, color: '#737373' }}>
-            Cả đơn: <b>{fmtNum(totalTons)} tấn</b> · trị giá chào <b>{fmtVnd(Math.round(totalRevenue))} đ</b>
+          <div style={{ fontSize: 11, color: '#737373', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span>Cả đơn: <b>{fmtNum(totalTons)} tấn</b> · trị giá chào <b>{fmtVnd(Math.round(totalRevenue))} đ</b></span>
+            <TermInfo term="market-ceiling" label="Giá trần nằm ở đâu?" />
           </div>
         </div>
       </div>
@@ -249,8 +255,9 @@ export default function OrderAcceptanceScreen({
       {/* Khóa giá what-if — theo từng nguyên liệu có trong đơn */}
       {lockRows.length > 0 && (
         <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 16, marginTop: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#737373', textTransform: 'uppercase', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#737373', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
             Khóa giá theo nguyên liệu trong đơn <span style={{ fontWeight: 400, textTransform: 'none' }}>(thử ngưỡng, không lưu cấu hình)</span>
+            <TermInfo term="locked-floor" />
           </div>
           {lockRows.map((r) => (
             <div key={r.materialId} style={{ display: 'grid', gridTemplateColumns: '1.2fr repeat(4, 1fr)', gap: 14, marginBottom: 10, alignItems: 'end' }}>

@@ -18,6 +18,7 @@
 import { useMemo, useState } from 'react';
 import { fmtVnd, fmtPct } from '../../lib/format.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
+import TermInfo from '../shell/TermInfo.js';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Prototype đóng băng: 8 nút loại chính + Tất cả + Khác.
@@ -210,6 +211,11 @@ export default function PriceList({
         <div style={{ marginTop: 8, fontSize: 10.5, color: '#737373', lineHeight: 1.5 }}>
           Vì sao chốt ở giá VF? Đây là tầng giá duy nhất nhà máy kiểm soát được — các tầng sau (TCG, nhà phân phối, VAT)
           chỉ là phép nhân theo chính sách phân phối, tự tính, không chốt tay từng tầng.
+        </div>
+        <div style={{ marginTop: 8, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <TermInfo term="suggested-vf" label="ⓘ Vì sao đề xuất mức giá này?" />
+          <TermInfo term="full-cost" label="ⓘ Giá sàn là gì?" />
+          <TermInfo term="market-ceiling" label="ⓘ Giá trần nằm ở đâu?" />
         </div>
       </>
     );

@@ -18,7 +18,16 @@ function Stat({ label, value, sub, color }: { label: string; value: string; sub?
   );
 }
 
-export default function LotCostingScreen({ scenario, internal }: { scenario: ScenarioInput | null; internal: ScenarioOutput | null }) {
+export default function LotCostingScreen({
+  scenario,
+  internal,
+  onNavigate,
+}: {
+  scenario: ScenarioInput | null;
+  internal: ScenarioOutput | null;
+  /** ADR-034 — link chéo theo mạch làm việc (lệch ngưỡng → chốt lại ở Bảng Giá). */
+  onNavigate?: (tab: string) => void;
+}) {
   if (!scenario || !internal) {
     return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
   }
@@ -111,8 +120,16 @@ export default function LotCostingScreen({ scenario, internal }: { scenario: Sce
             </div>
 
             {/* Khuyến nghị */}
-            <div style={{ marginTop: 12, padding: '9px 14px', borderRadius: 6, border: `1px solid ${bannerColor}`, background: bannerBg, color: bannerColor, fontSize: 11, fontWeight: 600 }}>
-              {bannerText}
+            <div style={{ marginTop: 12, padding: '9px 14px', borderRadius: 6, border: `1px solid ${bannerColor}`, background: bannerBg, color: bannerColor, fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <span>{bannerText}</span>
+              {reprice && onNavigate && (
+                <button
+                  onClick={() => onNavigate('pricing')}
+                  style={{ flexShrink: 0, padding: '6px 12px', background: bannerColor, color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  → Chốt lại ở Bảng Giá
+                </button>
+              )}
             </div>
           </div>
         );

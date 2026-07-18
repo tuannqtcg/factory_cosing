@@ -28,6 +28,14 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-034 — Sidebar theo tình huống CEO**: 4 nhóm (Hằng Ngày / Khi Có Việc /
+  Hoạch Định / Thiết Lập) + caption 1 dòng mỗi mục; gộp 3 tab giá thành hub
+  "Bảng Giá" (VF | NPP | Phân tích, `PricingHub.tsx`) → 12 mục còn 9; 3 link chéo
+  theo mạch (Lô→Bảng Giá, Độ Nhạy→So Sánh KB, Nhận Đơn→Lô). Thuần trình bày.
+- [x] **Đăng nhập production hoàn thiện**: gỡ hẳn lối tắt demo theo vai; thêm
+  "Quên mật khẩu" (email đặt lại) + "Đăng nhập bằng Google" (popup). Cần bật
+  provider Google + Authorized domains trên Console; Render cần điền 4 biến
+  VITE_FIREBASE_* rồi rebuild (bản cũ đang chạy nhầm chế độ emulator).
 - [x] **ADR-033 — Design system + phong cách đen–trắng**: `src/design/tokens.ts`
   (nguồn chân lý màu/chữ/spacing) + `primitives.tsx` (Screen/Card/Banner/Stat/Segmented…).
   Gu tối giản đen–trắng, màu chỉ cho biểu đồ + ghi chú. DEMO trên màn Độ Nhạy — CHỜ roll-out.

@@ -5,7 +5,7 @@
 // (VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_AUTH_DOMAIN)
 // — KHÔNG sửa code, có API key là tự tắt chế độ emulator.
 import { initializeApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import { connectAuthEmulator, getAuth, GoogleAuthProvider, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut, type User } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
@@ -44,6 +44,17 @@ export type AppRole = 'admin' | 'pricing' | 'sales' | 'production';
 /** ADR-023 — đăng nhập production thật bằng email/mật khẩu (owner + user thật). */
 export async function signInWithEmail(email: string, password: string): Promise<User> {
   const credential = await signInWithEmailAndPassword(auth, email, password);
+  return credential.user;
+}
+
+/**
+ * Đăng nhập bằng tài khoản Google (popup). Yêu cầu provider Google đã bật
+ * trong Firebase Console và domain app nằm trong Authorized domains. Phân
+ * quyền KHÔNG đổi: vẫn đọc custom claim `role` trên token — tài khoản Google
+ * chưa được cấp vai sẽ dừng ở màn "Không có quyền truy cập".
+ */
+export async function signInWithGoogle(): Promise<User> {
+  const credential = await signInWithPopup(auth, new GoogleAuthProvider());
   return credential.user;
 }
 

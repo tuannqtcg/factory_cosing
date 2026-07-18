@@ -4,7 +4,7 @@
 // production lẫn emulator đều đăng nhập bằng email/mật khẩu.
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth, roleOf, sendPasswordReset, signInWithEmail, signOutCurrentUser, type AppRole } from '../../lib/firebase.js';
+import { auth, roleOf, sendPasswordReset, signInWithEmail, signInWithGoogle, signOutCurrentUser, type AppRole } from '../../lib/firebase.js';
 
 export interface AuthState {
   status: 'loading' | 'signed-out' | 'signed-in';
@@ -12,6 +12,8 @@ export interface AuthState {
   role: AppRole | null;
   /** ADR-023 — đăng nhập thật bằng email/mật khẩu. Lỗi → trả message tiếng Việt. */
   signIn: (email: string, password: string) => Promise<string | null>;
+  /** Đăng nhập bằng Google (popup). Lỗi → trả message tiếng Việt, thành công → null. */
+  signInGoogle: () => Promise<string | null>;
   /** Đăng xuất. */
   signOut: () => Promise<void>;
   /** Gửi email đặt lại mật khẩu. Lỗi → trả message tiếng Việt, thành công → null. */
@@ -55,6 +57,20 @@ export function useAuth(): AuthState {
     }
   };
 
+  const signInGoogle = async (): Promise<string | null> => {
+    try {
+      await signInWithGoogle();
+      return null;
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return null; // user tự đóng popup — không phải lỗi
+      if (code === 'auth/popup-blocked') return 'Trình duyệt chặn popup — cho phép popup rồi thử lại.';
+      if (code === 'auth/operation-not-allowed') return 'Provider Google chưa được bật trong Firebase Console (Authentication → Sign-in method).';
+      if (code === 'auth/unauthorized-domain') return 'Domain này chưa nằm trong Authorized domains của Firebase Auth.';
+      return messageForAuthError(err);
+    }
+  };
+
   const signOut = async (): Promise<void> => {
     await signOutCurrentUser();
   };
@@ -72,5 +88,5 @@ export function useAuth(): AuthState {
     }
   };
 
-  return { ...state, signIn, signOut, resetPassword };
+  return { ...state, signIn, signInGoogle, signOut, resetPassword };
 }

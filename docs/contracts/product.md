@@ -89,7 +89,12 @@ Hoạch SX, bảng giá SKU) PHẢI lọc `managementStatus === 'active'` — th
 đúng cơ chế `EXCLUDED_SKUS` thủ công trong prototype Pha 1.
 
 ## Vai trò & phân quyền
-`Product` (BOM/master data) chỉ `admin` ghi. Đọc: mọi vai đọc được phần
-non-cost (`productName`, `sizeLabel`, `unit`, `dn`...) — các field liên quan chi
-phí (`unitWeightKg`, `cycleTimeSec`, `cavity`, `moldSizeDN`) KHÔNG lộ ra ngoài
-doc mà `sales` có quyền đọc (xem tách doc ở `scenario.md`).
+Sửa 2026-07-18 (ADR-039, thay quy định "chỉ admin ghi" của M12.9a): `Product`
+(BOM/master data) do `admin` VÀ `pricing` ghi — danh mục là master data KỸ
+THUẬT (tên, kích thước, đơn trọng, chu kỳ), không phải cấu trúc chi phí; CEO
+giao nhân viên vai `pricing` quản danh mục. RIÊNG `moldAssets` (tài sản vốn:
+giá mua, năm mua, đời khấu hao — kể cả `producesSkus` vì nằm cùng mảng) vẫn
+CHỈ `admin` ghi. Đọc: mọi vai đọc được phần non-cost (`productName`,
+`sizeLabel`, `unit`, `dn`...) — các field liên quan chi phí (`unitWeightKg`,
+`cycleTimeSec`, `cavity`, `moldSizeDN`) KHÔNG lộ ra ngoài doc mà `sales` có
+quyền đọc (xem tách doc ở `scenario.md`).

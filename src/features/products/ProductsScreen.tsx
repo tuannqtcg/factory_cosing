@@ -25,10 +25,12 @@ export default function ProductsScreen({
   scenarioId: string;
   scenario: ScenarioInput | null;
 }) {
-  // Khớp rules server (hợp đồng product.md): danh mục sản phẩm + khuôn CHỈ vai
-  // Toàn Quyền ghi được — vai Định Giá xem được nhưng lưu sẽ bị hệ thống chặn.
-  const canEdit = role === 'admin';
-  const canView = role === 'admin' || role === 'pricing';
+  // ADR-039 — quyền khớp rules server: DANH MỤC (products[]) mở cho cả Toàn
+  // Quyền lẫn Định Giá (master data kỹ thuật); riêng KHUÔN (moldAssets — tài
+  // sản vốn: giá mua, khấu hao) vẫn chỉ Toàn Quyền, kể cả việc gán SKU↔khuôn.
+  const canEdit = role === 'admin' || role === 'pricing';
+  const canEditMolds = role === 'admin';
+  const canView = canEdit;
   const [form, setForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
@@ -245,9 +247,9 @@ export default function ProductsScreen({
           <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
             Quản lý các mã Ống và Phụ kiện tham gia vào bài toán tính giá thành. Phụ kiện chỉ LÊN BẢNG GIÁ khi đã gán khuôn — nhiều SKU dùng chung một khuôn là bình thường (cùng khuôn, khác nguyên liệu).
           </div>
-          {!canEdit && (
+          {!canEditMolds && (
             <div style={{ fontSize: 11, color: '#92400e', background: '#fffbeb', border: '1px solid #b45309', borderRadius: 6, padding: '7px 12px', marginTop: 8, fontWeight: 600 }}>
-              Vai của bạn chỉ XEM được danh mục — hệ thống chỉ cho vai Toàn Quyền lưu thay đổi danh mục sản phẩm và khuôn.
+              Bạn tạo/sửa được danh mục sản phẩm. Riêng GÁN KHUÔN là thao tác trên tài sản vốn — chỉ vai Toàn Quyền làm được: SKU mới của bạn sẽ ở trạng thái "chờ khuôn" cho tới khi được gán.
             </div>
           )}
         </div>
@@ -394,7 +396,7 @@ export default function ProductsScreen({
                         <div>
                           <select
                             value={mold?.id ?? ''}
-                            disabled={!canEdit}
+                            disabled={!canEditMolds}
                             onChange={(e) => assignMold(p, e.target.value)}
                             style={{ width: 160, padding: '4px 6px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 10.5, background: '#fff' }}
                           >

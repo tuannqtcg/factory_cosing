@@ -130,7 +130,7 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       'Đây là dữ liệu gốc nuôi Bảng Giá: đơn trọng quyết định giá mỗi mét/cái; chu kỳ ép + số lòng khuôn quyết định chi phí giờ máy của phụ kiện.',
       'Phụ kiện chỉ LÊN BẢNG GIÁ khi đã gán khuôn — SKU chưa có khuôn ở trạng thái "chờ khuôn" và tự ẩn. Nhiều SKU dùng chung một khuôn là bình thường (cùng khuôn, khác nguyên liệu compound).',
       'Mỗi cặp (kích cỡ, nguyên liệu) chỉ khai một dòng — hệ thống tự chặn khai trùng.',
-      'Chỉ vai Toàn Quyền lưu được thay đổi danh mục; vai Định Giá xem để đối chiếu.',
+      'Vai Định Giá tạo/sửa được danh mục; riêng GÁN KHUÔN là thao tác trên tài sản vốn (giá mua, khấu hao) nên chỉ vai Toàn Quyền làm — SKU mới sẽ "chờ khuôn" cho tới khi được gán.',
     ],
     action: [
       'Sản phẩm mới: bấm "+ Thêm" → khai tiêu chuẩn, kích thước, đơn trọng, nguyên liệu → gán khuôn (dùng chung hoặc chờ khuôn mới) → Lưu. Bảng Giá tự tính và hiện SKU mới.',

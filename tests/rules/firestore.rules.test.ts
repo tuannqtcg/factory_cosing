@@ -149,8 +149,10 @@ describe('scenarios/{id} — ghi field KHÓA (resource.md/cost-pool.md)', () => 
       })
     );
   });
-  it('pricing sửa products[] (khóa, product.md — M12.9a vá) bị từ chối', async () => {
-    await assertFails(
+  // ADR-039: products[] MỞ cho pricing (danh mục = master data kỹ thuật, không
+  // phải cấu trúc chi phí) — đảo ngược khóa M12.9a/product.md cũ.
+  it('pricing sửa products[] được phép (ADR-039 — mở danh mục cho Định Giá)', async () => {
+    await assertSucceeds(
       updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
         products: [{ kind: 'pipe', dn: 'DN25', materialId: 'bm-orange-pipe' }],
       })
@@ -160,6 +162,27 @@ describe('scenarios/{id} — ghi field KHÓA (resource.md/cost-pool.md)', () => 
     await assertSucceeds(
       updateDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1'), {
         products: [{ kind: 'pipe', dn: 'DN25', materialId: 'bm-orange-pipe' }],
+      })
+    );
+  });
+  // ADR-039: moldAssets trong scenario GIỮ khóa admin (tài sản vốn — giá mua,
+  // khấu hao chảy vào giá thành). Gán SKU↔khuôn cũng nằm trong mảng này nên
+  // pricing không tự gán được — admin thao tác.
+  it('pricing sửa resources.fitting.moldAssets (tài sản vốn) bị từ chối', async () => {
+    await assertFails(
+      updateDoc(doc(ctxFor('pricing').firestore(), 'scenarios/scn-1'), {
+        'resources.fitting.moldAssets': [
+          { id: 'mold-1', label: 'Cút 90º', producesSkus: [{ productName: 'Cút 90º', sizeLabel: '20' }], cavity: 4, costUsd: 1, costVnd: 1, purchaseYear: 2026, usefulLifeYears: 5 },
+        ],
+      })
+    );
+  });
+  it('admin sửa resources.fitting.moldAssets được phép', async () => {
+    await assertSucceeds(
+      updateDoc(doc(ctxFor('admin').firestore(), 'scenarios/scn-1'), {
+        'resources.fitting.moldAssets': [
+          { id: 'mold-1', label: 'Cút 90º', producesSkus: [{ productName: 'Cút 90º', sizeLabel: '20' }], cavity: 4, costUsd: 1, costVnd: 1, purchaseYear: 2026, usefulLifeYears: 5 },
+        ],
       })
     );
   });

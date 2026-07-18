@@ -85,13 +85,19 @@ service cloud.firestore {
         && incoming.resources.pipe.yieldRate == existing.resources.pipe.yieldRate
         && incoming.resources.fitting.yieldRate == existing.resources.fitting.yieldRate
         && incoming.resources.fitting.machineTypes == existing.resources.fitting.machineTypes
+        // ADR-039: moldAssets GIỮ khóa admin — khuôn là TÀI SẢN VỐN (giá mua,
+        // năm mua, đời khấu hao → chảy vào giá thành). 66 khuôn nên không
+        // unroll khóa từng field theo phần tử được (kiểu ADR-015) — khóa cả
+        // mảng; gán SKU↔khuôn do admin thao tác (1 click ở Danh Mục Sản Phẩm).
         && incoming.resources.fitting.moldAssets == existing.resources.fitting.moldAssets
         // cost-pool.md: toàn bộ CostPool khóa TRỪ markup/currency
         && incoming.costPool.sharedFixedCosts == existing.costPool.sharedFixedCosts
         && incoming.costPool.nonProductionCosts == existing.costPool.nonProductionCosts
         && incoming.costPool.solvent550PricePerBox == existing.costPool.solvent550PricePerBox
-        // product.md: "Product chỉ admin ghi" — toàn bộ mảng, pricing không sửa BOM/master data
-        && incoming.products == existing.products
+        // ADR-039 (thay product.md "chỉ admin ghi"): products[] MỞ cho pricing —
+        // danh mục (tên/kích thước/đơn trọng/chu kỳ) là master data KỸ THUẬT,
+        // không phải cấu trúc chi phí; sales vẫn không đọc/ghi được scenario.
+        // Dòng khóa `incoming.products == existing.products` (M12.9a) đã gỡ.
         // ADR-015: thresholdPct admin-only theo từng phần tử mảng
         && materialsThresholdAllLocked(existing, incoming)
         && metalInsertsThresholdAllLocked(existing, incoming);

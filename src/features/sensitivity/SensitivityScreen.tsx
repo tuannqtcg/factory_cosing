@@ -93,6 +93,54 @@ export default function SensitivityScreen({
         </div>
       </Card>
 
+      {/* Ngưỡng khóa giá nghĩa là gì — quy đổi ngưỡng ra tiền (ADR-035 mở rộng).
+          Xấp xỉ tuyến tính từ tornado: EBIT lệch mỗi 1% giá compound ≈ biên độ
+          compound tại ±δ chia δ. Đủ đúng để QUYẾT ngưỡng, không phải số kế toán. */}
+      {(() => {
+        const compound = result.drivers.find((d) => d.key === 'compound');
+        if (!compound || !scenario) return null;
+        const ebitPer1Pct = compound.maxAbsSwingVnd / (deltaPct * 100);
+        return (
+          <Card style={{ marginTop: sp[4] }}>
+            <div style={{ fontSize: ft.size.eyebrow, letterSpacing: '.06em', textTransform: 'uppercase', color: tk.inkMuted, fontWeight: ft.weight.semibold, marginBottom: sp[3] }}>
+              Ngưỡng khóa giá đang đặt nghĩa là gì?
+            </div>
+            <div style={{ fontSize: ft.size.sm, color: tk.inkMuted, lineHeight: 1.6, marginBottom: sp[3] }}>
+              Ngưỡng khóa là mức giá nguyên liệu được phép trôi TRƯỚC KHI hệ thống đề nghị chốt lại bảng giá.
+              Trong vùng chưa chạm ngưỡng, giá bán giữ nguyên — nghĩa là lợi nhuận tự gánh phần trôi đó.
+              Với cấu trúc chi phí hiện tại, <b>mỗi 1% giá nguyên liệu lệch ≈ {fmtTyAbs(ebitPer1Pct)} EBIT/năm</b> ({fmtPct1(ebitPer1Pct / Math.abs(base))} EBIT).
+            </div>
+            {scenario.materials.map((m) => {
+              const thr = m.inventory.priceLock.thresholdPct;
+              const drift = ebitPer1Pct * thr * 100;
+              return (
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: sp[3], padding: `8px 0`, borderTop: `1px solid ${tk.surfaceMuted}`, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.semibold, color: tk.ink }}>{m.name}</div>
+                  <div style={{ fontSize: ft.size.sm, color: tk.inkMuted, ...tnum }}>
+                    ngưỡng ±{fmtPct1(thr)} → EBIT có thể trôi tới <b style={{ color: tk.ink }}>±{fmtTyAbs(drift)}/năm</b> ({fmtPct1(drift / Math.abs(base))} EBIT) trước khi chốt lại giá
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: sp[3], marginTop: sp[3], flexWrap: 'wrap' }}>
+              <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, lineHeight: 1.5, flex: 1, minWidth: 280 }}>
+                Ngưỡng chặt = biên được bảo vệ sát nhưng đổi bảng giá thường xuyên (khách mệt).
+                Ngưỡng lỏng = giá ổn định nhưng lợi nhuận trôi nhiều trước khi phản ứng.
+                Chọn mức EBIT-trôi anh chịu được rồi suy ngược ra ngưỡng.
+              </div>
+              {onNavigate && (
+                <button
+                  onClick={() => onNavigate('assumptions')}
+                  style={{ padding: '6px 12px', background: 'transparent', color: tk.ink, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer', flexShrink: 0 }}
+                >
+                  → Đổi ngưỡng ở Tham Số
+                </button>
+              )}
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* Bảng chi tiết */}
       <Card style={{ marginTop: sp[4], padding: 0, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 0.8fr', gap: sp[2], padding: `10px ${sp[4]}px`, background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}` }}>

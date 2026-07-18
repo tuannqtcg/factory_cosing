@@ -1,9 +1,10 @@
 // M12.5 / ADR-023 — hook auth theo vai (custom claim `role`, firestore.rules).
-// `signIn` = đăng nhập production thật (email/mật khẩu); `switchRole` = lối tắt
-// đăng nhập user demo (chỉ dùng ở emulator, xem src/lib/firebase.ts).
+// `signIn` = đăng nhập production thật (email/mật khẩu); `resetPassword` = gửi
+// email đặt lại mật khẩu khi quên. Lối tắt đăng nhập demo theo vai đã gỡ bỏ —
+// production lẫn emulator đều đăng nhập bằng email/mật khẩu.
 import { useEffect, useState } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { auth, roleOf, signInAsRole, signInWithEmail, signOutCurrentUser, type AppRole } from '../../lib/firebase.js';
+import { auth, roleOf, sendPasswordReset, signInWithEmail, signInWithGoogle, signOutCurrentUser, type AppRole } from '../../lib/firebase.js';
 
 export interface AuthState {
   status: 'loading' | 'signed-out' | 'signed-in';
@@ -11,10 +12,12 @@ export interface AuthState {
   role: AppRole | null;
   /** ADR-023 — đăng nhập thật bằng email/mật khẩu. Lỗi → trả message tiếng Việt. */
   signIn: (email: string, password: string) => Promise<string | null>;
+  /** Đăng nhập bằng Google (popup). Lỗi → trả message tiếng Việt, thành công → null. */
+  signInGoogle: () => Promise<string | null>;
   /** Đăng xuất. */
   signOut: () => Promise<void>;
-  /** Lối tắt đăng nhập user demo của vai (CHỈ emulator). Lỗi (chưa seed) → trả message. */
-  switchRole: (role: AppRole) => Promise<string | null>;
+  /** Gửi email đặt lại mật khẩu. Lỗi → trả message tiếng Việt, thành công → null. */
+  resetPassword: (email: string) => Promise<string | null>;
 }
 
 function messageForAuthError(err: unknown): string {
@@ -54,18 +57,36 @@ export function useAuth(): AuthState {
     }
   };
 
+  const signInGoogle = async (): Promise<string | null> => {
+    try {
+      await signInWithGoogle();
+      return null;
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return null; // user tự đóng popup — không phải lỗi
+      if (code === 'auth/popup-blocked') return 'Trình duyệt chặn popup — cho phép popup rồi thử lại.';
+      if (code === 'auth/operation-not-allowed') return 'Provider Google chưa được bật trong Firebase Console (Authentication → Sign-in method).';
+      if (code === 'auth/unauthorized-domain') return 'Domain này chưa nằm trong Authorized domains của Firebase Auth.';
+      return messageForAuthError(err);
+    }
+  };
+
   const signOut = async (): Promise<void> => {
     await signOutCurrentUser();
   };
 
-  const switchRole = async (role: AppRole): Promise<string | null> => {
+  const resetPassword = async (email: string): Promise<string | null> => {
     try {
-      await signInAsRole(role);
+      await sendPasswordReset(email.trim());
       return null;
-    } catch {
-      return 'Không đăng nhập được user demo — đã chạy `npm run seed:emulator` (và emulator đang chạy) chưa?';
+    } catch (err) {
+      const code = (err as { code?: string })?.code ?? '';
+      if (code === 'auth/invalid-email') return 'Email không hợp lệ.';
+      if (code === 'auth/user-not-found') return 'Không tìm thấy tài khoản với email này.';
+      if (code === 'auth/too-many-requests') return 'Gửi yêu cầu quá nhiều lần — thử lại sau ít phút.';
+      return `Không gửi được email đặt lại mật khẩu: ${err instanceof Error ? err.message : String(err)}`;
     }
   };
 
-  return { ...state, signIn, signOut, switchRole };
+  return { ...state, signIn, signInGoogle, signOut, resetPassword };
 }

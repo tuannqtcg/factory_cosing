@@ -5,7 +5,6 @@
 // (Kế Hoạch SX của production; báo cáo dây chuyền Ống/PK; nhập Tồn Kho; Danh Mục SP)
 // cho đỡ rối. Điều hướng chia 2 nhóm: PHÂN TÍCH & QUYẾT ĐỊNH và ĐIỀU CHỈNH.
 import { useState } from 'react';
-import { isEmulatorMode } from '../../lib/firebase.js';
 import { useAuth } from '../auth/useAuth.js';
 import LoginScreen from '../auth/LoginScreen.js';
 import { useScenarioData } from '../dashboard/useScenarioData.js';
@@ -72,7 +71,7 @@ export default function AppShell() {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f6f6f6', fontSize: 12, color: '#737373', fontFamily: 'Roboto,sans-serif' }}>Đang kiểm tra đăng nhập…</div>;
   }
   if (authState.status === 'signed-out') {
-    return <LoginScreen onSignIn={authState.signIn} onDemoLogin={authState.switchRole} isEmulator={isEmulatorMode} />;
+    return <LoginScreen onSignIn={authState.signIn} onSignInGoogle={authState.signInGoogle} onResetPassword={authState.resetPassword} />;
   }
   if (!hasAccess) {
     return (

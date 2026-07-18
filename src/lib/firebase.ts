@@ -5,7 +5,7 @@
 // (VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_AUTH_DOMAIN)
 // — KHÔNG sửa code, có API key là tự tắt chế độ emulator.
 import { initializeApp } from 'firebase/app';
-import { connectAuthEmulator, getAuth, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
+import { connectAuthEmulator, getAuth, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 
@@ -41,18 +41,6 @@ if (isEmulatorMode) {
 
 export type AppRole = 'admin' | 'pricing' | 'sales' | 'production';
 
-/**
- * Nút đổi vai trên sidebar (prototype Pha 1 đã duyệt có role switcher) = đăng
- * nhập bằng user demo tương ứng do `npm run seed:emulator` tạo sẵn (custom
- * claim `role` — firestore.rules M12.3 đọc claim này). CHỈ có nghĩa ở chế độ
- * emulator; với project thật, đăng nhập/cấp vai là việc của security-review
- * Pha 4 (cơ chế cấp claim chưa thiết kế — xem scenario.md §6 "Còn treo").
- */
-export async function signInAsRole(role: AppRole): Promise<User> {
-  const credential = await signInWithEmailAndPassword(auth, `${role}@demo.local`, 'demo-password');
-  return credential.user;
-}
-
 /** ADR-023 — đăng nhập production thật bằng email/mật khẩu (owner + user thật). */
 export async function signInWithEmail(email: string, password: string): Promise<User> {
   const credential = await signInWithEmailAndPassword(auth, email, password);
@@ -61,6 +49,15 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
 export async function signOutCurrentUser(): Promise<void> {
   await signOut(auth);
+}
+
+/**
+ * Gửi email đặt lại mật khẩu (Firebase Auth). Dùng khi quên mật khẩu — link
+ * trong email dẫn tới trang đặt mật khẩu mới do Firebase host. Ở emulator,
+ * email không gửi thật mà in ra log của Auth Emulator.
+ */
+export async function sendPasswordReset(email: string): Promise<void> {
+  await sendPasswordResetEmail(auth, email);
 }
 
 /** Đọc vai từ custom claim của user hiện tại (null nếu chưa đăng nhập/chưa có claim). */

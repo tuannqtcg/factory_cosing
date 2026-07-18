@@ -1,27 +1,19 @@
 // ADR-023 — màn đăng nhập production (email/mật khẩu). Lối tắt đăng nhập demo
-// theo vai CHỈ hiện ở emulator (isEmulatorMode) — tiện dev, không lộ production.
+// theo vai đã gỡ bỏ hoàn toàn — chỉ còn một đường vào duy nhất là email/mật khẩu,
+// kèm "Quên mật khẩu" gửi email đặt lại qua Firebase Auth.
 import { useState } from 'react';
-import type { AppRole } from '../../lib/firebase.js';
-
-const DEMO_ROLES: Array<{ role: AppRole; label: string }> = [
-  { role: 'admin', label: 'Admin' },
-  { role: 'pricing', label: 'Pricing' },
-  { role: 'sales', label: 'Sales' },
-  { role: 'production', label: 'Production' },
-];
 
 export default function LoginScreen({
   onSignIn,
-  onDemoLogin,
-  isEmulator,
+  onResetPassword,
 }: {
   onSignIn: (email: string, password: string) => Promise<string | null>;
-  onDemoLogin: (role: AppRole) => Promise<string | null>;
-  isEmulator: boolean;
+  onResetPassword: (email: string) => Promise<string | null>;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -29,8 +21,22 @@ export default function LoginScreen({
       setError('Nhập đủ email và mật khẩu.');
       return;
     }
+    setInfo(null);
     setBusy(true);
     setError(await onSignIn(email, password));
+    setBusy(false);
+  };
+
+  const resetPassword = async () => {
+    if (!email.trim()) {
+      setError('Nhập email trước, rồi bấm "Quên mật khẩu" để nhận link đặt lại.');
+      return;
+    }
+    setInfo(null);
+    setBusy(true);
+    const err = await onResetPassword(email);
+    setError(err);
+    if (!err) setInfo(`Đã gửi email đặt lại mật khẩu tới ${email.trim()} — kiểm tra hộp thư (kể cả mục Spam).`);
     setBusy(false);
   };
 
@@ -54,27 +60,17 @@ export default function LoginScreen({
             <input style={inputStyle} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="••••••••" />
           </div>
           {error && <div style={{ color: '#DC2626', fontSize: 11, marginBottom: 12 }}>{error}</div>}
+          {info && <div style={{ color: '#15803D', fontSize: 11, marginBottom: 12 }}>{info}</div>}
           <button onClick={() => void submit()} disabled={busy} style={{ width: '100%', padding: '11px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
-            {busy ? 'Đang đăng nhập…' : 'Đăng nhập'}
+            {busy ? 'Đang xử lý…' : 'Đăng nhập'}
           </button>
-
-          {isEmulator && (
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px dashed #e0dcc8' }}>
-              <div style={{ fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', color: '#999', fontWeight: 700, marginBottom: 8 }}>Lối tắt demo (chỉ emulator)</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {DEMO_ROLES.map((d) => (
-                  <button
-                    key={d.role}
-                    onClick={async () => { setBusy(true); setError(await onDemoLogin(d.role)); setBusy(false); }}
-                    disabled={busy}
-                    style={{ flex: '1 0 45%', padding: '7px 10px', background: '#fff', color: '#555', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          <button
+            onClick={() => void resetPassword()}
+            disabled={busy}
+            style={{ width: '100%', marginTop: 10, padding: 0, background: 'none', border: 'none', color: '#737373', fontSize: 11, textDecoration: 'underline', cursor: busy ? 'default' : 'pointer' }}
+          >
+            Quên mật khẩu? Gửi email đặt lại
+          </button>
         </div>
       </div>
     </div>

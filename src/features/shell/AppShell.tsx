@@ -175,7 +175,7 @@ export default function AppShell() {
             {tabId === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
             {tabId === 'sensitivity' && <SensitivityScreen scenario={data.scenario} onNavigate={go} />}
             {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
-            {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} onNavigate={go} />}
+            {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} priceList={data.priceList} onNavigate={go} />}
             {tabId === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
             {tabId === 'lot-costing' && tabSub !== 'edit' && (
               <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />

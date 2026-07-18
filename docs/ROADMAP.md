@@ -28,6 +28,11 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-036 — Phiếu giá + Nhận đơn thương mại**: Bảng Giá thêm dạng "Phiếu
+  giá từng sản phẩm" (chọn SP + size → 1 phiếu chi tiết: VF trước/có VAT cỡ lớn,
+  TCG/NPP, truy nguyên giá) song song dạng danh sách; Nhận Đơn nhập theo SKU cụ
+  thể + đơn vị thương mại (mét ống / cái phụ kiện, giá đ/mét|đ/cái, gợi ý sẵn
+  giá VF niêm yết), UI quy về kg bằng đơn trọng — engine decideOrder giữ nguyên.
 - [x] **ADR-035 — "Giải thích tại chỗ"**: nút ⓘ mọi màn (câu hỏi màn trả lời /
   số từ đâu ra / khi nào hành động / màn liên quan, ngôn ngữ CEO); Bảng Giá bấm
   từng SKU ra thác nước truy nguyên giá (NVL→SX→hoà vốn→+lời→VF→TCG→NPP) + trạng

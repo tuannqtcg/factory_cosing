@@ -6,6 +6,7 @@ import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.
 import { managementStatusOf, type PipeProduct, type FittingProduct, type Product } from '../../schemas/product.js';
 import type { MoldAsset } from '../../schemas/resource.js';
 import type { Material } from '../../schemas/material.js';
+import { calculateScenario } from '../../engine/scenario.js';
 
 // ADR-044 — bộ nguyên liệu Corzan CHUẨN (đúng 1 bộ). "Chuẩn hóa Corzan" = XÓA mọi
 // Corzan cũ (kể cả trùng/gõ tay lệch) rồi tạo lại đúng bộ này + mirror SKU từ
@@ -48,6 +49,7 @@ export default function ProductsScreen({
   const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [diag, setDiag] = useState<{ ok: boolean; msg: string } | null>(null);
 
   if (scenario && !loadedRef.current) {
     loadedRef.current = true;
@@ -230,6 +232,41 @@ export default function ProductsScreen({
       }
       return { ...f, materials, products: [...products, ...clones] };
     });
+  };
+
+  // ADR-044 — KIỂM TRA vì sao bảng giá thiếu: chạy engine NGAY trên dữ liệu đang
+  // sửa. Phân biệt rõ 3 tình huống: (a) dữ liệu lỗi → engine ném → bảng giá KHÔNG
+  // cập nhật được; (b) phụ kiện "chờ khuôn" (0 lên giá) → thiếu khuôn; (c) engine
+  // báo CÓ lên giá nhưng bảng giá vẫn trống → máy chủ chưa tính lại (Cloud Function).
+  const checkPriceListData = () => {
+    if (!form) return;
+    const parsed = ScenarioInputSchema.safeParse(form);
+    if (!parsed.success) {
+      setDiag({ ok: false, msg: `✗ Dữ liệu CHƯA HỢP LỆ: ${parsed.error.issues[0]?.message ?? 'lỗi không rõ'}.\nBảng giá không thể cập nhật cho tới khi sửa. Kiểm tra lại các SKU/nguyên liệu vừa nhập.` });
+      return;
+    }
+    let out;
+    try {
+      out = calculateScenario(parsed.data);
+    } catch (e) {
+      setDiag({ ok: false, msg: `✗ Không tính được giá: ${e instanceof Error ? e.message : String(e)}.\nThường do SKU trỏ tới nguyên liệu đã xóa, hoặc trùng khóa. Sửa xong bấm lại.` });
+      return;
+    }
+    // Đếm phụ kiện active/chờ-khuôn theo nguyên liệu.
+    const byMat = new Map<string, { active: number; pending: number }>();
+    for (const sku of out.skuPriceChains) {
+      if (sku.productKey.productName === undefined) continue; // bỏ ống
+      const e = byMat.get(sku.productKey.materialId) ?? { active: 0, pending: 0 };
+      if (sku.managementStatus === 'active') e.active++; else e.pending++;
+      byMat.set(sku.productKey.materialId, e);
+    }
+    const nameOf = (id: string) => parsed.data.materials.find((m) => m.id === id)?.name ?? id;
+    const lines = [...byMat.entries()].map(([id, c]) => `• ${nameOf(id)}: ${c.active} SẼ lên bảng giá${c.pending ? `, ${c.pending} chờ khuôn (ẩn)` : ''}`);
+    const totalActive = [...byMat.values()].reduce((s, c) => s + c.active, 0);
+    const tail = totalActive > 0
+      ? '\n\n→ Có SKU sẽ lên giá. Nếu bảng giá THẬT vẫn trống: bấm "Lưu" (để máy chủ tính lại), hoặc máy chủ (Cloud Function) chưa tính — chờ 1–2 phút / báo lại.'
+      : '\n\n→ 0 SKU lên giá: phụ kiện đều "chờ khuôn" — KHUÔN bị thiếu. Cần gán khuôn (tên+size phải khớp khuôn dùng chung BlazeMaster).';
+    setDiag({ ok: totalActive > 0, msg: `✓ Dữ liệu hợp lệ. Phụ kiện theo nguyên liệu:\n${lines.join('\n')}${tail}` });
   };
 
   return (
@@ -459,7 +496,19 @@ export default function ProductsScreen({
             ♻ Chuẩn hóa Corzan (xóa trùng → mirror BlazeMaster)
           </button>
         )}
+        <button
+          onClick={checkPriceListData}
+          title="Chạy engine ngay trên dữ liệu đang sửa để biết vì sao bảng giá thiếu (dữ liệu lỗi / thiếu khuôn / máy chủ chưa tính)."
+          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #6b6b6b', background: '#fff', color: '#4b4b4b', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+        >
+          🔎 Kiểm tra dữ liệu bảng giá
+        </button>
       </div>
+      {diag && (
+        <div style={{ marginTop: 10, padding: '11px 14px', borderRadius: 6, border: `1px solid ${diag.ok ? '#16A34A' : '#DC2626'}`, background: diag.ok ? '#f0fdf4' : '#fef2f2', color: diag.ok ? '#15803d' : '#b91c1c', fontSize: 11.5, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+          {diag.msg}
+        </div>
+      )}
     </div>
   );
 }

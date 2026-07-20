@@ -134,6 +134,10 @@
 - [ ] Vận hành: tắt/vô hiệu hoá tài khoản demo trên project thật (Firebase Console).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
+- [ ] **(2026-07-20) Cơ cấu sản lượng theo size (chế độ m/giờ)** — nâng cấp ADR-048:
+  hiện giả định chia ĐỀU thời gian máy giữa các size (trung bình cộng). Cho nhập
+  **tỷ trọng sản lượng %/size** (hoặc lấy từ nhu cầu/đơn hàng thực) → thay bằng
+  trung bình có trọng số `K = H·yield / Σ(s_i / kg-giờ_i)`. CHƯA code, chờ user.
 - [ ] **(2026-07-20) CEO Planner Chế độ 2** — mục tiêu sản lượng → cần thêm máy: nhập sản lượng mong muốn cả 2 loại; vượt trần 3 ca → tính số máy đùn/ép cần mua + CAPEX + payback. Kèm vá `calculatePipeCapacity` nhân `extruderCount` (no-op khi =1). Xem ADR-042.
 - [ ] **(2026-07-20)** Đo thêm m/giờ đùn các size DN32/40/50/65/100 để thay số nội suy (hiện min(420, 163/đơn trọng)) — ADR-046.
 - [ ] **(2026-07-20)** Cân nhắc TÁCH Firebase project riêng cho costing (project chung `bmcosting-ver-2` bị app khác xóa mất `onScenarioWrite`; app đã tự tính client-side theo ADR-045 nên không kẹt, nhưng nên tách để sạch).

@@ -14,13 +14,15 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
 import type { AppRole } from '../../lib/firebase.js';
 import { fmtVnd } from '../../lib/format.js';
-import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
+import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '../../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
 import type { FittingProduct } from '../../schemas/product.js';
+import type { Material } from '../../schemas/material.js';
 import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { calculatePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
-import { sharedFixedCostsTotalPerYear } from '../../engine/cost-pool.js';
+import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
+import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
 type SectionId = 'assets' | 'conv' | 'oh' | 'mat' | 'sku' | 'fin' | 'pnl';
@@ -83,13 +85,21 @@ function GridCell({ label, derived, children }: { label: React.ReactNode; derive
   );
 }
 
-export default function DataSetupScreen({ role, scenarioId, scenario }: { role: AppRole; scenarioId: string; scenario: ScenarioInput | null }) {
+export default function DataSetupScreen({ role, user, scenarioId, scenario, internal }: {
+  role: AppRole;
+  user: { uid: string; email: string | null } | null;
+  scenarioId: string;
+  scenario: ScenarioInput | null;
+  internal: ScenarioOutput | null;
+}) {
   // Master-data tài sản khóa cho vai Định Giá (khớp firestore.rules — chỉ admin
   // sửa giá máy/khấu hao/CAPEX; ranh giới bảo mật, không phải điều hướng vai).
   const locked = role !== 'admin';
+  const isAdmin = role === 'admin';
   const [section, setSection] = useState<SectionId>('assets');
   const [form, setForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
+  const lastPersistedMaterialsRef = useRef<Material[] | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showMoldModal, setShowMoldModal] = useState(false);
@@ -97,6 +107,7 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
   if (scenario && !loadedRef.current) {
     loadedRef.current = true;
     setForm(scenario);
+    lastPersistedMaterialsRef.current = scenario.materials;
   }
   if (!form) return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải dữ liệu thiết lập…</div>;
 
@@ -121,6 +132,32 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
     setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), moldAssets: molds } } } : f));
   const setNonProd = (key: 'operatingCostPerYear' | 'financialCostPerYear', v: number) =>
     setForm((f) => (f ? { ...f, costPool: { ...f.costPool, nonProductionCosts: { ...f.costPool.nonProductionCosts, [key]: v } } } : f));
+
+  // ── Nguyên liệu (mục ④) — cùng setter/ngữ nghĩa AssumptionsScreen ──
+  const setMaterials = (updater: (m: Material[]) => Material[]) => setForm((f) => (f ? { ...f, materials: updater(f.materials) } : f));
+  const updMatNum = (id: string, key: 'markupVf' | 'importTaxRate' | 'customsLogisticsFeeRate', v: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, [key]: v })));
+  const updReplacement = (id: string, v: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, replacementPriceUsdPerKg: v } })));
+  const updThreshold = (id: string, v: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, thresholdPct: v } } })));
+  const chotBaseline = (id: string) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, baseline: m.inventory.replacementPriceUsdPerKg } } })));
+  const updMatText = (id: string, key: 'name' | 'code' | 'originLabel', v: string) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, [key]: v })));
+  const productRefsMaterial = (id: string) => form.products.some((p) => p.materialId === id);
+  const addMaterial = () =>
+    setMaterials((ms) => {
+      let n = ms.length + 1;
+      let id = `nguyen-lieu-${n}`;
+      while (ms.some((m) => m.id === id)) id = `nguyen-lieu-${++n}`;
+      return [...ms, { id, name: 'Nguyên liệu mới', code: '', originLabel: '', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.3, inventory: { lots: [], priceLock: { baseline: 0, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 0 } }];
+    });
+  const removeMaterial = (id: string) => {
+    if (productRefsMaterial(id)) { window.alert('Không xóa được: vẫn còn SKU dùng nguyên liệu này. Đổi/xóa ở mục Danh mục sản phẩm trước.'); return; }
+    if (!window.confirm('Xóa nguyên liệu này? Bấm "Lưu" để áp dụng.')) return;
+    setMaterials((ms) => ms.filter((m) => m.id !== id));
+  };
 
   // ── Khấu hao/năm — CÙNG công thức engine (thẳng = nguyên giá×SL/đời; khuôn = ADR-007) ──
   const depExtruder = (pipe.extruderPriceEach * pipe.extruderCount) / pipe.depreciationYears;
@@ -174,9 +211,26 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
       setSaveError(`Dữ liệu không hợp lệ: ${parsed.error.issues[0]?.message ?? 'lỗi không rõ'}`);
       return;
     }
+    // Audit khi baseline khóa giá đổi (bảo mật giá — như AssumptionsScreen).
+    const prevMaterials = lastPersistedMaterialsRef.current ?? [];
+    const baselineChanges = parsed.data.materials
+      .map((m) => ({ m, prev: prevMaterials.find((p) => p.id === m.id) }))
+      .filter(({ m, prev }) => prev && prev.inventory.priceLock.baseline !== m.inventory.priceLock.baseline);
     try {
       await setDoc(doc(db, `scenarios/${scenarioId}`), parsed.data);
       setSaveState('saved');
+      lastPersistedMaterialsRef.current = parsed.data.materials;
+      if (user && (role === 'admin' || role === 'pricing')) {
+        await Promise.all(
+          baselineChanges.map(({ m, prev }) =>
+            writePriceLockAuditEntry(scenarioId, {
+              materialId: m.id, materialName: m.name,
+              oldBaselineUsdPerKg: prev!.inventory.priceLock.baseline, newBaselineUsdPerKg: m.inventory.priceLock.baseline,
+              changedByUid: user.uid, changedByEmail: user.email, changedByRole: role,
+            }),
+          ),
+        );
+      }
       setTimeout(() => setSaveState('idle'), 3000);
     } catch (err) {
       setSaveState('error');
@@ -215,7 +269,7 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
-              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : 'Thiết lập dữ liệu'}
+              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : section === 'mat' ? 'Nguyên liệu (compound)' : 'Thiết lập dữ liệu'}
             </h1>
             <div style={{ fontSize: 12, color: '#737373', marginTop: 4, maxWidth: '64ch' }}>
               {section === 'assets'
@@ -224,7 +278,9 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
                   ? 'Nhân công, điện, nước, bảo trì và thông số vận hành — truy được về từng dòng (Ống · Phụ kiện). Ô nhập sửa được; nhân công/điện/nước/tổng là số tự tính.'
                   : section === 'oh'
                     ? 'Chi phí chung sản xuất (khấu hao tài sản chung + kiểm định + thuê đất) phân bổ 2 dòng theo sản lượng. Chi phí ngoài SX tách riêng — chỉ tính lãi/lỗ.'
-                    : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
+                    : section === 'mat'
+                      ? 'Từng compound: giá tái tạo, thuế NK, phí HQ, markup VF, ngưỡng khóa. Giá NL/kg nhập về và trạng thái khóa giá do hệ thống tự tính.'
+                      : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -467,8 +523,68 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
           );
         })()}
 
-        {/* ── MỤC ④–⑥ + Báo cáo: đang dựng dần ── */}
-        {section !== 'assets' && section !== 'conv' && section !== 'oh' && (
+        {/* ── MỤC 04: NGUYÊN LIỆU (COMPOUND) ── */}
+        {section === 'mat' && (() => {
+          const usdRate = form.costPool.currency.usdVndRate;
+          const th4: React.CSSProperties = { ...th };
+          return (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                {isAdmin && <button onClick={addMaterial} style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>➕ Thêm nguyên liệu</button>}
+              </div>
+              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 960 }}>
+                    <thead><tr>
+                      <th style={th4}>Compound</th><th style={{ ...th4, ...rNum }}>Giá tái tạo (USD/kg)</th>
+                      <th style={{ ...th4, ...rNum }}>Thuế NK</th><th style={{ ...th4, ...rNum }}>Phí HQ</th>
+                      <th style={{ ...th4, ...rNum }}>Markup VF</th><th style={{ ...th4, ...rNum }}>Ngưỡng khóa</th>
+                      <th style={{ ...th4, ...rNum }}>Giá NL/kg (nhập về)</th><th style={th4}>Khóa giá</th>{isAdmin && <th style={th4}></th>}
+                    </tr></thead>
+                    <tbody>
+                      {form.materials.map((m) => {
+                        const landed = landedCostPerKgVnd(m.inventory.replacementPriceUsdPerKg, { importTaxRate: m.importTaxRate, customsLogisticsFeeRate: m.customsLogisticsFeeRate, usdVndRate: usdRate });
+                        const lockEntry = internal?.priceLock.byMaterial.find((e) => e.materialId === m.id);
+                        const isLocked = lockEntry?.evaluation.isLocked ?? null;
+                        return (
+                          <tr key={m.id}>
+                            <td style={td}>
+                              {isAdmin ? (
+                                <input value={m.name} onChange={(e) => updMatText(m.id, 'name', e.target.value)} style={{ width: 150, padding: '5px 8px', border: '1px solid #c8cdd5', borderRadius: 6, fontSize: 12.5, fontWeight: 600, outline: 'none' }} />
+                              ) : <b>{m.name}</b>}
+                              <div style={{ fontSize: 10, color: '#9aa0aa', marginTop: 2 }}>{m.code || '—'} · {m.originLabel || '—'}</div>
+                            </td>
+                            <td style={{ ...td, ...rNum }}><InCell value={m.inventory.replacementPriceUsdPerKg} onChange={(v) => updReplacement(m.id, v)} width={78} /></td>
+                            <td style={{ ...td, ...rNum }}><InCell value={m.importTaxRate} onChange={(v) => updMatNum(m.id, 'importTaxRate', v)} unit="tỷ lệ" width={64} /></td>
+                            <td style={{ ...td, ...rNum }}><InCell value={m.customsLogisticsFeeRate} onChange={(v) => updMatNum(m.id, 'customsLogisticsFeeRate', v)} unit="tỷ lệ" width={64} /></td>
+                            <td style={{ ...td, ...rNum }}><InCell value={m.markupVf} onChange={(v) => updMatNum(m.id, 'markupVf', v)} unit="tỷ lệ" width={64} /></td>
+                            <td style={{ ...td, ...rNum }}><InCell value={m.inventory.priceLock.thresholdPct} onChange={(v) => updThreshold(m.id, v)} unit="0,03=3%" width={64} disabled={!isAdmin} /></td>
+                            <td style={{ ...td, ...rNum }}><FxCell value={landed} unit="đ" /></td>
+                            <td style={td}>
+                              {isLocked === null ? <span style={{ fontSize: 10.5, color: '#9aa0aa' }}>—</span> : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                                  <span style={{ fontSize: 10.5, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? '🔒 KHÓA' : '🔓 MỞ KHÓA'}</span>
+                                  {!isLocked && <button onClick={() => chotBaseline(m.id)} style={{ fontSize: 9.5, padding: '3px 7px', borderRadius: 5, border: '1px solid #a8003b', background: '#fff', color: '#a8003b', cursor: 'pointer', fontWeight: 700 }}>Chốt baseline</button>}
+                                </div>
+                              )}
+                            </td>
+                            {isAdmin && <td style={{ ...td, ...rNum }}><button onClick={() => removeMaterial(m.id)} disabled={productRefsMaterial(m.id)} title={productRefsMaterial(m.id) ? 'Còn SKU dùng' : 'Xóa'} style={{ fontSize: 11, color: productRefsMaterial(m.id) ? '#c9c9c9' : '#DC2626', background: 'none', border: 'none', cursor: productRefsMaterial(m.id) ? 'not-allowed' : 'pointer' }}>Xóa</button></td>}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 10 }}>
+                <b>Giá NL/kg (nhập về)</b> là số <b>tự tính</b> = giá USD × (1 + thuế NK + phí HQ) × tỷ giá (hàm <code>landedCostPerKgVnd</code>). Trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-004), không tính lại. Thuế/phí/markup khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── MỤC ⑤–⑥ + Báo cáo: đang dựng dần ── */}
+        {section !== 'assets' && section !== 'conv' && section !== 'oh' && section !== 'mat' && (
           <div style={{ background: '#fff', border: '1px dashed #d3d7dd', borderRadius: 12, padding: '40px 30px', textAlign: 'center', color: '#737373' }}>
             <div style={{ fontSize: 30, marginBottom: 8 }}>🚧</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>Mục “{[...SETUP_SECTIONS, { id: 'pnl' as SectionId, t: 'Báo cáo lãi/lỗ' }].find((s) => s.id === section)?.t}” đang được dựng</div>

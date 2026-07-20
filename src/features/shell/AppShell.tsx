@@ -289,7 +289,15 @@ export default function AppShell() {
             )}
             {tabId === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {tabId === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
-            {tabId === 'data-setup' && <DataSetupScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
+            {tabId === 'data-setup' && (
+              <DataSetupScreen
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+                scenarioId={SCENARIO_ID}
+                scenario={data.scenario}
+                internal={data.internal}
+              />
+            )}
             {tabId === 'assumptions' && (
               <AssumptionsScreen
                 role={role}

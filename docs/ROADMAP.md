@@ -28,6 +28,12 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-048 — 'meters' làm nghẽn tổng công suất**: chế độ m/giờ nay tính tổng
+  sản lượng dòng ống từ tốc độ per-size (m/giờ × đơn trọng, chia đều thời gian máy)
+  thay 1 tốc độ pha trộn → size chậm kéo tổng kg/năm xuống → Trợ Lý CEO ra doanh thu/
+  LN KHÁC chế độ kg (trước đây giống hệt vì chỉ redistribution). Verify: bơm m/giờ →
+  sản lượng −27%, doanh thu −21%. Parity kg + meters-chưa-đo giữ nguyên (suite 380/380).
+  Kèm banner Danh Mục nhận biết chế độ kg/m + hướng dẫn khi máy chỉ 1 compound.
 - [x] **ADR-038 — Danh Mục Sản Phẩm mở lại + khuôn dùng chung + phiếu giá 3 tầng**:
   tạo SKU mới trọn vòng (khai chuẩn/kích thước/đơn trọng → gán khuôn chung/chờ
   khuôn → lưu → tự lên Bảng Giá); phiếu giá phân biệt rõ nguyên liệu + tiêu chuẩn.

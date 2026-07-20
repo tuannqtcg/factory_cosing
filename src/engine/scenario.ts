@@ -23,7 +23,7 @@
 import type { ScenarioInput, ScenarioOutput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
 import type { Material } from '../schemas/material.js';
-import type { Product } from '../schemas/product.js';
+import type { Product, PipeProduct } from '../schemas/product.js';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity, type PipeCostAtNormalCapacity } from './pipe.js';
 import {
   calculateFittingCapacity,
@@ -126,7 +126,26 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   };
 
   // ── 2. Công suất (độc lập giá compound; năng suất mix từ TOÀN BỘ SKU phụ kiện — ADR-011) ──
-  const pipeCapacity = calculatePipeCapacity(pipeResource);
+  // ADR-048 — chế độ 'meters': tổng công suất DÒNG suy từ tốc độ per-size
+  // (m/giờ × đơn trọng) thay 1 tốc độ pha trộn cố định → size chạy chậm KÉO
+  // tổng sản lượng xuống (máy nghẽn). Mỗi size chia đều thời gian máy: effective
+  // kg/giờ thành phẩm = trung bình (m/giờ × đơn trọng) các size; size CHƯA nhập
+  // m/giờ dùng tốc độ pha trộn cũ. KHÔNG size nào nhập ⇒ không override ⇒ trùng
+  // khít mô hình cũ (parity kg + parity meters-chưa-đo tuyệt đối).
+  const pipeEffectiveFinishedKgPerHour = (() => {
+    if (pipeCostMethod !== 'meters') return undefined;
+    const withRate = (pipeProducts as PipeProduct[]).filter((p) => p.capacityMetersPerHour !== undefined);
+    if (withRate.length === 0) return undefined;
+    const fallback = pipeResource.actualCapacityKgPerHour * pipeResource.yieldRate;
+    const rates = (pipeProducts as PipeProduct[]).map((p) =>
+      p.capacityMetersPerHour !== undefined ? p.capacityMetersPerHour * p.unitWeightKgPerM : fallback,
+    );
+    return rates.reduce((sum, r) => sum + r, 0) / rates.length;
+  })();
+  const pipeCapacity = calculatePipeCapacity(
+    pipeResource,
+    pipeEffectiveFinishedKgPerHour !== undefined ? { effectiveFinishedKgPerHour: pipeEffectiveFinishedKgPerHour } : undefined,
+  );
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 
   // ── 3. Chi phí SX tại CS bình thường — 1 lần cho MỖI (line, material) ──────

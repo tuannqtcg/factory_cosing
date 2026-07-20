@@ -347,7 +347,8 @@ export default function ProductsScreen({
             Đang tính giá thành Ống <b>{costByMeters ? 'theo m/giờ (giờ máy per-size)' : 'theo kg (rải đều — chuẩn Excel)'}</b>.{' '}
             {costByMeters ? (
               <>
-                Cột <b>“CS đùn (m/giờ)”</b> bên dưới <b>quyết định giá vốn từng size</b> — size chạy chậm gánh giá cao hơn.
+                Cột <b>“CS đùn (m/giờ)”</b> bên dưới <b>quyết định giá vốn từng size</b> (size chạy chậm gánh giá cao hơn) và{' '}
+                <b>tổng sản lượng/năm</b> (size chậm kéo công suất máy xuống → doanh thu &amp; lợi nhuận đổi theo — ADR-048).
                 Hãy nhập số đo m/giờ thật; size bỏ trống sẽ suy từ tốc độ chung (rơi về đúng kết quả theo kg).
               </>
             ) : (

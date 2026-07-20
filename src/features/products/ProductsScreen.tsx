@@ -5,20 +5,6 @@ import type { AppRole } from '../../lib/firebase.js';
 import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
 import { managementStatusOf, type PipeProduct, type FittingProduct, type Product } from '../../schemas/product.js';
 import type { MoldAsset } from '../../schemas/resource.js';
-import type { Material } from '../../schemas/material.js';
-
-// ADR-012 — nguyên liệu compound Corzan (khớp tests/fixtures/corzan.json). Nhập
-// Ấn Độ 0% thuế (AIFTA C/O form AI), markup VF ống 0,25 / phụ kiện 0,40, tồn
-// kho ban đầu = 0 lô nên baseline khóa giá = giá tái tạo (lệch 0%, KHÓA).
-const CORZAN_MATERIALS: Material[] = [
-  { id: 'corzan-pipe', name: 'Corzan 3710 (ống)', code: 'CZ-3710-P', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.25, inventory: { lots: [], priceLock: { baseline: 3.47, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.47 } },
-  { id: 'corzan-fitting', name: 'Corzan compound (phụ kiện)', code: 'CZ-3710-F', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.4, inventory: { lots: [], priceLock: { baseline: 3.97, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.97 } },
-];
-// Ống Corzan nặng hơn 10%/size (ADR-012 skuDerivationRule); phụ kiện giống hệt.
-const CORZAN_PIPE_WEIGHT_FACTOR = 1.1;
-// Khóa nhận diện SKU trùng — CÙNG quy ước với handleSave (DN/tên+size + nguyên liệu).
-const productDupeKey = (p: Product, matName: string) =>
-  p.kind === 'pipe' ? `Ống DN${p.dn} · ${matName}` : `${p.productName} ${p.sizeLabel} · ${matName}`;
 
 const InputNode = ({ value, onChange, type = 'text', width = 60, placeholder = '' }: any) => (
   <input
@@ -207,40 +193,6 @@ export default function ProductsScreen({
       setSaveError(err instanceof Error ? err.message : String(err));
     }
   };
-
-  // ADR-012 — BẬT DÒNG CORZAN qua UI (thay vì seed script): thêm 2 nguyên liệu
-  // compound Corzan + clone TOÀN BỘ Ống (×1,1 đơn trọng) và Phụ kiện (giống hệt,
-  // chỉ khác compound & khuôn dùng chung) từ dòng BlazeMaster. Khớp
-  // buildCorzanScenarioInput (tests/helpers) — logic đã có parity test. Idempotent:
-  // bấm nhiều lần không nhân đôi (bỏ qua nguyên liệu/SKU đã tồn tại). Bấm xong "Lưu".
-  const enableCorzanLine = () => {
-    setForm((f) => {
-      if (!f) return f;
-      // 1. Thêm nguyên liệu Corzan còn thiếu.
-      const materials = [...f.materials];
-      for (const cm of CORZAN_MATERIALS) {
-        if (!materials.some((m) => m.id === cm.id)) materials.push(cm);
-      }
-      const nameOf = (id: string) => materials.find((m) => m.id === id)?.name ?? id;
-      // 2+3. Clone Ống/Phụ kiện gốc (không phải Corzan) → Corzan; bỏ qua nếu đã có.
-      const existing = new Set(f.products.map((p) => productDupeKey(p, nameOf(p.materialId))));
-      const clones: Product[] = [];
-      for (const p of f.products) {
-        if (p.materialId.startsWith('corzan')) continue;
-        const clone: Product =
-          p.kind === 'pipe'
-            ? { ...p, materialId: 'corzan-pipe', unitWeightKgPerM: p.unitWeightKgPerM * CORZAN_PIPE_WEIGHT_FACTOR }
-            : { ...p, materialId: 'corzan-fitting' };
-        const key = productDupeKey(clone, nameOf(clone.materialId));
-        if (!existing.has(key)) {
-          existing.add(key);
-          clones.push(clone);
-        }
-      }
-      return { ...f, materials, products: [...f.products, ...clones] };
-    });
-  };
-  const corzanAlreadyPresent = form.products.some((p) => p.materialId.startsWith('corzan'));
 
   return (
     <div style={{ padding: '32px 36px', paddingBottom: 100 }}>
@@ -459,13 +411,6 @@ export default function ProductsScreen({
           style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #a8003b', background: '#fff', color: '#a8003b', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
         >
           + Thêm {activeTab === 'pipe' ? 'Ống CPVC' : 'Phụ Kiện'} mới
-        </button>
-        <button
-          onClick={enableCorzanLine}
-          title="Thêm 2 nguyên liệu Corzan + clone toàn bộ Ống (×1,1 đơn trọng) và Phụ kiện từ dòng BlazeMaster. Bấm xong nhớ Lưu."
-          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: corzanAlreadyPresent ? '#f0fdf4' : '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
-        >
-          {corzanAlreadyPresent ? '↻ Bổ sung SKU Corzan còn thiếu' : '⚡ Bật dòng Corzan (nguyên liệu + Ống + Phụ kiện)'}
         </button>
       </div>
     </div>

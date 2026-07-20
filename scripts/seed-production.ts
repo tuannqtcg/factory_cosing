@@ -41,7 +41,7 @@ if (!databaseId) {
   process.exit(1);
 }
 
-const scenarioId = process.argv[2] ?? 'baseline-v3.7-corzan';
+const scenarioId = process.argv[2] ?? 'baseline-v3.4';
 
 const app = initializeApp({ projectId });
 const db = getFirestore(app, databaseId);

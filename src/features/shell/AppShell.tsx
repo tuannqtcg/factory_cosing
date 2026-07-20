@@ -23,7 +23,7 @@ import ScenarioCompareScreen from '../scenario-compare/ScenarioCompareScreen.js'
 import OrderAcceptanceScreen from '../order-acceptance/OrderAcceptanceScreen.js';
 import ProductMixScreen from '../product-mix/ProductMixScreen.js';
 
-const SCENARIO_ID = 'baseline-v3.7-corzan';
+const SCENARIO_ID = 'baseline-v3.4';
 
 // ADR-034 — điều hướng theo TÌNH HUỐNG của CEO (hằng ngày / khi có việc /
 // hoạch định / thiết lập), không theo loại công cụ. Mỗi mục kèm chú thích

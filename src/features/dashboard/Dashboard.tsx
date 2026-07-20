@@ -9,15 +9,13 @@
 // liệu nào). ADR-012: thang giá/CVP theo (line, materialId) — có selector
 // nguyên liệu khi 1 line có >1 material.
 import { useMemo, useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, type AppRole } from '../../lib/firebase.js';
+import { type AppRole } from '../../lib/firebase.js';
 import { fmtVnd, fmtUsd, fmtPct, fmtTyVnd } from '../../lib/format.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import { referenceMaterialOf } from '../../engine/scenario.js';
 import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
 import { solve } from '../../engine/solver.js';
 import { calculateScenario } from '../../engine/scenario.js';
-import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ReferenceLine } from 'recharts';
 
 const TIER_DEFS = [
@@ -165,6 +163,7 @@ export default function Dashboard({
   scenario,
   internal,
   salesPriceLadder,
+  onNavigate,
 }: {
   role: AppRole;
   /** M12.10 (security-review) — ai chốt baseline, ghi vào priceLockAudit. */
@@ -174,6 +173,8 @@ export default function Dashboard({
   internal: ScenarioOutput | null;
   /** priceLadder từ outputs/priceList — nguồn duy nhất của vai sales (M12.6: PriceListDoc.priceLadder). */
   salesPriceLadder: ScenarioOutput['priceLadder'] | null;
+  /** ADR-041 — điều hướng sang màn CHỈNH THẬT (Tham Số) khi cần chốt baseline. */
+  onNavigate?: (tab: string) => void;
 }) {
   // ADR-026 — bỏ cờ `canSeeCostDetail` + nhánh view sales dự phòng (code chết:
   // chỉ admin/pricing đăng nhập được — ADR-023). Dashboard chỉ còn luồng CEO.
@@ -270,32 +271,10 @@ export default function Dashboard({
   ).filter(([, m, e]) => m && e);
   const anyUnlocked = lockRows.some(([, , e]) => !e!.evaluation.isLocked);
 
-  const chotBaselineMoi = async () => {
-    if (!scenario || !user || (role !== 'admin' && role !== 'pricing')) return;
-    // ADR-004: chốt lại baseline = replacement hiện hành cho material đang MỞ KHÓA.
-    const changed: Array<{ materialId: string; materialName: string; oldBaseline: number; newBaseline: number }> = [];
-    const materials = scenario.materials.map((m) => {
-      const entry = internal?.priceLock.byMaterial.find((e) => e.materialId === m.id);
-      if (!entry || entry.evaluation.isLocked) return m;
-      changed.push({ materialId: m.id, materialName: m.name, oldBaseline: m.inventory.priceLock.baseline, newBaseline: m.inventory.replacementPriceUsdPerKg });
-      return { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, baseline: m.inventory.replacementPriceUsdPerKg } } };
-    });
-    await updateDoc(doc(db, `scenarios/${scenarioId}`), { materials });
-    // M12.10 (security-review) — audit log SAU KHI ghi thành công, 1 entry/material đổi.
-    await Promise.all(
-      changed.map((c) =>
-        writePriceLockAuditEntry(scenarioId, {
-          materialId: c.materialId,
-          materialName: c.materialName,
-          oldBaselineUsdPerKg: c.oldBaseline,
-          newBaselineUsdPerKg: c.newBaseline,
-          changedByUid: user.uid,
-          changedByEmail: user.email,
-          changedByRole: role,
-        }),
-      ),
-    );
-  };
+  // ADR-041 — Tổng Quan là màn CHỈ XEM: KHÔNG còn ghi thật ở đây. Thao tác "chốt
+  // baseline" (ghi materials) đã dời hẳn về Tham Số (một nhà duy nhất cho việc
+  // chỉnh dữ liệu gốc) — tránh một màn "xem" lại lén sửa dữ liệu, đúng ranh giới
+  // đọc/ghi. Ở đây chỉ còn LINK điều hướng sang Tham Số khi có nguyên liệu mở khóa.
 
   const tierAt = pipeLadder;
   const tdFloor = tierAt?.variableCostFloor ?? 0;
@@ -420,9 +399,13 @@ export default function Dashboard({
               </div>
             );
           })}
-          {anyUnlocked && (
-            <button onClick={() => void chotBaselineMoi()} style={{ display: 'flex', alignItems: 'center', padding: '8px 16px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-              Chốt Baseline Mới
+          {anyUnlocked && onNavigate && (
+            <button
+              onClick={() => onNavigate('assumptions')}
+              title="Việc chốt baseline là chỉnh dữ liệu gốc — làm ở màn Tham Số để mọi màn tính lại nhất quán."
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#fff', color: '#a8003b', border: '1px solid #a8003b', borderRadius: 2, cursor: 'pointer', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
+            >
+              Chỉnh ở Tham Số →
             </button>
           )}
         </div>

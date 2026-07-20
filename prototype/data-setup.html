@@ -143,6 +143,19 @@
   .kpi .lab{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
   .kpi .val{font-family:var(--mono);font-size:16px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
   .val.pipe{color:var(--pipe)} .val.fit{color:var(--fit)} .val.shared{color:var(--shared)}
+  .railcap{list-style:none;margin:16px 6px 6px;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--faint);font-weight:700;border-top:1px solid var(--border);padding-top:14px}
+  .rimark{font-size:13px;min-width:17px;text-align:center;color:var(--faint)}
+  .step.on .rimark{color:var(--accent-ink)}
+  table.pnl{min-width:520px}
+  table.pnl td{padding:10px 16px}
+  table.pnl td:first-child{font-weight:500}
+  table.pnl .pct{color:var(--faint);font-size:11.5px;width:70px}
+  table.pnl tr.sub td:first-child{padding-left:34px;font-weight:400;color:var(--muted);font-size:11.5px}
+  table.pnl tr.sub td{padding-top:4px;padding-bottom:4px;border-bottom:none}
+  table.pnl tr.total td{font-weight:700;border-top:1px solid var(--border-strong);background:var(--surface-2)}
+  table.pnl tr.grand td{font-weight:800;font-size:14px;border-top:2px solid var(--ink);background:var(--surface-2);color:var(--good)}
+  table.pnl tr.rev td{font-weight:700}
 </style>
 
 <div class="app">
@@ -155,6 +168,8 @@
       <li class="step" data-p="mat"><span class="step-no"></span><span><span class="step-t">Nguyên liệu (compound)</span><span class="step-cap">giá · thuế · markup · khóa giá</span></span></li>
       <li class="step" data-p="sku"><span class="step-no"></span><span><span class="step-t">Danh mục sản phẩm</span><span class="step-cap">SKU · đơn trọng · khuôn</span></span></li>
       <li class="step" data-p="fin"><span class="step-no"></span><span><span class="step-t">Tham số tài chính</span><span class="step-cap">tỷ giá · VAT · markup kênh · vốn</span></span></li>
+      <li class="railcap">Báo cáo (đọc số thiết lập)</li>
+      <li class="step report" data-p="pnl"><span class="rimark">↳</span><span><span class="step-t">Báo cáo lãi/lỗ</span><span class="step-cap">nhận số → tính lãi/lỗ · chỉ xem</span></span></li>
     </ul>
   </nav>
 
@@ -418,6 +433,30 @@
       </div>
     </section>
 
+    <!-- BÁO CÁO LÃI/LỖ (tab riêng — chỉ đọc) -->
+    <section class="pane" data-p="pnl">
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow" style="color:var(--good)">Báo cáo kết quả kinh doanh</div><h2>Lãi/lỗ cả năm — nhận số từ Thiết lập</h2></div>
+          <span class="note">Toàn bộ dòng dưới là <b>fx</b> · engine tính, không nhập ở đây</span></div>
+        <div class="tw"><table class="pnl">
+          <tbody>
+            <tr class="rev"><td>Doanh thu thuần (giá VF)</td><td class="num">95.600.020.628</td><td class="num pct">100%</td></tr>
+            <tr><td>(−) Giá vốn hàng bán</td><td class="num">(75.506.370.970)</td><td class="num pct">79,0%</td></tr>
+            <tr class="sub"><td>· Nguyên vật liệu + chế biến trực tiếp (gồm KH máy trực tiếp)</td><td class="num">74.252.870.970</td><td></td></tr>
+            <tr class="sub"><td>· Chi phí chung sản xuất phân bổ (theo sản lượng)</td><td class="num">1.253.500.000</td><td></td></tr>
+            <tr class="total"><td>= Lãi gộp</td><td class="num">20.093.649.658</td><td class="num pct">21,0%</td></tr>
+            <tr><td>(−) Chi phí ngoài sản xuất</td><td class="num">(3.352.000.000)</td><td class="num pct">3,5%</td></tr>
+            <tr class="sub"><td>· Chi phí vận hành</td><td class="num">640.000.000</td><td></td></tr>
+            <tr class="sub"><td>· Chi phí tài chính</td><td class="num">2.712.000.000</td><td></td></tr>
+            <tr class="total"><td>= Lợi nhuận trước thuế</td><td class="num">16.741.649.658</td><td class="num pct">17,5%</td></tr>
+            <tr><td>(−) Thuế TNDN (20%)</td><td class="num">(3.348.329.932)</td><td></td></tr>
+            <tr class="grand"><td>= Lợi nhuận sau thuế</td><td class="num">13.393.319.726</td><td class="num pct">14,0%</td></tr>
+          </tbody>
+        </table></div>
+        <div class="flow"><span>Luồng: <b>Thiết lập dữ liệu</b> <span class="arrow">→</span> engine (giá thành · phân bổ · thang giá — <b>đã có, không đổi</b>) <span class="arrow">→</span> báo cáo này. Chi phí ngoài SX chỉ xuất hiện Ở ĐÂY (P&amp;L), không vào giá thành/kg.</span></div>
+      </div>
+    </section>
+
     <div style="font-size:11px;color:var(--faint);margin-top:8px">
       Prototype Pha 1 · số liệu thật từ fixture v3.4 · <b>chưa nối Firebase</b>. Ô “fx” minh hoạ số tự tính (khấu hao, tổng, phân bổ) — bản thật engine tính, người dùng không sửa.
     </div>
@@ -432,7 +471,8 @@
     oh:['Chi phí chung & ngoài sản xuất','Chi phí không truy trực tiếp một dòng: thuê đất, lab, UL, tài chính, cùng khấu hao tài sản “Chung” — phân bổ 2 dòng theo sản lượng.'],
     mat:['Nguyên liệu (compound)','Giá vốn NL, thuế nhập khẩu, phí hải quan, markup VF và ngưỡng khóa giá — theo từng compound.'],
     sku:['Danh mục sản phẩm','Mã SKU, đơn trọng, công suất đùn m/giờ và gán khuôn — nhúng màn Danh Mục hiện có.'],
-    fin:['Tham số tài chính chung','Tỷ giá, VAT, bảo hiểm, markup kênh phân phối và vốn lưu động — áp cho toàn hệ thống.']
+    fin:['Tham số tài chính chung','Tỷ giá, VAT, bảo hiểm, markup kênh phân phối và vốn lưu động — áp cho toàn hệ thống.'],
+    pnl:['Báo cáo lãi/lỗ','Bảng kết quả kinh doanh cả năm — chỉ ĐỌC số từ phần Thiết lập rồi tính lãi/lỗ. Đây là tab riêng, không nhập liệu; trong app thật nằm ở nhóm “Theo dõi”.']
   };
   steps.addEventListener('click', e => {
     const li = e.target.closest('.step'); if(!li) return;

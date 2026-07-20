@@ -17,6 +17,8 @@ import {
   type ScenarioOutput,
   type PriceListDoc,
 } from '../../schemas/scenario.js';
+import { calculateScenario } from '../../engine/scenario.js';
+import { toPriceListDoc } from '../../engine/price-list-doc.js';
 
 export interface ScenarioData {
   scenario: ScenarioInput | null;
@@ -40,69 +42,60 @@ export function useScenarioData(scenarioId: string, role: AppRole | null): Scena
 
     const unsubs: Array<() => void> = [];
 
-    // outputs/priceList — mọi vai (sales chỉ có nguồn này)
-    unsubs.push(
-      onSnapshot(
-        doc(db, `scenarios/${scenarioId}/outputs/priceList`),
-        (snap) => {
-          if (!snap.exists()) {
-            if (role === 'sales') {
-              setData((prev) => ({ ...prev, loading: false, error: 'outputs/priceList chưa có — đã seed scenario chưa?' }));
-            }
-            return;
-          }
-          // Luật AGENTS.md #2: validate cả client — dữ liệu hỏng phải lộ ngay thay vì render sai.
-          const parsed = PriceListDocSchema.safeParse(snap.data());
-          if (!parsed.success) {
-            setData((prev) => ({ ...prev, loading: false, error: `PriceListDoc không hợp lệ: ${parsed.error.issues[0]?.message}` }));
-            return;
-          }
-          setData((prev) => ({
-            ...prev,
-            priceList: parsed.data,
-            loading: role === 'sales' ? false : prev.scenario === null || prev.internal === null,
-            error: null,
-          }));
-        },
-        fail('Đọc outputs/priceList'),
-      ),
-    );
-
-    if (role !== 'sales') {
+    if (role === 'sales') {
+      // Sales KHÔNG đọc được scenario doc (rules) → vẫn phải đọc outputs/priceList
+      // do Cloud Function tính. (ADR-026: hiện chỉ admin/pricing đăng nhập.)
       unsubs.push(
         onSnapshot(
-          doc(db, `scenarios/${scenarioId}`),
+          doc(db, `scenarios/${scenarioId}/outputs/priceList`),
           (snap) => {
             if (!snap.exists()) {
-              setData((prev) => ({ ...prev, loading: false, error: `scenarios/${scenarioId} chưa có — chạy npm run seed:emulator` }));
+              setData((prev) => ({ ...prev, loading: false, error: 'outputs/priceList chưa có — đã seed scenario chưa?' }));
               return;
             }
-            const parsed = ScenarioInputSchema.safeParse(snap.data());
+            const parsed = PriceListDocSchema.safeParse(snap.data());
             if (!parsed.success) {
-              setData((prev) => ({ ...prev, loading: false, error: `ScenarioInput không hợp lệ: ${parsed.error.issues[0]?.message}` }));
+              setData((prev) => ({ ...prev, loading: false, error: `PriceListDoc không hợp lệ: ${parsed.error.issues[0]?.message}` }));
               return;
             }
-            setData((prev) => ({ ...prev, scenario: parsed.data, loading: prev.internal === null, error: null }));
+            setData((prev) => ({ ...prev, priceList: parsed.data, loading: false, error: null }));
           },
-          fail('Đọc scenario'),
+          fail('Đọc outputs/priceList'),
         ),
       );
-      unsubs.push(
-        onSnapshot(
-          doc(db, `scenarios/${scenarioId}/outputs/internal`),
-          (snap) => {
-            if (!snap.exists()) return; // Cloud Function chưa tính xong — chờ snapshot sau
-            const parsed = ScenarioOutputSchema.safeParse(snap.data());
-            if (!parsed.success) {
-              setData((prev) => ({ ...prev, loading: false, error: `ScenarioOutput không hợp lệ: ${parsed.error.issues[0]?.message}` }));
-              return;
-            }
-            setData((prev) => ({ ...prev, internal: parsed.data, loading: prev.scenario === null, error: null }));
-          },
-          fail('Đọc outputs/internal'),
-        ),
-      );
+      return () => unsubs.forEach((u) => u());
     }
+
+    // ADR-045 — admin/pricing TỰ TÍNH internal + priceList NGAY từ scenario doc,
+    // KHÔNG đọc outputs/* (không phụ thuộc Cloud Function — Bảng Giá cập nhật ngay
+    // khi Lưu, không lo function bị xóa/không deploy trong project dùng chung).
+    unsubs.push(
+      onSnapshot(
+        doc(db, `scenarios/${scenarioId}`),
+        (snap) => {
+          if (!snap.exists()) {
+            setData((prev) => ({ ...prev, loading: false, error: `scenarios/${scenarioId} chưa có — chạy npm run seed:production` }));
+            return;
+          }
+          const parsed = ScenarioInputSchema.safeParse(snap.data());
+          if (!parsed.success) {
+            setData((prev) => ({ ...prev, scenario: null, internal: null, priceList: null, loading: false, error: `ScenarioInput không hợp lệ: ${parsed.error.issues[0]?.message}` }));
+            return;
+          }
+          const scenario = parsed.data;
+          try {
+            const internal = ScenarioOutputSchema.parse(calculateScenario(scenario));
+            const priceList = toPriceListDoc(internal, scenario.products, scenario.materials);
+            setData({ scenario, internal, priceList, loading: false, error: null });
+          } catch (e) {
+            // Dữ liệu gốc lỗi (SKU trỏ nguyên liệu đã xóa, trùng khóa…) — lộ ngay
+            // thay vì hiển thị giá cũ sai. Vẫn giữ scenario để màn chỉnh sửa được.
+            setData({ scenario, internal: null, priceList: null, loading: false, error: `Không tính được giá từ dữ liệu gốc: ${e instanceof Error ? e.message : String(e)}` });
+          }
+        },
+        fail('Đọc scenario'),
+      ),
+    );
 
     return () => unsubs.forEach((u) => u());
   }, [scenarioId, role]);

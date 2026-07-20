@@ -20,6 +20,7 @@ import type { FittingProduct } from '../../schemas/product.js';
 import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { calculatePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
+import { sharedFixedCostsTotalPerYear } from '../../engine/cost-pool.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
 type SectionId = 'assets' | 'conv' | 'oh' | 'mat' | 'sku' | 'fin' | 'pnl';
@@ -118,6 +119,8 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
     setForm((f) => (f ? { ...f, costPool: { ...f.costPool, sharedFixedCosts: { ...f.costPool.sharedFixedCosts, [key]: v } } } : f));
   const setMoldAssets = (molds: MoldAsset[]) =>
     setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), moldAssets: molds } } } : f));
+  const setNonProd = (key: 'operatingCostPerYear' | 'financialCostPerYear', v: number) =>
+    setForm((f) => (f ? { ...f, costPool: { ...f.costPool, nonProductionCosts: { ...f.costPool.nonProductionCosts, [key]: v } } } : f));
 
   // ── Khấu hao/năm — CÙNG công thức engine (thẳng = nguyên giá×SL/đời; khuôn = ADR-007) ──
   const depExtruder = (pipe.extruderPriceEach * pipe.extruderCount) / pipe.depreciationYears;
@@ -135,9 +138,11 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
 
   // ── MỤC ②: chi phí chế biến/năm theo dòng — CÙNG công thức engine (pipe.ts / fitting.ts) ──
   const insurance = form.costPool.currency.mandatoryInsuranceRate;
-  const pipeHours = calculatePipeCapacity(pipe).normalOperatingHours;
+  const pipeCap = calculatePipeCapacity(pipe);
+  const pipeHours = pipeCap.normalOperatingHours;
   const fittingProducts = form.products.filter((p): p is FittingProduct => p.kind === 'fitting');
-  const fitHours = calculateFittingCapacity(fitting, fittingProducts).normalMachineHoursUtilized;
+  const fitCap = calculateFittingCapacity(fitting, fittingProducts);
+  const fitHours = fitCap.normalMachineHoursUtilized;
   const laborOf = (r: { normalShifts: number; peoplePerShift: number; avgSalaryMonthly: number; monthsSalaryPerYear: number }) =>
     r.normalShifts * r.peoplePerShift * r.avgSalaryMonthly * r.monthsSalaryPerYear * (1 + insurance);
   const pipeLabor = laborOf(pipe);
@@ -148,6 +153,17 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
   const fitElec = fitting.electricityKwPerMachineHour * fitting.electricityPricePerKwh * fitHours;
   const fitWater = fitting.waterM3PerMachineHour * fitting.waterPricePerM3 * fitHours;
   const fitConvTotal = depFit + fitLabor + fitElec + fitWater + fitting.annualMoldMaintenance;
+
+  // ── MỤC ③: chi phí chung sản xuất (phân bổ theo sản lượng — sharedCostAllocationRatio)
+  //           + chi phí ngoài SX (chỉ lãi/lỗ). CÙNG hàm engine, không tính mới. ──
+  const sharedTotal = sharedFixedCostsTotalPerYear(shared); // = depShared + kiểm định + thuê đất
+  const pipeKgYear = pipeCap.normalCapacityKgYear;
+  const fitKgYear = fitCap.estimatedProductionKgYear;
+  const denomKg = pipeKgYear + fitKgYear;
+  const ratioPipe = denomKg > 0 ? pipeKgYear / denomKg : 0;
+  const sharedToPipe = sharedTotal * ratioPipe;
+  const sharedToFit = sharedTotal * (1 - ratioPipe);
+  const nonProdTotal = form.costPool.nonProductionCosts.operatingCostPerYear + form.costPool.nonProductionCosts.financialCostPerYear;
 
   const handleSave = async () => {
     setSaveState('saving');
@@ -199,14 +215,16 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
-              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : 'Thiết lập dữ liệu'}
+              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : 'Thiết lập dữ liệu'}
             </h1>
             <div style={{ fontSize: 12, color: '#737373', marginTop: 4, maxWidth: '64ch' }}>
               {section === 'assets'
                 ? 'Khai báo mọi tài sản như trang “Nhập liệu ban đầu” của Excel. Nhập nguyên giá và đời khấu hao; cột khấu hao/năm + phân bổ về dòng do hệ thống tự tính.'
                 : section === 'conv'
                   ? 'Nhân công, điện, nước, bảo trì và thông số vận hành — truy được về từng dòng (Ống · Phụ kiện). Ô nhập sửa được; nhân công/điện/nước/tổng là số tự tính.'
-                  : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
+                  : section === 'oh'
+                    ? 'Chi phí chung sản xuất (khấu hao tài sản chung + kiểm định + thuê đất) phân bổ 2 dòng theo sản lượng. Chi phí ngoài SX tách riêng — chỉ tính lãi/lỗ.'
+                    : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -407,8 +425,50 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
           );
         })()}
 
-        {/* ── MỤC ③–⑥ + Báo cáo: đang dựng dần ── */}
-        {section !== 'assets' && section !== 'conv' && (
+        {/* ── MỤC 03: CHI PHÍ CHUNG & NGOÀI SẢN XUẤT ── */}
+        {section === 'oh' && (() => {
+          const fxTag = <span style={{ fontSize: 8.5, fontWeight: 700, color: '#6b7280', border: '1px solid #c8cdd5', borderRadius: 3, padding: '0 3px' }}>fx</span>;
+          const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', border: '1px solid #e6e8ec', borderRadius: 10, overflow: 'hidden' };
+          const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16, marginBottom: 16 };
+          return (
+            <div>
+              <div style={cardStyle}>
+                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#8a5a12', fontWeight: 700, marginBottom: 2 }}>Chi phí chung sản xuất</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 2 }}>Dùng chung 2 dòng → phân bổ theo sản lượng</div>
+                <div style={{ fontSize: 11.5, color: '#737373', marginBottom: 12 }}>Máy thử nghiệm / UL đã ở Sổ tài sản — khấu hao tự về đây.</div>
+                <div style={gridStyle}>
+                  <GridCell derived label={<>Khấu hao tài sản chung (từ Sổ tài sản) {fxTag}</>}><FxCell value={depShared} unit="đ" /></GridCell>
+                  <GridCell label="Chi phí kiểm định / năm"><InCell width="100%" value={shared.annualComplianceFee} onChange={(v) => setShared('annualComplianceFee', v)} unit="đ" disabled={locked} /></GridCell>
+                  <GridCell label="Thuê đất / năm"><InCell width="100%" value={shared.annualLandRent} onChange={(v) => setShared('annualLandRent', v)} unit="đ" disabled={locked} /></GridCell>
+                  <GridCell derived label={<>Tổng chi phí chung sản xuất {fxTag}</>}><FxCell value={sharedTotal} unit="đ" /></GridCell>
+                </div>
+                <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', padding: '13px 4px 2px' }}>
+                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Tỷ lệ phân bổ (theo sản lượng kg/năm)</div>
+                    <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, marginTop: 3 }}>Ống {(ratioPipe * 100).toFixed(1)}% · PK {((1 - ratioPipe) * 100).toFixed(1)}%</div></div>
+                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Phân bổ → Ống</div>
+                    <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, color: '#1f5fd0', marginTop: 3 }}>{fmtVnd(sharedToPipe)} đ/năm</div></div>
+                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Phân bổ → Phụ kiện</div>
+                    <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, color: '#7a3fc0', marginTop: 3 }}>{fmtVnd(sharedToFit)} đ/năm</div></div>
+                </div>
+                <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 8 }}>Tỷ lệ = sản lượng dòng ÷ tổng sản lượng (Ống {fmtVnd(pipeKgYear)} kg · PK {fmtVnd(fitKgYear)} kg) — <b>tự tính từ công suất</b>, không nhập tay.</div>
+              </div>
+
+              <div style={cardStyle}>
+                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#737373', fontWeight: 700, marginBottom: 2 }}>Chi phí ngoài sản xuất</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 2 }}>Chỉ để tính lãi/lỗ — KHÔNG vào giá thành/kg</div>
+                <div style={{ fontSize: 11.5, color: '#737373', marginBottom: 12 }}>Trừ thẳng khỏi lợi nhuận (P&amp;L) · chỉ hiện ở hòa vốn toàn doanh nghiệp (thang giá bậc 4).</div>
+                <div style={gridStyle}>
+                  <GridCell label="Chi phí vận hành ngoài SX / năm"><InCell width="100%" value={form.costPool.nonProductionCosts.operatingCostPerYear} onChange={(v) => setNonProd('operatingCostPerYear', v)} unit="đ" disabled={locked} /></GridCell>
+                  <GridCell label="Chi phí tài chính / năm"><InCell width="100%" value={form.costPool.nonProductionCosts.financialCostPerYear} onChange={(v) => setNonProd('financialCostPerYear', v)} unit="đ" disabled={locked} /></GridCell>
+                  <GridCell derived label={<>Tổng ngoài sản xuất {fxTag}</>}><FxCell value={nonProdTotal} unit="đ" /></GridCell>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── MỤC ④–⑥ + Báo cáo: đang dựng dần ── */}
+        {section !== 'assets' && section !== 'conv' && section !== 'oh' && (
           <div style={{ background: '#fff', border: '1px dashed #d3d7dd', borderRadius: 12, padding: '40px 30px', textAlign: 'center', color: '#737373' }}>
             <div style={{ fontSize: 30, marginBottom: 8 }}>🚧</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>Mục “{[...SETUP_SECTIONS, { id: 'pnl' as SectionId, t: 'Báo cáo lãi/lỗ' }].find((s) => s.id === section)?.t}” đang được dựng</div>

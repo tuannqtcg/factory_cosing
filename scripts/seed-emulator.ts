@@ -27,7 +27,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const ROLES = ['admin', 'pricing', 'sales', 'production'] as const;
-const SCENARIO_ID = 'baseline-v3.4';
+const SCENARIO_ID = 'baseline-v3.7-corzan';
 
 // Chủ app (owner) mặc định — vai `admin` = toàn quyền (ADR-020 view CEO). Đăng
 // nhập bằng email/mật khẩu demo trên emulator; production dùng chính email này.

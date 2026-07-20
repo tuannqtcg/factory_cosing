@@ -23,6 +23,16 @@ import TermInfo from '../shell/TermInfo.js';
 const PIPE_LABEL = 'Ống CPVC';
 // Prototype đóng băng: 8 nút loại chính + Tất cả + Khác.
 const MAIN_CATEGORIES = [PIPE_LABEL, 'Tê đều', 'Tê giảm', 'Cút 90°', 'Cút 45°', 'Nối thẳng', 'Nối giảm', 'Lơ thu'];
+
+// Tên thương hiệu từ materialId (corzan-* → Corzan, còn lại → BlazeMaster).
+const brandOf = (matId: string): string => matId.startsWith('corzan') ? 'Corzan' : 'BlazeMaster';
+// Nhãn chip lọc nguyên liệu: "BlazeMaster (ống)", "Corzan (phụ kiện)", v.v.
+const matChipLabel = (matId: string): string => {
+  const brand = brandOf(matId);
+  if (matId.endsWith('-pipe')) return `${brand} (ống)`;
+  if (matId.endsWith('-fitting')) return `${brand} (phụ kiện)`;
+  return brand;
+};
 const CAT_LIST = ['all', ...MAIN_CATEGORIES, 'khác'] as const;
 
 interface Row {
@@ -38,6 +48,7 @@ interface Row {
   priceWithVat: number;
   materialId: string;
   matName: string;
+  brand: string;
   // Bản sales-safe (chỉ giá bán); các bậc GIÁ VỐN tra từ `internal` lúc mở dòng.
   chain: PriceListDoc['skuPriceChains'][number]['chain'];
 }
@@ -116,6 +127,7 @@ export default function PriceList({
           priceWithVat: Math.round(sku.chain.vfPricePerUnit * (1 + vatRate)),
           materialId: sku.productKey.materialId,
           matName: scenario?.materials.find((m) => m.id === sku.productKey.materialId)?.name ?? sku.productKey.materialId,
+          brand: brandOf(sku.productKey.materialId),
           chain: sku.chain,
         };
       });
@@ -131,6 +143,7 @@ export default function PriceList({
     return matchesSearch && matchesFilter && matchesMaterial;
   });
   const allMaterials = [...new Map(rows.map((r) => [r.materialId, r.matName])).entries()];
+  const multiBrand = new Set(allMaterials.map(([id]) => brandOf(id as string))).size > 1;
 
   // Thuế suất VAT suy từ chính dữ liệu (sales không đọc được costPool) — chỉ để hiển thị nhãn.
   const vatPctLabel = Math.round(vatRate * 100);
@@ -229,7 +242,11 @@ export default function PriceList({
     <div style={{ padding: '32px 36px' }}>
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Xuất Xưởng (VF)</div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>BlazeMaster CPVC — {rows.length} SKU</h1>
+        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
+          {multiBrand
+            ? `BlazeMaster & Corzan CPVC — ${rows.length} SKU`
+            : `${[...new Set(allMaterials.map(([id]) => brandOf(id as string)))][0] ?? 'BlazeMaster'} CPVC — ${rows.length} SKU`}
+        </h1>
         <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
           Giá bán xuất xưởng của nhà máy (VF) = giá thành đầy đủ + phần lời của nhà máy, giữ ổn định theo cơ chế khóa giá.
           Giá tới nhà phân phối là bước suy tiếp tự động — xem tab <b>Bảng giá NPP</b>. <b>Bấm vào từng dòng</b> để xem giá đó từ đâu ra.
@@ -291,7 +308,7 @@ export default function PriceList({
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>① Nguyên liệu (compound)</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {cardMaterials.map(([id, name]) => {
+                {cardMaterials.map(([id]) => {
                   const active = id === activeMatId;
                   return (
                     <div
@@ -299,7 +316,7 @@ export default function PriceList({
                       onClick={() => { setCardMaterial(id); setCardGroup(null); setCardKey(null); }}
                       style={{ padding: '8px 20px', cursor: 'pointer', border: `2px solid ${active ? '#a8003b' : '#d8d8d8'}`, background: active ? '#a8003b' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 6, fontSize: 13, fontWeight: 700 }}
                     >
-                      {name}
+                      {matChipLabel(id as string)}
                     </div>
                   );
                 })}
@@ -415,7 +432,7 @@ export default function PriceList({
                 onClick={() => setMaterialFilter(id)}
                 style={{ padding: '4px 12px', cursor: 'pointer', border: `1px solid ${active ? '#0a0a0a' : '#b3b3b3'}`, background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 11, fontWeight: 600 }}
               >
-                {name}
+                {id === 'all' ? name : matChipLabel(id as string)}
               </div>
             );
           })}
@@ -454,7 +471,10 @@ export default function PriceList({
                 style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? '#faf9f4' : '#fff' }}
               >
                 <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
-                <div style={{ fontSize: 12, fontWeight: 500 }}>{expanded ? '▾ ' : '▸ '}{row.name}</div>
+                <div style={{ fontSize: 12, fontWeight: 500 }}>
+                  {expanded ? '▾ ' : '▸ '}{row.name}
+                  {multiBrand && <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: '#6b5e00', background: '#fef9c3', padding: '1px 5px', borderRadius: 3, verticalAlign: 'middle' }}>{row.brand}</span>}
+                </div>
                 <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
                 <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.spec}</div>
                 <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.designationCode}</div>

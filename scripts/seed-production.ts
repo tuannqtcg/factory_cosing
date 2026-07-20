@@ -16,7 +16,7 @@ import path from 'node:path';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ScenarioInputSchema } from '../src/schemas/scenario.js';
-import { buildBaselineScenarioInput } from '../tests/helpers/scenario-fixture.js';
+import { buildCorzanScenarioInput } from '../tests/helpers/scenario-fixture.js';
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const firebaseJson = JSON.parse(readFileSync(path.join(rootDir, 'firebase.json'), 'utf8'));
@@ -41,12 +41,12 @@ if (!databaseId) {
   process.exit(1);
 }
 
-const scenarioId = process.argv[2] ?? 'baseline-v3.4';
+const scenarioId = process.argv[2] ?? 'baseline-v3.7-corzan';
 
 const app = initializeApp({ projectId });
 const db = getFirestore(app, databaseId);
 
-const scenarioInput = ScenarioInputSchema.parse(buildBaselineScenarioInput());
+const scenarioInput = ScenarioInputSchema.parse(buildCorzanScenarioInput());
 console.log(`Ghi scenarios/${scenarioId} vào project "${projectId}", database "${databaseId}"...`);
 await db.doc(`scenarios/${scenarioId}`).set({ ...scenarioInput, id: scenarioId });
 console.log(

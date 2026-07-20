@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { ScenarioInputSchema } from '../src/schemas/scenario.js';
-import { buildBaselineScenarioInput, buildCorzanScenarioInput } from '../tests/helpers/scenario-fixture.js';
+import { buildBaselineScenarioInput } from '../tests/helpers/scenario-fixture.js';
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const firebaseJson = JSON.parse(readFileSync(path.join(rootDir, 'firebase.json'), 'utf8'));
@@ -50,7 +50,8 @@ async function seedUsers(): Promise<void> {
 }
 
 async function seedScenario(): Promise<void> {
-  const scenarioInput = ScenarioInputSchema.parse(buildCorzanScenarioInput());
+  // ADR-044 — baseline BlazeMaster sạch; Corzan nhập tay trong app (chuẩn hóa).
+  const scenarioInput = ScenarioInputSchema.parse(buildBaselineScenarioInput());
 
   // DEMO ONLY (không đụng fixture parity — tests dựng scenario riêng): làm giàu
   // tồn kho nguyên liệu Ống BlazeMaster thành 3 lô KHÁC GIÁ + giá tái tạo LỆCH

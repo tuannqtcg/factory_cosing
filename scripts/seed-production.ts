@@ -16,7 +16,7 @@ import path from 'node:path';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { ScenarioInputSchema } from '../src/schemas/scenario.js';
-import { buildCorzanScenarioInput } from '../tests/helpers/scenario-fixture.js';
+import { buildBaselineScenarioInput } from '../tests/helpers/scenario-fixture.js';
 
 const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const firebaseJson = JSON.parse(readFileSync(path.join(rootDir, 'firebase.json'), 'utf8'));
@@ -46,7 +46,10 @@ const scenarioId = process.argv[2] ?? 'baseline-v3.4';
 const app = initializeApp({ projectId });
 const db = getFirestore(app, databaseId);
 
-const scenarioInput = ScenarioInputSchema.parse(buildCorzanScenarioInput());
+// ADR-044 — seed CHỈ dựng baseline BlazeMaster sạch ("số vàng" Excel v3.4).
+// Corzan/nguyên liệu khác nhập TAY trong app (Tham Số + Danh Mục) để chuẩn hóa,
+// tránh sinh dữ liệu trùng như các đợt bơm Corzan tự động trước đây.
+const scenarioInput = ScenarioInputSchema.parse(buildBaselineScenarioInput());
 console.log(`Ghi scenarios/${scenarioId} vào project "${projectId}", database "${databaseId}"...`);
 await db.doc(`scenarios/${scenarioId}`).set({ ...scenarioInput, id: scenarioId });
 console.log(

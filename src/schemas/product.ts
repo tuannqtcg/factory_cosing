@@ -15,6 +15,10 @@ export const PipeProductSchema = z.object({
   minWallThicknessMm: z.number().positive(),
   unitWeightKgPerM: z.number().positive(),
   materialId: z.string(), // ADR-012
+  // ADR-046 — tốc độ đùn thực đo THEO SIZE (mét/giờ). Optional: hiện chỉ để
+  // nhập + kiểm tra công suất (cảnh báo khi m/giờ × đơn trọng > kg/giờ max của
+  // máy) — CHƯA dùng tính giá thành (giữ parity). Sẽ dùng ở bước nâng mô hình.
+  capacityMetersPerHour: z.number().positive().optional(),
 });
 export type PipeProduct = z.infer<typeof PipeProductSchema>;
 

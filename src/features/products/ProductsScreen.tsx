@@ -71,6 +71,9 @@ export default function ProductsScreen({
   const materials = form.materials;
   const pipeProducts = form.products.filter((p) => p.kind === 'pipe') as PipeProduct[];
   const fittingProducts = form.products.filter((p) => p.kind === 'fitting') as FittingProduct[];
+  // ADR-046 — công suất TỐI ĐA máy đùn (kg/giờ) = HẰNG SỐ vật lý, dùng làm trần
+  // cảnh báo khi nhập m/giờ theo size (m/giờ × đơn trọng không được vượt trần này).
+  const pipeMaxKgPerHour = form.resources.pipe.driverType === 'continuous_kg' ? form.resources.pipe.maxCapacityKgPerHour : undefined;
 
   // Khuôn (ADR-007): phụ kiện chỉ LÊN BẢNG GIÁ khi có khuôn sản xuất nó. Nhiều
   // SKU dùng chung 1 khuôn (cùng khuôn, khác compound — ADR-012) là bình thường.
@@ -328,6 +331,7 @@ export default function ProductsScreen({
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>OD (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Dày min (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Đơn trọng (kg/m)</th>
+                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }} title={`Tốc độ đùn thực đo theo size. Cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`}>CS đùn (m/giờ)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Nguyên liệu (Compound)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 60 }}></th>
               </tr>
@@ -349,6 +353,30 @@ export default function ProductsScreen({
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     <InputNode type="number" value={p.unitWeightKgPerM} onChange={(v: number) => updateProduct(i, 'pipe', { ...p, unitWeightKgPerM: v })} width={70} />
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    {(() => {
+                      const mph = p.capacityMetersPerHour;
+                      const kgh = mph !== undefined ? mph * p.unitWeightKgPerM : undefined;
+                      const over = kgh !== undefined && pipeMaxKgPerHour !== undefined && kgh > pipeMaxKgPerHour;
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <InputNode
+                            type="number"
+                            value={mph ?? ''}
+                            onChange={(v: number | string) => updateProduct(i, 'pipe', { ...p, capacityMetersPerHour: v === '' || Number.isNaN(Number(v)) ? undefined : Number(v) })}
+                            width={70}
+                            placeholder="m/giờ"
+                          />
+                          {kgh !== undefined && (
+                            <span title={over ? `Vượt công suất máy: ${Math.round(kgh)} kg/giờ > ${pipeMaxKgPerHour} kg/giờ. Giảm m/giờ.` : `≈ ${Math.round(kgh)} kg/giờ (trong ngưỡng)`}
+                              style={{ fontSize: 10, fontWeight: 700, color: over ? '#DC2626' : '#16A34A', whiteSpace: 'nowrap' }}>
+                              {over ? `⚠ ${Math.round(kgh)}kg/h` : `✓ ${Math.round(kgh)}kg/h`}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     <select

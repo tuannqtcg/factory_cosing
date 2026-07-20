@@ -5,6 +5,18 @@ import type { AppRole } from '../../lib/firebase.js';
 import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
 import { managementStatusOf, type PipeProduct, type FittingProduct, type Product } from '../../schemas/product.js';
 import type { MoldAsset } from '../../schemas/resource.js';
+import type { Material } from '../../schemas/material.js';
+
+// ADR-044 — bộ nguyên liệu Corzan CHUẨN (đúng 1 bộ). "Chuẩn hóa Corzan" = XÓA mọi
+// Corzan cũ (kể cả trùng/gõ tay lệch) rồi tạo lại đúng bộ này + mirror SKU từ
+// BlazeMaster. Khớp tests/fixtures/corzan.json. Idempotent: chạy lại ra y hệt.
+const CANON_CORZAN: Material[] = [
+  { id: 'corzan-pipe', name: 'Corzan 3710 (ống)', code: 'CZ-3710-P', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.25, inventory: { lots: [], priceLock: { baseline: 3.47, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.47 } },
+  { id: 'corzan-fitting', name: 'Corzan 3710 (phụ kiện)', code: 'CZ-3710-F', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.4, inventory: { lots: [], priceLock: { baseline: 3.97, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.97 } },
+];
+const CORZAN_PIPE_WEIGHT_FACTOR = 1.1; // ống Corzan nặng hơn 10%/size (ADR-012)
+// Nhận diện MỌI nguyên liệu "Corzan" (id chuẩn hoặc tên có chữ corzan) để dọn sạch.
+const isCorzanMat = (m: { id: string; name: string }) => m.id.toLowerCase().includes('corzan') || m.name.toLowerCase().includes('corzan');
 
 const InputNode = ({ value, onChange, type = 'text', width = 60, placeholder = '' }: any) => (
   <input
@@ -192,6 +204,32 @@ export default function ProductsScreen({
       setSaveState('error');
       setSaveError(err instanceof Error ? err.message : String(err));
     }
+  };
+
+  // ADR-044 — CHUẨN HÓA Corzan (idempotent, KHÁC nút append cũ đã gỡ): XÓA sạch
+  // mọi nguyên liệu + SKU Corzan hiện có (kể cả bản trùng / gõ tay lệch) rồi tạo
+  // lại ĐÚNG 1 bộ compound chuẩn + mirror toàn bộ SKU từ BlazeMaster (ống ×1,1
+  // đơn trọng; phụ kiện giống hệt → dùng chung khuôn, tự active). Bấm bao nhiêu
+  // lần cũng ra một kết quả duy nhất. Sau khi bấm nhớ "Lưu".
+  const standardizeCorzan = () => {
+    if (!window.confirm('Chuẩn hóa dòng Corzan?\n\nThao tác này sẽ XÓA toàn bộ nguyên liệu & SKU Corzan hiện có (kể cả bản trùng) rồi tạo lại đúng MỘT bộ mirror BlazeMaster. BlazeMaster giữ nguyên.\n\nBấm OK, sau đó nhớ bấm "Lưu".')) return;
+    setForm((f) => {
+      if (!f) return f;
+      // 1. Bỏ MỌI nguyên liệu Corzan + SKU dùng chúng.
+      const corzanIds = new Set(f.materials.filter(isCorzanMat).map((m) => m.id));
+      const materials = [...f.materials.filter((m) => !isCorzanMat(m)), ...CANON_CORZAN];
+      const products = f.products.filter((p) => !corzanIds.has(p.materialId));
+      // 2. Nguồn BlazeMaster để mirror (ưu tiên id chuẩn, fallback SKU đầu tiên).
+      const bmPipeId = materials.find((m) => m.id === 'bm-orange-pipe')?.id ?? products.find((p) => p.kind === 'pipe')?.materialId;
+      const bmFitId = materials.find((m) => m.id === 'bm-fitting')?.id ?? products.find((p) => p.kind === 'fitting')?.materialId;
+      // 3. Mirror SKU BM → Corzan (chỉ từ đúng dòng BM, tránh nhân chéo compound khác).
+      const clones: Product[] = [];
+      for (const p of products) {
+        if (p.kind === 'pipe' && p.materialId === bmPipeId) clones.push({ ...p, materialId: 'corzan-pipe', unitWeightKgPerM: p.unitWeightKgPerM * CORZAN_PIPE_WEIGHT_FACTOR });
+        else if (p.kind === 'fitting' && p.materialId === bmFitId) clones.push({ ...p, materialId: 'corzan-fitting' });
+      }
+      return { ...f, materials, products: [...products, ...clones] };
+    });
   };
 
   return (
@@ -412,6 +450,15 @@ export default function ProductsScreen({
         >
           + Thêm {activeTab === 'pipe' ? 'Ống CPVC' : 'Phụ Kiện'} mới
         </button>
+        {canEditMolds && (
+          <button
+            onClick={standardizeCorzan}
+            title="Xóa sạch Corzan trùng/loạn rồi tạo lại đúng 1 bộ mirror BlazeMaster (dùng chung khuôn). Idempotent. Bấm xong nhớ Lưu."
+            style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #1f5fd0', background: '#f7faff', color: '#1f5fd0', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          >
+            ♻ Chuẩn hóa Corzan (xóa trùng → mirror BlazeMaster)
+          </button>
+        )}
       </div>
     </div>
   );

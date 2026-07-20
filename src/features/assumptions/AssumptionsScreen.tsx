@@ -106,6 +106,49 @@ export default function AssumptionsScreen({
       mats.map((m) => (m.id !== matId ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, baseline: m.inventory.replacementPriceUsdPerKg } } })),
     );
 
+  // ADR-012 — THÊM/XÓA/đổi tên nguyên liệu (compound) ngay trong app (admin),
+  // thay cho seed. `id` hệ thống tự sinh (slug ổn định); người dùng gán SKU theo
+  // TÊN nguyên liệu ở màn Danh Mục nên không cần gõ id. Xóa bị chặn nếu còn SKU
+  // tham chiếu — tránh mồ côi materialId (engine yêu cầu mỗi SP có material hợp lệ).
+  const productRefsMaterial = (matId: string) => form.products.some((p) => p.materialId === matId);
+  const updateMaterialText = (matId: string, key: 'name' | 'code' | 'originLabel', value: string) =>
+    setMaterials((mats) => mats.map((m) => (m.id !== matId ? m : { ...m, [key]: value })));
+  const addMaterial = () =>
+    setMaterials((mats) => {
+      let n = mats.length + 1;
+      let id = `nguyen-lieu-${n}`;
+      while (mats.some((m) => m.id === id)) id = `nguyen-lieu-${++n}`;
+      const blank: Material = {
+        id,
+        name: 'Nguyên liệu mới',
+        code: '',
+        originLabel: '',
+        importTaxRate: 0,
+        customsLogisticsFeeRate: 0.01,
+        markupVf: 0.3,
+        inventory: { lots: [], priceLock: { baseline: 0, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 0 },
+      };
+      return [...mats, blank];
+    });
+  const removeMaterial = (matId: string) => {
+    if (productRefsMaterial(matId)) {
+      window.alert('Không xóa được nguyên liệu này: vẫn còn sản phẩm đang dùng nó. Hãy đổi/xóa nguyên liệu của các SKU đó trong màn "Danh Mục Sản Phẩm" trước.');
+      return;
+    }
+    if (!window.confirm('Xóa nguyên liệu này khỏi kịch bản? Thao tác chỉ ảnh hưởng bảng tham số — bấm "Lưu & Cập Nhật" để áp dụng.')) return;
+    setMaterials((mats) => mats.filter((m) => m.id !== matId));
+  };
+  const textField = (label: string, value: string, onChange: (v: string) => void, width = 150) => (
+    <label style={{ display: 'block' }}>
+      <span style={{ fontSize: 9, fontWeight: 700, color: '#1a1a1a', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4, display: 'block' }}>{label}</span>
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        style={{ width, padding: '6px 8px', borderRadius: 2, fontSize: 12, fontWeight: 600, border: '1px solid #d8d8d8', outline: 'none' }}
+      />
+    </label>
+  );
+
   const setInsert = (updater: (entries: MetalInsertCatalogEntry[]) => MetalInsertCatalogEntry[]) =>
     setForm((f) => (f ? { ...f, inventory: { ...f.inventory, metalInsert: updater(f.inventory.metalInsert) } } : f));
   const updateInsertThreshold = (key: string, value: number) =>
@@ -172,9 +215,20 @@ export default function AssumptionsScreen({
         {saveState === 'error' && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6 }}>{saveError}</div>}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 11 }}>
-        <div style={{ width: 3, height: 14, background: '#a8003b', borderRadius: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color: '#a8003b' }}>Tham số theo từng nguyên liệu</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ width: 3, height: 14, background: '#a8003b', borderRadius: 1, flexShrink: 0 }} />
+          <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color: '#a8003b' }}>Tham số theo từng nguyên liệu</div>
+        </div>
+        {isAdmin && (
+          <button
+            onClick={addMaterial}
+            title="Thêm một compound mới (vd Corzan). Sau khi thêm, gán SKU cho nó ở màn Danh Mục Sản Phẩm, rồi Lưu."
+            style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          >
+            ➕ Thêm nguyên liệu
+          </button>
+        )}
       </div>
 
       {form.materials.map((m) => {
@@ -182,11 +236,19 @@ export default function AssumptionsScreen({
         const isLocked = lockEntry?.evaluation.isLocked ?? true;
         return (
           <div key={m.id} style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflow: 'hidden', marginBottom: 14 }}>
-            <div style={{ padding: '12px 16px', background: '#f5f5f3', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div>
-                <div style={{ fontSize: 9.5, color: '#737373', marginTop: 2 }}>{m.code} · {m.originLabel}</div>
-              </div>
+            <div style={{ padding: '12px 16px', background: '#f5f5f3', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+              {isAdmin ? (
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  {textField('Tên nguyên liệu', m.name, (v) => updateMaterialText(m.id, 'name', v), 200)}
+                  {textField('Mã', m.code, (v) => updateMaterialText(m.id, 'code', v), 110)}
+                  {textField('Xuất xứ', m.originLabel, (v) => updateMaterialText(m.id, 'originLabel', v), 140)}
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div>
+                  <div style={{ fontSize: 9.5, color: '#737373', marginTop: 2 }}>{m.code} · {m.originLabel}</div>
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? 'KHÓA' : 'MỞ KHÓA'}</span>
                 {!isLocked && (
@@ -195,6 +257,15 @@ export default function AssumptionsScreen({
                     style={{ padding: '7px 14px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, fontSize: 10, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}
                   >
                     Chốt Baseline Mới
+                  </button>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={() => removeMaterial(m.id)}
+                    title={productRefsMaterial(m.id) ? 'Còn SKU dùng nguyên liệu này — không xóa được' : 'Xóa nguyên liệu này'}
+                    style={{ padding: '7px 12px', background: 'none', color: productRefsMaterial(m.id) ? '#c9c9c9' : '#DC2626', border: `1px solid ${productRefsMaterial(m.id) ? '#e5e5e5' : '#DC2626'}`, borderRadius: 2, fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    Xóa
                   </button>
                 )}
               </div>

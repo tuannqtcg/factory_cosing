@@ -49,6 +49,7 @@ import {
   assistantFallbackAnswer,
 } from '../../src/engine/assistant-knowledge.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
+import { toPriceListDoc } from '../../src/engine/price-list-doc.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
 import { calculatePipeCapacity } from '../../src/engine/pipe.js';
 import { calculateFittingCapacity } from '../../src/engine/fitting.js';
@@ -78,46 +79,7 @@ const firestoreDatabaseId = defineString('FIRESTORE_DATABASE_ID', { default: '(d
 const anthropicApiKey = defineSecret('ANTHROPIC_API_KEY');
 const ADVISE_MODEL_DEFAULT = 'claude-opus-4-8';
 
-// M12.6 (bảng ADR-009 #8): thêm unit/spec hiển thị — sales không đọc được
-// scenarios/{id} nên 2 field này phải nằm ngay trong doc. skuPriceChains do
-// calculateScenario() dựng bằng products.map() CÙNG THỨ TỰ → zip theo index,
-// nhưng vẫn đối chiếu khóa để không bao giờ ghi nhầm hàng khi engine đổi.
-function toPriceListDoc(output: ScenarioOutput, products: ScenarioInput['products'], materials: ScenarioInput['materials']) {
-  return PriceListDocSchema.parse({
-    priceLadder: output.priceLadder,
-    skuPriceChains: output.skuPriceChains.map((sku, i) => {
-      const product = products[i];
-      const matches =
-        product !== undefined &&
-        product.materialId === sku.productKey.materialId &&
-        (product.kind === 'pipe'
-          ? product.dn === sku.productKey.dn
-          : product.productName === sku.productKey.productName && product.sizeLabel === sku.productKey.sizeLabel);
-      if (!matches) {
-        throw new Error(`skuPriceChains[${i}] không khớp products[${i}] — thứ tự engine đổi? Không ghi priceList sai hàng.`);
-      }
-      const material = materials.find(m => m.id === product.materialId);
-      return {
-        productKey: sku.productKey,
-        managementStatus: sku.managementStatus,
-        // ADR-013: 2 mã optional — CHỈ đính khi có giá trị. Firestore từ chối
-        // ghi `undefined` (khác Zod .optional() bỏ qua), nên material thiếu mã
-        // mà set thẳng undefined sẽ làm cả onScenarioWrite văng → outputs không
-        // bao giờ ghi, UI kẹt loading. Bỏ key khi thiếu là đúng nghĩa optional.
-        ...(material?.designationCode !== undefined ? { materialDesignationCode: material.designationCode } : {}),
-        ...(material?.classificationCode !== undefined ? { materialClassificationCode: material.classificationCode } : {}),
-        unit: product.kind === 'pipe' ? 'mét' : product.unit,
-        spec: (product.kind === 'pipe' ? product.spec : product.schedule) ?? '',
-        chain: {
-          vfPricePerUnit: sku.chain.vfPricePerUnit,
-          tcgPricePerUnit: sku.chain.tcgPricePerUnit,
-          listPriceBeforeVat: sku.chain.listPriceBeforeVat,
-          listPriceWithVat: sku.chain.listPriceWithVat,
-        },
-      };
-    }),
-  });
-}
+// ADR-045 — dùng CHUNG toPriceListDoc với client (src/engine/price-list-doc.ts).
 
 // ADR-014 (M12.7) — danh mục SP + tham số vận hành cho vai production dựng
 // form Kế Hoạch SX. TUYỆT ĐỐI không field giá (xem ADR-014 mục 1).

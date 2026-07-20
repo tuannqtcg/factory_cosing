@@ -13,6 +13,7 @@ import PricingHub, { type PricingSub } from '../price-list/PricingHub.js';
 import InventoryScreen from '../inventory/InventoryScreen.js';
 import ProductsScreen from '../products/ProductsScreen.js';
 import ExplainPanel from './ExplainPanel.js';
+import AssistantChat from './AssistantChat.js';
 import ConfigScreen from '../config/ConfigScreen.js';
 import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
@@ -157,6 +158,7 @@ export default function AppShell() {
 
       {/* ═══ MAIN ═══ */}
       <ExplainPanel tabId={tabId} onNavigate={go} />
+      <AssistantChat scenarioId={SCENARIO_ID} screenId={tabId} />
       <main style={{ flex: 1, overflow: 'auto', background: '#f6f6f6', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 1366, background: '#f6f6f6', minHeight: '100%' }}>
         {role && (

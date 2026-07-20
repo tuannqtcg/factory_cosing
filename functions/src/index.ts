@@ -42,6 +42,12 @@ import {
 } from '../../src/schemas/role-management.js';
 import { CeoAdviceRequestSchema, CeoAdviceResultSchema, type CeoAdviceResult } from '../../src/schemas/ceo-planner.js';
 import { generateCeoAdviceMock } from '../../src/engine/ceo-advice-mock.js';
+import { AssistantAskRequestSchema, AssistantAnswerSchema, type AssistantAnswer } from '../../src/schemas/assistant.js';
+import {
+  ASSISTANT_SYSTEM_PROMPT,
+  ASSISTANT_DISCLAIMER,
+  assistantFallbackAnswer,
+} from '../../src/engine/assistant-knowledge.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 import { calculatePlanForScenario } from '../../src/engine/plan-support.js';
 import { calculatePipeCapacity } from '../../src/engine/pipe.js';
@@ -394,4 +400,111 @@ export const adviseScenario = onCall({ secrets: [anthropicApiKey] }, async (requ
   });
 
   return result;
+});
+
+// ADR-040 — HTTPS Callable `askAssistant`: Trợ Lý Ảo toàn app. CEO hỏi tự do ở
+// bất kỳ màn nào; server gọi Claude với kiến thức ngành CPVC + nghiệp vụ app
+// (assistant-knowledge.ts) + số liệu ĐÃ TÍNH của kịch bản (đọc bằng Admin SDK).
+// Chưa set ANTHROPIC_API_KEY hoặc Claude lỗi → fallback hướng dẫn (không chết).
+// Audit dùng chung collection adviceAudit (kind: 'assistant').
+export const askAssistant = onCall({ secrets: [anthropicApiKey] }, async (request) => {
+  const role = request.auth?.token?.role;
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Cần đăng nhập để hỏi trợ lý.');
+  }
+  if (role !== 'pricing' && role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Chỉ vai pricing/admin được dùng trợ lý (ADR-006).');
+  }
+
+  let parsed;
+  try {
+    parsed = AssistantAskRequestSchema.parse(request.data);
+  } catch (err) {
+    throw new HttpsError('invalid-argument', `Request không khớp AssistantAskRequest: ${String(err)}`);
+  }
+
+  let answer: AssistantAnswer;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (apiKey) {
+    try {
+      // Ngữ cảnh số liệu GỌN từ dữ liệu đã tính — không tính lại công thức nào.
+      const db = getFirestore(firestoreDatabaseId.value());
+      const [scenarioSnap, internalSnap] = await Promise.all([
+        db.doc(`scenarios/${parsed.scenarioId}`).get(),
+        db.doc(`scenarios/${parsed.scenarioId}/outputs/internal`).get(),
+      ]);
+      const scenario = scenarioSnap.exists ? ScenarioInputSchema.parse(scenarioSnap.data()) : null;
+      const internal = internalSnap.exists ? ScenarioOutputSchema.parse(internalSnap.data()) : null;
+      const context = {
+        screenId: parsed.screenId,
+        materials: scenario?.materials.map((m) => ({
+          name: m.name,
+          markupVf: m.markupVf,
+          replacementUsdPerKg: m.inventory.replacementPriceUsdPerKg,
+          baselineUsdPerKg: m.inventory.priceLock.baseline,
+          thresholdPct: m.inventory.priceLock.thresholdPct,
+          inventoryLots: m.inventory.lots,
+        })),
+        markup: scenario?.costPool.markup,
+        usdVndRate: scenario?.costPool.currency.usdVndRate,
+        priceLadderPerKg: internal?.priceLadder.byLineMaterial.map((e) => ({
+          line: e.line,
+          materialId: e.materialId,
+          ladder: e.ladder,
+        })),
+        priceLock: internal?.priceLock.byMaterial,
+      };
+
+      const { default: Anthropic } = await import('@anthropic-ai/sdk');
+      const client = new Anthropic({ apiKey });
+      const msg = await client.messages.create({
+        model: process.env.ADVISE_MODEL ?? ADVISE_MODEL_DEFAULT,
+        max_tokens: 1500,
+        thinking: { type: 'adaptive' },
+        system: ASSISTANT_SYSTEM_PROMPT,
+        messages: [
+          ...parsed.history.map((h) => ({ role: h.role, content: h.text })),
+          {
+            role: 'user' as const,
+            content: `context: ${JSON.stringify(context)}\n\nCâu hỏi (đang đứng ở màn "${parsed.screenId}"): ${parsed.question}`,
+          },
+        ],
+      });
+      const text = msg.content
+        .map((b) => (b.type === 'text' ? b.text : ''))
+        .join('')
+        .trim();
+      answer = AssistantAnswerSchema.parse({
+        generatedByModel: msg.model,
+        answer: text || assistantFallbackAnswer(parsed.question),
+        disclaimer: ASSISTANT_DISCLAIMER,
+      });
+    } catch {
+      answer = AssistantAnswerSchema.parse({
+        generatedByModel: 'fallback',
+        answer: assistantFallbackAnswer(parsed.question),
+        disclaimer: ASSISTANT_DISCLAIMER,
+      });
+    }
+  } else {
+    answer = AssistantAnswerSchema.parse({
+      generatedByModel: 'fallback',
+      answer: assistantFallbackAnswer(parsed.question),
+      disclaimer: ASSISTANT_DISCLAIMER,
+    });
+  }
+
+  // Audit: ai hỏi, khi nào, ở màn nào, model gì — KHÔNG lưu nội dung câu hỏi.
+  const db = getFirestore(firestoreDatabaseId.value());
+  await db.collection(`scenarios/${parsed.scenarioId}/adviceAudit`).add({
+    kind: 'assistant',
+    uid: request.auth.uid,
+    email: request.auth.token.email ?? null,
+    role,
+    screenId: parsed.screenId,
+    model: answer.generatedByModel,
+    at: FieldValue.serverTimestamp(),
+  });
+
+  return answer;
 });

@@ -31,6 +31,12 @@ export const ScenarioInputSchema = z
     inventory: z.object({
       metalInsert: MetalInsertCatalogSchema, // ADR-008 — theo (renType, ptSize)
     }),
+    // ADR-047 — cách phân bổ chi phí máy đùn cho giá thành ỐNG (2 logic song song):
+    // 'kg' (mặc định) = rải đều theo kg → khớp Excel v3.4 (parity); 'meters' =
+    // phân bổ theo GIỜ MÁY per-size (dùng capacityMetersPerHour) → size chạy chậm
+    // giá cao hơn. TỔNG chi phí máy giữ nguyên, chỉ đổi cách chia giữa các size.
+    // Mặc định 'kg' → doc cũ không có field vẫn parse đúng, không vỡ parity.
+    pipeCostMethod: z.enum(['kg', 'meters']).default('kg'),
   })
   .superRefine((input, ctx) => {
     // materialId của mọi product phải tồn tại trong materials[] (contract material.md)

@@ -74,6 +74,12 @@ export default function ProductsScreen({
   // ADR-046 — công suất TỐI ĐA máy đùn (kg/giờ) = HẰNG SỐ vật lý, dùng làm trần
   // cảnh báo khi nhập m/giờ theo size (m/giờ × đơn trọng không được vượt trần này).
   const pipeMaxKgPerHour = form.resources.pipe.driverType === 'continuous_kg' ? form.resources.pipe.maxCapacityKgPerHour : undefined;
+  // ADR-047 — cách tính giá thành Ống đang bật (công tắc toàn cục ở sidebar). CHỈ
+  // đọc để trình bày cho khớp: cột "CS đùn (m/giờ)" đổi VAI TRÒ theo chế độ —
+  // 'meters' thì con số này quyết định giá vốn từng size; 'kg' thì nó chỉ là
+  // cảnh báo công suất, KHÔNG ăn vào giá (rải đều theo kg, chuẩn Excel v3.4).
+  const pipeCostMethod = form.pipeCostMethod ?? 'kg';
+  const costByMeters = pipeCostMethod === 'meters';
 
   // Khuôn (ADR-007): phụ kiện chỉ LÊN BẢNG GIÁ khi có khuôn sản xuất nó. Nhiều
   // SKU dùng chung 1 khuôn (cùng khuôn, khác compound — ADR-012) là bình thường.
@@ -321,6 +327,39 @@ export default function ProductsScreen({
         ))}
       </div>
 
+      {activeTab === 'pipe' && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            marginBottom: 12,
+            padding: '9px 13px',
+            borderRadius: 6,
+            border: `1px solid ${costByMeters ? '#1f5fd0' : '#b45309'}`,
+            background: costByMeters ? '#f4f8ff' : '#fffbeb',
+            fontSize: 11.5,
+            lineHeight: 1.5,
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>{costByMeters ? '⏱' : '⚖'}</span>
+          <span>
+            Đang tính giá thành Ống <b>{costByMeters ? 'theo m/giờ (giờ máy per-size)' : 'theo kg (rải đều — chuẩn Excel)'}</b>.{' '}
+            {costByMeters ? (
+              <>
+                Cột <b>“CS đùn (m/giờ)”</b> bên dưới <b>quyết định giá vốn từng size</b> — size chạy chậm gánh giá cao hơn.
+                Hãy nhập số đo m/giờ thật; size bỏ trống sẽ suy từ tốc độ chung (rơi về đúng kết quả theo kg).
+              </>
+            ) : (
+              <>
+                Cột <b>“CS đùn (m/giờ)”</b> bên dưới <b>KHÔNG ảnh hưởng giá</b> ở chế độ này — chỉ dùng để{' '}
+                <b>cảnh báo công suất</b> (m/giờ × đơn trọng có vượt trần máy không). Đổi cách tính ở công tắc “Cách tính giá thành Ống” trên thanh bên.
+              </>
+            )}
+          </span>
+        </div>
+      )}
+
       <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflowX: 'auto' }}>
         {activeTab === 'pipe' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
@@ -331,7 +370,22 @@ export default function ProductsScreen({
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>OD (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Dày min (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Đơn trọng (kg/m)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }} title={`Tốc độ đùn thực đo theo size. Cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`}>CS đùn (m/giờ)</th>
+                <th
+                  style={{
+                    padding: '8px 12px',
+                    borderBottom: `1px solid ${costByMeters ? '#1f5fd0' : '#d8d8d8'}`,
+                    background: costByMeters ? '#eef4ff' : undefined,
+                    color: costByMeters ? '#1f5fd0' : '#9a9a9a',
+                    fontWeight: costByMeters ? 700 : 400,
+                  }}
+                  title={
+                    costByMeters
+                      ? `Đang tính giá THEO m/giờ: con số này quyết định giá vốn từng size. Cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`
+                      : `Đang tính giá THEO kg: cột này KHÔNG ăn vào giá, chỉ cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`
+                  }
+                >
+                  CS đùn (m/giờ){costByMeters ? ' → giá' : ' · chỉ cảnh báo'}
+                </th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Nguyên liệu (Compound)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 60 }}></th>
               </tr>

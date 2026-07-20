@@ -235,6 +235,24 @@
                 <td><span class="alloc a-fit">Trực tiếp · Phụ kiện</span></td>
               </tr>
               <tr>
+                <td class="name">Máy móc thiết bị thử nghiệm<small>phòng lab · dùng chung 2 dòng</small></td>
+                <td><span class="in"><input value="1.192.500.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="5" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">238.500.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-shared">Chung · phân bổ</span></td>
+              </tr>
+              <tr>
+                <td class="name">Chứng nhận UL (thiết bị & setup)<small>gồm cả VN-UL nếu có</small></td>
+                <td><span class="in"><input value="1.200.000.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="5" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">240.000.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-shared">Chung · phân bổ</span></td>
+              </tr>
+              <tr>
                 <td class="name">Nhà xưởng<small>chưa nhập nguyên giá</small></td>
                 <td><span class="in"><input value="0" placeholder="0"><span class="u">đ</span></span></td>
                 <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
@@ -247,8 +265,8 @@
             <tfoot>
               <tr>
                 <td class="lab">Tổng nguyên giá &amp; khấu hao</td>
-                <td class="num">24.326.062.000</td><td></td><td></td><td></td>
-                <td><span class="fx" style="background:none;padding-right:0">5.150.587.867<span class="u">đ</span></span></td>
+                <td class="num">26.718.562.000</td><td></td><td></td><td></td>
+                <td><span class="fx" style="background:none;padding-right:0">5.629.087.867<span class="u">đ</span></span></td>
                 <td></td>
               </tr>
             </tfoot>
@@ -257,7 +275,7 @@
         <div class="kpi">
           <div><div class="lab">Khấu hao → Ống</div><div class="val pipe">2.326.037.867 đ/năm</div></div>
           <div><div class="lab">Khấu hao → Phụ kiện</div><div class="val fit">2.824.550.000 đ/năm</div></div>
-          <div><div class="lab">Khấu hao → Chung</div><div class="val shared">0 đ/năm</div></div>
+          <div><div class="lab">Khấu hao → Chung</div><div class="val shared">478.500.000 đ/năm</div></div>
         </div>
         <div class="flow">
           <span>Dòng chảy kế toán:</span><b>Tài sản</b><span class="arrow">→</span><b>Khấu hao/năm</b>
@@ -309,21 +327,30 @@
     <!-- 3. OVERHEAD -->
     <section class="pane" data-p="oh">
       <div class="card">
-        <div class="card-h"><div><div class="eyebrow" style="color:var(--shared)">Chi phí chung & ngoài sản xuất</div><h2>Phân bổ cho cả 2 dòng</h2></div>
-          <span class="note">Cộng khấu hao tài sản gắn thẻ “Chung”</span></div>
+        <div class="card-h"><div><div class="eyebrow" style="color:var(--shared)">Chi phí chung sản xuất</div><h2>Dùng chung 2 dòng → phân bổ theo sản lượng</h2></div>
+          <span class="note">Máy móc thử nghiệm / UL đã nằm ở Sổ tài sản (khấu hao tự về đây)</span></div>
         <div class="grid">
-          <div class="cell"><label>Thuê đất / năm</label><span class="in"><input value="0" placeholder="nhập"><span class="u">đ</span></span></div>
-          <div class="cell"><label>Phí tuân thủ / năm</label><span class="in"><input value="0" placeholder="nhập"><span class="u">đ</span></span></div>
-          <div class="cell"><label>Chi phí lab (đã quy năm)</label><span class="in"><input value="1.192.500.000"><span class="u">đ</span></span></div>
-          <div class="cell"><label>Chứng nhận UL (đã quy năm)</label><span class="in"><input value="1.200.000.000"><span class="u">đ</span></span></div>
-          <div class="cell derived"><label>Khấu hao tài sản chung <span class="fxtag">fx</span></label><span class="fx">0<span class="u">đ</span></span></div>
-          <div class="cell"><label>Chi phí vận hành ngoài SX / năm</label><span class="in"><input value="640.000.000"><span class="u">đ</span></span></div>
-          <div class="cell"><label>Chi phí tài chính / năm</label><span class="in"><input value="2.712.000.000"><span class="u">đ</span></span></div>
-          <div class="cell derived"><label>Tổng chi phí chung + ngoài SX <span class="fxtag">fx</span></label><span class="fx">5.744.500.000<span class="u">đ</span></span></div>
+          <div class="cell derived"><label>Khấu hao tài sản chung (từ Sổ tài sản) <span class="fxtag">fx</span></label><span class="fx">478.500.000<span class="u">đ</span></span></div>
+          <div class="cell"><label>Chi phí kiểm định / năm</label><span class="in"><input value="250.000.000"><span class="u">đ</span></span></div>
+          <div class="cell"><label>Thuê đất / năm</label><span class="in"><input value="525.000.000"><span class="u">đ</span></span></div>
+          <div class="cell derived"><label>Tổng chi phí chung sản xuất <span class="fxtag">fx</span></label><span class="fx">1.253.500.000<span class="u">đ</span></span></div>
         </div>
         <div class="kpi">
-          <div><div class="lab">Phân bổ → Ống (theo sản lượng)</div><div class="val pipe">fx tự tính</div></div>
-          <div><div class="lab">Phân bổ → Phụ kiện</div><div class="val fit">fx tự tính</div></div>
+          <div><div class="lab">Tỷ lệ phân bổ (theo sản lượng kg/năm)</div><div class="val">Ống 93,2% · PK 6,8%</div></div>
+          <div><div class="lab">Phân bổ → Ống</div><div class="val pipe">1.168.795.000 đ/năm</div></div>
+          <div><div class="lab">Phân bổ → Phụ kiện</div><div class="val fit">84.705.000 đ/năm</div></div>
+        </div>
+        <div class="flow">
+          <span>Tỷ lệ phân bổ = sản lượng dòng ÷ tổng sản lượng (Ống 619.920 kg · Phụ kiện 44.925 kg) — <b>tự tính từ công suất</b>, không nhập tay.</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow">Chi phí ngoài sản xuất</div><h2>Cấp doanh nghiệp — không tính vào giá thành/kg</h2></div>
+          <span class="note">Trừ ở hòa vốn toàn doanh nghiệp (thang giá bậc 4)</span></div>
+        <div class="grid">
+          <div class="cell"><label>Chi phí vận hành ngoài SX / năm</label><span class="in"><input value="640.000.000"><span class="u">đ</span></span></div>
+          <div class="cell"><label>Chi phí tài chính / năm</label><span class="in"><input value="2.712.000.000"><span class="u">đ</span></span></div>
+          <div class="cell derived"><label>Tổng ngoài sản xuất <span class="fxtag">fx</span></label><span class="fx">3.352.000.000<span class="u">đ</span></span></div>
         </div>
       </div>
     </section>

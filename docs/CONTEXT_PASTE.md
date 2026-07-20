@@ -2,6 +2,14 @@
 
 ## TRẠNG THÁI HIỆN TẠI (cập nhật mỗi khi đổi pha hoặc chốt ADR — xem chi tiết ở
 ## docs/sessions/SESSION_<ngày mới nhất>.md, đây chỉ là bản tóm tắt để orient nhanh)
+- **PHA 4 (2026-07-20) — Corzan chuẩn hóa · Điều hướng theo vai · App TỰ TÍNH client-side · Giá thành Ống 2 logic. Xem `docs/sessions/SESSION_2026-07-20.md` + ADR-041→047.**
+  - ⭐ **ADR-045 (QUAN TRỌNG NHẤT)**: Cloud Function `onScenarioWrite` đã BỊ XÓA khỏi project chung `bmcosting-ver-2` (app khác deploy functions xóa nhầm) → app giờ TỰ TÍNH `internal`+`priceList` client-side (`useScenarioData` gọi `calculateScenario` + `src/engine/price-list-doc.ts`), KHÔNG đọc `outputs/*`. Bảng Giá "Lưu là thấy ngay", không cần backend. Cân nhắc tách Firebase project riêng cho costing.
+  - **ADR-041**: sidebar 3 nhóm theo QUYỀN CHẠM DỮ LIỆU (Theo dõi=xem · Thử=giả định không lưu · Dữ liệu gốc=chỉnh thật) + nhãn vai mỗi màn + màu chung. Dashboard hết ghi-thật; cầu nối Trợ Lý CEO "áp dụng giả định→thật".
+  - **ADR-042/043**: CEO Planner chạy 1 loại vs 2 loại đồng thời (chia % công suất CHUNG máy, không cộng dồn) + Bước 1 tái cấu trúc THEO MÁY (số ca của máy, compound chọn độc lập ống/phụ kiện).
+  - **ADR-044**: Corzan chuẩn hóa THỦ CÔNG — bỏ nút append + seed về BM sạch; nút "♻ Chuẩn hóa Corzan" idempotent (xóa trùng→mirror BM) + nút "🔎 Kiểm tra dữ liệu bảng giá".
+  - **ADR-046/047**: nhập công suất đùn `m/giờ` theo size (`PipeProduct.capacityMetersPerHour`) + cảnh báo vượt trần máy; công tắc **2 logic giá thành Ống** (`ScenarioInput.pipeCostMethod` 'kg'|'meters', default 'kg' → parity giữ) ở sidebar, lưu vào scenario, toàn hệ thống.
+  - Test **379/379 xanh**. PR #13→#20 đã merge vào `claude/project-knowledge-setup-2au4hr` (branch mặc định = Render deploy).
+  - **CÒN TREO**: CEO Planner Chế độ 2 (mục tiêu sản lượng→cần thêm máy, +CAPEX/payback; vá `calculatePipeCapacity` nhân `extruderCount`); đo thêm m/giờ các size; user cần bấm "Chuẩn hóa Corzan"+Lưu để có Corzan trong Firestore.
 - **PHA 4 ĐANG CHẠY (2026-07-13) — Tái cấu trúc Dashboard UX & Auth Seeding.**
   Giải quyết lỗi đăng nhập môi trường Production bằng cách tạo script `scripts/create-demo-users.ts`, seed trực tiếp 4 user (admin, pricing, sales, production) với custom claims (role) lên Firebase Auth thật qua Admin SDK (đã có `.env` chứa API Key).
   **ADR-018 (UX Redesign)**: Tái cấu trúc Dashboard theo nguyên lý **Progressive Disclosure**. Màn hình khổng lồ được tách làm 4 Tab (Tổng quan, Sản xuất, Đầu tư & Tài chính, Chiến lược giá). Làm rõ khái niệm "Tài sản dùng chung (Shared Assets)" cho khuôn/máy đùn, và làm rõ module "Sản xuất" hiện tại chỉ mô phỏng cho "Dòng Ống" (đùn liên tục).

@@ -118,27 +118,30 @@ export default function CeoPlannerScreen({
   const pipeMaterials = useMemo(() => (scenario ? scenario.materials.filter((m) => scenario.products.some((p) => p.kind === 'pipe' && p.materialId === m.id)) : []), [scenario]);
   const fittingMaterials = useMemo(() => (scenario ? scenario.materials.filter((m) => scenario.products.some((p) => p.kind === 'fitting' && p.materialId === m.id)) : []), [scenario]);
 
-  const [brandIdx, setBrandIdx] = useState(0);
-  const pipeMat = pipeMaterials[brandIdx] ?? pipeMaterials[0];
-  const fitMat = fittingMaterials[brandIdx] ?? fittingMaterials[0];
-  // ADR-042 — thương hiệu THỨ HAI = thương hiệu còn lại (BM ↔ Corzan). Chỉ bật chế
-  // độ 2 loại khi CẢ hai dòng đều có ≥2 nguyên liệu (đủ cặp để chạy đồng thời).
-  const secondPipeMat = pipeMaterials.find((m) => m.id !== pipeMat?.id);
-  const secondFitMat = fittingMaterials.find((m) => m.id !== fitMat?.id);
-  const hasSecondBrand = !!secondPipeMat && !!secondFitMat;
-
+  // ADR-043 — MÔ HÌNH THEO MÁY: số ca/huy động thuộc về MÁY (một lần/dòng, dùng
+  // chung cho mọi compound chạy trên nó); compound chọn ĐỘC LẬP cho máy đùn và
+  // máy ép (bỏ ép thẳng hàng brandIdx cũ vốn gây lệch khi số compound 2 dòng khác
+  // nhau). Mỗi máy chạy 1 hoặc 2 compound; 2 compound = CHIA thời gian máy (%).
   const [marginMode, setMarginMode] = useState<MarginMode>('markup_on_cost');
-  const [pipeUsd, setPipeUsd] = useState('');
-  const [fitUsd, setFitUsd] = useState('');
-  const [pipeMargin, setPipeMargin] = useState('');
-  const [fitMargin, setFitMargin] = useState('');
+  // Compound chọn theo MÁY (A = chính, B = thứ hai). '' = mặc định phần tử đầu.
+  const [pipeAId, setPipeAId] = useState('');
+  const [pipeBId, setPipeBId] = useState('');
+  const [fitAId, setFitAId] = useState('');
+  const [fitBId, setFitBId] = useState('');
+  const [pipeTwo, setPipeTwo] = useState(false); // máy đùn chạy 2 compound?
+  const [fitTwo, setFitTwo] = useState(false); // máy ép chạy 2 compound?
+  // Giá compound (USD/kg) + markup (%) NHẬP TAY từng compound (rỗng = mặc định của nó).
+  const [pipeUsdA, setPipeUsdA] = useState(''); const [pipeMarginA, setPipeMarginA] = useState('');
+  const [pipeUsdB, setPipeUsdB] = useState(''); const [pipeMarginB, setPipeMarginB] = useState('');
+  const [fitUsdA, setFitUsdA] = useState(''); const [fitMarginA, setFitMarginA] = useState('');
+  const [fitUsdB, setFitUsdB] = useState(''); const [fitMarginB, setFitMarginB] = useState('');
+  // Thuộc tính MÁY (dùng chung cả 2 compound trên máy đó).
   const [pipeShifts, setPipeShifts] = useState<1 | 2 | 3>(3);
   const [fitShifts, setFitShifts] = useState<1 | 2 | 3>(1);
   const [fitUtil, setFitUtil] = useState(0.6);
-  // ADR-042 — chế độ 2 thương hiệu chung dây chuyền + % phân bổ công suất DÒNG.
-  const [twoBrands, setTwoBrands] = useState(false);
-  const [allocPipe, setAllocPipe] = useState(60); // % công suất máy đùn cho thương hiệu CHÍNH
-  const [allocFit, setAllocFit] = useState(60); // % giờ máy ép cho thương hiệu CHÍNH
+  // % THỜI GIAN máy dành cho compound A (còn lại cho B). Chỉ dùng khi máy chạy 2 compound.
+  const [allocPipe, setAllocPipe] = useState(60);
+  const [allocFit, setAllocFit] = useState(60);
   const [fxRate, setFxRate] = useState('');
   const [lease, setLease] = useState(''); // triệu đ/năm
   const [result, setResult] = useState<CeoPlannerResult | null>(null);
@@ -146,43 +149,40 @@ export default function CeoPlannerScreen({
   const [aiLoading, setAiLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // Giá trị mặc định theo scenario (nạp 1 lần khi có material).
-  const defaults = useMemo(() => {
-    if (!scenario || !pipeMat || !fitMat) return null;
-    return {
-      pipeUsd: pipeMat.inventory.replacementPriceUsdPerKg,
-      fitUsd: fitMat.inventory.replacementPriceUsdPerKg,
-      pipeMargin: pipeMat.markupVf * 100,
-      fitMargin: fitMat.markupVf * 100,
-      fx: scenario.costPool.currency.usdVndRate,
-      lease: scenario.costPool.sharedFixedCosts.annualLandRent / 1e6,
-    };
-  }, [scenario, pipeMat, fitMat]);
+  // Compound đang chọn từng máy (fallback: phần tử đầu / phần tử khác A).
+  const pipeA = pipeMaterials.find((m) => m.id === pipeAId) ?? pipeMaterials[0];
+  const pipeB = pipeMaterials.find((m) => m.id === pipeBId) ?? pipeMaterials.find((m) => m.id !== pipeA?.id);
+  const fitA = fittingMaterials.find((m) => m.id === fitAId) ?? fittingMaterials[0];
+  const fitB = fittingMaterials.find((m) => m.id === fitBId) ?? fittingMaterials.find((m) => m.id !== fitA?.id);
+  const canTwoPipe = pipeMaterials.length >= 2; // đủ ≥2 compound mới chạy 2 loại được
+  const canTwoFit = fittingMaterials.length >= 2;
+  const fxDefault = scenario ? scenario.costPool.currency.usdVndRate : 0;
+  const leaseDefault = scenario ? scenario.costPool.sharedFixedCosts.annualLandRent / 1e6 : 0;
 
   const num = (s: string, dflt: number) => (s.trim() === '' ? dflt : parseFloat(s) || 0);
 
   const run = (ov?: { allocPipe?: number; allocFit?: number }) => {
-    if (!scenario || !pipeMat || !fitMat || !defaults) return;
-    const useTwo = twoBrands && hasSecondBrand && !!secondPipeMat && !!secondFitMat;
+    if (!scenario || !pipeA || !fitA) return;
     const aPipe = ov?.allocPipe ?? allocPipe;
     const aFit = ov?.allocFit ?? allocFit;
+    const usePipeTwo = pipeTwo && canTwoPipe && !!pipeB && pipeB.id !== pipeA.id;
+    const useFitTwo = fitTwo && canTwoFit && !!fitB && fitB.id !== fitA.id;
     try {
       const request: CeoPlannerRequest = {
         scenarioId: scenario.id,
         marginMode,
-        fxRateUsdVnd: num(fxRate, defaults.fx),
-        annualPremiseLeaseVnd: Math.round(num(lease, defaults.lease) * 1e6),
-        pipe: { materialId: pipeMat.id, compoundPriceUsdPerKg: num(pipeUsd, defaults.pipeUsd), desiredMargin: num(pipeMargin, defaults.pipeMargin) / 100, normalShifts: pipeShifts },
-        fitting: { materialId: fitMat.id, compoundPriceUsdPerKg: num(fitUsd, defaults.fitUsd), desiredMargin: num(fitMargin, defaults.fitMargin) / 100, normalShifts: fitShifts, machineHourUtilization: fitUtil },
-        // ADR-042 — thương hiệu thứ hai dùng giá tái tạo + markup hiện hành của nó
-        // (giả định "chạy song song ở điều kiện hiện tại"); % phân bổ công suất dòng.
-        ...(useTwo
-          ? {
-              pipeSecond: { materialId: secondPipeMat!.id, compoundPriceUsdPerKg: secondPipeMat!.inventory.replacementPriceUsdPerKg, desiredMargin: secondPipeMat!.markupVf },
-              fittingSecond: { materialId: secondFitMat!.id, compoundPriceUsdPerKg: secondFitMat!.inventory.replacementPriceUsdPerKg, desiredMargin: secondFitMat!.markupVf },
-              allocationPipePrimaryPct: aPipe,
-              allocationFittingPrimaryPct: aFit,
-            }
+        fxRateUsdVnd: num(fxRate, fxDefault),
+        annualPremiseLeaseVnd: Math.round(num(lease, leaseDefault) * 1e6),
+        // Số ca/huy động = thuộc tính MÁY (chung); compound A = chính.
+        pipe: { materialId: pipeA.id, compoundPriceUsdPerKg: num(pipeUsdA, pipeA.inventory.replacementPriceUsdPerKg), desiredMargin: num(pipeMarginA, pipeA.markupVf * 100) / 100, normalShifts: pipeShifts },
+        fitting: { materialId: fitA.id, compoundPriceUsdPerKg: num(fitUsdA, fitA.inventory.replacementPriceUsdPerKg), desiredMargin: num(fitMarginA, fitA.markupVf * 100) / 100, normalShifts: fitShifts, machineHourUtilization: fitUtil },
+        // ADR-043 — compound thứ hai TRÊN CÙNG MÁY (độc lập ống/phụ kiện), giá +
+        // markup nhập tay; % = chia thời gian máy. Máy chạy 1 compound ⇒ bỏ qua.
+        ...(usePipeTwo
+          ? { pipeSecond: { materialId: pipeB!.id, compoundPriceUsdPerKg: num(pipeUsdB, pipeB!.inventory.replacementPriceUsdPerKg), desiredMargin: num(pipeMarginB, pipeB!.markupVf * 100) / 100 }, allocationPipePrimaryPct: aPipe }
+          : {}),
+        ...(useFitTwo
+          ? { fittingSecond: { materialId: fitB!.id, compoundPriceUsdPerKg: num(fitUsdB, fitB!.inventory.replacementPriceUsdPerKg), desiredMargin: num(fitMarginB, fitB!.markupVf * 100) / 100 }, allocationFittingPrimaryPct: aFit }
           : {}),
       };
       setResult(calculateCeoPlanner(request, scenario));
@@ -193,15 +193,14 @@ export default function CeoPlannerScreen({
     }
   };
 
-  // ADR-042 — Gợi ý tối ưu: với công suất dùng chung, lợi nhuận cực đại là "dồn
-  // 100% vào thương hiệu có biên đóng góp/kg (giá bán − sàn biến phí) cao hơn".
-  // Đặt slider về nghiệm góc rồi chạy lại. (Thực tế còn phụ thuộc cầu thị trường
-  // — đây là gợi ý thuần lợi nhuận, có ghi chú.)
+  // ADR-042/043 — Gợi ý tối ưu (mỗi máy độc lập): lợi nhuận cực đại khi dồn 100%
+  // thời gian máy vào compound có biên đóng góp/kg (giá bán − sàn biến phí) cao
+  // hơn. Đặt slider về nghiệm góc rồi chạy lại. (Thực tế còn tùy cầu thị trường.)
   const optimize = () => {
-    if (!result?.pipeSecond || !result.fittingSecond) return;
+    if (!result) return;
     const cm = (l: CeoLineResult) => l.sellingPriceVndPerKg - l.ladder.variableCostFloor;
-    const newPipe = cm(result.pipe) >= cm(result.pipeSecond) ? 100 : 0;
-    const newFit = cm(result.fitting) >= cm(result.fittingSecond) ? 100 : 0;
+    const newPipe = result.pipeSecond ? (cm(result.pipe) >= cm(result.pipeSecond) ? 100 : 0) : allocPipe;
+    const newFit = result.fittingSecond ? (cm(result.fitting) >= cm(result.fittingSecond) ? 100 : 0) : allocFit;
     setAllocPipe(newPipe);
     setAllocFit(newFit);
     run({ allocPipe: newPipe, allocFit: newFit });
@@ -278,80 +277,108 @@ export default function CeoPlannerScreen({
   };
 
   if (!scenario) return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản…</div>;
-  if (!pipeMat || !fitMat || !defaults) return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Scenario chưa đủ nguyên liệu 2 dòng.</div>;
+  if (!pipeA || !fitA) return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Scenario chưa đủ nguyên liệu 2 dòng.</div>;
 
   const inputStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 14, textAlign: 'right', fontVariantNumeric: 'tabular-nums' };
+  const selStyle: React.CSSProperties = { width: '100%', padding: '7px 9px', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 13, fontWeight: 600, background: '#fff' };
+  const short = (n: string) => n.replace(/\s*\(.*\)/, '');
+
+  // ADR-043 — cấu hình 2 MÁY (đùn ống · ép phụ kiện). Số ca/huy động thuộc MÁY;
+  // compound A/B chọn độc lập; giá+markup nhập tay cả 2; % = chia thời gian máy.
+  type MachineCfg = {
+    key: 'pipe' | 'fit'; title: string; note: string; mats: typeof pipeMaterials; canTwo: boolean;
+    aId: string; setA: (v: string) => void; bMat?: (typeof pipeMaterials)[number]; bId: string; setB: (v: string) => void;
+    two: boolean; setTwo: (v: boolean) => void; matA: (typeof pipeMaterials)[number];
+    usdA: string; setUsdA: (v: string) => void; marginA: string; setMarginA: (v: string) => void;
+    usdB: string; setUsdB: (v: string) => void; marginB: string; setMarginB: (v: string) => void;
+    shifts: 1 | 2 | 3; setShifts: (v: 1 | 2 | 3) => void; alloc: number; setAlloc: (v: number) => void;
+  };
+  const machines: MachineCfg[] = [
+    { key: 'pipe', title: 'Máy đùn ống', note: '1 máy · đùn liên tục', mats: pipeMaterials, canTwo: canTwoPipe, aId: pipeA.id, setA: setPipeAId, bMat: pipeB, bId: pipeB?.id ?? '', setB: setPipeBId, two: pipeTwo, setTwo: setPipeTwo, matA: pipeA, usdA: pipeUsdA, setUsdA: setPipeUsdA, marginA: pipeMarginA, setMarginA: setPipeMarginA, usdB: pipeUsdB, setUsdB: setPipeUsdB, marginB: pipeMarginB, setMarginB: setPipeMarginB, shifts: pipeShifts, setShifts: setPipeShifts, alloc: allocPipe, setAlloc: setAllocPipe },
+    { key: 'fit', title: 'Máy ép phụ kiện', note: '2 máy · ép phun', mats: fittingMaterials, canTwo: canTwoFit, aId: fitA.id, setA: setFitAId, bMat: fitB, bId: fitB?.id ?? '', setB: setFitBId, two: fitTwo, setTwo: setFitTwo, matA: fitA, usdA: fitUsdA, setUsdA: setFitUsdA, marginA: fitMarginA, setMarginA: setFitMarginA, usdB: fitUsdB, setUsdB: setFitUsdB, marginB: fitMarginB, setMarginB: setFitMarginB, shifts: fitShifts, setShifts: setFitShifts, alloc: allocFit, setAlloc: setAllocFit },
+  ];
+  const anyTwo = (pipeTwo && canTwoPipe) || (fitTwo && canTwoFit);
 
   return (
     <div style={{ padding: '32px 36px', maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Trợ Lý CEO</div>
       <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Giá Bán & Hiệu Quả Cả Năm</h1>
-      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>Nhập giá nguyên liệu + markup mong muốn → giá bán, sàn đàm phán, hiệu quả cả năm. Chạy <b>1 loại</b> (full máy) hay <b>2 loại đồng thời</b> (BM + Corzan chung máy — chia công suất, không cộng dồn).</p>
+      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>Cấu hình <b>theo MÁY</b>: số ca là của máy (dùng chung), mỗi máy chạy <b>1</b> hay <b>2 compound</b> (chia thời gian máy — không cộng dồn vượt trần). Máy đùn ống và máy ép phụ kiện chọn compound độc lập.</p>
 
-      {/* ── BƯỚC 1 ── */}
+      {/* ── BƯỚC 1 — theo MÁY (ADR-043) ── */}
       <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 18, marginTop: 18 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: '#a8003b', textTransform: 'uppercase', marginBottom: 14 }}>Bước 1 — Câu hỏi của bạn</div>
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center', marginBottom: 16 }}>
-          {pipeMaterials.length > 1 && (
-            <Field label="Dòng sản phẩm">
-              <Seg options={pipeMaterials.map((m, i) => ({ v: i, label: m.name.replace(/\s*\(.*\)/, '') }))} value={brandIdx} onChange={(i) => { setBrandIdx(i); setPipeUsd(''); setFitUsd(''); }} />
-            </Field>
-          )}
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: '#a8003b', textTransform: 'uppercase' }}>Bước 1 — Câu hỏi của bạn</div>
           <Field label="Cách tính margin">
             <Seg options={[{ v: 'markup_on_cost' as MarginMode, label: 'Markup trên giá vốn' }, { v: 'margin_on_price' as MarginMode, label: 'Lãi trên giá bán' }]} value={marginMode} onChange={setMarginMode} />
           </Field>
-          {hasSecondBrand && (
-            <Field label="Số dòng chạy đồng thời" hint="2 loại DÙNG CHUNG máy — công suất chia, không cộng dồn">
-              <Seg options={[{ v: false, label: '1 loại (full máy)' }, { v: true, label: '2 loại (chung máy)' }]} value={twoBrands} onChange={setTwoBrands} />
-            </Field>
-          )}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-          {[
-            { title: 'Ống CPVC (đùn liên tục)', usd: pipeUsd, setUsd: setPipeUsd, dUsd: defaults.pipeUsd, margin: pipeMargin, setMargin: setPipeMargin, dMargin: defaults.pipeMargin, shifts: pipeShifts, setShifts: setPipeShifts, isFit: false },
-            { title: 'Phụ kiện (ép phun)', usd: fitUsd, setUsd: setFitUsd, dUsd: defaults.fitUsd, margin: fitMargin, setMargin: setFitMargin, dMargin: defaults.fitMargin, shifts: fitShifts, setShifts: setFitShifts, isFit: true },
-          ].map((c) => (
-            <div key={c.title} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{c.title}</div>
-              <Field label="Giá compound (USD/kg, CIF trước thuế NK)"><input style={inputStyle} value={c.usd} placeholder={fmtUsd(c.dUsd)} onChange={(e) => c.setUsd(e.target.value)} /></Field>
-              <Field label="Markup mong muốn (%)"><input style={inputStyle} value={c.margin} placeholder={fmt1(c.dMargin)} onChange={(e) => c.setMargin(e.target.value)} /></Field>
-              <Field label="Số ca chạy / ngày"><Seg options={[1, 2, 3].map((v) => ({ v: v as 1 | 2 | 3, label: `${v} ca` }))} value={c.shifts} onChange={c.setShifts} /></Field>
-              {c.isFit && <Field label="Huy động giờ máy ép"><Seg options={[{ v: 0.6, label: '60%' }, { v: 0.85, label: '85%' }]} value={fitUtil} onChange={setFitUtil} /></Field>}
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+          {machines.map((m) => (
+            <div key={m.key} style={{ display: 'flex', flexDirection: 'column', gap: 12, border: '1px solid #ece8dc', borderRadius: 8, padding: 14 }}>
+              <div style={{ fontSize: 13, fontWeight: 700 }}>🏭 {m.title} <span style={{ fontWeight: 400, color: '#999', fontSize: 10 }}>({m.note})</span></div>
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <Field label="Số ca / ngày (của máy)"><Seg options={[1, 2, 3].map((v) => ({ v: v as 1 | 2 | 3, label: `${v} ca` }))} value={m.shifts} onChange={m.setShifts} /></Field>
+                {m.key === 'fit' && <Field label="Huy động giờ máy (của máy)"><Seg options={[{ v: 0.6, label: '60%' }, { v: 0.85, label: '85%' }]} value={fitUtil} onChange={setFitUtil} /></Field>}
+              </div>
+              {m.canTwo && (
+                <Field label="Compound chạy trên máy" hint="2 compound = chia thời gian máy, tổng = 100%">
+                  <Seg options={[{ v: false, label: '1 compound' }, { v: true, label: '2 compound' }]} value={m.two} onChange={m.setTwo} />
+                </Field>
+              )}
+
+              {/* Compound A (chính) */}
+              <div style={{ border: '1px solid #f0c4d3', borderRadius: 6, padding: 10 }}>
+                <div style={{ fontSize: 9, color: '#a8003b', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>{m.two && m.canTwo ? 'Compound A' : 'Compound chạy'}</div>
+                <select style={selStyle} value={m.aId} onChange={(e) => m.setA(e.target.value)}>
+                  {m.mats.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                </select>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                  <Field label="Giá USD/kg"><input style={inputStyle} value={m.usdA} placeholder={fmtUsd(m.matA.inventory.replacementPriceUsdPerKg)} onChange={(e) => m.setUsdA(e.target.value)} /></Field>
+                  <Field label="Markup %"><input style={inputStyle} value={m.marginA} placeholder={fmt1(m.matA.markupVf * 100)} onChange={(e) => m.setMarginA(e.target.value)} /></Field>
+                </div>
+              </div>
+
+              {/* Compound B (thứ hai) + phân bổ thời gian máy */}
+              {m.two && m.canTwo && m.bMat && (
+                <>
+                  <div style={{ border: '1px solid #bcd3f5', borderRadius: 6, padding: 10, background: '#f7faff' }}>
+                    <div style={{ fontSize: 9, color: '#1f5fd0', fontWeight: 700, textTransform: 'uppercase', marginBottom: 6 }}>Compound B</div>
+                    <select style={selStyle} value={m.bId} onChange={(e) => m.setB(e.target.value)}>
+                      {m.mats.filter((x) => x.id !== m.aId).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+                    </select>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+                      <Field label="Giá USD/kg"><input style={inputStyle} value={m.usdB} placeholder={fmtUsd(m.bMat.inventory.replacementPriceUsdPerKg)} onChange={(e) => m.setUsdB(e.target.value)} /></Field>
+                      <Field label="Markup %"><input style={inputStyle} value={m.marginB} placeholder={fmt1(m.bMat.markupVf * 100)} onChange={(e) => m.setMarginB(e.target.value)} /></Field>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                      <span style={{ fontWeight: 600 }}>Chia thời gian máy</span>
+                      <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        <b style={{ color: '#a8003b' }}>{short(m.matA.name)} {m.alloc}%</b>{'  ·  '}<b style={{ color: '#1f5fd0' }}>{short(m.bMat.name)} {100 - m.alloc}%</b>
+                      </span>
+                    </div>
+                    <input type="range" min={0} max={100} step={5} value={m.alloc} onChange={(e) => m.setAlloc(Number(e.target.value))} style={{ width: '100%' }} />
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
+
         <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap' }}>
-          <Field label="Tỷ giá USD/VND"><input style={{ ...inputStyle, width: 140 }} value={fxRate} placeholder={fmtVnd(defaults.fx)} onChange={(e) => setFxRate(e.target.value)} /></Field>
-          <Field label="Thuê mặt bằng (triệu đ/năm)" hint="Mô hình đi thuê, đổi được từng năm (ADR-021)"><input style={{ ...inputStyle, width: 140 }} value={lease} placeholder={fmt1(defaults.lease)} onChange={(e) => setLease(e.target.value)} /></Field>
-        </div>
-        {twoBrands && hasSecondBrand && secondPipeMat && secondFitMat && (
-          <div style={{ marginTop: 16, padding: 14, background: '#f7faff', border: '1px solid #bcd3f5', borderRadius: 6 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#1f5fd0', marginBottom: 2 }}>Phân bổ công suất — 2 loại chung máy, tổng mỗi dòng = 100%</div>
-            <div style={{ fontSize: 10, color: '#737373', marginBottom: 12 }}>
-              Thương hiệu thứ hai dùng giá + markup hiện hành của nó. Máy đùn / máy ép có hạn nên tăng loại này là giảm loại kia.
+          <Field label="Tỷ giá USD/VND"><input style={{ ...inputStyle, width: 140 }} value={fxRate} placeholder={fmtVnd(fxDefault)} onChange={(e) => setFxRate(e.target.value)} /></Field>
+          <Field label="Thuê mặt bằng (triệu đ/năm)" hint="Mô hình đi thuê, đổi được từng năm (ADR-021)"><input style={{ ...inputStyle, width: 140 }} value={lease} placeholder={fmt1(leaseDefault)} onChange={(e) => setLease(e.target.value)} /></Field>
+          {anyTwo && (
+            <div style={{ alignSelf: 'flex-end' }}>
+              <button onClick={optimize} disabled={!result || (!result.pipeSecond && !result.fittingSecond)} title={result ? '' : 'Bấm Chạy số liệu trước để có dữ liệu so sánh biên lợi nhuận'} style={{ padding: '8px 14px', background: '#fff', color: '#1f5fd0', border: '1px solid #1f5fd0', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: result ? 'pointer' : 'not-allowed', opacity: result ? 1 : 0.5 }}>
+                💡 Gợi ý tối ưu (dồn về compound biên đóng góp/kg cao hơn)
+              </button>
             </div>
-            {([
-              { label: 'Máy đùn ống', primary: pipeMat, second: secondPipeMat, val: allocPipe, set: setAllocPipe },
-              { label: 'Máy ép phụ kiện', primary: fitMat, second: secondFitMat, val: allocFit, set: setAllocFit },
-            ] as const).map((row) => (
-              <div key={row.label} style={{ marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600 }}>{row.label}</span>
-                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    <b style={{ color: '#a8003b' }}>{row.primary?.name.replace(/\s*\(.*\)/, '')} {row.val}%</b>
-                    {'  ·  '}
-                    <b style={{ color: '#1f5fd0' }}>{row.second.name.replace(/\s*\(.*\)/, '')} {100 - row.val}%</b>
-                  </span>
-                </div>
-                <input type="range" min={0} max={100} step={5} value={row.val} onChange={(e) => row.set(Number(e.target.value))} style={{ width: '100%' }} />
-              </div>
-            ))}
-            <button onClick={optimize} disabled={!result?.pipeSecond} title={result?.pipeSecond ? '' : 'Bấm Chạy số liệu trước để có dữ liệu so sánh biên lợi nhuận'} style={{ padding: '6px 14px', background: '#fff', color: '#1f5fd0', border: '1px solid #1f5fd0', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: result?.pipeSecond ? 'pointer' : 'not-allowed', opacity: result?.pipeSecond ? 1 : 0.5 }}>
-              💡 Gợi ý tối ưu (lợi nhuận cao nhất)
-            </button>
-            <span style={{ fontSize: 10, color: '#737373', marginLeft: 10 }}>Dồn về loại có biên đóng góp/kg cao hơn — tham khảo, còn tùy cầu thị trường.</span>
-          </div>
-        )}
+          )}
+        </div>
         <button onClick={() => run()} style={{ marginTop: 18, width: '100%', padding: '12px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>▶ Chạy số liệu</button>
         {err && <div style={{ marginTop: 10, color: '#DC2626', fontSize: 11 }}>Lỗi tính: {err}</div>}
       </div>

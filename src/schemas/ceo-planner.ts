@@ -40,6 +40,16 @@ export const CeoFittingInputSchema = CeoLineInputBase.extend({
 });
 export type CeoFittingInput = z.infer<typeof CeoFittingInputSchema>;
 
+// ADR-042 — thương hiệu THỨ HAI chạy ĐỒNG THỜI trên CÙNG dây chuyền (BM + Corzan
+// dùng chung máy đùn/máy ép). KHÔNG có số ca/huy động riêng: dùng chung của line.
+// Công suất DÒNG là "cái bánh" chia theo %, KHÔNG nhân đôi.
+const CeoSecondBrandInputSchema = z.object({
+  materialId: z.string().min(1),
+  compoundPriceUsdPerKg: z.number().positive(),
+  desiredMargin: z.number().min(0).lt(0.95),
+});
+export type CeoSecondBrandInput = z.infer<typeof CeoSecondBrandInputSchema>;
+
 export const CeoPlannerRequestSchema = z.object({
   scenarioId: z.string().min(1),
   marginMode: MarginModeSchema,
@@ -50,6 +60,14 @@ export const CeoPlannerRequestSchema = z.object({
   annualPremiseLeaseVnd: z.number().int().nonnegative(),
   pipe: CeoPipeInputSchema,
   fitting: CeoFittingInputSchema,
+  // ADR-042 — CHẾ ĐỘ 2 THƯƠNG HIỆU (optional; vắng = chạy 1 loại, parity giữ).
+  // *Second có mặt ⇒ chia công suất DÒNG: thương hiệu chính giữ allocation…Pct%,
+  // phần còn lại cho thương hiệu thứ hai. Tổng luôn = 100% công suất dòng (2 loại
+  // dùng CHUNG máy, không cộng dồn vượt trần).
+  pipeSecond: CeoSecondBrandInputSchema.optional(),
+  fittingSecond: CeoSecondBrandInputSchema.optional(),
+  allocationPipePrimaryPct: z.number().min(0).max(100).optional(),
+  allocationFittingPrimaryPct: z.number().min(0).max(100).optional(),
 });
 export type CeoPlannerRequest = z.infer<typeof CeoPlannerRequestSchema>;
 
@@ -130,6 +148,10 @@ export const CeoPlannerResultSchema = z.object({
   request: CeoPlannerRequestSchema,
   pipe: CeoLineResultSchema,
   fitting: CeoLineResultSchema,
+  // ADR-042 — thương hiệu thứ hai trên cùng dòng (chỉ có khi chạy 2 loại).
+  // annualProductionKg của từng thương hiệu = phần công suất DÒNG được phân bổ.
+  pipeSecond: CeoLineResultSchema.optional(),
+  fittingSecond: CeoLineResultSchema.optional(),
   summary: CeoFactorySummarySchema,
   pipeDnPrices: z.array(CeoDnPriceRowSchema),
   fittingSkuPrices: z.array(CeoFittingSkuPriceRowSchema),

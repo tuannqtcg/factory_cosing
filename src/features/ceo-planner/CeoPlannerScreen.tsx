@@ -23,7 +23,7 @@ const TIER = [
   { key: 'targetVf', label: '5 · Giá mục tiêu markup chuẩn VF', color: '#16A34A' },
 ] as const;
 
-function Seg<T extends string | number>({ options, value, onChange }: { options: { v: T; label: string }[]; value: T; onChange: (v: T) => void }) {
+function Seg<T extends string | number | boolean>({ options, value, onChange }: { options: { v: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   return (
     <div style={{ display: 'inline-flex', border: '1px solid #d8d8d8', borderRadius: 6, overflow: 'hidden' }}>
       {options.map((o) => (
@@ -121,6 +121,11 @@ export default function CeoPlannerScreen({
   const [brandIdx, setBrandIdx] = useState(0);
   const pipeMat = pipeMaterials[brandIdx] ?? pipeMaterials[0];
   const fitMat = fittingMaterials[brandIdx] ?? fittingMaterials[0];
+  // ADR-042 — thương hiệu THỨ HAI = thương hiệu còn lại (BM ↔ Corzan). Chỉ bật chế
+  // độ 2 loại khi CẢ hai dòng đều có ≥2 nguyên liệu (đủ cặp để chạy đồng thời).
+  const secondPipeMat = pipeMaterials.find((m) => m.id !== pipeMat?.id);
+  const secondFitMat = fittingMaterials.find((m) => m.id !== fitMat?.id);
+  const hasSecondBrand = !!secondPipeMat && !!secondFitMat;
 
   const [marginMode, setMarginMode] = useState<MarginMode>('markup_on_cost');
   const [pipeUsd, setPipeUsd] = useState('');
@@ -130,6 +135,10 @@ export default function CeoPlannerScreen({
   const [pipeShifts, setPipeShifts] = useState<1 | 2 | 3>(3);
   const [fitShifts, setFitShifts] = useState<1 | 2 | 3>(1);
   const [fitUtil, setFitUtil] = useState(0.6);
+  // ADR-042 — chế độ 2 thương hiệu chung dây chuyền + % phân bổ công suất DÒNG.
+  const [twoBrands, setTwoBrands] = useState(false);
+  const [allocPipe, setAllocPipe] = useState(60); // % công suất máy đùn cho thương hiệu CHÍNH
+  const [allocFit, setAllocFit] = useState(60); // % giờ máy ép cho thương hiệu CHÍNH
   const [fxRate, setFxRate] = useState('');
   const [lease, setLease] = useState(''); // triệu đ/năm
   const [result, setResult] = useState<CeoPlannerResult | null>(null);
@@ -152,8 +161,11 @@ export default function CeoPlannerScreen({
 
   const num = (s: string, dflt: number) => (s.trim() === '' ? dflt : parseFloat(s) || 0);
 
-  const run = () => {
+  const run = (ov?: { allocPipe?: number; allocFit?: number }) => {
     if (!scenario || !pipeMat || !fitMat || !defaults) return;
+    const useTwo = twoBrands && hasSecondBrand && !!secondPipeMat && !!secondFitMat;
+    const aPipe = ov?.allocPipe ?? allocPipe;
+    const aFit = ov?.allocFit ?? allocFit;
     try {
       const request: CeoPlannerRequest = {
         scenarioId: scenario.id,
@@ -162,6 +174,16 @@ export default function CeoPlannerScreen({
         annualPremiseLeaseVnd: Math.round(num(lease, defaults.lease) * 1e6),
         pipe: { materialId: pipeMat.id, compoundPriceUsdPerKg: num(pipeUsd, defaults.pipeUsd), desiredMargin: num(pipeMargin, defaults.pipeMargin) / 100, normalShifts: pipeShifts },
         fitting: { materialId: fitMat.id, compoundPriceUsdPerKg: num(fitUsd, defaults.fitUsd), desiredMargin: num(fitMargin, defaults.fitMargin) / 100, normalShifts: fitShifts, machineHourUtilization: fitUtil },
+        // ADR-042 — thương hiệu thứ hai dùng giá tái tạo + markup hiện hành của nó
+        // (giả định "chạy song song ở điều kiện hiện tại"); % phân bổ công suất dòng.
+        ...(useTwo
+          ? {
+              pipeSecond: { materialId: secondPipeMat!.id, compoundPriceUsdPerKg: secondPipeMat!.inventory.replacementPriceUsdPerKg, desiredMargin: secondPipeMat!.markupVf },
+              fittingSecond: { materialId: secondFitMat!.id, compoundPriceUsdPerKg: secondFitMat!.inventory.replacementPriceUsdPerKg, desiredMargin: secondFitMat!.markupVf },
+              allocationPipePrimaryPct: aPipe,
+              allocationFittingPrimaryPct: aFit,
+            }
+          : {}),
       };
       setResult(calculateCeoPlanner(request, scenario));
       setAdvice(null);
@@ -169,6 +191,20 @@ export default function CeoPlannerScreen({
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     }
+  };
+
+  // ADR-042 — Gợi ý tối ưu: với công suất dùng chung, lợi nhuận cực đại là "dồn
+  // 100% vào thương hiệu có biên đóng góp/kg (giá bán − sàn biến phí) cao hơn".
+  // Đặt slider về nghiệm góc rồi chạy lại. (Thực tế còn phụ thuộc cầu thị trường
+  // — đây là gợi ý thuần lợi nhuận, có ghi chú.)
+  const optimize = () => {
+    if (!result?.pipeSecond || !result.fittingSecond) return;
+    const cm = (l: CeoLineResult) => l.sellingPriceVndPerKg - l.ladder.variableCostFloor;
+    const newPipe = cm(result.pipe) >= cm(result.pipeSecond) ? 100 : 0;
+    const newFit = cm(result.fitting) >= cm(result.fittingSecond) ? 100 : 0;
+    setAllocPipe(newPipe);
+    setAllocFit(newFit);
+    run({ allocPipe: newPipe, allocFit: newFit });
   };
 
   const askAi = async () => {
@@ -250,7 +286,7 @@ export default function CeoPlannerScreen({
     <div style={{ padding: '32px 36px', maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>Trợ Lý CEO</div>
       <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Giá Bán & Hiệu Quả Cả Năm</h1>
-      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>Nhập giá nguyên liệu + markup mong muốn → giá bán, sàn đàm phán, hiệu quả khi chạy tối đa công suất.</p>
+      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>Nhập giá nguyên liệu + markup mong muốn → giá bán, sàn đàm phán, hiệu quả cả năm. Chạy <b>1 loại</b> (full máy) hay <b>2 loại đồng thời</b> (BM + Corzan chung máy — chia công suất, không cộng dồn).</p>
 
       {/* ── BƯỚC 1 ── */}
       <div style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 18, marginTop: 18 }}>
@@ -264,6 +300,11 @@ export default function CeoPlannerScreen({
           <Field label="Cách tính margin">
             <Seg options={[{ v: 'markup_on_cost' as MarginMode, label: 'Markup trên giá vốn' }, { v: 'margin_on_price' as MarginMode, label: 'Lãi trên giá bán' }]} value={marginMode} onChange={setMarginMode} />
           </Field>
+          {hasSecondBrand && (
+            <Field label="Số dòng chạy đồng thời" hint="2 loại DÙNG CHUNG máy — công suất chia, không cộng dồn">
+              <Seg options={[{ v: false, label: '1 loại (full máy)' }, { v: true, label: '2 loại (chung máy)' }]} value={twoBrands} onChange={setTwoBrands} />
+            </Field>
+          )}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           {[
@@ -283,7 +324,35 @@ export default function CeoPlannerScreen({
           <Field label="Tỷ giá USD/VND"><input style={{ ...inputStyle, width: 140 }} value={fxRate} placeholder={fmtVnd(defaults.fx)} onChange={(e) => setFxRate(e.target.value)} /></Field>
           <Field label="Thuê mặt bằng (triệu đ/năm)" hint="Mô hình đi thuê, đổi được từng năm (ADR-021)"><input style={{ ...inputStyle, width: 140 }} value={lease} placeholder={fmt1(defaults.lease)} onChange={(e) => setLease(e.target.value)} /></Field>
         </div>
-        <button onClick={run} style={{ marginTop: 18, width: '100%', padding: '12px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>▶ Chạy số liệu</button>
+        {twoBrands && hasSecondBrand && secondPipeMat && secondFitMat && (
+          <div style={{ marginTop: 16, padding: 14, background: '#f7faff', border: '1px solid #bcd3f5', borderRadius: 6 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#1f5fd0', marginBottom: 2 }}>Phân bổ công suất — 2 loại chung máy, tổng mỗi dòng = 100%</div>
+            <div style={{ fontSize: 10, color: '#737373', marginBottom: 12 }}>
+              Thương hiệu thứ hai dùng giá + markup hiện hành của nó. Máy đùn / máy ép có hạn nên tăng loại này là giảm loại kia.
+            </div>
+            {([
+              { label: 'Máy đùn ống', primary: pipeMat, second: secondPipeMat, val: allocPipe, set: setAllocPipe },
+              { label: 'Máy ép phụ kiện', primary: fitMat, second: secondFitMat, val: allocFit, set: setAllocFit },
+            ] as const).map((row) => (
+              <div key={row.label} style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{row.label}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    <b style={{ color: '#a8003b' }}>{row.primary?.name.replace(/\s*\(.*\)/, '')} {row.val}%</b>
+                    {'  ·  '}
+                    <b style={{ color: '#1f5fd0' }}>{row.second.name.replace(/\s*\(.*\)/, '')} {100 - row.val}%</b>
+                  </span>
+                </div>
+                <input type="range" min={0} max={100} step={5} value={row.val} onChange={(e) => row.set(Number(e.target.value))} style={{ width: '100%' }} />
+              </div>
+            ))}
+            <button onClick={optimize} disabled={!result?.pipeSecond} title={result?.pipeSecond ? '' : 'Bấm Chạy số liệu trước để có dữ liệu so sánh biên lợi nhuận'} style={{ padding: '6px 14px', background: '#fff', color: '#1f5fd0', border: '1px solid #1f5fd0', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: result?.pipeSecond ? 'pointer' : 'not-allowed', opacity: result?.pipeSecond ? 1 : 0.5 }}>
+              💡 Gợi ý tối ưu (lợi nhuận cao nhất)
+            </button>
+            <span style={{ fontSize: 10, color: '#737373', marginLeft: 10 }}>Dồn về loại có biên đóng góp/kg cao hơn — tham khảo, còn tùy cầu thị trường.</span>
+          </div>
+        )}
+        <button onClick={() => run()} style={{ marginTop: 18, width: '100%', padding: '12px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>▶ Chạy số liệu</button>
         {err && <div style={{ marginTop: 10, color: '#DC2626', fontSize: 11 }}>Lỗi tính: {err}</div>}
       </div>
 
@@ -291,8 +360,9 @@ export default function CeoPlannerScreen({
       {result && (
         <>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
-            <LineCard line={result.pipe} />
-            <LineCard line={result.fitting} />
+            {[result.pipe, result.pipeSecond, result.fitting, result.fittingSecond]
+              .filter((l): l is CeoLineResult => l !== undefined)
+              .map((l, i) => <LineCard key={`${l.line}-${l.materialId}-${i}`} line={l} />)}
           </div>
           <div style={{ background: '#1a1a1a', color: '#fff', borderRadius: 6, padding: 18, marginTop: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#ff5c8a', marginBottom: 12 }}>Hiệu quả toàn nhà máy cả năm với giá bán này</div>

@@ -50,6 +50,10 @@ function applyOverrides(baseline: ScenarioInput, request: CeoPlannerRequest): Sc
   };
   setCompound(request.pipe.materialId, request.pipe.compoundPriceUsdPerKg);
   setCompound(request.fitting.materialId, request.fitting.compoundPriceUsdPerKg);
+  // ADR-042 — thương hiệu thứ hai (nếu chạy 2 loại) cũng áp giá CEO để thang giá
+  // (fullCost) của nó phản ánh đúng kịch bản mua hàng.
+  if (request.pipeSecond) setCompound(request.pipeSecond.materialId, request.pipeSecond.compoundPriceUsdPerKg);
+  if (request.fittingSecond) setCompound(request.fittingSecond.materialId, request.fittingSecond.compoundPriceUsdPerKg);
 
   (s.resources.pipe as ContinuousKgResource).normalShifts = request.pipe.normalShifts;
   (s.resources.fitting as MachineHourResource).normalShifts = request.fitting.normalShifts;
@@ -143,12 +147,44 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
     };
   };
 
-  const pipe = buildLine('pipe', pipeMat, pipeLadder, pipeCvp, request.pipe.desiredMargin, pipeMaterialPerKg, pipeResource.packagingCostPerKg, pipeCapKg, pipeHours, pipeResource.yieldRate);
-  const fitting = buildLine('fitting', fitMat, fitLadder, fitCvp, request.fitting.desiredMargin, fitMaterialPerKg, fittingResource.packagingCostPerKg, fitProdKg, fitHours, fittingResource.yieldRate, out.mhrPerMachineHour);
+  // ADR-042 — CHIA công suất DÒNG cho 2 thương hiệu (dùng chung máy). Vắng
+  // *Second ⇒ thương hiệu chính giữ 100% (chạy 1 loại) ⇒ parity giữ nguyên.
+  // Tổng phần chia = 100% công suất dòng (KHÔNG cộng dồn vượt trần vật lý).
+  const allocPipe = request.pipeSecond ? (request.allocationPipePrimaryPct ?? 100) / 100 : 1;
+  const allocFit = request.fittingSecond ? (request.allocationFittingPrimaryPct ?? 100) / 100 : 1;
+
+  const pipe = buildLine('pipe', pipeMat, pipeLadder, pipeCvp, request.pipe.desiredMargin, pipeMaterialPerKg, pipeResource.packagingCostPerKg, pipeCapKg * allocPipe, pipeHours * allocPipe, pipeResource.yieldRate);
+  const fitting = buildLine('fitting', fitMat, fitLadder, fitCvp, request.fitting.desiredMargin, fitMaterialPerKg, fittingResource.packagingCostPerKg, fitProdKg * allocFit, fitHours * allocFit, fittingResource.yieldRate, out.mhrPerMachineHour);
+
+  // Thương hiệu thứ hai (nếu chạy 2 loại) — cùng công thức, phần công suất còn lại.
+  const buildSecond = (
+    line: 'pipe' | 'fitting',
+    second: { materialId: string; compoundPriceUsdPerKg: number; desiredMargin: number },
+    capKgTotal: number,
+    hoursTotal: number,
+    allocPrimary: number,
+    yieldRate: number,
+    packagingPerKg: number,
+    mhr?: number,
+  ): CeoLineResult => {
+    const m2 = s.materials.find((x) => x.id === second.materialId)!;
+    const matPerKg2 = materialCostOf(second.compoundPriceUsdPerKg, m2.importTaxRate, m2.customsLogisticsFeeRate, yieldRate);
+    return buildLine(line, m2, ladderOf(out, line, m2.id), cvpOf(line, m2.id), second.desiredMargin, matPerKg2, packagingPerKg, capKgTotal * (1 - allocPrimary), hoursTotal * (1 - allocPrimary), yieldRate, mhr);
+  };
+  const pipeSecond = request.pipeSecond
+    ? buildSecond('pipe', request.pipeSecond, pipeCapKg, pipeHours, allocPipe, pipeResource.yieldRate, pipeResource.packagingCostPerKg)
+    : undefined;
+  const fittingSecond = request.fittingSecond
+    ? buildSecond('fitting', request.fittingSecond, fitProdKg, fitHours, allocFit, fittingResource.yieldRate, fittingResource.packagingCostPerKg, out.mhrPerMachineHour)
+    : undefined;
 
   // ── Hiệu quả toàn nhà máy ────────────────────────────────────────────────
-  const revenueVfVnd = pipe.sellingPriceVndPerKg * pipeCapKg + fitting.sellingPriceVndPerKg * fitProdKg;
-  const grossProfitVnd = pipe.annualGrossProfitVnd + fitting.annualGrossProfitVnd;
+  // Cộng MỌI thương hiệu đang chạy. Vì định phí đã nằm trong giá thành/kg và tổng
+  // sản lượng 2 thương hiệu = đúng công suất dòng, phép cộng này TỰ ĐÚNG định phí
+  // (không nhân đôi, không bỏ sót) — xem chứng minh ADR-042.
+  const activeLines = [pipe, fitting, pipeSecond, fittingSecond].filter((l): l is CeoLineResult => l !== undefined);
+  const revenueVfVnd = activeLines.reduce((sum, l) => sum + l.sellingPriceVndPerKg * l.annualProductionKg, 0);
+  const grossProfitVnd = activeLines.reduce((sum, l) => sum + l.annualGrossProfitVnd, 0);
   const nonProd = s.costPool.nonProductionCosts.operatingCostPerYear + s.costPool.nonProductionCosts.financialCostPerYear;
   const preTaxProfitVnd = grossProfitVnd - nonProd;
   const corporateIncomeTaxVnd = preTaxProfitVnd > 0 ? preTaxProfitVnd * CIT_RATE : 0;
@@ -215,5 +251,5 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
       };
     });
 
-  return { request, pipe, fitting, summary, pipeDnPrices, fittingSkuPrices };
+  return { request, pipe, fitting, ...(pipeSecond ? { pipeSecond } : {}), ...(fittingSecond ? { fittingSecond } : {}), summary, pipeDnPrices, fittingSkuPrices };
 }

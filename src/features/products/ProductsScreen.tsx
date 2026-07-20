@@ -5,6 +5,20 @@ import type { AppRole } from '../../lib/firebase.js';
 import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
 import { managementStatusOf, type PipeProduct, type FittingProduct, type Product } from '../../schemas/product.js';
 import type { MoldAsset } from '../../schemas/resource.js';
+import type { Material } from '../../schemas/material.js';
+
+// ADR-012 — nguyên liệu compound Corzan (khớp tests/fixtures/corzan.json). Nhập
+// Ấn Độ 0% thuế (AIFTA C/O form AI), markup VF ống 0,25 / phụ kiện 0,40, tồn
+// kho ban đầu = 0 lô nên baseline khóa giá = giá tái tạo (lệch 0%, KHÓA).
+const CORZAN_MATERIALS: Material[] = [
+  { id: 'corzan-pipe', name: 'Corzan 3710 (ống)', code: 'CZ-3710-P', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.25, inventory: { lots: [], priceLock: { baseline: 3.47, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.47 } },
+  { id: 'corzan-fitting', name: 'Corzan compound (phụ kiện)', code: 'CZ-3710-F', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.4, inventory: { lots: [], priceLock: { baseline: 3.97, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.97 } },
+];
+// Ống Corzan nặng hơn 10%/size (ADR-012 skuDerivationRule); phụ kiện giống hệt.
+const CORZAN_PIPE_WEIGHT_FACTOR = 1.1;
+// Khóa nhận diện SKU trùng — CÙNG quy ước với handleSave (DN/tên+size + nguyên liệu).
+const productDupeKey = (p: Product, matName: string) =>
+  p.kind === 'pipe' ? `Ống DN${p.dn} · ${matName}` : `${p.productName} ${p.sizeLabel} · ${matName}`;
 
 const InputNode = ({ value, onChange, type = 'text', width = 60, placeholder = '' }: any) => (
   <input
@@ -194,49 +208,39 @@ export default function ProductsScreen({
     }
   };
 
-  const seedCorzanPipes = () => {
-    const corzanMat = form?.materials.find((m) => m.name.toLowerCase().includes('corzan') || m.id.toLowerCase().includes('corzan')) || form?.materials[0];
-    const corzanId = corzanMat?.id ?? '';
-    
-    const data = [
-      ["3/4", "20", 0.358279989],
-      ["1", "25", 0.526176116],
-      ["1,25", "32", 0.712158917],
-      ["1,5", "40", 0.848996797],
-      ["2", "50", 1.137023817],
-      ["2,5", "65", 1.79489852],
-      ["3", "80", 2.351474652],
-      ["3,5", "90", 2.82435135],
-      ["4", "100", 3.345977956],
-      ["5", "125", 4.537816317],
-      ["6", "150", 5.894814898],
-      ["8", "200", 8.87743801],
-      ["10", "250", 12.58565203],
-      ["12", "300", 16.6358004],
-      ["14", "350", 19.68879769],
-      ["16", "400", 25.7212535],
-      ["18", "450", 32.50674525],
-      ["20", "500", 38.19039286],
-      ["24", "600", 53.15278768]
-    ];
-
+  // ADR-012 — BẬT DÒNG CORZAN qua UI (thay vì seed script): thêm 2 nguyên liệu
+  // compound Corzan + clone TOÀN BỘ Ống (×1,1 đơn trọng) và Phụ kiện (giống hệt,
+  // chỉ khác compound & khuôn dùng chung) từ dòng BlazeMaster. Khớp
+  // buildCorzanScenarioInput (tests/helpers) — logic đã có parity test. Idempotent:
+  // bấm nhiều lần không nhân đôi (bỏ qua nguyên liệu/SKU đã tồn tại). Bấm xong "Lưu".
+  const enableCorzanLine = () => {
     setForm((f) => {
       if (!f) return f;
-      const newPipes = data.map((row) => ({
-        kind: 'pipe' as const,
-        dn: row[1] as string,
-        spec: `SCH40 ${row[0]}"`,
-        odMm: Number(row[1]),
-        minWallThicknessMm: 2,
-        unitWeightKgPerM: row[2] as number,
-        materialId: corzanId
-      }));
-      return {
-        ...f,
-        products: [...f.products, ...newPipes]
-      };
+      // 1. Thêm nguyên liệu Corzan còn thiếu.
+      const materials = [...f.materials];
+      for (const cm of CORZAN_MATERIALS) {
+        if (!materials.some((m) => m.id === cm.id)) materials.push(cm);
+      }
+      const nameOf = (id: string) => materials.find((m) => m.id === id)?.name ?? id;
+      // 2+3. Clone Ống/Phụ kiện gốc (không phải Corzan) → Corzan; bỏ qua nếu đã có.
+      const existing = new Set(f.products.map((p) => productDupeKey(p, nameOf(p.materialId))));
+      const clones: Product[] = [];
+      for (const p of f.products) {
+        if (p.materialId.startsWith('corzan')) continue;
+        const clone: Product =
+          p.kind === 'pipe'
+            ? { ...p, materialId: 'corzan-pipe', unitWeightKgPerM: p.unitWeightKgPerM * CORZAN_PIPE_WEIGHT_FACTOR }
+            : { ...p, materialId: 'corzan-fitting' };
+        const key = productDupeKey(clone, nameOf(clone.materialId));
+        if (!existing.has(key)) {
+          existing.add(key);
+          clones.push(clone);
+        }
+      }
+      return { ...f, materials, products: [...f.products, ...clones] };
     });
   };
+  const corzanAlreadyPresent = form.products.some((p) => p.materialId.startsWith('corzan'));
 
   return (
     <div style={{ padding: '32px 36px', paddingBottom: 100 }}>
@@ -456,14 +460,13 @@ export default function ProductsScreen({
         >
           + Thêm {activeTab === 'pipe' ? 'Ống CPVC' : 'Phụ Kiện'} mới
         </button>
-        {activeTab === 'pipe' && (
-          <button
-            onClick={seedCorzanPipes}
-            style={{ padding: '6px 14px', borderRadius: 2, border: '1px dashed #16A34A', background: '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Seed 19 Ống Corzan SCH40
-          </button>
-        )}
+        <button
+          onClick={enableCorzanLine}
+          title="Thêm 2 nguyên liệu Corzan + clone toàn bộ Ống (×1,1 đơn trọng) và Phụ kiện từ dòng BlazeMaster. Bấm xong nhớ Lưu."
+          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: corzanAlreadyPresent ? '#f0fdf4' : '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+        >
+          {corzanAlreadyPresent ? '↻ Bổ sung SKU Corzan còn thiếu' : '⚡ Bật dòng Corzan (nguyên liệu + Ống + Phụ kiện)'}
+        </button>
       </div>
     </div>
   );

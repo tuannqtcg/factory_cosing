@@ -87,6 +87,9 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
 
   const pipeProducts = products.filter((p) => p.kind === 'pipe');
   const fittingProducts = products.filter((p) => p.kind === 'fitting');
+  // ADR-047 — cách phân bổ chi phí máy đùn cho giá thành ống: 'kg' (mặc định,
+  // parity Excel) | 'meters' (theo giờ máy per-size). Xem nhánh ở vòng skuPriceChains.
+  const pipeCostMethod = input.pipeCostMethod ?? 'kg';
   // Material theo line, GIỮ THỨ TỰ materials[] (phần tử đầu = material tham chiếu — xem ghi chú đầu file)
   const pipeMaterialIds = materials.filter((m) => pipeProducts.some((p) => p.materialId === m.id)).map((m) => m.id);
   const fittingMaterialIds = materials
@@ -219,7 +222,21 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
 
     if (product.kind === 'pipe') {
       const cost = pipeCostByMaterial.get(product.materialId)!;
-      const chain = calculatePipeSkuPriceChain(cost.fullCostPerKg, product.unitWeightKgPerM, material.markupVf, costPool);
+      let fullCostPerKg = cost.fullCostPerKg;
+      if (pipeCostMethod === 'meters') {
+        // ADR-047 — phân bổ chi phí máy theo GIỜ MÁY per-size (thay vì rải đều/kg).
+        // Chi phí giờ máy: tổng chi phí gia công/năm ÷ giờ máy vận hành/năm.
+        const mhrPipe = cost.totalProcessingCostPerYear / pipeCapacity.normalOperatingHours;
+        // Tốc độ đùn m/giờ của size: đo thực (capacityMetersPerHour) hoặc suy từ
+        // tốc độ chung khi chưa đo (kg thành phẩm/giờ ÷ đơn trọng) → luôn tính được.
+        const finishedKgPerHour = pipeResource.actualCapacityKgPerHour * pipeResource.yieldRate;
+        const mPerHour = product.capacityMetersPerHour ?? finishedKgPerHour / product.unitWeightKgPerM;
+        const processingPerMeter = mPerHour > 0 ? mhrPipe / mPerHour : 0;
+        // Quy về đ/kg để tái dùng nguyên chuỗi giá ống: giá vốn/kg = NL/kg + bao bì/kg
+        // + gia công/mét ÷ đơn trọng. (Bao bì giữ theo kg như mô hình gốc.)
+        fullCostPerKg = cost.materialPerKgFinished + pipeResource.packagingCostPerKg + processingPerMeter / product.unitWeightKgPerM;
+      }
+      const chain = calculatePipeSkuPriceChain(fullCostPerKg, product.unitWeightKgPerM, material.markupVf, costPool);
       return {
         productKey: { dn: product.dn, materialId: product.materialId },
         managementStatus: 'active' as const,

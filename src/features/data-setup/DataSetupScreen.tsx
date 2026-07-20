@@ -16,7 +16,10 @@ import type { AppRole } from '../../lib/firebase.js';
 import { fmtVnd } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
+import type { FittingProduct } from '../../schemas/product.js';
 import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
+import { calculatePipeCapacity } from '../../engine/pipe.js';
+import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
 type SectionId = 'assets' | 'conv' | 'oh' | 'mat' | 'sku' | 'fin' | 'pnl';
@@ -36,7 +39,7 @@ const ALLOC = {
 } as const;
 
 // ── Ô NHẬP (viền, sửa được; disabled → xám khóa) ──
-function InCell({ value, onChange, unit, disabled, width = 130 }: { value: number; onChange: (v: number) => void; unit?: string; disabled?: boolean; width?: number }) {
+function InCell({ value, onChange, unit, disabled, width = 130 }: { value: number; onChange: (v: number) => void; unit?: string; disabled?: boolean; width?: number | string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
       <input
@@ -68,6 +71,15 @@ function FxCell({ value, unit }: { value: number; unit?: string }) {
 function AllocTag({ kind }: { kind: keyof typeof ALLOC }) {
   const a = ALLOC[kind];
   return <span style={{ fontSize: 10.5, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: a.bg, color: a.fg, whiteSpace: 'nowrap' }}>{a.label}</span>;
+}
+// Ô lưới cho mục chế biến/tài chính: nhãn trên, control dưới; derived = nền xám.
+function GridCell({ label, derived, children }: { label: React.ReactNode; derived?: boolean; children: React.ReactNode }) {
+  return (
+    <div style={{ padding: '13px 15px', borderRight: '1px solid #f0f0f0', borderBottom: '1px solid #f0f0f0', background: derived ? '#fafbfc' : '#fff', display: 'flex', flexDirection: 'column', gap: 7 }}>
+      <div style={{ fontSize: 11.5, color: '#565b64', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>{label}</div>
+      {children}
+    </div>
+  );
 }
 
 export default function DataSetupScreen({ role, scenarioId, scenario }: { role: AppRole; scenarioId: string; scenario: ScenarioInput | null }) {
@@ -121,6 +133,22 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
   const depFactory = (shared.factoryConstructionCost || 0) / (shared.factoryDepreciationYears || 10);
   const depShared = depLab + depUl + depVnUl + depFactory;
 
+  // ── MỤC ②: chi phí chế biến/năm theo dòng — CÙNG công thức engine (pipe.ts / fitting.ts) ──
+  const insurance = form.costPool.currency.mandatoryInsuranceRate;
+  const pipeHours = calculatePipeCapacity(pipe).normalOperatingHours;
+  const fittingProducts = form.products.filter((p): p is FittingProduct => p.kind === 'fitting');
+  const fitHours = calculateFittingCapacity(fitting, fittingProducts).normalMachineHoursUtilized;
+  const laborOf = (r: { normalShifts: number; peoplePerShift: number; avgSalaryMonthly: number; monthsSalaryPerYear: number }) =>
+    r.normalShifts * r.peoplePerShift * r.avgSalaryMonthly * r.monthsSalaryPerYear * (1 + insurance);
+  const pipeLabor = laborOf(pipe);
+  const pipeElec = pipe.electricityKw * pipe.electricityPricePerKwh * pipeHours;
+  const pipeWater = pipe.waterM3PerHour * pipe.waterPricePerM3 * pipeHours;
+  const pipeConvTotal = depPipe + pipeLabor + pipeElec + pipeWater + pipe.annualMaintenance;
+  const fitLabor = laborOf(fitting);
+  const fitElec = fitting.electricityKwPerMachineHour * fitting.electricityPricePerKwh * fitHours;
+  const fitWater = fitting.waterM3PerMachineHour * fitting.waterPricePerM3 * fitHours;
+  const fitConvTotal = depFit + fitLabor + fitElec + fitWater + fitting.annualMoldMaintenance;
+
   const handleSave = async () => {
     setSaveState('saving');
     setSaveError(null);
@@ -170,9 +198,15 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
       <div style={{ flex: 1, padding: '26px 30px', maxWidth: 1120 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>{section === 'assets' ? 'Tài sản cố định & khấu hao' : 'Thiết lập dữ liệu'}</h1>
+            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
+              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : 'Thiết lập dữ liệu'}
+            </h1>
             <div style={{ fontSize: 12, color: '#737373', marginTop: 4, maxWidth: '64ch' }}>
-              {section === 'assets' ? 'Khai báo mọi tài sản như trang “Nhập liệu ban đầu” của Excel. Nhập nguyên giá và đời khấu hao; cột khấu hao/năm + phân bổ về dòng do hệ thống tự tính.' : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
+              {section === 'assets'
+                ? 'Khai báo mọi tài sản như trang “Nhập liệu ban đầu” của Excel. Nhập nguyên giá và đời khấu hao; cột khấu hao/năm + phân bổ về dòng do hệ thống tự tính.'
+                : section === 'conv'
+                  ? 'Nhân công, điện, nước, bảo trì và thông số vận hành — truy được về từng dòng (Ống · Phụ kiện). Ô nhập sửa được; nhân công/điện/nước/tổng là số tự tính.'
+                  : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -312,8 +346,69 @@ export default function DataSetupScreen({ role, scenarioId, scenario }: { role: 
           </>
         )}
 
-        {/* ── MỤC ②–⑥ + Báo cáo: đang dựng dần ── */}
-        {section !== 'assets' && (
+        {/* ── MỤC 02: CHI PHÍ CHẾ BIẾN THEO DÒNG ── */}
+        {section === 'conv' && (() => {
+          const fxTag = <span style={{ fontSize: 8.5, fontWeight: 700, color: '#6b7280', border: '1px solid #c8cdd5', borderRadius: 3, padding: '0 3px' }}>fx</span>;
+          const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(206px, 1fr))', border: '1px solid #e6e8ec', borderRadius: 10, overflow: 'hidden', borderRight: 'none', borderBottom: 'none' };
+          const cardStyle: React.CSSProperties = { background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16, marginBottom: 16 };
+          const kpi = (label: string, val: number, color: string, dep: number) => (
+            <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', padding: '13px 4px 2px' }}>
+              <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>{label}</div>
+                <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, color, marginTop: 3 }}>{fmtVnd(val)} đ/năm</div>
+                <div style={{ fontSize: 10.5, color: '#9aa0aa', marginTop: 2 }}>gồm khấu hao trực tiếp {fmtVnd(dep)} đ</div></div>
+            </div>
+          );
+          return (
+            <div>
+              <div style={{ ...cardStyle }}>
+                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#1f5fd0', fontWeight: 700, marginBottom: 2 }}>Dòng Ống CPVC</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 12 }}>Chi phí chế biến / năm</div>
+                <div style={gridStyle}>
+                  <GridCell label="Số ca / ngày"><InCell width="100%" value={pipe.normalShifts} onChange={(v) => setPipe('normalShifts', v)} unit="ca (1-3)" /></GridCell>
+                  <GridCell label="Số người / ca"><InCell width="100%" value={pipe.peoplePerShift} onChange={(v) => setPipe('peoplePerShift', v)} unit="người" /></GridCell>
+                  <GridCell label="Lương bình quân / tháng"><InCell width="100%" value={pipe.avgSalaryMonthly} onChange={(v) => setPipe('avgSalaryMonthly', v)} unit="đ" /></GridCell>
+                  <GridCell label="Số tháng lương / năm"><InCell width="100%" value={pipe.monthsSalaryPerYear} onChange={(v) => setPipe('monthsSalaryPerYear', v)} unit="tháng" /></GridCell>
+                  <GridCell derived label={<>Nhân công / năm {fxTag}</>}><FxCell value={pipeLabor} unit="đ" /></GridCell>
+                  <GridCell label={<>Công suất điện {locked && '🔒'}</>}><InCell width="100%" value={pipe.electricityKw} onChange={(v) => setPipe('electricityKw', v)} unit="kW" disabled={locked} /></GridCell>
+                  <GridCell label="Đơn giá điện"><InCell width="100%" value={pipe.electricityPricePerKwh} onChange={(v) => setPipe('electricityPricePerKwh', v)} unit="đ/kWh" /></GridCell>
+                  <GridCell derived label={<>Tiền điện / năm {fxTag}</>}><FxCell value={pipeElec} unit="đ" /></GridCell>
+                  <GridCell label={<>Nước tiêu thụ {locked && '🔒'}</>}><InCell width="100%" value={pipe.waterM3PerHour} onChange={(v) => setPipe('waterM3PerHour', v)} unit="m³/giờ" disabled={locked} /></GridCell>
+                  <GridCell label="Đơn giá nước"><InCell width="100%" value={pipe.waterPricePerM3} onChange={(v) => setPipe('waterPricePerM3', v)} unit="đ/m³" /></GridCell>
+                  <GridCell derived label={<>Tiền nước / năm {fxTag}</>}><FxCell value={pipeWater} unit="đ" /></GridCell>
+                  <GridCell label="Bảo trì phần ống / năm"><InCell width="100%" value={pipe.annualMaintenance} onChange={(v) => setPipe('annualMaintenance', v)} unit="đ" /></GridCell>
+                  <GridCell label="Bao bì + vật tư"><InCell width="100%" value={pipe.packagingCostPerKg} onChange={(v) => setPipe('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                </div>
+                {kpi('Tổng chế biến Ống', pipeConvTotal, '#1f5fd0', depPipe)}
+              </div>
+
+              <div style={{ ...cardStyle }}>
+                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#7a3fc0', fontWeight: 700, marginBottom: 2 }}>Dòng Phụ kiện</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 12 }}>Chi phí chế biến / năm</div>
+                <div style={gridStyle}>
+                  <GridCell label="Số ca / ngày"><InCell width="100%" value={fitting.normalShifts} onChange={(v) => setFitting('normalShifts', v)} unit="ca (1-3)" /></GridCell>
+                  <GridCell label="Hệ số huy động giờ máy"><InCell width="100%" value={fitting.normalUtilizationFactor} onChange={(v) => setFitting('normalUtilizationFactor', v)} unit="tỷ lệ (0,6=60%)" /></GridCell>
+                  <GridCell label="Số người / ca"><InCell width="100%" value={fitting.peoplePerShift} onChange={(v) => setFitting('peoplePerShift', v)} unit="người" /></GridCell>
+                  <GridCell label="Lương bình quân / tháng"><InCell width="100%" value={fitting.avgSalaryMonthly} onChange={(v) => setFitting('avgSalaryMonthly', v)} unit="đ" /></GridCell>
+                  <GridCell label="Số tháng lương / năm"><InCell width="100%" value={fitting.monthsSalaryPerYear} onChange={(v) => setFitting('monthsSalaryPerYear', v)} unit="tháng" /></GridCell>
+                  <GridCell derived label={<>Nhân công / năm {fxTag}</>}><FxCell value={fitLabor} unit="đ" /></GridCell>
+                  <GridCell label={<>Điện / giờ máy {locked && '🔒'}</>}><InCell width="100%" value={fitting.electricityKwPerMachineHour} onChange={(v) => setFitting('electricityKwPerMachineHour', v)} unit="kW" disabled={locked} /></GridCell>
+                  <GridCell label="Đơn giá điện"><InCell width="100%" value={fitting.electricityPricePerKwh} onChange={(v) => setFitting('electricityPricePerKwh', v)} unit="đ/kWh" /></GridCell>
+                  <GridCell derived label={<>Tiền điện / năm {fxTag}</>}><FxCell value={fitElec} unit="đ" /></GridCell>
+                  <GridCell label={<>Nước / giờ máy {locked && '🔒'}</>}><InCell width="100%" value={fitting.waterM3PerMachineHour} onChange={(v) => setFitting('waterM3PerMachineHour', v)} unit="m³/giờ" disabled={locked} /></GridCell>
+                  <GridCell label="Đơn giá nước"><InCell width="100%" value={fitting.waterPricePerM3} onChange={(v) => setFitting('waterPricePerM3', v)} unit="đ/m³" /></GridCell>
+                  <GridCell derived label={<>Tiền nước / năm {fxTag}</>}><FxCell value={fitWater} unit="đ" /></GridCell>
+                  <GridCell label="Bảo trì khuôn / năm"><InCell width="100%" value={fitting.annualMoldMaintenance} onChange={(v) => setFitting('annualMoldMaintenance', v)} unit="đ" /></GridCell>
+                  <GridCell label="Bao bì + vật tư"><InCell width="100%" value={fitting.packagingCostPerKg} onChange={(v) => setFitting('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                </div>
+                {kpi('Tổng chế biến Phụ kiện', fitConvTotal, '#7a3fc0', depFit)}
+              </div>
+              <div style={{ fontSize: 11, color: '#a3a3a3' }}>Nhân công/điện/nước/tổng là số <b>tự tính</b> theo công thức engine (nhân công = ca×người×lương×tháng×(1+BH); điện/nước theo giờ vận hành). Bao bì tính theo kg thành phẩm, không gộp vào tổng/năm.</div>
+            </div>
+          );
+        })()}
+
+        {/* ── MỤC ③–⑥ + Báo cáo: đang dựng dần ── */}
+        {section !== 'assets' && section !== 'conv' && (
           <div style={{ background: '#fff', border: '1px dashed #d3d7dd', borderRadius: 12, padding: '40px 30px', textAlign: 'center', color: '#737373' }}>
             <div style={{ fontSize: 30, marginBottom: 8 }}>🚧</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>Mục “{[...SETUP_SECTIONS, { id: 'pnl' as SectionId, t: 'Báo cáo lãi/lỗ' }].find((s) => s.id === section)?.t}” đang được dựng</div>

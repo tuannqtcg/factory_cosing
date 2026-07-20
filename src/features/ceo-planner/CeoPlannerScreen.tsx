@@ -4,12 +4,14 @@
 // Pha 1 (prototype/ceo-planner.html), số liệu THẬT từ scenario.
 import { useMemo, useState } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '../../lib/firebase.js';
+import { doc, setDoc } from 'firebase/firestore';
+import { functions, db, type AppRole } from '../../lib/firebase.js';
 import { fmtVnd, fmtUsd } from '../../lib/format.js';
-import type { ScenarioInput } from '../../schemas/scenario.js';
+import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
 import type { CeoPlannerRequest, CeoPlannerResult, CeoAdviceResult, MarginMode, CeoLineResult } from '../../schemas/ceo-planner.js';
 import { calculateCeoPlanner } from '../../engine/ceo-planner.js';
 import { generateCeoAdviceMock } from '../../engine/ceo-advice-mock.js';
+import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e9) + ' tỷ đ';
 const fmt1 = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v);
@@ -102,7 +104,17 @@ function LineCard({ line }: { line: CeoLineResult }) {
   );
 }
 
-export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput | null }) {
+export default function CeoPlannerScreen({
+  scenario,
+  role,
+  user,
+}: {
+  scenario: ScenarioInput | null;
+  /** ADR-041 — vai để gác nút "Áp dụng vào thật" (chỉ admin/pricing được ghi). */
+  role?: AppRole;
+  /** ADR-041 — ai áp dụng baseline mới, ghi vào priceLockAudit. */
+  user?: { uid: string; email: string | null } | null;
+}) {
   const pipeMaterials = useMemo(() => (scenario ? scenario.materials.filter((m) => scenario.products.some((p) => p.kind === 'pipe' && p.materialId === m.id)) : []), [scenario]);
   const fittingMaterials = useMemo(() => (scenario ? scenario.materials.filter((m) => scenario.products.some((p) => p.kind === 'fitting' && p.materialId === m.id)) : []), [scenario]);
 
@@ -171,6 +183,61 @@ export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput
       setAdvice(generateCeoAdviceMock(result));
     } finally {
       setAiLoading(false);
+    }
+  };
+
+  // ADR-041 — CẦU NỐI giả định → thật. Chỉ ghi GIÁ COMPOUND + MARKUP (theo lựa
+  // chọn: số ca/tỷ lệ máy KHÔNG đổi). markup thật = markupVf (markup trên giá
+  // vốn); quy đổi từ desiredMargin theo marginMode: margin_on_price → m/(1−m).
+  const canApply = role === 'admin' || role === 'pricing';
+  const markupVfFromReq = (m: number, mode: MarginMode) => (mode === 'markup_on_cost' ? m : m / (1 - m));
+  const [applyState, setApplyState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [applyErr, setApplyErr] = useState<string | null>(null);
+  const applyPlan = result
+    ? [result.request.pipe, result.request.fitting].map((line) => ({
+        id: line.materialId,
+        mat: scenario?.materials.find((x) => x.id === line.materialId) ?? null,
+        newPrice: line.compoundPriceUsdPerKg,
+        newMarkup: markupVfFromReq(line.desiredMargin, result.request.marginMode),
+      }))
+    : [];
+  const applyToReal = async () => {
+    if (!result || !scenario || !canApply) return;
+    const lines = applyPlan
+      .filter((c) => c.mat)
+      .map((c) => `• ${c.mat!.name}: giá ${fmtUsd(c.mat!.inventory.replacementPriceUsdPerKg)} → ${fmtUsd(c.newPrice)}/kg · markup ${Math.round(c.mat!.markupVf * 100)}% → ${Math.round(c.newMarkup * 100)}%`)
+      .join('\n');
+    if (!window.confirm(`GHI VÀO DỮ LIỆU THẬT? Mọi màn (Bảng Giá, Tổng Quan…) sẽ tính lại theo.\n\n${lines}\n\nSố ca & tỷ lệ dùng máy KHÔNG đổi. Bấm OK để áp dụng.`)) return;
+    setApplyState('saving');
+    setApplyErr(null);
+    try {
+      const materials = scenario.materials.map((m) => {
+        const c = applyPlan.find((x) => x.id === m.id);
+        if (!c) return m;
+        // Ghi giá tái tạo + KHÓA baseline tại giá vừa áp (commit ở giá đã thử) + markup.
+        return { ...m, markupVf: c.newMarkup, inventory: { ...m.inventory, replacementPriceUsdPerKg: c.newPrice, priceLock: { ...m.inventory.priceLock, baseline: c.newPrice } } };
+      });
+      const parsed = ScenarioInputSchema.safeParse({ ...scenario, materials });
+      if (!parsed.success) {
+        setApplyState('error');
+        setApplyErr(`Dữ liệu không hợp lệ: ${parsed.error.issues[0]?.message ?? 'lỗi không rõ'}`);
+        return;
+      }
+      await setDoc(doc(db, `scenarios/${scenario.id}`), parsed.data);
+      if (user && (role === 'admin' || role === 'pricing')) {
+        await Promise.all(
+          applyPlan.flatMap((c) =>
+            c.mat && c.mat.inventory.priceLock.baseline !== c.newPrice
+              ? [writePriceLockAuditEntry(scenario.id, { materialId: c.id, materialName: c.mat.name, oldBaselineUsdPerKg: c.mat.inventory.priceLock.baseline, newBaselineUsdPerKg: c.newPrice, changedByUid: user.uid, changedByEmail: user.email, changedByRole: role })]
+              : [],
+          ),
+        );
+      }
+      setApplyState('saved');
+      setTimeout(() => setApplyState('idle'), 3500);
+    } catch (e) {
+      setApplyState('error');
+      setApplyErr(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -246,6 +313,53 @@ export default function CeoPlannerScreen({ scenario }: { scenario: ScenarioInput
             </div>
             <div style={{ fontSize: 10, color: '#999', marginTop: 10 }}>Nhu cầu compound cả năm: ống {fmtVnd(result.pipe.compoundNeedKgPerYear)} kg · phụ kiện {fmtVnd(result.fitting.compoundNeedKgPerYear)} kg (hao hụt). Thuế TNDN 20% (ước tính). Vốn đầu tư {fmtTy(result.summary.totalInvestedVnd)}.</div>
           </div>
+
+          {/* ADR-041 — CẦU NỐI giả định → thật: đối chiếu rồi áp dụng (chỉ giá + markup). */}
+          {canApply && (
+            <div style={{ background: '#fff', border: '2px solid #a8003b', borderRadius: 6, padding: 18, marginTop: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.1em', color: '#a8003b', textTransform: 'uppercase', marginBottom: 4 }}>Biến giả định thành thật</div>
+              <div style={{ fontSize: 11, color: '#737373', marginBottom: 12 }}>
+                Đối chiếu bộ số bạn vừa chốt với dữ liệu thật. Bấm áp dụng để <b>ghi giá compound + markup</b> vào Dữ liệu gốc — mọi màn Theo dõi &amp; Thử tính lại theo. Số ca &amp; tỷ lệ dùng máy <b>giữ nguyên</b>.
+              </div>
+              <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse', marginBottom: 14 }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', color: '#737373', fontSize: 10 }}>
+                    <th style={{ padding: '4px 6px' }}>Nguyên liệu</th>
+                    <th style={{ textAlign: 'right', padding: '4px 6px' }}>Giá compound (thật → giả định)</th>
+                    <th style={{ textAlign: 'right', padding: '4px 6px' }}>Markup VF (thật → giả định)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applyPlan.filter((c) => c.mat).map((c) => {
+                    const priceChanged = Math.abs(c.mat!.inventory.replacementPriceUsdPerKg - c.newPrice) > 1e-9;
+                    const markupChanged = Math.abs(c.mat!.markupVf - c.newMarkup) > 1e-9;
+                    return (
+                      <tr key={c.id} style={{ borderTop: '1px solid #f0ece0' }}>
+                        <td style={{ padding: '6px', fontWeight: 600 }}>{c.mat!.name}</td>
+                        <td style={{ textAlign: 'right', padding: '6px', fontVariantNumeric: 'tabular-nums', color: priceChanged ? '#a8003b' : '#737373', fontWeight: priceChanged ? 700 : 400 }}>
+                          {fmtUsd(c.mat!.inventory.replacementPriceUsdPerKg)} → {fmtUsd(c.newPrice)}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '6px', fontVariantNumeric: 'tabular-nums', color: markupChanged ? '#a8003b' : '#737373', fontWeight: markupChanged ? 700 : 400 }}>
+                          {Math.round(c.mat!.markupVf * 100)}% → {Math.round(c.newMarkup * 100)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => void applyToReal()}
+                  disabled={applyState === 'saving'}
+                  style={{ padding: '10px 20px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 700, cursor: applyState === 'saving' ? 'default' : 'pointer', opacity: applyState === 'saving' ? 0.6 : 1 }}
+                >
+                  {applyState === 'saving' ? 'Đang ghi…' : 'Áp dụng vào dữ liệu thật →'}
+                </button>
+                {applyState === 'saved' && <span style={{ fontSize: 12, color: '#16A34A', fontWeight: 700 }}>✓ Đã ghi — mọi màn đang tính lại</span>}
+                {applyState === 'error' && <span style={{ fontSize: 12, color: '#DC2626' }}>{applyErr}</span>}
+              </div>
+            </div>
+          )}
 
           {/* Bảng giá DN + SKU */}
           <details style={{ marginTop: 14, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: 14 }}>

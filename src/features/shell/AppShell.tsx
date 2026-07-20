@@ -215,7 +215,13 @@ export default function AppShell() {
                 onNavigate={go}
               />
             )}
-            {tabId === 'ceo-planner' && <CeoPlannerScreen scenario={data.scenario} />}
+            {tabId === 'ceo-planner' && (
+              <CeoPlannerScreen
+                scenario={data.scenario}
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+              />
+            )}
             {tabId === 'sensitivity' && <SensitivityScreen scenario={data.scenario} onNavigate={go} />}
             {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
             {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} priceList={data.priceList} onNavigate={go} />}

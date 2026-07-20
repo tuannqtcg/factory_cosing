@@ -128,6 +128,9 @@
 - [ ] Vận hành: tắt/vô hiệu hoá tài khoản demo trên project thật (Firebase Console).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
+- [ ] **(2026-07-20) CEO Planner Chế độ 2** — mục tiêu sản lượng → cần thêm máy: nhập sản lượng mong muốn cả 2 loại; vượt trần 3 ca → tính số máy đùn/ép cần mua + CAPEX + payback. Kèm vá `calculatePipeCapacity` nhân `extruderCount` (no-op khi =1). Xem ADR-042.
+- [ ] **(2026-07-20)** Đo thêm m/giờ đùn các size DN32/40/50/65/100 để thay số nội suy (hiện min(420, 163/đơn trọng)) — ADR-046.
+- [ ] **(2026-07-20)** Cân nhắc TÁCH Firebase project riêng cho costing (project chung `bmcosting-ver-2` bị app khác xóa mất `onScenarioWrite`; app đã tự tính client-side theo ADR-045 nên không kẹt, nhưng nên tách để sạch).
 - [ ] Chờ danh mục ống SCH80 chuẩn từ nhà cung cấp để cập nhật lại Seed Data.
 - [ ] Kiểm tra lại toàn bộ quy trình từ khâu nhập Tồn kho -> Thay đổi định mức -> Tính giá thành -> Khóa giá -> Báo giá xem có bị khựng ở bước nào không.
 - [ ] Khi có Excel v3.7 chính thức: trích lại fixture bằng cached-value để thay số vàng engine-derived (ghi chú ADR-019).

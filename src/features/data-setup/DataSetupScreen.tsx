@@ -18,6 +18,7 @@ import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '..
 import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
 import type { FittingProduct } from '../../schemas/product.js';
 import type { Material } from '../../schemas/material.js';
+import ProductsScreen from '../products/ProductsScreen.js';
 import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { calculatePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
@@ -159,6 +160,13 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
     setMaterials((ms) => ms.filter((m) => m.id !== id));
   };
 
+  // ── Tham số tài chính (mục ⑥) ──
+  const setCurrency = (key: 'usdVndRate' | 'vatOutputRate' | 'mandatoryInsuranceRate', v: number) =>
+    setForm((f) => (f ? { ...f, costPool: { ...f.costPool, currency: { ...f.costPool.currency, [key]: v } } } : f));
+  const setMarkup = (key: 'markupTcg' | 'listPriceMargin', v: number) =>
+    setForm((f) => (f ? { ...f, costPool: { ...f.costPool, markup: { ...f.costPool.markup, [key]: v } } } : f));
+  const setSolvent = (v: number) => setForm((f) => (f ? { ...f, costPool: { ...f.costPool, solvent550PricePerBox: v } } : f));
+
   // ── Khấu hao/năm — CÙNG công thức engine (thẳng = nguyên giá×SL/đời; khuôn = ADR-007) ──
   const depExtruder = (pipe.extruderPriceEach * pipe.extruderCount) / pipe.depreciationYears;
   const depPuller = pipe.moldPullerCutterCost / pipe.moldDepreciationYears;
@@ -269,7 +277,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
-              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : section === 'mat' ? 'Nguyên liệu (compound)' : 'Thiết lập dữ liệu'}
+              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : section === 'mat' ? 'Nguyên liệu (compound)' : section === 'sku' ? 'Danh mục sản phẩm' : section === 'fin' ? 'Tham số tài chính' : section === 'pnl' ? 'Báo cáo lãi/lỗ' : 'Thiết lập dữ liệu'}
             </h1>
             <div style={{ fontSize: 12, color: '#737373', marginTop: 4, maxWidth: '64ch' }}>
               {section === 'assets'
@@ -279,28 +287,36 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   : section === 'oh'
                     ? 'Chi phí chung sản xuất (khấu hao tài sản chung + kiểm định + thuê đất) phân bổ 2 dòng theo sản lượng. Chi phí ngoài SX tách riêng — chỉ tính lãi/lỗ.'
                     : section === 'mat'
-                      ? 'Từng compound: giá tái tạo, thuế NK, phí HQ, markup VF, ngưỡng khóa. Giá NL/kg nhập về và trạng thái khóa giá do hệ thống tự tính.'
-                      : 'Gộp các khai báo cũ theo trật tự kế toán. Chọn mục ở thanh bên trái.'}
+                      ? 'Từng compound: giá tái tạo, thuế NK, phí HQ, ngưỡng khóa. Giá NL/kg nhập về + trạng thái khóa giá tự tính. (Markup VF tạm còn ở đây — sẽ chuyển sang chỗ có giá thành/hòa vốn.)'
+                      : section === 'sku'
+                        ? 'Danh sách SKU + quy cách từng sản phẩm (đơn trọng, CS đùn m/giờ, gán khuôn) — nhúng màn Danh Mục Sản Phẩm có sẵn.'
+                        : section === 'fin'
+                          ? 'Tỷ giá, VAT, bảo hiểm, markup kênh phân phối và vốn lưu động — áp cho toàn hệ thống.'
+                          : 'Bảng kết quả kinh doanh — chỉ ĐỌC số từ phần Thiết lập rồi tính lãi/lỗ. Không nhập liệu ở đây.'}
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {saveState === 'saved' && <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 600 }}>✓ Đã lưu</span>}
-            {saveState === 'error' && <span style={{ fontSize: 11, color: '#DC2626' }}>{saveError}</span>}
-            <button onClick={() => void handleSave()} disabled={saveState === 'saving' || locked} style={{ padding: '10px 20px', background: locked ? '#c9a3b1' : '#a8003b', color: '#fff', border: 'none', borderRadius: 6, cursor: locked ? 'not-allowed' : 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>
-              {saveState === 'saving' ? 'Đang lưu…' : 'Lưu & cập nhật'}
-            </button>
-          </div>
+          {section !== 'sku' && section !== 'pnl' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {saveState === 'saved' && <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 600 }}>✓ Đã lưu</span>}
+              {saveState === 'error' && <span style={{ fontSize: 11, color: '#DC2626' }}>{saveError}</span>}
+              <button onClick={() => void handleSave()} disabled={saveState === 'saving' || locked} style={{ padding: '10px 20px', background: locked ? '#c9a3b1' : '#a8003b', color: '#fff', border: 'none', borderRadius: 6, cursor: locked ? 'not-allowed' : 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>
+                {saveState === 'saving' ? 'Đang lưu…' : 'Lưu & cập nhật'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quy ước nhập vs tự tính */}
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', fontSize: 11.5, color: '#565b64', background: '#fff', border: '1px solid #e6e8ec', borderRadius: 10, padding: '9px 13px', marginBottom: 18 }}>
-          <b style={{ color: '#1a1a1a' }}>Quy ước:</b>
-          <span style={{ display: 'flex', gap: 7, alignItems: 'center' }}><span style={{ width: 26, height: 17, borderRadius: 4, background: '#fff', border: '1px solid #c8cdd5' }} /> Ô <b>nhập liệu</b> — sửa được</span>
-          <span style={{ display: 'flex', gap: 7, alignItems: 'center' }}><span style={{ width: 26, height: 17, borderRadius: 4, background: '#eef1f4', display: 'grid', placeItems: 'center', fontSize: 8, fontWeight: 700, color: '#6b7280' }}>fx</span> Số <b>tự tính</b> — chỉ hiển thị</span>
-          <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><AllocTag kind="pipe" /><AllocTag kind="fit" /><AllocTag kind="shared" /></span>
-        </div>
+        {section !== 'sku' && section !== 'pnl' && (
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', fontSize: 11.5, color: '#565b64', background: '#fff', border: '1px solid #e6e8ec', borderRadius: 10, padding: '9px 13px', marginBottom: 18 }}>
+            <b style={{ color: '#1a1a1a' }}>Quy ước:</b>
+            <span style={{ display: 'flex', gap: 7, alignItems: 'center' }}><span style={{ width: 26, height: 17, borderRadius: 4, background: '#fff', border: '1px solid #c8cdd5' }} /> Ô <b>nhập liệu</b> — sửa được</span>
+            <span style={{ display: 'flex', gap: 7, alignItems: 'center' }}><span style={{ width: 26, height: 17, borderRadius: 4, background: '#eef1f4', display: 'grid', placeItems: 'center', fontSize: 8, fontWeight: 700, color: '#6b7280' }}>fx</span> Số <b>tự tính</b> — chỉ hiển thị</span>
+            <span style={{ display: 'flex', gap: 6, alignItems: 'center' }}><AllocTag kind="pipe" /><AllocTag kind="fit" /><AllocTag kind="shared" /></span>
+          </div>
+        )}
 
-        {locked && (
+        {locked && section !== 'sku' && section !== 'pnl' && (
           <div style={{ background: '#fffbeb', border: '1px solid #f0c98a', borderRadius: 8, padding: '9px 13px', marginBottom: 16, fontSize: 11.5, color: '#8a5a12' }}>
             🔒 Tài sản (giá máy, khấu hao, CAPEX) là dữ liệu vốn — chỉ vai <b>Toàn quyền</b> sửa. Bạn đang xem ở chế độ chỉ đọc.
           </div>
@@ -583,13 +599,47 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
           );
         })()}
 
-        {/* ── MỤC ⑤–⑥ + Báo cáo: đang dựng dần ── */}
-        {section !== 'assets' && section !== 'conv' && section !== 'oh' && section !== 'mat' && (
+        {/* ── MỤC 05: DANH MỤC SẢN PHẨM (nhúng màn có sẵn) ── */}
+        {section === 'sku' && (
+          <div>
+            <div style={{ fontSize: 11.5, color: '#8a5a12', background: '#fffbeb', border: '1px solid #f0c98a', borderRadius: 8, padding: '9px 13px', marginBottom: 14 }}>
+              Mục này nhúng màn <b>Danh Mục Sản Phẩm</b> có sẵn (SKU · đơn trọng · CS đùn · khuôn), có nút <b>Lưu riêng</b> bên trong. Hãy <b>lưu thay đổi ở các mục khác trước</b> khi làm việc ở đây để tránh ghi đè.
+            </div>
+            <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
+              <ProductsScreen role={role} scenarioId={scenarioId} scenario={scenario} />
+            </div>
+          </div>
+        )}
+
+        {/* ── MỤC 06: THAM SỐ TÀI CHÍNH ── */}
+        {section === 'fin' && (() => {
+          const cur = form.costPool.currency; const mk = form.costPool.markup;
+          const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' };
+          return (
+            <div>
+              <div style={gridStyle}>
+                <GridCell label="Tỷ giá USD → VND"><InCell width="100%" value={cur.usdVndRate} onChange={(v) => setCurrency('usdVndRate', v)} unit="đ/USD" /></GridCell>
+                <GridCell label="VAT đầu ra"><InCell width="100%" value={cur.vatOutputRate} onChange={(v) => setCurrency('vatOutputRate', v)} unit="tỷ lệ (0,08=8%)" /></GridCell>
+                <GridCell label="Bảo hiểm bắt buộc + KPCĐ"><InCell width="100%" value={cur.mandatoryInsuranceRate} onChange={(v) => setCurrency('mandatoryInsuranceRate', v)} unit="tỷ lệ (0,235=23,5%)" /></GridCell>
+                <GridCell label="Markup kênh TCG"><InCell width="100%" value={mk.markupTcg} onChange={(v) => setMarkup('markupTcg', v)} unit="tỷ lệ (0,3=30%)" /></GridCell>
+                <GridCell label="Biên nhà phân phối (NPP)"><InCell width="100%" value={mk.listPriceMargin} onChange={(v) => setMarkup('listPriceMargin', v)} unit="tỷ lệ (0-0,9)" /></GridCell>
+                <GridCell label={<>Dung môi 550 / thùng {locked && '🔒'}</>}><InCell width="100%" value={form.costPool.solvent550PricePerBox} onChange={setSolvent} unit="đ" disabled={locked} /></GridCell>
+                <GridCell label={<>Vốn lưu động ban đầu {locked && '🔒'}</>}><InCell width="100%" value={shared.workingCapital || 0} onChange={(v) => setShared('workingCapital', v)} unit="đ" disabled={locked} /></GridCell>
+              </div>
+              <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 10 }}>
+                Tham số áp cho toàn hệ thống. <b>Markup kênh</b> (TCG → NPP) là chuỗi định giá phân phối. Riêng <b>markup VF</b> (giá thành → giá xuất xưởng) đang tạm ở mục ④ — sẽ chuyển sang chỗ hiển thị giá thành + hòa vốn (đang cân nhắc, theo góp ý của bạn).
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── BÁO CÁO LÃI/LỖ: đang dựng ── */}
+        {section === 'pnl' && (
           <div style={{ background: '#fff', border: '1px dashed #d3d7dd', borderRadius: 12, padding: '40px 30px', textAlign: 'center', color: '#737373' }}>
-            <div style={{ fontSize: 30, marginBottom: 8 }}>🚧</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>Mục “{[...SETUP_SECTIONS, { id: 'pnl' as SectionId, t: 'Báo cáo lãi/lỗ' }].find((s) => s.id === section)?.t}” đang được dựng</div>
-            <div style={{ fontSize: 12, marginTop: 6, maxWidth: '52ch', margin: '6px auto 0' }}>
-              Đang chuyển từng mục từ “Tham Số” + “Cấu Hình Nhà Máy” sang đây theo trật tự kế toán. Trong lúc chờ, dữ liệu mục này vẫn nhập/sửa được ở 2 màn cũ. Mục ① Sổ tài sản cố định đã hoàn thiện.
+            <div style={{ fontSize: 30, marginBottom: 8 }}>📊</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>Báo cáo lãi/lỗ — đang dựng</div>
+            <div style={{ fontSize: 12, marginTop: 6, maxWidth: '54ch', margin: '6px auto 0' }}>
+              Sẽ đọc số từ engine (doanh thu − giá vốn − chi phí ngoài SX = lãi/lỗ) như mockup. Làm sau cùng để không trùng logic dashboard/ceo-planner đang có.
             </div>
           </div>
         )}

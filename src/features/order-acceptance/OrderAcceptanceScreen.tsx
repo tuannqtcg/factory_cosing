@@ -103,6 +103,9 @@ export default function OrderAcceptanceScreen({
   const [items, setItems] = useState<OrderItem[]>([{ id: 1, group: null, skuKey: null, qtyUnits: 1000, offeredPerUnit: null }]);
   const [nextId, setNextId] = useState(2);
   const [thresholdOverride, setThresholdOverride] = useState<number | null>(null);
+  // ADR-051 — chi phí setup một lần / dòng (đổi khuôn, khởi động máy). Rải trên
+  // tổng sản lượng từng dòng → đơn nhỏ bị phạt. 0 = như cũ (biên tế thuần).
+  const [setupCostVnd, setSetupCostVnd] = useState(0);
 
   const listedVfOf = (sku: SkuOption): number | null => {
     if (!priceList) return null;
@@ -131,12 +134,13 @@ export default function OrderAcceptanceScreen({
           materialId: sku.materialId,
           quantityTons: tons,
           offeredPriceVndPerKg: offeredPerKg,
+          setupCostVnd,
           ...(thresholdOverride != null ? { thresholdPctWhatIf: thresholdOverride } : {}),
         });
       }
       return { item, group, groupOpts, sku, offered, tons, offeredPerKg, result };
     }).filter((r): r is NonNullable<typeof r> => r !== null);
-  }, [scenario, items, options, groups, thresholdOverride, priceList]);
+  }, [scenario, items, options, groups, thresholdOverride, setupCostVnd, priceList]);
 
   if (!scenario || rows.length === 0) {
     return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản…</div>;
@@ -230,6 +234,12 @@ export default function OrderAcceptanceScreen({
           >
             + Thêm dòng sản phẩm
           </button>
+          <label style={{ fontSize: 11, color: '#737373', display: 'flex', alignItems: 'center', gap: 6 }} title="Chi phí một lần để chạy mỗi dòng (đổi khuôn/khởi động máy). Rải trên tổng sản lượng dòng → đơn nhỏ gánh setup/kg lớn, verdict xuống.">
+            Chi phí setup / dòng
+            <input type="number" value={setupCostVnd} onChange={(e) => setSetupCostVnd(Number(e.target.value) || 0)}
+              style={{ width: 110, padding: '5px 8px', fontSize: 12, fontWeight: 700, textAlign: 'right', border: '1px solid #d8d8d8', borderRadius: 4, outline: 'none', fontVariantNumeric: 'tabular-nums' }} />
+            <span style={{ color: '#b3b3b3' }}>đ</span>
+          </label>
           <div style={{ fontSize: 11, color: '#737373', display: 'flex', alignItems: 'center', gap: 10 }}>
             <span>Cả đơn: <b>{fmtNum(totalTons)} tấn</b> · trị giá chào <b>{fmtVnd(Math.round(totalRevenue))} đ</b></span>
             <TermInfo term="market-ceiling" label="Giá trần nằm ở đâu?" />
@@ -248,6 +258,7 @@ export default function OrderAcceptanceScreen({
           </div>
           <div style={{ fontSize: 11, color: v.color, marginTop: 6 }}>
             {v.note} {rows.some((r) => r.result && r.result.verdict !== overall) && 'Kết luận từng dòng khác nhau — xem cột "Kết luận" để mặc cả đúng dòng đang kéo cả đơn xuống.'}
+            {setupCostVnd > 0 && ` · Đã tính chi phí setup ${fmtVnd(setupCostVnd)} đ/dòng — đơn càng nhỏ, setup/kg càng nặng.`}
           </div>
         </div>
       )}

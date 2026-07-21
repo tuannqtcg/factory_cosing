@@ -3,6 +3,7 @@
 // biên/Δ song song với Cơ sở. CHỈ đọc engine giá-bán-cố-định (calculateScenarioCompare).
 import { useMemo, useState } from 'react';
 import type { ScenarioInput } from '../../schemas/scenario.js';
+import SensitivityScreen from '../sensitivity/SensitivityScreen.js';
 import { calculateScenarioCompare } from '../../engine/scenario-compare.js';
 import type { DriverMultipliers } from '../../engine/scenario-drivers.js';
 import { DRIVER_LABELS } from '../../engine/scenario-drivers.js';
@@ -34,7 +35,13 @@ const fmtTyAbs = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFraction
 const fmtTySigned = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 2, signDisplay: 'exceptZero' }).format(v / 1e9) + ' tỷ';
 const fmtPct1 = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1, signDisplay: 'exceptZero' }).format(v) + '%';
 
-export default function ScenarioCompareScreen({ scenario }: { scenario: ScenarioInput | null }) {
+export default function ScenarioCompareScreen({ scenario, onNavigate, initialTab }: {
+  scenario: ScenarioInput | null;
+  onNavigate?: (tab: string) => void;
+  // ADR-050 — gộp Độ Nhạy (tornado) thành tab trong đây (trùng nền scenario-drivers).
+  initialTab?: 'compare' | 'tornado';
+}) {
+  const [tab, setTab] = useState<'compare' | 'tornado'>(initialTab ?? 'compare');
   const [nameA, setNameA] = useState('Suy thoái');
   const [nameB, setNameB] = useState('Kỳ vọng');
   const [pctA, setPctA] = useState<PctChange>({ ...ZERO, compound: 15, fx: 10, volume: -20 });
@@ -70,8 +77,18 @@ export default function ScenarioCompareScreen({ scenario }: { scenario: Scenario
   const applyPreset = (setPct: (p: PctChange) => void, preset: Preset) => setPct({ ...ZERO, ...preset.pct });
 
   return (
-    <div style={{ padding: '32px 36px', maxWidth: 1040, margin: '0 auto' }}>
-      <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>So Sánh Kịch Bản</div>
+    <div>
+      {/* ADR-050 — 2 tab: So Sánh Kịch Bản · Độ Nhạy (tornado) — chung nền scenario-drivers */}
+      <div style={{ display: 'flex', gap: 4, padding: '14px 36px 0', borderBottom: '1px solid #ececec' }}>
+        {([['compare', 'So Sánh Kịch Bản'], ['tornado', 'Độ Nhạy (Tornado)']] as const).map(([v, label]) => (
+          <button key={v} onClick={() => setTab(v)} style={{ padding: '8px 14px', border: 'none', borderBottom: `2px solid ${tab === v ? '#a8003b' : 'transparent'}`, background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: tab === v ? '#a8003b' : '#737373', marginBottom: -1 }}>{label}</button>
+        ))}
+      </div>
+      {tab === 'tornado' ? (
+        <SensitivityScreen scenario={scenario} onNavigate={(t) => (t === 'scenario-compare' ? setTab('compare') : onNavigate?.(t))} />
+      ) : (
+      <div style={{ padding: '24px 36px 32px', maxWidth: 1040, margin: '0 auto' }}>
+        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>So Sánh Kịch Bản</div>
       <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Nếu thế giới thành X thì tôi ở đâu?</h1>
       <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
         Đặt 2 kịch bản (chỉnh % các yếu tố, hoặc chọn preset) → EBIT / doanh thu / biên đặt cạnh Cơ sở. Giữ NGUYÊN giá bán hiện hành (đo rủi ro nén biên, đồng bộ màn Độ Nhạy).
@@ -152,6 +169,8 @@ export default function ScenarioCompareScreen({ scenario }: { scenario: Scenario
       <p style={{ fontSize: 10, color: '#999', marginTop: 12 }}>
         Ghi chú: EBIT giữ GIÁ BÁN cố định ở mức hiện hành (đo rủi ro nén biên). Các yếu tố áp đồng thời trong mỗi kịch bản. Preset chỉ là điểm khởi đầu — chỉnh % tuỳ ý.
       </p>
+      </div>
+      )}
     </div>
   );
 }

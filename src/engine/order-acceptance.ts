@@ -51,13 +51,19 @@ export function decideOrder(baseline: ScenarioInput, request: OrderDecisionReque
 
   const quantityKg = request.quantityTons * 1000;
   const offered = request.offeredPriceVndPerKg;
+  // ADR-051 — chi phí setup một lần rải trên TỔNG sản lượng đơn. Đơn nhỏ → setup/kg
+  // lớn → sàn/giá thành hiệu dụng cao hơn → verdict xuống. setup=0 ⇒ như cũ.
+  const setupCostVnd = request.setupCostVnd ?? 0;
+  const setupCostPerKgVnd = quantityKg > 0 ? setupCostVnd / quantityKg : 0;
   const contributionPerKgVnd = offered - market.variableCostPerKg;
   const profitVsFullCostPerKgVnd = offered - market.fullCostPerKg;
-
-  // Verdict theo sàn THỊ TRƯỜNG (đơn mới): ≥ full cost → NHẬN; ≥ biến phí → CÂN NHẮC
-  // (đóng góp dương, bù định phí nếu còn công suất trống); < biến phí → KHÔNG (lỗ tiền tươi).
+  // Verdict xét ở mức TỔNG đơn (đã trừ setup): ≥ full cost + setup → NHẬN; còn bù
+  // được biến phí + setup → CÂN NHẮC; không → KHÔNG (lỗ tiền tươi cả setup). Khi
+  // setup=0, dấu tổng = dấu biên/kg (quantity>0) ⇒ verdict trùng khít ADR-029.
+  const contributionTotalVnd = contributionPerKgVnd * quantityKg - setupCostVnd;
+  const profitVsFullCostTotalVnd = profitVsFullCostPerKgVnd * quantityKg - setupCostVnd;
   const verdict: OrderDecisionResult['verdict'] =
-    profitVsFullCostPerKgVnd >= 0 ? 'accept' : contributionPerKgVnd >= 0 ? 'consider' : 'reject';
+    profitVsFullCostTotalVnd >= 0 ? 'accept' : contributionTotalVnd >= 0 ? 'consider' : 'reject';
 
   return {
     line: request.line,
@@ -73,13 +79,15 @@ export function decideOrder(baseline: ScenarioInput, request: OrderDecisionReque
     },
     quantityKg,
     offeredPriceVndPerKg: offered,
+    setupCostVnd,
+    setupCostPerKgVnd,
     marketVariableFloorVndPerKg: market.variableCostPerKg,
     marketFullCostVndPerKg: market.fullCostPerKg,
     lockedVariableFloorVndPerKg: locked.variableCostPerKg,
     contributionPerKgVnd,
-    contributionTotalVnd: contributionPerKgVnd * quantityKg,
+    contributionTotalVnd,
     profitVsFullCostPerKgVnd,
-    profitVsFullCostTotalVnd: profitVsFullCostPerKgVnd * quantityKg,
+    profitVsFullCostTotalVnd,
     verdict,
   };
 }

@@ -322,10 +322,23 @@ export default function CeoPlannerScreen({
                 <Field label="Số ca / ngày (của máy)"><Seg options={[1, 2, 3].map((v) => ({ v: v as 1 | 2 | 3, label: `${v} ca` }))} value={m.shifts} onChange={m.setShifts} /></Field>
                 {m.key === 'fit' && <Field label="Huy động giờ máy (của máy)"><Seg options={[{ v: 0.6, label: '60%' }, { v: 0.85, label: '85%' }]} value={fitUtil} onChange={setFitUtil} /></Field>}
               </div>
-              {m.canTwo && (
+              {m.canTwo ? (
                 <Field label="Compound chạy trên máy" hint="2 compound = chia thời gian máy, tổng = 100%">
                   <Seg options={[{ v: false, label: '1 compound' }, { v: true, label: '2 compound' }]} value={m.two} onChange={m.setTwo} />
                 </Field>
+              ) : (
+                // Danh mục chỉ có 1 compound cho máy này ⇒ không thể chạy 2 thương
+                // hiệu chung máy ⇒ nút "2 compound" + slider phân bổ tỷ lệ KHÔNG
+                // hiện. Nói rõ vì sao + chỉ đường thêm compound thứ hai, để CEO
+                // không tưởng mất tính năng (slider "biến mất").
+                <div style={{ fontSize: 10.5, lineHeight: 1.5, color: '#8a6d1a', background: '#fffbeb', border: '1px dashed #d0a94e', borderRadius: 6, padding: '9px 11px' }}>
+                  <b>Chỉ 1 compound {m.key === 'pipe' ? 'ống' : 'phụ kiện'} trong danh mục</b> → chạy 1 loại, chưa phân bổ tỷ lệ được.
+                  {m.key === 'pipe'
+                    ? ' Muốn chạy BlazeMaster + Corzan chung máy đùn và kéo slider chia tỷ lệ sản lượng: vào '
+                    : ' Muốn chạy 2 compound chung máy ép và chia tỷ lệ: vào '}
+                  <b>Danh Mục Sản Phẩm</b> thêm compound thứ hai
+                  {m.key === 'pipe' ? ' (nút “♻ Chuẩn hóa Corzan”)' : ''} rồi bấm Lưu — nút “2 compound” và slider sẽ hiện lại ở đây.
+                </div>
               )}
 
               {/* Compound A (chính) */}

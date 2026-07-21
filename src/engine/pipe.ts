@@ -22,14 +22,25 @@ export interface PipeCapacity {
   normalCapacityKgYear: number;
 }
 
-export function calculatePipeCapacity(resource: ContinuousKgResource): PipeCapacity {
+/**
+ * @param opts.effectiveFinishedKgPerHour — ADR-048 (chế độ 'meters'): tốc độ THÀNH
+ *   PHẨM kg/giờ suy từ m/giờ per-size × đơn trọng (thay 1 tốc độ pha trộn cố định).
+ *   Chỉ thay `normalCapacityKgYear` (sản lượng vận hành thực) — công suất thiết kế
+ *   3 ca giữ theo tốc độ danh nghĩa. Vắng ⇒ dùng actualCapacityKgPerHour × yield
+ *   (nguyên mô hình cũ ⇒ parity kg tuyệt đối).
+ */
+export function calculatePipeCapacity(
+  resource: ContinuousKgResource,
+  opts?: { effectiveFinishedKgPerHour?: number },
+): PipeCapacity {
   const batchesPerYear =
     resource.operatingDaysPerYear / (resource.continuousRunDaysPerBatch + resource.maintenanceDaysPerBatch);
   const designHours3ShiftHours = batchesPerYear * resource.continuousRunDaysPerBatch * 3 * resource.hoursPerShift;
   const designCapacity3ShiftKgYear = resource.actualCapacityKgPerHour * designHours3ShiftHours * resource.yieldRate;
   const normalOperatingHours =
     batchesPerYear * resource.continuousRunDaysPerBatch * resource.normalShifts * resource.hoursPerShift;
-  const normalCapacityKgYear = resource.actualCapacityKgPerHour * normalOperatingHours * resource.yieldRate;
+  const finishedKgPerHour = opts?.effectiveFinishedKgPerHour ?? resource.actualCapacityKgPerHour * resource.yieldRate;
+  const normalCapacityKgYear = finishedKgPerHour * normalOperatingHours;
 
   return {
     batchesPerYear,

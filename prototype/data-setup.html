@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thiết lập dữ liệu — Prototype Pha 1</title>
+<style>html,body{margin:0}</style>
+</head>
+<body>
+<style>
+  :root {
+    --canvas:#f4f5f7; --surface:#ffffff; --surface-2:#fafbfc;
+    --ink:#0d0e11; --muted:#565b64; --faint:#9198a3;
+    --border:#e6e8ec; --border-strong:#d3d7dd;
+    --field-bg:#ffffff; --field-border:#c8cdd5; --field-focus:#0d0e11;
+    --derived-bg:#eef1f4; --derived-ink:#3a3f47;
+    --accent:#0d0e11; --accent-ink:#ffffff;
+    --pipe:#1f5fd0; --pipe-tint:#eaf1fd;
+    --fit:#8a4bd0; --fit-tint:#f2ebfb;
+    --shared:#8a5a12; --shared-tint:#f7efdf;
+    --good:#1f7a44; --danger:#c0392b;
+    --mono:ui-monospace,"SF Mono","Roboto Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){ :root{
+    --canvas:#0d0f12; --surface:#16181d; --surface-2:#1b1e24;
+    --ink:#eef0f3; --muted:#a4abb6; --faint:#6c7480;
+    --border:#282c33; --border-strong:#363b44;
+    --field-bg:#1f2229; --field-border:#3a404a; --field-focus:#eef0f3;
+    --derived-bg:#22262d; --derived-ink:#c3c9d2;
+    --accent:#eef0f3; --accent-ink:#0d0e11;
+    --pipe:#6ea0f5; --pipe-tint:#18243a;
+    --fit:#b389ea; --fit-tint:#251a38;
+    --shared:#d0a45a; --shared-tint:#332812;
+    --good:#4cc47f; --danger:#e8695b;
+  }}
+  :root[data-theme="dark"]{
+    --canvas:#0d0f12; --surface:#16181d; --surface-2:#1b1e24;
+    --ink:#eef0f3; --muted:#a4abb6; --faint:#6c7480;
+    --border:#282c33; --border-strong:#363b44;
+    --field-bg:#1f2229; --field-border:#3a404a; --field-focus:#eef0f3;
+    --derived-bg:#22262d; --derived-ink:#c3c9d2;
+    --accent:#eef0f3; --accent-ink:#0d0e11;
+    --pipe:#6ea0f5; --pipe-tint:#18243a; --fit:#b389ea; --fit-tint:#251a38;
+    --shared:#d0a45a; --shared-tint:#332812; --good:#4cc47f; --danger:#e8695b;
+  }
+  :root[data-theme="light"]{
+    --canvas:#f4f5f7; --surface:#ffffff; --surface-2:#fafbfc;
+    --ink:#0d0e11; --muted:#565b64; --faint:#9198a3;
+    --border:#e6e8ec; --border-strong:#d3d7dd;
+    --field-bg:#ffffff; --field-border:#c8cdd5; --field-focus:#0d0e11;
+    --derived-bg:#eef1f4; --derived-ink:#3a3f47;
+    --accent:#0d0e11; --accent-ink:#ffffff;
+    --pipe:#1f5fd0; --pipe-tint:#eaf1fd; --fit:#8a4bd0; --fit-tint:#f2ebfb;
+    --shared:#8a5a12; --shared-tint:#f7efdf; --good:#1f7a44; --danger:#c0392b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);
+    font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+  /* ── Rail ── */
+  .rail{background:var(--surface);border-right:1px solid var(--border);padding:22px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+  .brand{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:700}
+  .brand b{display:block;color:var(--ink);font-size:16px;letter-spacing:-.01em;text-transform:none;margin-top:3px}
+  .steps{list-style:none;margin:22px 0 0;padding:0;counter-reset:s}
+  .step{display:flex;gap:11px;align-items:flex-start;padding:10px 11px;border-radius:9px;cursor:pointer;margin-bottom:2px}
+  .step:hover{background:var(--surface-2)}
+  .step.on{background:var(--accent);color:var(--accent-ink)}
+  .step.on .step-cap{color:var(--accent-ink);opacity:.72}
+  .step-no{counter-increment:s;font-family:var(--mono);font-size:11px;font-weight:700;min-width:17px;
+    padding-top:1px;color:var(--faint)}
+  .step.on .step-no{color:var(--accent-ink)}
+  .step-no::before{content:counter(s,decimal-leading-zero)}
+  .step-t{font-size:13px;font-weight:600}
+  .step-cap{font-size:11px;color:var(--faint);margin-top:1px;line-height:1.3}
+  /* ── Main ── */
+  .main{padding:26px 30px 80px;max-width:1120px}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+  h1{margin:0;font-size:22px;letter-spacing:-.02em;text-wrap:balance}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:4px;max-width:64ch}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:11.5px;color:var(--muted);
+    background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:9px 13px;margin-bottom:20px}
+  .lg{display:flex;gap:7px;align-items:center}
+  .swatch-in{width:26px;height:17px;border-radius:4px;background:var(--field-bg);border:1px solid var(--field-border)}
+  .swatch-fx{width:26px;height:17px;border-radius:4px;background:var(--derived-bg);display:grid;place-items:center}
+  .fxtag{font-family:var(--mono);font-size:8.5px;font-weight:700;color:var(--muted);border:1px solid var(--border-strong);
+    border-radius:3px;padding:0 3px;letter-spacing:.03em}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:0;overflow:hidden;margin-bottom:18px}
+  .card-h{padding:15px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;
+    align-items:center;gap:12px;flex-wrap:wrap}
+  .card-h h2{margin:0;font-size:14.5px;letter-spacing:-.01em}
+  .card-h .note{font-size:11.5px;color:var(--muted);font-weight:400}
+  .eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:4px}
+  /* Table */
+  .tw{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:720px}
+  th{text-align:left;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);
+    font-weight:700;padding:11px 14px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface-2)}
+  td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  .num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .name{font-weight:600}
+  .name small{display:block;font-weight:400;color:var(--faint);font-size:10.5px}
+  /* Input field look */
+  .in{display:inline-flex;align-items:center;justify-content:flex-end;gap:5px;background:var(--field-bg);
+    border:1px solid var(--field-border);border-radius:6px;padding:5px 9px;font-family:var(--mono);
+    font-size:12px;font-variant-numeric:tabular-nums;min-width:96px;color:var(--ink);cursor:text}
+  .in:focus-within,.in:hover{border-color:var(--field-focus)}
+  .in .u{font-family:var(--sans);font-size:10px;color:var(--faint)}
+  .in input{border:none;background:none;color:inherit;font:inherit;text-align:right;width:100%;outline:none;padding:0}
+  /* Derived look */
+  .fx{display:inline-flex;align-items:center;justify-content:flex-end;gap:6px;background:var(--derived-bg);
+    border-radius:6px;padding:5px 9px;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;
+    min-width:96px;color:var(--derived-ink);font-weight:600}
+  .fx::before{content:"fx";font-size:8.5px;font-weight:700;opacity:.6;letter-spacing:.03em;
+    border:1px solid currentColor;border-radius:3px;padding:0 3px;line-height:1.35}
+  .fx .u{font-family:var(--sans);font-size:10px;opacity:.7;font-weight:400}
+  /* allocation chip */
+  .alloc{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;display:inline-block;white-space:nowrap}
+  .a-pipe{background:var(--pipe-tint);color:var(--pipe)}
+  .a-fit{background:var(--fit-tint);color:var(--fit)}
+  .a-shared{background:var(--shared-tint);color:var(--shared)}
+  tfoot td{background:var(--surface-2);font-weight:700;border-top:2px solid var(--border-strong)}
+  tfoot .lab{font-size:11px;letter-spacing:.02em}
+  /* form grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1px;background:var(--border)}
+  .cell{background:var(--surface);padding:13px 16px;display:flex;flex-direction:column;gap:7px}
+  .cell.derived{background:var(--surface-2)}
+  .cell label{font-size:11.5px;color:var(--muted);font-weight:500;display:flex;align-items:center;gap:6px}
+  .cell .in,.cell .fx{min-width:0;width:100%}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){ .app{grid-template-columns:1fr} .rail{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+    .steps{display:grid;grid-template-columns:1fr 1fr;gap:2px} .two{grid-template-columns:1fr} }
+  .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);
+    padding:12px 18px;background:var(--surface-2);border-top:1px solid var(--border)}
+  .flow b{color:var(--ink)} .arrow{color:var(--faint)}
+  .btn{background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:9px 18px;
+    font-size:12.5px;font-weight:700;cursor:pointer;font-family:var(--sans)}
+  .pane{display:none} .pane.on{display:block}
+  .rowsum{font-size:11.5px;color:var(--muted);padding:2px 0}
+  .kpi{display:flex;gap:22px;flex-wrap:wrap;padding:14px 18px;border-top:1px solid var(--border);background:var(--surface-2)}
+  .kpi>div{min-width:150px}
+  .kpi .lab{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .kpi .val{font-family:var(--mono);font-size:16px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .val.pipe{color:var(--pipe)} .val.fit{color:var(--fit)} .val.shared{color:var(--shared)}
+  .railcap{list-style:none;margin:16px 6px 6px;font-size:10px;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--faint);font-weight:700;border-top:1px solid var(--border);padding-top:14px}
+  .rimark{font-size:13px;min-width:17px;text-align:center;color:var(--faint)}
+  .step.on .rimark{color:var(--accent-ink)}
+  table.pnl{min-width:520px}
+  table.pnl td{padding:10px 16px}
+  table.pnl td:first-child{font-weight:500}
+  table.pnl .pct{color:var(--faint);font-size:11.5px;width:70px}
+  table.pnl tr.sub td:first-child{padding-left:34px;font-weight:400;color:var(--muted);font-size:11.5px}
+  table.pnl tr.sub td{padding-top:4px;padding-bottom:4px;border-bottom:none}
+  table.pnl tr.total td{font-weight:700;border-top:1px solid var(--border-strong);background:var(--surface-2)}
+  table.pnl tr.grand td{font-weight:800;font-size:14px;border-top:2px solid var(--ink);background:var(--surface-2);color:var(--good)}
+  table.pnl tr.rev td{font-weight:700}
+</style>
+
+<div class="app">
+  <nav class="rail">
+    <div class="brand">Costing App<b>Thiết lập dữ liệu</b></div>
+    <ul class="steps" id="steps">
+      <li class="step on" data-p="assets"><span class="step-no"></span><span><span class="step-t">Tài sản cố định</span><span class="step-cap">CAPEX · khấu hao · phân bổ</span></span></li>
+      <li class="step" data-p="conv"><span class="step-no"></span><span><span class="step-t">Chi phí chế biến</span><span class="step-cap">nhân công · điện · nước theo dòng</span></span></li>
+      <li class="step" data-p="oh"><span class="step-no"></span><span><span class="step-t">Chi phí chung & ngoài SX</span><span class="step-cap">thuê · lab · UL · tài chính</span></span></li>
+      <li class="step" data-p="mat"><span class="step-no"></span><span><span class="step-t">Nguyên liệu (compound)</span><span class="step-cap">giá · thuế · markup · khóa giá</span></span></li>
+      <li class="step" data-p="sku"><span class="step-no"></span><span><span class="step-t">Danh mục sản phẩm</span><span class="step-cap">SKU · đơn trọng · khuôn</span></span></li>
+      <li class="step" data-p="fin"><span class="step-no"></span><span><span class="step-t">Tham số tài chính</span><span class="step-cap">tỷ giá · VAT · markup kênh · vốn</span></span></li>
+      <li class="railcap">Báo cáo (đọc số thiết lập)</li>
+      <li class="step report" data-p="pnl"><span class="rimark">↳</span><span><span class="step-t">Báo cáo lãi/lỗ</span><span class="step-cap">nhận số → tính lãi/lỗ · chỉ xem</span></span></li>
+    </ul>
+  </nav>
+
+  <main class="main">
+    <div class="top">
+      <div>
+        <h1 id="ttl">Tài sản cố định & khấu hao</h1>
+        <div class="sub" id="sub">Khai báo mọi tài sản như trang “Nhập liệu ban đầu” của file Excel. Nhập nguyên giá và đời khấu hao; hệ thống tự tính khấu hao/năm và phân bổ về dòng sản phẩm.</div>
+      </div>
+      <button class="btn">Lưu &amp; cập nhật</button>
+    </div>
+
+    <div class="legend">
+      <b style="color:var(--ink)">Quy ước:</b>
+      <span class="lg"><span class="swatch-in"></span> Ô <b>nhập liệu</b> — sửa được</span>
+      <span class="lg"><span class="swatch-fx"><span class="fxtag">fx</span></span> Số <b>tự tính</b> — chỉ hiển thị, không sửa</span>
+      <span class="lg"><span class="alloc a-pipe">Ống</span><span class="alloc a-fit">Phụ kiện</span><span class="alloc a-shared">Chung</span> phân bổ chi phí</span>
+    </div>
+
+    <div class="flow" style="border:1px solid var(--border);border-radius:11px;margin-bottom:18px">
+      <span><b>Luồng 1 chiều:</b> Thiết lập dữ liệu <span class="arrow">→</span> Engine (giá thành · phân bổ · thang giá) <span class="arrow">→</span> Báo cáo (lãi/lỗ · bảng giá).
+      &nbsp;•&nbsp; <b>Trợ Lý CEO</b> = lớp giả định: đọc cùng nguồn, thử what-if, <b>không ghi ngược</b> (trừ nút “Áp dụng vào thật”).</span>
+    </div>
+
+    <!-- 1. ASSETS -->
+    <section class="pane on" data-p="assets">
+      <div class="card">
+        <div class="card-h">
+          <div><div class="eyebrow">Sổ tài sản cố định</div><h2>Máy móc, khuôn, nhà xưởng</h2></div>
+          <span class="note">Khấu hao đường thẳng = Nguyên giá × SL ÷ Đời (năm)</span>
+        </div>
+        <div class="tw">
+          <table>
+            <thead><tr>
+              <th>Tài sản</th><th class="num">Nguyên giá / đơn vị</th><th class="num">SL</th>
+              <th class="num">Năm đưa vào</th><th class="num">Đời (năm)</th>
+              <th class="num">Khấu hao / năm</th><th>Phân bổ về</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td class="name">Máy đùn ống CPVC<small>dây chuyền đùn liên tục</small></td>
+                <td><span class="in"><input value="3.612.904.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="3" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="10" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">1.083.871.200<span class="u">đ</span></span></td>
+                <td><span class="alloc a-pipe">Trực tiếp · Ống</span></td>
+              </tr>
+              <tr>
+                <td class="name">Bộ khuôn kéo & cắt ống<small>đời khấu hao ngắn (3 năm)</small></td>
+                <td><span class="in"><input value="3.726.500.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="3" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">1.242.166.667<span class="u">đ</span></span></td>
+                <td><span class="alloc a-pipe">Trực tiếp · Ống</span></td>
+              </tr>
+              <tr>
+                <td class="name">Máy ép phun — loại A</td>
+                <td><span class="in"><input value="1.297.900.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="5" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">259.580.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-fit">Trực tiếp · Phụ kiện</span></td>
+              </tr>
+              <tr>
+                <td class="name">Máy ép phun — loại B</td>
+                <td><span class="in"><input value="1.920.100.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="5" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">384.020.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-fit">Trực tiếp · Phụ kiện</span></td>
+              </tr>
+              <tr>
+                <td class="name">Bộ khuôn ép phụ kiện<small>nhiều SKU dùng chung 1 khuôn · KH phân bổ · gán khuôn ở Danh mục (Toàn quyền)</small></td>
+                <td><span class="in"><input value="6.542.850.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="3" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">2.180.950.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-fit">Trực tiếp · Phụ kiện</span></td>
+              </tr>
+              <tr>
+                <td class="name">Máy móc thiết bị thử nghiệm<small>phòng lab · dùng chung 2 dòng</small></td>
+                <td><span class="in"><input value="1.192.500.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="5" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">238.500.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-shared">Chung · phân bổ</span></td>
+              </tr>
+              <tr>
+                <td class="name">Chứng nhận UL (thiết bị & setup)<small>gồm cả VN-UL nếu có</small></td>
+                <td><span class="in"><input value="1.200.000.000"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="2024" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="5" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">240.000.000<span class="u">đ</span></span></td>
+                <td><span class="alloc a-shared">Chung · phân bổ</span></td>
+              </tr>
+              <tr>
+                <td class="name">Nhà xưởng<small>chưa nhập nguyên giá</small></td>
+                <td><span class="in"><input value="0" placeholder="0"><span class="u">đ</span></span></td>
+                <td><span class="in" style="min-width:56px"><input value="1" style="width:28px"></span></td>
+                <td><span class="in" style="min-width:70px"><input value="—" style="width:44px"></span></td>
+                <td><span class="in" style="min-width:60px"><input value="10" style="width:28px"><span class="u">năm</span></span></td>
+                <td><span class="fx">0<span class="u">đ</span></span></td>
+                <td><span class="alloc a-shared">Chung · phân bổ</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td class="lab">Tổng nguyên giá &amp; khấu hao</td>
+                <td class="num">26.718.562.000</td><td></td><td></td><td></td>
+                <td><span class="fx" style="background:none;padding-right:0">5.629.087.867<span class="u">đ</span></span></td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="kpi">
+          <div><div class="lab">Khấu hao → Ống</div><div class="val pipe">2.326.037.867 đ/năm</div></div>
+          <div><div class="lab">Khấu hao → Phụ kiện</div><div class="val fit">2.824.550.000 đ/năm</div></div>
+          <div><div class="lab">Khấu hao → Chung</div><div class="val shared">478.500.000 đ/năm</div></div>
+        </div>
+        <div class="flow">
+          <span>Dòng chảy kế toán:</span><b>Tài sản</b><span class="arrow">→</span><b>Khấu hao/năm</b>
+          <span class="arrow">→</span> gắn thẻ <b>Trực tiếp</b> (vào giá thành từng dòng) hoặc <b>Chung</b>
+          <span class="arrow">→</span> chi phí chung phân bổ 2 dòng.
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CONVERSION -->
+    <section class="pane" data-p="conv">
+      <div class="two">
+        <div class="card">
+          <div class="card-h"><div><div class="eyebrow" style="color:var(--pipe)">Dòng Ống CPVC</div><h2>Chi phí chế biến / năm</h2></div></div>
+          <div class="grid">
+            <div class="cell"><label>Số người / ca</label><span class="in"><input value="2"></span></div>
+            <div class="cell"><label>Số ca / ngày</label><span class="in"><input value="3"></span></div>
+            <div class="cell"><label>Lương bình quân / tháng</label><span class="in"><input value="13.250.000"><span class="u">đ</span></span></div>
+            <div class="cell"><label>Số tháng lương / năm</label><span class="in"><input value="14"></span></div>
+            <div class="cell derived"><label>Chi phí nhân công / năm <span class="fxtag">fx</span></label><span class="fx">1.113.000.000<span class="u">đ</span></span></div>
+            <div class="cell"><label>Công suất điện</label><span class="in"><input value="120"><span class="u">kW</span></span></div>
+            <div class="cell"><label>Đơn giá điện</label><span class="in"><input value="2.120"><span class="u">đ/kWh</span></span></div>
+            <div class="cell derived"><label>Tiền điện / năm <span class="fxtag">fx</span></label><span class="fx">1.251.648.000<span class="u">đ</span></span></div>
+            <div class="cell derived"><label>Tiền nước / năm <span class="fxtag">fx</span></label><span class="fx">1.043.040.000<span class="u">đ</span></span></div>
+            <div class="cell"><label>Bảo trì / năm</label><span class="in"><input value="120.000.000"><span class="u">đ</span></span></div>
+          </div>
+          <div class="kpi"><div><div class="lab">Tổng chế biến Ống (gồm khấu hao)</div><div class="val pipe">5.853.725.867 đ/năm</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div><div class="eyebrow" style="color:var(--fit)">Dòng Phụ kiện</div><h2>Chi phí chế biến / năm</h2></div></div>
+          <div class="grid">
+            <div class="cell"><label>Số người / ca</label><span class="in"><input value="1"></span></div>
+            <div class="cell"><label>Số ca / ngày</label><span class="in"><input value="1"></span></div>
+            <div class="cell"><label>Lương bình quân / tháng</label><span class="in"><input value="13.250.000"><span class="u">đ</span></span></div>
+            <div class="cell"><label>Huy động giờ máy</label><span class="in"><input value="60"><span class="u">%</span></span></div>
+            <div class="cell derived"><label>Chi phí nhân công / năm <span class="fxtag">fx</span></label><span class="fx">185.500.000<span class="u">đ</span></span></div>
+            <div class="cell"><label>Điện / giờ máy</label><span class="in"><input value="30"><span class="u">kWh</span></span></div>
+            <div class="cell"><label>Nước / giờ máy</label><span class="in"><input value="2"><span class="u">m³</span></span></div>
+            <div class="cell derived"><label>Điện + nước / năm <span class="fxtag">fx</span></label><span class="fx">theo giờ máy<span class="u"></span></span></div>
+          </div>
+          <div class="kpi"><div><div class="lab">Tổng chế biến Phụ kiện (gồm khấu hao)</div><div class="val fit">tự tính theo giờ máy</div></div></div>
+        </div>
+      </div>
+      <div class="flow" style="border:1px solid var(--border);border-radius:13px">
+        <span>Chi phí chế biến truy được về <b>từng dòng</b> → cộng khấu hao trực tiếp → ra <b>giá thành gia công/kg</b> (Ống theo kg hoặc m/giờ) và <b>MHR/giờ máy</b> (Phụ kiện).</span>
+      </div>
+    </section>
+
+    <!-- 3. OVERHEAD -->
+    <section class="pane" data-p="oh">
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow" style="color:var(--shared)">Chi phí chung sản xuất</div><h2>Dùng chung 2 dòng → phân bổ theo sản lượng</h2></div>
+          <span class="note">Máy móc thử nghiệm / UL đã nằm ở Sổ tài sản (khấu hao tự về đây)</span></div>
+        <div class="grid">
+          <div class="cell derived"><label>Khấu hao tài sản chung (từ Sổ tài sản) <span class="fxtag">fx</span></label><span class="fx">478.500.000<span class="u">đ</span></span></div>
+          <div class="cell"><label>Chi phí kiểm định / năm</label><span class="in"><input value="250.000.000"><span class="u">đ</span></span></div>
+          <div class="cell"><label>Thuê đất / năm</label><span class="in"><input value="525.000.000"><span class="u">đ</span></span></div>
+          <div class="cell derived"><label>Tổng chi phí chung sản xuất <span class="fxtag">fx</span></label><span class="fx">1.253.500.000<span class="u">đ</span></span></div>
+        </div>
+        <div class="kpi">
+          <div><div class="lab">Tỷ lệ phân bổ (theo sản lượng kg/năm)</div><div class="val">Ống 93,2% · PK 6,8%</div></div>
+          <div><div class="lab">Phân bổ → Ống</div><div class="val pipe">1.168.795.000 đ/năm</div></div>
+          <div><div class="lab">Phân bổ → Phụ kiện</div><div class="val fit">84.705.000 đ/năm</div></div>
+        </div>
+        <div class="flow">
+          <span>Tỷ lệ phân bổ = sản lượng dòng ÷ tổng sản lượng (Ống 619.920 kg · Phụ kiện 44.925 kg) — <b>tự tính từ công suất</b>, không nhập tay.</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow">Chi phí ngoài sản xuất</div><h2>Chỉ để tính lãi/lỗ — KHÔNG vào giá thành/kg</h2></div>
+          <span class="note">Trừ thẳng khỏi lợi nhuận (P&amp;L) · chỉ hiện ở hòa vốn toàn doanh nghiệp (thang giá bậc 4)</span></div>
+        <div class="grid">
+          <div class="cell"><label>Chi phí vận hành ngoài SX / năm</label><span class="in"><input value="640.000.000"><span class="u">đ</span></span></div>
+          <div class="cell"><label>Chi phí tài chính / năm</label><span class="in"><input value="2.712.000.000"><span class="u">đ</span></span></div>
+          <div class="cell derived"><label>Tổng ngoài sản xuất <span class="fxtag">fx</span></label><span class="fx">3.352.000.000<span class="u">đ</span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. MATERIALS -->
+    <section class="pane" data-p="mat">
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow">Nguyên liệu — Compound</div><h2>Giá vốn, thuế, markup, khóa giá</h2></div></div>
+        <div class="tw"><table>
+          <thead><tr><th>Compound</th><th class="num">Giá NL (USD/kg)</th><th class="num">Thuế NK</th><th class="num">Phí HQ</th><th class="num">Markup VF</th><th class="num">Ngưỡng khóa giá</th><th class="num">Giá vốn/kg</th></tr></thead>
+          <tbody>
+            <tr><td class="name">BlazeMaster (ống)<small>xuất xứ EU</small></td>
+              <td><span class="in"><input value="3,40" style="min-width:50px"></span></td>
+              <td><span class="in" style="min-width:64px"><input value="6" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="1" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="25" style="width:30px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="3" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="fx" style="min-width:0">108.712<span class="u">đ</span></span></td></tr>
+            <tr><td class="name">BlazeMaster (phụ kiện)</td>
+              <td><span class="in"><input value="3,40" style="min-width:50px"></span></td>
+              <td><span class="in" style="min-width:64px"><input value="6" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="1" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="40" style="width:30px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="3" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="fx" style="min-width:0">fx<span class="u">đ</span></span></td></tr>
+            <tr><td class="name">Corzan 3710<small>xuất xứ Ấn Độ (AIFTA) · nhập tay ở Danh mục</small></td>
+              <td><span class="in"><input value="3,47" style="min-width:50px"></span></td>
+              <td><span class="in" style="min-width:64px"><input value="0" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="1" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="25" style="width:30px"><span class="u">%</span></span></td>
+              <td><span class="in" style="min-width:64px"><input value="3" style="width:26px"><span class="u">%</span></span></td>
+              <td><span class="fx" style="min-width:0">fx<span class="u">đ</span></span></td></tr>
+          </tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <!-- 5. SKU -->
+    <section class="pane" data-p="sku">
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow">Danh mục sản phẩm</div><h2>SKU · đơn trọng · CS đùn · khuôn</h2></div>
+          <span class="note">Giữ nguyên màn “Danh Mục Sản Phẩm” hiện có — nhúng vào đây thành 1 mục</span></div>
+        <div class="grid">
+          <div class="cell"><label>Ống CPVC</label><span class="fx" style="min-width:0">7 size<span class="u"></span></span></div>
+          <div class="cell"><label>Phụ kiện</label><span class="fx" style="min-width:0">66 SKU<span class="u"></span></span></div>
+          <div class="cell"><label>Đơn trọng, CS đùn m/giờ</label><span class="fx" style="min-width:0">nhập theo size<span class="u"></span></span></div>
+          <div class="cell"><label>Gán khuôn (chỉ Toàn quyền)</label><span class="fx" style="min-width:0">tài sản khuôn<span class="u"></span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. FINANCE -->
+    <section class="pane" data-p="fin">
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow">Tham số tài chính chung</div><h2>Áp cho toàn hệ thống</h2></div></div>
+        <div class="grid">
+          <div class="cell"><label>Tỷ giá USD → VND</label><span class="in"><input value="26.500"><span class="u">đ</span></span></div>
+          <div class="cell"><label>VAT đầu ra</label><span class="in"><input value="8"><span class="u">%</span></span></div>
+          <div class="cell"><label>Bảo hiểm bắt buộc</label><span class="in"><input value="0"><span class="u">%</span></span></div>
+          <div class="cell"><label>Markup kênh TCG</label><span class="in"><input value="30"><span class="u">%</span></span></div>
+          <div class="cell"><label>Biên nhà phân phối (NPP)</label><span class="in"><input value="30"><span class="u">%</span></span></div>
+          <div class="cell"><label>Dung môi 550 / thùng</label><span class="in"><input value="550.000"><span class="u">đ</span></span></div>
+          <div class="cell"><label>Vốn lưu động</label><span class="in"><input value="0"><span class="u">đ</span></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BÁO CÁO LÃI/LỖ (tab riêng — chỉ đọc) -->
+    <section class="pane" data-p="pnl">
+      <div class="card">
+        <div class="card-h"><div><div class="eyebrow" style="color:var(--good)">Báo cáo kết quả kinh doanh</div><h2>Lãi/lỗ cả năm — nhận số từ Thiết lập</h2></div>
+          <span class="note">Toàn bộ dòng dưới là <b>fx</b> · engine tính, không nhập ở đây</span></div>
+        <div class="tw"><table class="pnl">
+          <tbody>
+            <tr class="rev"><td>Doanh thu thuần (giá VF)</td><td class="num">95.600.020.628</td><td class="num pct">100%</td></tr>
+            <tr><td>(−) Giá vốn hàng bán</td><td class="num">(75.506.370.970)</td><td class="num pct">79,0%</td></tr>
+            <tr class="sub"><td>· Nguyên vật liệu + chế biến trực tiếp (gồm KH máy trực tiếp)</td><td class="num">74.252.870.970</td><td></td></tr>
+            <tr class="sub"><td>· Chi phí chung sản xuất phân bổ (theo sản lượng)</td><td class="num">1.253.500.000</td><td></td></tr>
+            <tr class="total"><td>= Lãi gộp</td><td class="num">20.093.649.658</td><td class="num pct">21,0%</td></tr>
+            <tr><td>(−) Chi phí ngoài sản xuất</td><td class="num">(3.352.000.000)</td><td class="num pct">3,5%</td></tr>
+            <tr class="sub"><td>· Chi phí vận hành</td><td class="num">640.000.000</td><td></td></tr>
+            <tr class="sub"><td>· Chi phí tài chính</td><td class="num">2.712.000.000</td><td></td></tr>
+            <tr class="total"><td>= Lợi nhuận trước thuế</td><td class="num">16.741.649.658</td><td class="num pct">17,5%</td></tr>
+            <tr><td>(−) Thuế TNDN (20%)</td><td class="num">(3.348.329.932)</td><td></td></tr>
+            <tr class="grand"><td>= Lợi nhuận sau thuế</td><td class="num">13.393.319.726</td><td class="num pct">14,0%</td></tr>
+          </tbody>
+        </table></div>
+        <div class="flow"><span>Luồng: <b>Thiết lập dữ liệu</b> <span class="arrow">→</span> engine (giá thành · phân bổ · thang giá — <b>đã có, không đổi</b>) <span class="arrow">→</span> báo cáo này. Chi phí ngoài SX chỉ xuất hiện Ở ĐÂY (P&amp;L), không vào giá thành/kg.</span></div>
+      </div>
+    </section>
+
+    <div style="font-size:11px;color:var(--faint);margin-top:8px">
+      Prototype Pha 1 · số liệu thật từ fixture v3.4 · <b>chưa nối Firebase</b>. Ô “fx” minh hoạ số tự tính (khấu hao, tổng, phân bổ) — bản thật engine tính, người dùng không sửa.
+    </div>
+  </main>
+</div>
+
+<script>
+  const steps = document.getElementById('steps');
+  const titles = {
+    assets:['Tài sản cố định & khấu hao','Khai báo mọi tài sản như trang “Nhập liệu ban đầu” của Excel. Nhập nguyên giá và đời khấu hao; hệ thống tự tính khấu hao/năm và phân bổ về dòng sản phẩm.'],
+    conv:['Chi phí chế biến theo dòng','Nhân công, điện, nước, bảo trì và thông số vận hành — truy được về từng dòng sản phẩm (Ống · Phụ kiện).'],
+    oh:['Chi phí chung & ngoài sản xuất','Chi phí không truy trực tiếp một dòng: thuê đất, lab, UL, tài chính, cùng khấu hao tài sản “Chung” — phân bổ 2 dòng theo sản lượng.'],
+    mat:['Nguyên liệu (compound)','Giá vốn NL, thuế nhập khẩu, phí hải quan, markup VF và ngưỡng khóa giá — theo từng compound.'],
+    sku:['Danh mục sản phẩm','Mã SKU, đơn trọng, công suất đùn m/giờ và gán khuôn — nhúng màn Danh Mục hiện có.'],
+    fin:['Tham số tài chính chung','Tỷ giá, VAT, bảo hiểm, markup kênh phân phối và vốn lưu động — áp cho toàn hệ thống.'],
+    pnl:['Báo cáo lãi/lỗ','Bảng kết quả kinh doanh cả năm — chỉ ĐỌC số từ phần Thiết lập rồi tính lãi/lỗ. Đây là tab riêng, không nhập liệu; trong app thật nằm ở nhóm “Theo dõi”.']
+  };
+  steps.addEventListener('click', e => {
+    const li = e.target.closest('.step'); if(!li) return;
+    const p = li.dataset.p;
+    steps.querySelectorAll('.step').forEach(s=>s.classList.toggle('on',s===li));
+    document.querySelectorAll('.pane').forEach(s=>s.classList.toggle('on',s.dataset.p===p));
+    document.getElementById('ttl').textContent = titles[p][0];
+    document.getElementById('sub').textContent = titles[p][1];
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+</script>
+</body>
+</html>

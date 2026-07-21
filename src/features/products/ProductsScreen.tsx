@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
 import type { AppRole } from '../../lib/firebase.js';
@@ -33,10 +33,18 @@ export default function ProductsScreen({
   role,
   scenarioId,
   scenario,
+  formOverride,
+  onFormChange,
+  hideChrome,
 }: {
   role: AppRole;
   scenarioId: string;
   scenario: ScenarioInput | null;
+  // Chế độ "controlled" (nhúng ở Thiết Lập Dữ Liệu — ADR-049): dùng CHUNG form +
+  // setter của màn cha để 1 nguồn dữ liệu, 1 nút Lưu (tránh 2 form ghi đè nhau).
+  formOverride?: ScenarioInput | null;
+  onFormChange?: Dispatch<SetStateAction<ScenarioInput | null>>;
+  hideChrome?: boolean;
 }) {
   // ADR-039 — quyền khớp rules server: DANH MỤC (products[]) mở cho cả Toàn
   // Quyền lẫn Định Giá (master data kỹ thuật); riêng KHUÔN (moldAssets — tài
@@ -44,16 +52,20 @@ export default function ProductsScreen({
   const canEdit = role === 'admin' || role === 'pricing';
   const canEditMolds = role === 'admin';
   const canView = canEdit;
-  const [form, setForm] = useState<ScenarioInput | null>(null);
+  const controlled = !!onFormChange;
+  const [internalForm, setInternalForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [diag, setDiag] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  if (scenario && !loadedRef.current) {
+  const form = controlled ? formOverride ?? null : internalForm;
+  const setForm = controlled ? onFormChange! : setInternalForm;
+
+  if (!controlled && scenario && !loadedRef.current) {
     loadedRef.current = true;
-    setForm(scenario);
+    setInternalForm(scenario);
   }
 
   if (!canView) {
@@ -74,6 +86,12 @@ export default function ProductsScreen({
   // ADR-046 — công suất TỐI ĐA máy đùn (kg/giờ) = HẰNG SỐ vật lý, dùng làm trần
   // cảnh báo khi nhập m/giờ theo size (m/giờ × đơn trọng không được vượt trần này).
   const pipeMaxKgPerHour = form.resources.pipe.driverType === 'continuous_kg' ? form.resources.pipe.maxCapacityKgPerHour : undefined;
+  // ADR-047 — cách tính giá thành Ống đang bật (công tắc toàn cục ở sidebar). CHỈ
+  // đọc để trình bày cho khớp: cột "CS đùn (m/giờ)" đổi VAI TRÒ theo chế độ —
+  // 'meters' thì con số này quyết định giá vốn từng size; 'kg' thì nó chỉ là
+  // cảnh báo công suất, KHÔNG ăn vào giá (rải đều theo kg, chuẩn Excel v3.4).
+  const pipeCostMethod = form.pipeCostMethod ?? 'kg';
+  const costByMeters = pipeCostMethod === 'meters';
 
   // Khuôn (ADR-007): phụ kiện chỉ LÊN BẢNG GIÁ khi có khuôn sản xuất nó. Nhiều
   // SKU dùng chung 1 khuôn (cùng khuôn, khác compound — ADR-012) là bình thường.
@@ -273,7 +291,8 @@ export default function ProductsScreen({
   };
 
   return (
-    <div style={{ padding: '32px 36px', paddingBottom: 100 }}>
+    <div style={{ padding: hideChrome ? '18px 18px 24px' : '32px 36px', paddingBottom: hideChrome ? 24 : 100 }}>
+      {!hideChrome && (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
@@ -299,6 +318,7 @@ export default function ProductsScreen({
           </button>
         </div>
       </div>
+      )}
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
         {(['pipe', 'fitting'] as const).map((t) => (
@@ -321,6 +341,40 @@ export default function ProductsScreen({
         ))}
       </div>
 
+      {activeTab === 'pipe' && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 8,
+            marginBottom: 12,
+            padding: '9px 13px',
+            borderRadius: 6,
+            border: `1px solid ${costByMeters ? '#1f5fd0' : '#b45309'}`,
+            background: costByMeters ? '#f4f8ff' : '#fffbeb',
+            fontSize: 11.5,
+            lineHeight: 1.5,
+          }}
+        >
+          <span style={{ fontWeight: 700 }}>{costByMeters ? '⏱' : '⚖'}</span>
+          <span>
+            Đang tính giá thành Ống <b>{costByMeters ? 'theo m/giờ (giờ máy per-size)' : 'theo kg (rải đều — chuẩn Excel)'}</b>.{' '}
+            {costByMeters ? (
+              <>
+                Cột <b>“CS đùn (m/giờ)”</b> bên dưới <b>quyết định giá vốn từng size</b> (size chạy chậm gánh giá cao hơn) và{' '}
+                <b>tổng sản lượng/năm</b> (size chậm kéo công suất máy xuống → doanh thu &amp; lợi nhuận đổi theo — ADR-048).
+                Hãy nhập số đo m/giờ thật; size bỏ trống sẽ suy từ tốc độ chung (rơi về đúng kết quả theo kg).
+              </>
+            ) : (
+              <>
+                Cột <b>“CS đùn (m/giờ)”</b> bên dưới <b>KHÔNG ảnh hưởng giá</b> ở chế độ này — chỉ dùng để{' '}
+                <b>cảnh báo công suất</b> (m/giờ × đơn trọng có vượt trần máy không). Đổi cách tính ở công tắc “Cách tính giá thành Ống” trên thanh bên.
+              </>
+            )}
+          </span>
+        </div>
+      )}
+
       <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflowX: 'auto' }}>
         {activeTab === 'pipe' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
@@ -331,7 +385,22 @@ export default function ProductsScreen({
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>OD (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Dày min (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Đơn trọng (kg/m)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }} title={`Tốc độ đùn thực đo theo size. Cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`}>CS đùn (m/giờ)</th>
+                <th
+                  style={{
+                    padding: '8px 12px',
+                    borderBottom: `1px solid ${costByMeters ? '#1f5fd0' : '#d8d8d8'}`,
+                    background: costByMeters ? '#eef4ff' : undefined,
+                    color: costByMeters ? '#1f5fd0' : '#9a9a9a',
+                    fontWeight: costByMeters ? 700 : 400,
+                  }}
+                  title={
+                    costByMeters
+                      ? `Đang tính giá THEO m/giờ: con số này quyết định giá vốn từng size. Cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`
+                      : `Đang tính giá THEO kg: cột này KHÔNG ăn vào giá, chỉ cảnh báo nếu m/giờ × đơn trọng vượt công suất tối đa máy${pipeMaxKgPerHour ? ` (${pipeMaxKgPerHour} kg/giờ)` : ''}.`
+                  }
+                >
+                  CS đùn (m/giờ){costByMeters ? ' → giá' : ' · chỉ cảnh báo'}
+                </th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Nguyên liệu (Compound)</th>
                 <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 60 }}></th>
               </tr>

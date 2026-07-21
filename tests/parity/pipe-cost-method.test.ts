@@ -53,4 +53,23 @@ describe('ADR-047 — pipeCostMethod: kg vs meters', () => {
     };
     expect(spread(mByDn)).not.toBeCloseTo(spread(kgByDn), 3); // phân bố giá đổi
   });
+
+  // ADR-048 — 'meters' CÓ m/giờ: size chạy chậm KÉO tổng công suất dòng xuống
+  // (máy nghẽn) → tổng sản lượng/năm KHÁC 'kg'. 'meters' CHƯA đo thì giữ y hệt.
+  it("'meters' CÓ m/giờ đo → tổng công suất dòng đổi (nghẽn); chưa đo thì giữ nguyên", () => {
+    const kg = calculateScenario({ ...base, pipeCostMethod: 'kg' });
+    const metersNoRate = calculateScenario({ ...base, pipeCostMethod: 'meters' });
+    // Chưa nhập m/giờ ⇒ công suất trùng khít 'kg'.
+    expect(metersNoRate.capacity.pipe.normalCapacityKgYear).toBeCloseTo(kg.capacity.pipe.normalCapacityKgYear, 4);
+
+    const withRates = {
+      ...base,
+      pipeCostMethod: 'meters' as const,
+      products: base.products.map((p) => (p.kind === 'pipe' ? { ...p, capacityMetersPerHour: Number(p.dn) <= 25 ? 420 : 60 } : p)),
+    };
+    const meters = calculateScenario(withRates);
+    // Size lớn (60 m/h) nhiều hơn size nhỏ nhanh ⇒ tổng công suất GIẢM rõ rệt.
+    expect(meters.capacity.pipe.normalCapacityKgYear).toBeLessThan(kg.capacity.pipe.normalCapacityKgYear * 0.95);
+    expect(meters.capacity.pipe.normalCapacityKgYear).toBeGreaterThan(0);
+  });
 });

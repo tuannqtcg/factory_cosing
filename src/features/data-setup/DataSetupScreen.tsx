@@ -23,17 +23,20 @@ import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { calculatePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
+import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
+import { CIT_RATE } from '../../engine/ceo-planner.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
-type SectionId = 'assets' | 'conv' | 'oh' | 'mat' | 'sku' | 'fin' | 'pnl';
+type SectionId = 'assets' | 'conv' | 'oh' | 'mat' | 'sku' | 'fin' | 'pricing' | 'pnl';
 const SETUP_SECTIONS: Array<{ id: SectionId; no: string; t: string; cap: string }> = [
   { id: 'assets', no: '01', t: 'Tài sản cố định', cap: 'CAPEX · khấu hao · phân bổ' },
   { id: 'conv', no: '02', t: 'Chi phí chế biến', cap: 'nhân công · điện · nước theo dòng' },
   { id: 'oh', no: '03', t: 'Chi phí chung & ngoài SX', cap: 'thuê · lab · UL · tài chính' },
-  { id: 'mat', no: '04', t: 'Nguyên liệu (compound)', cap: 'giá · thuế · markup · khóa giá' },
+  { id: 'mat', no: '04', t: 'Nguyên liệu (compound)', cap: 'giá · thuế · khóa giá' },
   { id: 'sku', no: '05', t: 'Danh mục sản phẩm', cap: 'SKU · đơn trọng · khuôn' },
-  { id: 'fin', no: '06', t: 'Tham số tài chính', cap: 'tỷ giá · VAT · markup kênh · vốn' },
+  { id: 'fin', no: '06', t: 'Tham số tài chính', cap: 'tỷ giá · VAT · vốn' },
+  { id: 'pricing', no: '07', t: 'Chính sách giá & markup', cap: 'giá thành → hòa vốn → markup → giá' },
 ];
 
 const ALLOC = {
@@ -48,6 +51,7 @@ function InCell({ value, onChange, unit, disabled, width = 130 }: { value: numbe
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
       <input
         type="number"
+        className={disabled ? undefined : 'ds-in'}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
@@ -252,6 +256,15 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
 
   return (
     <div style={{ display: 'flex', minHeight: '100%', gap: 0 }}>
+      {/* Hiệu ứng ô NHẬP: viền + quầng đỏ khi rê/chọn để biết ô nào gõ được. */}
+      <style>{`
+        .ds-in { transition: box-shadow .12s ease, border-color .12s ease, background-color .12s ease; caret-color:#a8003b; }
+        .ds-in:hover { border-color:#a8003b !important; background-color:#fffdfd !important; }
+        .ds-in:focus { border-color:#a8003b !important; background-color:#fff !important; box-shadow:0 0 0 3px rgba(168,0,59,.15); }
+        .ds-in::placeholder { color:#c4c9d2; }
+        @keyframes dsHint { 0%,100%{box-shadow:0 0 0 0 rgba(168,0,59,0);} 50%{box-shadow:0 0 0 3px rgba(168,0,59,.10);} }
+        .ds-in:not(:disabled):not(:focus):hover { animation: none; }
+      `}</style>
       {/* Rail mục con */}
       <nav style={{ width: 232, flexShrink: 0, borderRight: '1px solid #e6e8ec', padding: '26px 12px', background: '#fff' }}>
         <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#a3a3a3', fontWeight: 700 }}>Dữ liệu gốc</div>
@@ -277,7 +290,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 16, flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
-              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : section === 'mat' ? 'Nguyên liệu (compound)' : section === 'sku' ? 'Danh mục sản phẩm' : section === 'fin' ? 'Tham số tài chính' : section === 'pnl' ? 'Báo cáo lãi/lỗ' : 'Thiết lập dữ liệu'}
+              {section === 'assets' ? 'Tài sản cố định & khấu hao' : section === 'conv' ? 'Chi phí chế biến theo dòng' : section === 'oh' ? 'Chi phí chung & ngoài sản xuất' : section === 'mat' ? 'Nguyên liệu (compound)' : section === 'sku' ? 'Danh mục sản phẩm' : section === 'fin' ? 'Tham số tài chính' : section === 'pricing' ? 'Chính sách giá & markup' : section === 'pnl' ? 'Báo cáo lãi/lỗ' : 'Thiết lập dữ liệu'}
             </h1>
             <div style={{ fontSize: 12, color: '#737373', marginTop: 4, maxWidth: '64ch' }}>
               {section === 'assets'
@@ -287,12 +300,14 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   : section === 'oh'
                     ? 'Chi phí chung sản xuất (khấu hao tài sản chung + kiểm định + thuê đất) phân bổ 2 dòng theo sản lượng. Chi phí ngoài SX tách riêng — chỉ tính lãi/lỗ.'
                     : section === 'mat'
-                      ? 'Từng compound: giá tái tạo, thuế NK, phí HQ, ngưỡng khóa. Giá NL/kg nhập về + trạng thái khóa giá tự tính. (Markup VF tạm còn ở đây — sẽ chuyển sang chỗ có giá thành/hòa vốn.)'
+                      ? 'Từng compound: giá tái tạo, thuế NK, phí HQ, ngưỡng khóa. Giá NL/kg nhập về + trạng thái khóa giá tự tính. (Markup VF đã chuyển sang mục ⑦ Chính sách giá — đặt sau giá thành/hòa vốn.)'
                       : section === 'sku'
                         ? 'Danh sách SKU + quy cách từng sản phẩm (đơn trọng, CS đùn m/giờ, gán khuôn) — nhúng màn Danh Mục Sản Phẩm có sẵn.'
                         : section === 'fin'
-                          ? 'Tỷ giá, VAT, bảo hiểm, markup kênh phân phối và vốn lưu động — áp cho toàn hệ thống.'
-                          : 'Bảng kết quả kinh doanh — chỉ ĐỌC số từ phần Thiết lập rồi tính lãi/lỗ. Không nhập liệu ở đây.'}
+                          ? 'Tỷ giá, VAT, bảo hiểm và vốn lưu động — áp cho toàn hệ thống.'
+                          : section === 'pricing'
+                            ? 'Markup đặt SAU giá thành + hòa vốn: mỗi compound thấy giá thành đầy đủ → hòa vốn → nhập markup VF → ra giá bán VF (live). Kèm markup kênh TCG/NPP.'
+                            : 'Bảng kết quả kinh doanh — chỉ ĐỌC số từ phần Thiết lập rồi tính lãi/lỗ. Không nhập liệu ở đây.'}
             </div>
           </div>
           {section !== 'sku' && section !== 'pnl' && (
@@ -554,7 +569,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                     <thead><tr>
                       <th style={th4}>Compound</th><th style={{ ...th4, ...rNum }}>Giá tái tạo (USD/kg)</th>
                       <th style={{ ...th4, ...rNum }}>Thuế NK</th><th style={{ ...th4, ...rNum }}>Phí HQ</th>
-                      <th style={{ ...th4, ...rNum }}>Markup VF</th><th style={{ ...th4, ...rNum }}>Ngưỡng khóa</th>
+                      <th style={{ ...th4, ...rNum }}>Ngưỡng khóa</th>
                       <th style={{ ...th4, ...rNum }}>Giá NL/kg (nhập về)</th><th style={th4}>Khóa giá</th>{isAdmin && <th style={th4}></th>}
                     </tr></thead>
                     <tbody>
@@ -566,14 +581,13 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                           <tr key={m.id}>
                             <td style={td}>
                               {isAdmin ? (
-                                <input value={m.name} onChange={(e) => updMatText(m.id, 'name', e.target.value)} style={{ width: 150, padding: '5px 8px', border: '1px solid #c8cdd5', borderRadius: 6, fontSize: 12.5, fontWeight: 600, outline: 'none' }} />
+                                <input className="ds-in" value={m.name} onChange={(e) => updMatText(m.id, 'name', e.target.value)} style={{ width: 150, padding: '5px 8px', border: '1px solid #c8cdd5', borderRadius: 6, fontSize: 12.5, fontWeight: 600, outline: 'none' }} />
                               ) : <b>{m.name}</b>}
                               <div style={{ fontSize: 10, color: '#9aa0aa', marginTop: 2 }}>{m.code || '—'} · {m.originLabel || '—'}</div>
                             </td>
                             <td style={{ ...td, ...rNum }}><InCell value={m.inventory.replacementPriceUsdPerKg} onChange={(v) => updReplacement(m.id, v)} width={78} /></td>
                             <td style={{ ...td, ...rNum }}><InCell value={m.importTaxRate} onChange={(v) => updMatNum(m.id, 'importTaxRate', v)} unit="tỷ lệ" width={64} /></td>
                             <td style={{ ...td, ...rNum }}><InCell value={m.customsLogisticsFeeRate} onChange={(v) => updMatNum(m.id, 'customsLogisticsFeeRate', v)} unit="tỷ lệ" width={64} /></td>
-                            <td style={{ ...td, ...rNum }}><InCell value={m.markupVf} onChange={(v) => updMatNum(m.id, 'markupVf', v)} unit="tỷ lệ" width={64} /></td>
                             <td style={{ ...td, ...rNum }}><InCell value={m.inventory.priceLock.thresholdPct} onChange={(v) => updThreshold(m.id, v)} unit="0,03=3%" width={64} disabled={!isAdmin} /></td>
                             <td style={{ ...td, ...rNum }}><FxCell value={landed} unit="đ" /></td>
                             <td style={td}>
@@ -593,7 +607,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 </div>
               </div>
               <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 10 }}>
-                <b>Giá NL/kg (nhập về)</b> là số <b>tự tính</b> = giá USD × (1 + thuế NK + phí HQ) × tỷ giá (hàm <code>landedCostPerKgVnd</code>). Trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-004), không tính lại. Thuế/phí/markup khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
+                <b>Giá NL/kg (nhập về)</b> là số <b>tự tính</b> = giá USD × (1 + thuế NK + phí HQ) × tỷ giá (hàm <code>landedCostPerKgVnd</code>). Trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-004), không tính lại. Thuế/phí khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
               </div>
             </div>
           );
@@ -613,7 +627,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
 
         {/* ── MỤC 06: THAM SỐ TÀI CHÍNH ── */}
         {section === 'fin' && (() => {
-          const cur = form.costPool.currency; const mk = form.costPool.markup;
+          const cur = form.costPool.currency;
           const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' };
           return (
             <div>
@@ -621,28 +635,124 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 <GridCell label="Tỷ giá USD → VND"><InCell width="100%" value={cur.usdVndRate} onChange={(v) => setCurrency('usdVndRate', v)} unit="đ/USD" /></GridCell>
                 <GridCell label="VAT đầu ra"><InCell width="100%" value={cur.vatOutputRate} onChange={(v) => setCurrency('vatOutputRate', v)} unit="tỷ lệ (0,08=8%)" /></GridCell>
                 <GridCell label="Bảo hiểm bắt buộc + KPCĐ"><InCell width="100%" value={cur.mandatoryInsuranceRate} onChange={(v) => setCurrency('mandatoryInsuranceRate', v)} unit="tỷ lệ (0,235=23,5%)" /></GridCell>
-                <GridCell label="Markup kênh TCG"><InCell width="100%" value={mk.markupTcg} onChange={(v) => setMarkup('markupTcg', v)} unit="tỷ lệ (0,3=30%)" /></GridCell>
-                <GridCell label="Biên nhà phân phối (NPP)"><InCell width="100%" value={mk.listPriceMargin} onChange={(v) => setMarkup('listPriceMargin', v)} unit="tỷ lệ (0-0,9)" /></GridCell>
                 <GridCell label={<>Dung môi 550 / thùng {locked && '🔒'}</>}><InCell width="100%" value={form.costPool.solvent550PricePerBox} onChange={setSolvent} unit="đ" disabled={locked} /></GridCell>
                 <GridCell label={<>Vốn lưu động ban đầu {locked && '🔒'}</>}><InCell width="100%" value={shared.workingCapital || 0} onChange={(v) => setShared('workingCapital', v)} unit="đ" disabled={locked} /></GridCell>
               </div>
               <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 10 }}>
-                Tham số áp cho toàn hệ thống. <b>Markup kênh</b> (TCG → NPP) là chuỗi định giá phân phối. Riêng <b>markup VF</b> (giá thành → giá xuất xưởng) đang tạm ở mục ④ — sẽ chuyển sang chỗ hiển thị giá thành + hòa vốn (đang cân nhắc, theo góp ý của bạn).
+                Tham số áp cho toàn hệ thống. Chính sách markup (VF → TCG → NPP) đặt ở mục ⑦ Chính sách giá.
               </div>
             </div>
           );
         })()}
 
-        {/* ── BÁO CÁO LÃI/LỖ: đang dựng ── */}
-        {section === 'pnl' && (
-          <div style={{ background: '#fff', border: '1px dashed #d3d7dd', borderRadius: 12, padding: '40px 30px', textAlign: 'center', color: '#737373' }}>
-            <div style={{ fontSize: 30, marginBottom: 8 }}>📊</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a' }}>Báo cáo lãi/lỗ — đang dựng</div>
-            <div style={{ fontSize: 12, marginTop: 6, maxWidth: '54ch', margin: '6px auto 0' }}>
-              Sẽ đọc số từ engine (doanh thu − giá vốn − chi phí ngoài SX = lãi/lỗ) như mockup. Làm sau cùng để không trùng logic dashboard/ceo-planner đang có.
+        {/* ── MỤC 07: CHÍNH SÁCH GIÁ & MARKUP (markup sau giá thành + hòa vốn) ── */}
+        {section === 'pricing' && (() => {
+          const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' };
+          return (
+            <div>
+              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden', marginBottom: 16 }}>
+                <div style={{ padding: '13px 16px', borderBottom: '1px solid #e6e8ec' }}>
+                  <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#16A34A', fontWeight: 700 }}>Markup VF theo compound</div>
+                  <div style={{ fontSize: 14.5, fontWeight: 700 }}>Giá thành → hòa vốn → <span style={{ color: '#16A34A' }}>+markup</span> → giá bán VF</div>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 780 }}>
+                    <thead><tr>
+                      <th style={th}>Compound</th><th style={{ ...th, ...rNum }}>Giá thành đầy đủ</th>
+                      <th style={{ ...th, ...rNum }}>Hòa vốn toàn DN</th><th style={{ ...th, ...rNum }}>Markup VF</th>
+                      <th style={{ ...th, ...rNum }}>Giá bán VF</th>
+                    </tr></thead>
+                    <tbody>
+                      {form.materials.map((m) => {
+                        const entry = internal?.priceLadder.byLineMaterial.find((e) => e.materialId === m.id);
+                        const fullCost = entry?.ladder.breakEvenFullCost ?? null;
+                        const breakEven = entry?.ladder.enterpriseBreakEven ?? null;
+                        const vfLive = fullCost !== null ? fullCost * (1 + m.markupVf) : null; // = engine targetPrice
+                        return (
+                          <tr key={m.id}>
+                            <td style={td}><b>{m.name}</b><div style={{ fontSize: 10, color: '#9aa0aa' }}>{entry ? (entry.line === 'pipe' ? 'Ống' : 'Phụ kiện') : 'chưa có SKU lên giá'}</div></td>
+                            <td style={{ ...td, ...rNum }}>{fullCost !== null ? <FxCell value={fullCost} unit="đ/kg" /> : <span style={{ color: '#9aa0aa' }}>—</span>}</td>
+                            <td style={{ ...td, ...rNum }}>{breakEven !== null ? <FxCell value={breakEven} unit="đ/kg" /> : <span style={{ color: '#9aa0aa' }}>—</span>}</td>
+                            <td style={{ ...td, ...rNum }}><InCell value={m.markupVf} onChange={(v) => updMatNum(m.id, 'markupVf', v)} unit="tỷ lệ (0,25=25%)" width={90} /></td>
+                            <td style={{ ...td, ...rNum }}>{vfLive !== null ? <FxCell value={vfLive} unit="đ/kg" /> : <span style={{ color: '#9aa0aa' }}>—</span>}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ fontSize: 11, color: '#a3a3a3', padding: '10px 16px' }}>
+                  Markup áp trên <b>giá thành đầy đủ</b> (đã gồm NVL + chế biến + chi phí chung phân bổ), không phải trên giá NL. Giá thành/hòa vốn đọc từ engine (thang giá 5 bậc); giá VF = giá thành × (1+markup) — đúng công thức engine.
+                </div>
+              </div>
+
+              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16 }}>
+                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#8a5a12', fontWeight: 700, marginBottom: 2 }}>Markup kênh phân phối</div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 12 }}>VF → TCG → Nhà phân phối</div>
+                <div style={gridStyle}>
+                  <GridCell label="Markup kênh TCG"><InCell width="100%" value={form.costPool.markup.markupTcg} onChange={(v) => setMarkup('markupTcg', v)} unit="tỷ lệ (0,3=30%)" /></GridCell>
+                  <GridCell label="Biên nhà phân phối (NPP)"><InCell width="100%" value={form.costPool.markup.listPriceMargin} onChange={(v) => setMarkup('listPriceMargin', v)} unit="tỷ lệ (0-0,9)" /></GridCell>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
+
+        {/* ── BÁO CÁO LÃI/LỖ (đọc số engine — dashboard KPIs) ── */}
+        {section === 'pnl' && (() => {
+          let pnl: { revenue: number; cogs: number; gross: number; nonProd: number; ebit: number; tax: number; net: number } | null = null;
+          try {
+            const k = calculateDashboardKpis(form).investment;
+            const nonProd = form.costPool.nonProductionCosts.operatingCostPerYear + form.costPool.nonProductionCosts.financialCostPerYear;
+            const revenue = k.expectedRevenueVf;
+            const ebit = k.ebitAtNormalCapacityVfPrice; // = lãi gộp (trên giá thành đầy đủ) − ngoài SX
+            const gross = ebit + nonProd;
+            const tax = ebit > 0 ? ebit * CIT_RATE : 0;
+            pnl = { revenue, cogs: revenue - gross, gross, nonProd, ebit, tax, net: ebit - tax };
+          } catch { pnl = null; }
+          if (!pnl) return <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 30, color: '#737373', fontSize: 12 }}>Chưa tính được báo cáo — kiểm tra lại dữ liệu thiết lập (nguyên liệu / công suất).</div>;
+          const pct = (v: number) => (pnl!.revenue > 0 ? `${((v / pnl!.revenue) * 100).toFixed(1)}%` : '—');
+          const rows: Array<{ label: string; v: number; kind: 'rev' | 'sub' | 'total' | 'grand'; neg?: boolean }> = [
+            { label: 'Doanh thu thuần (giá VF)', v: pnl.revenue, kind: 'rev' },
+            { label: '(−) Giá vốn hàng bán (giá thành đầy đủ)', v: pnl.cogs, kind: 'sub', neg: true },
+            { label: '= Lãi gộp', v: pnl.gross, kind: 'total' },
+            { label: '(−) Chi phí ngoài sản xuất', v: pnl.nonProd, kind: 'sub', neg: true },
+            { label: '= Lợi nhuận trước thuế (EBIT)', v: pnl.ebit, kind: 'total' },
+            { label: `(−) Thuế TNDN (${Math.round(CIT_RATE * 100)}%)`, v: pnl.tax, kind: 'sub', neg: true },
+            { label: '= Lợi nhuận sau thuế', v: pnl.net, kind: 'grand' },
+          ];
+          return (
+            <div>
+              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
+                <div style={{ padding: '13px 16px', borderBottom: '1px solid #e6e8ec', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <div><div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#16A34A', fontWeight: 700 }}>Báo cáo kết quả kinh doanh</div><div style={{ fontSize: 14.5, fontWeight: 700 }}>Lãi/lỗ cả năm — đọc số từ Thiết lập</div></div>
+                  <span style={{ fontSize: 11, color: '#737373' }}>Toàn bộ là số tự tính · engine, không nhập</span>
+                </div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 520 }}>
+                    <tbody>
+                      {rows.map((r) => {
+                        const isTotal = r.kind === 'total', isGrand = r.kind === 'grand', isRev = r.kind === 'rev';
+                        return (
+                          <tr key={r.label} style={{ background: isTotal || isGrand ? '#fafbfc' : 'transparent', borderTop: isGrand ? '2px solid #0d0e11' : isTotal ? '1px solid #d3d7dd' : '1px solid #f0f0f0' }}>
+                            <td style={{ padding: isGrand ? '12px 16px' : '9px 16px', fontWeight: isRev || isTotal || isGrand ? 700 : 400, color: r.kind === 'sub' ? '#565b64' : '#1a1a1a', paddingLeft: r.kind === 'sub' ? 30 : 16, fontSize: isGrand ? 14 : 13 }}>{r.label}</td>
+                            <td style={{ padding: isGrand ? '12px 16px' : '9px 16px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontWeight: isRev || isTotal || isGrand ? 700 : 500, fontVariantNumeric: 'tabular-nums', color: isGrand ? (pnl!.net >= 0 ? '#16A34A' : '#DC2626') : '#1a1a1a', fontSize: isGrand ? 15 : 13 }}>
+                              {r.neg ? `(${fmtVnd(r.v)})` : fmtVnd(r.v)}
+                            </td>
+                            <td style={{ padding: '9px 16px', textAlign: 'right', color: '#9aa0aa', fontSize: 11.5, width: 70, fontVariantNumeric: 'tabular-nums' }}>{r.kind === 'sub' ? '' : pct(r.v)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ fontSize: 11, color: '#a3a3a3', padding: '11px 16px', lineHeight: 1.5 }}>
+                  Nguồn: <b>doanh thu VF</b> và <b>EBIT</b> lấy từ engine (KPI Dashboard, giá bán markup chuẩn); lãi gộp = EBIT + chi phí ngoài SX; thuế TNDN {Math.round(CIT_RATE * 100)}%. <b>Chi phí ngoài SX chỉ xuất hiện ở đây (P&amp;L), không vào giá thành/kg.</b> Cập nhật theo số bạn đang thiết lập.
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {showMoldModal && (

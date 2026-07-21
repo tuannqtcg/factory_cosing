@@ -20,7 +20,6 @@ import DataSetupScreen from '../data-setup/DataSetupScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
 import ScenarioCompareScreen from '../scenario-compare/ScenarioCompareScreen.js';
-import ProductMixScreen from '../product-mix/ProductMixScreen.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
@@ -63,7 +62,6 @@ const NAV_GROUPS: Array<{ title: string; role: ScreenRole; caption: string; tabs
       { id: 'ceo-planner', label: 'Trợ Lý CEO', caption: 'kịch bản ca/biên → lợi nhuận' },
       { id: 'lot-costing', label: 'Giá Vốn Theo Lô', caption: 'lô mới về — chốt lại giá?' },
       { id: 'scenario-compare', label: 'So Sánh Kịch Bản', caption: 'kịch bản · độ nhạy (tornado)' },
-      { id: 'product-mix', label: 'Tối Ưu Product-mix', caption: 'dồn lực vào dòng nào?' },
     ],
   },
   {
@@ -247,7 +245,6 @@ export default function AppShell() {
             )}
             {tabId === 'sensitivity' && <ScenarioCompareScreen scenario={data.scenario} onNavigate={go} initialTab="tornado" />}
             {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} onNavigate={go} />}
-            {tabId === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
             {tabId === 'lot-costing' && tabSub !== 'edit' && (
               <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />
             )}

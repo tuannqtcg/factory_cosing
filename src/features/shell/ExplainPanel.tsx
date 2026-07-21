@@ -96,15 +96,6 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
     action: ['Kịch bản xấu vẫn sống được → yên tâm mở rộng; kịch bản xấu lỗ nặng → chuẩn bị phương án phòng hộ từ giờ.'],
     related: [{ tab: 'sensitivity', label: 'Độ Nhạy — yếu tố nào đáng đưa vào kịch bản' }],
   },
-  'product-mix': {
-    question: 'Máy móc và vốn có hạn — nên dồn lực sản xuất dòng nào để tổng lời cao nhất?',
-    source: [
-      'So các dòng sản phẩm theo tiền lời góp về trên mỗi đơn vị nguồn lực khan hiếm: mỗi kg nguyên liệu, mỗi giờ máy, mỗi đồng vốn.',
-      'Có tính đến giá thị trường thực tế từng dòng — dòng biên cao chưa chắc thắng nếu thị trường không mua ở giá đó.',
-    ],
-    action: ['Kết quả chỉ đổi khi anh nhập giá thị trường thật của từng dòng — số này càng sát, kết luận càng đáng tin.'],
-    related: [{ tab: 'ceo-planner', label: 'Trợ Lý CEO — kịch bản lợi nhuận cả năm' }],
-  },
   products: {
     question: 'Danh mục sản phẩm gốc: tên, tiêu chuẩn, kích thước, đơn trọng, và khuôn nào sản xuất SKU nào.',
     source: [

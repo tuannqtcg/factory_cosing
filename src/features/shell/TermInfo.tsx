@@ -43,7 +43,7 @@ const TERM_DEFS: Record<PriceTerm, { title: string; body: string[] }> = {
     title: 'Giá trần nằm ở đâu?',
     body: [
       'Giá trần KHÔNG nằm trong sổ sách — nó là mức cao nhất thị trường chịu trả, do đối thủ và khách quyết định. App không tự biết con số này; nó chỉ biết khi anh cho nó số.',
-      'Đưa giá thị trường vào ở màn Tối Ưu Product-mix (ô nhập giá thị trường từng dòng — nhập số thật thì kết luận nên dồn lực vào đâu mới đáng tin).',
+      'Muốn app tính theo giá trần, phải nhập giá thị trường thật của từng dòng — số này càng sát thực tế, kết luận càng đáng tin.',
       'Nguyên tắc điều hành: giá bán thực tế nằm GIỮA giá thành đầy đủ (sàn có lãi) và giá trần thị trường. Khoảng cách hai mức đó chính là dư địa mặc cả của công ty.',
     ],
   },

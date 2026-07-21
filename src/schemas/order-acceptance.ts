@@ -13,6 +13,10 @@ export const OrderDecisionRequestSchema = z.object({
   offeredPriceVndPerKg: z.number().nonnegative(),
   /** Ngưỡng khóa giá THỬ (thập phân, 0.1 = 10%). Bỏ trống = ngưỡng cấu hình hiện tại. */
   thresholdPctWhatIf: z.number().min(0).max(1).optional(),
+  /** ADR-051 — chi phí SETUP một lần cho dòng đơn này (đổi khuôn/khởi động máy…),
+   * đ. Rải trên tổng sản lượng đơn → đơn nhỏ gánh setup/kg lớn ⇒ verdict xuống.
+   * Bỏ trống/0 = như cũ (verdict thuần biên tế/kg, parity ADR-029). */
+  setupCostVnd: z.number().nonnegative().optional(),
 });
 export type OrderDecisionRequest = z.infer<typeof OrderDecisionRequestSchema>;
 
@@ -35,6 +39,9 @@ export const OrderDecisionResultSchema = z.object({
   lock: LockPanelSchema,
   quantityKg: z.number(),
   offeredPriceVndPerKg: z.number(),
+  /** ADR-051 — setup rải/kg = setupCostVnd ÷ quantityKg (0 nếu không nhập). */
+  setupCostVnd: z.number(),
+  setupCostPerKgVnd: z.number(),
   /** Sàn tiền tươi (biến phí/kg) tại GIÁ THỊ TRƯỜNG (tái tạo) — đơn mới phải mua NL mới. */
   marketVariableFloorVndPerKg: z.number(),
   /** Giá thành ĐẦY ĐỦ/kg tại giá thị trường (bù cả định phí). */

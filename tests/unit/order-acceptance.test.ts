@@ -97,3 +97,21 @@ describe('decideOrder — materialId chỉ định (ADR-037)', () => {
     expect(() => decideOrder(baseline, { line: 'pipe', materialId: 'khong-ton-tai', quantityTons: 1, offeredPriceVndPerKg: 100000 })).toThrow();
   });
 });
+
+describe('decideOrder — ADR-051 chi phí setup (đơn nhỏ bị phạt)', () => {
+  it('setup=0 ⇒ verdict + tổng đóng góp trùng khít biên tế/kg (parity ADR-029)', () => {
+    const noSetup = decideOrder(baseline, { line: 'fitting', quantityTons: 10, offeredPriceVndPerKg: 130000 });
+    const zero = decideOrder(baseline, { line: 'fitting', quantityTons: 10, offeredPriceVndPerKg: 130000, setupCostVnd: 0 });
+    expect(zero.verdict).toBe(noSetup.verdict);
+    expect(zero.contributionTotalVnd).toBeCloseTo(zero.contributionPerKgVnd * zero.quantityKg, 0);
+    expect(zero.setupCostPerKgVnd).toBe(0);
+  });
+
+  it('giá chào > full cost nhưng đơn TÍ (1 kg) + setup lớn ⇒ không còn accept', () => {
+    const big = decideOrder(baseline, { line: 'fitting', quantityTons: 10, offeredPriceVndPerKg: 200000 });
+    expect(big.verdict).toBe('accept'); // đơn lớn, giá tốt → nhận
+    const tiny = decideOrder(baseline, { line: 'fitting', quantityTons: 0.001, offeredPriceVndPerKg: 200000, setupCostVnd: 1_000_000 });
+    expect(tiny.verdict).not.toBe('accept'); // 1 kg gánh 1 triệu setup → verdict xuống
+    expect(tiny.setupCostPerKgVnd).toBeGreaterThan(0);
+  });
+});

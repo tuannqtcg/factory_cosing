@@ -130,10 +130,10 @@ export default function SensitivityScreen({
               </div>
               {onNavigate && (
                 <button
-                  onClick={() => onNavigate('assumptions')}
+                  onClick={() => onNavigate('data-setup')}
                   style={{ padding: '6px 12px', background: 'transparent', color: tk.ink, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer', flexShrink: 0 }}
                 >
-                  → Đổi ngưỡng ở Tham Số
+                  → Đổi ngưỡng ở Thiết Lập Dữ Liệu
                 </button>
               )}
             </div>

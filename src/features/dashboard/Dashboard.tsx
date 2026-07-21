@@ -401,11 +401,11 @@ export default function Dashboard({
           })}
           {anyUnlocked && onNavigate && (
             <button
-              onClick={() => onNavigate('assumptions')}
-              title="Việc chốt baseline là chỉnh dữ liệu gốc — làm ở màn Tham Số để mọi màn tính lại nhất quán."
+              onClick={() => onNavigate('data-setup')}
+              title="Việc chốt baseline là chỉnh dữ liệu gốc — làm ở Thiết Lập Dữ Liệu (mục ④ Nguyên liệu) để mọi màn tính lại nhất quán."
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', background: '#fff', color: '#a8003b', border: '1px solid #a8003b', borderRadius: 2, cursor: 'pointer', fontSize: 10, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
             >
-              Chỉnh ở Tham Số →
+              Chỉnh ở Thiết Lập Dữ Liệu →
             </button>
           )}
         </div>

@@ -16,8 +16,6 @@ import InventoryScreen from '../inventory/InventoryScreen.js';
 import ProductsScreen from '../products/ProductsScreen.js';
 import ExplainPanel from './ExplainPanel.js';
 import AssistantChat from './AssistantChat.js';
-import ConfigScreen from '../config/ConfigScreen.js';
-import AssumptionsScreen from '../assumptions/AssumptionsScreen.js';
 import DataSetupScreen from '../data-setup/DataSetupScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
@@ -77,10 +75,8 @@ const NAV_GROUPS: Array<{ title: string; role: ScreenRole; caption: string; tabs
     role: 'edit',
     caption: 'đổi ở đây → mọi màn tính lại',
     tabs: [
-      { id: 'data-setup', label: 'Thiết Lập Dữ Liệu', caption: 'tài sản · chi phí · gộp theo kế toán (mới)' },
-      { id: 'assumptions', label: 'Tham Số', caption: 'giá compound · tỷ giá · ngưỡng' },
-      { id: 'products', label: 'Danh Mục Sản Phẩm', caption: 'SKU · đơn trọng · khuôn' },
-      { id: 'config', label: 'Cấu Hình Nhà Máy', caption: 'máy · ca · lương · CAPEX' },
+      { id: 'data-setup', label: 'Thiết Lập Dữ Liệu', caption: 'tài sản · chi phí · nguyên liệu · SKU · giá' },
+      { id: 'products', label: 'Danh Mục Sản Phẩm', caption: 'SKU · đơn trọng · khuôn (lối tắt)' },
     ],
   },
 ];
@@ -288,18 +284,8 @@ export default function AppShell() {
               />
             )}
             {tabId === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
-            {tabId === 'config' && <ConfigScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {tabId === 'data-setup' && (
               <DataSetupScreen
-                role={role}
-                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
-                scenarioId={SCENARIO_ID}
-                scenario={data.scenario}
-                internal={data.internal}
-              />
-            )}
-            {tabId === 'assumptions' && (
-              <AssumptionsScreen
                 role={role}
                 user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
                 scenarioId={SCENARIO_ID}

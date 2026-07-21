@@ -282,10 +282,10 @@ export default function OrderAcceptanceScreen({
                 Đây mới là con số THỬ — chưa có hiệu lực. Thấy ngưỡng {fmtPct(thr)} là đúng và muốn áp dụng chính thức?
               </span>
               <button
-                onClick={() => onNavigate('assumptions')}
+                onClick={() => onNavigate('data-setup')}
                 style={{ flexShrink: 0, padding: '6px 12px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
               >
-                → Chốt ở màn Tham Số
+                → Chốt ở Thiết Lập Dữ Liệu
               </button>
             </div>
           )}

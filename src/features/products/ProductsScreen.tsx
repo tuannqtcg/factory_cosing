@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
 import type { AppRole } from '../../lib/firebase.js';
@@ -33,10 +33,18 @@ export default function ProductsScreen({
   role,
   scenarioId,
   scenario,
+  formOverride,
+  onFormChange,
+  hideChrome,
 }: {
   role: AppRole;
   scenarioId: string;
   scenario: ScenarioInput | null;
+  // Chế độ "controlled" (nhúng ở Thiết Lập Dữ Liệu — ADR-049): dùng CHUNG form +
+  // setter của màn cha để 1 nguồn dữ liệu, 1 nút Lưu (tránh 2 form ghi đè nhau).
+  formOverride?: ScenarioInput | null;
+  onFormChange?: Dispatch<SetStateAction<ScenarioInput | null>>;
+  hideChrome?: boolean;
 }) {
   // ADR-039 — quyền khớp rules server: DANH MỤC (products[]) mở cho cả Toàn
   // Quyền lẫn Định Giá (master data kỹ thuật); riêng KHUÔN (moldAssets — tài
@@ -44,16 +52,20 @@ export default function ProductsScreen({
   const canEdit = role === 'admin' || role === 'pricing';
   const canEditMolds = role === 'admin';
   const canView = canEdit;
-  const [form, setForm] = useState<ScenarioInput | null>(null);
+  const controlled = !!onFormChange;
+  const [internalForm, setInternalForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
   const [activeTab, setActiveTab] = useState<'pipe' | 'fitting'>('pipe');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [diag, setDiag] = useState<{ ok: boolean; msg: string } | null>(null);
 
-  if (scenario && !loadedRef.current) {
+  const form = controlled ? formOverride ?? null : internalForm;
+  const setForm = controlled ? onFormChange! : setInternalForm;
+
+  if (!controlled && scenario && !loadedRef.current) {
     loadedRef.current = true;
-    setForm(scenario);
+    setInternalForm(scenario);
   }
 
   if (!canView) {
@@ -279,7 +291,8 @@ export default function ProductsScreen({
   };
 
   return (
-    <div style={{ padding: '32px 36px', paddingBottom: 100 }}>
+    <div style={{ padding: hideChrome ? '18px 18px 24px' : '32px 36px', paddingBottom: hideChrome ? 24 : 100 }}>
+      {!hideChrome && (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
@@ -305,6 +318,7 @@ export default function ProductsScreen({
           </button>
         </div>
       </div>
+      )}
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 16 }}>
         {(['pipe', 'fitting'] as const).map((t) => (

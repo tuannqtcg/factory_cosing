@@ -42,6 +42,11 @@ tách rõ ô NHẬP vs số TỰ TÍNH, dễ cho CEO/tài chính.
   đầy đủ (đã có chi phí + hòa vốn), KHÔNG phải biến của nguyên liệu. Mục ⑦ hiển thị per-compound
   giá thành đầy đủ (fx) → hòa vốn (fx) → markup VF (nhập) → giá VF (fx live), kèm markup kênh TCG/NPP.
 - Ô nhập có hiệu ứng hover/focus (viền + quầng đỏ) để phân biệt ô gõ được (class `.ds-in`).
-- ⑤ Danh mục SP = nhúng ProductsScreen có sẵn (2 form độc lập — nhắc lưu mục khác trước).
-- **Còn treo**: gỡ tab Tham Số/Cấu Hình khỏi nav khi user xác nhận màn mới thay thế đủ; cân nhắc
-  hợp nhất 1 form (tránh clobber ⑤). Báo cáo đọc `form` (live) — chưa nối realtime doc.
+- **Hợp nhất form (XONG)**: ProductsScreen thêm chế độ "controlled" (`formOverride`+`onFormChange`
+  +`hideChrome`) → mục ⑤ dùng CHUNG form + 1 nút Lưu của DataSetup, hết nguy cơ 2 form ghi đè.
+- **Dọn dẹp menu (XONG)**: gỡ tab Tham Số + Cấu Hình Nhà Máy khỏi nav (mọi field đã trong
+  Thiết Lập Dữ Liệu); gỡ luôn handler render + import ở AppShell. 5 link chéo (Dashboard,
+  Độ Nhạy, Nhận Đơn, Explain ×3) trỏ 'assumptions'/'config' → đổi sang 'data-setup'. Giữ tab
+  Danh Mục Sản Phẩm làm lối tắt (standalone, form riêng — không đụng data-setup).
+- Báo cáo lãi/lỗ: mix-aware 2 compound/dòng (ADR-042) — chọn % chung máy; doanh thu Ống+PK.
+- **Còn treo**: file ConfigScreen/AssumptionsScreen giữ trong repo (không xóa) — có thể dọn sau.

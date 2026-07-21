@@ -312,7 +312,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                             : 'Bảng kết quả kinh doanh — chỉ ĐỌC số từ phần Thiết lập rồi tính lãi/lỗ. Không nhập liệu ở đây.'}
             </div>
           </div>
-          {section !== 'sku' && section !== 'pnl' && (
+          {section !== 'pnl' && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               {saveState === 'saved' && <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 600 }}>✓ Đã lưu</span>}
               {saveState === 'error' && <span style={{ fontSize: 11, color: '#DC2626' }}>{saveError}</span>}
@@ -618,11 +618,11 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
         {/* ── MỤC 05: DANH MỤC SẢN PHẨM (nhúng màn có sẵn) ── */}
         {section === 'sku' && (
           <div>
-            <div style={{ fontSize: 11.5, color: '#8a5a12', background: '#fffbeb', border: '1px solid #f0c98a', borderRadius: 8, padding: '9px 13px', marginBottom: 14 }}>
-              Mục này nhúng màn <b>Danh Mục Sản Phẩm</b> có sẵn (SKU · đơn trọng · CS đùn · khuôn), có nút <b>Lưu riêng</b> bên trong. Hãy <b>lưu thay đổi ở các mục khác trước</b> khi làm việc ở đây để tránh ghi đè.
+            <div style={{ fontSize: 11.5, color: '#565b64', background: '#fff', border: '1px solid #e6e8ec', borderRadius: 8, padding: '9px 13px', marginBottom: 14 }}>
+              Danh sách SKU + quy cách (đơn trọng · CS đùn m/giờ · gán khuôn). Dùng chung <b>nút Lưu ở trên</b> — mọi thay đổi (mục ①–⑦ và ở đây) lưu một lần, không ghi đè lẫn nhau.
             </div>
             <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
-              <ProductsScreen role={role} scenarioId={scenarioId} scenario={scenario} />
+              <ProductsScreen role={role} scenarioId={scenarioId} scenario={scenario} formOverride={form} onFormChange={setForm} hideChrome />
             </div>
           </div>
         )}

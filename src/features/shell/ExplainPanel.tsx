@@ -47,7 +47,7 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
     ],
     related: [
       { tab: 'lot-costing', label: 'Giá Vốn Theo Lô — kho đang lãi/lỗ giữ bao nhiêu' },
-      { tab: 'assumptions', label: 'Tham Số — đổi ngưỡng khóa giá chính thức' },
+      { tab: 'data-setup', label: 'Thiết Lập Dữ Liệu — đổi ngưỡng khóa giá (mục ④ Nguyên liệu)' },
     ],
   },
   'lot-costing': {
@@ -81,7 +81,7 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       'Thấy cảnh báo vật liệu lệch ngưỡng đầu trang → sang Giá Vốn Theo Lô xem nên chốt lại không.',
     ],
     related: [
-      { tab: 'assumptions', label: 'Tham Số — sửa phần lời (markup VF)' },
+      { tab: 'data-setup', label: 'Thiết Lập Dữ Liệu — sửa markup VF (mục ⑦ Chính sách giá)' },
       { tab: 'lot-costing', label: 'Giá Vốn Theo Lô — cân nhắc chốt lại giá' },
     ],
   },
@@ -138,7 +138,7 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
     ],
     related: [
       { tab: 'pricing', label: 'Bảng Giá — xem SKU mới sau khi lưu' },
-      { tab: 'config', label: 'Cấu Hình Nhà Máy — tài sản khuôn' },
+      { tab: 'data-setup', label: 'Thiết Lập Dữ Liệu — tài sản khuôn (mục ① Tài sản)' },
     ],
   },
   assumptions: {

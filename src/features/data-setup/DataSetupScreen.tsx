@@ -23,7 +23,6 @@ import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { calculatePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
-import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
 import { CIT_RATE } from '../../engine/ceo-planner.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
@@ -108,6 +107,9 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showMoldModal, setShowMoldModal] = useState(false);
+  // Báo cáo: % thời gian máy cho compound A của mỗi dòng khi chạy 2 compound (ADR-042).
+  const [allocPipePct, setAllocPipePct] = useState(60);
+  const [allocFitPct, setAllocFitPct] = useState(60);
 
   if (scenario && !loadedRef.current) {
     loadedRef.current = true;
@@ -698,19 +700,52 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
           );
         })()}
 
-        {/* ── BÁO CÁO LÃI/LỖ (đọc số engine — dashboard KPIs) ── */}
+        {/* ── BÁO CÁO LÃI/LỖ (đọc ladder engine; mix 2 compound/dòng theo ADR-042) ── */}
         {section === 'pnl' && (() => {
-          let pnl: { revenue: number; cogs: number; gross: number; nonProd: number; ebit: number; tax: number; net: number } | null = null;
+          // Compound theo dòng (giữ thứ tự materials[]). ≥2 ⇒ có bước phân bổ % chung máy.
+          const pipeMats = form.materials.filter((m) => form.products.some((p) => p.kind === 'pipe' && p.materialId === m.id));
+          const fitMats = form.materials.filter((m) => form.products.some((p) => p.kind === 'fitting' && p.materialId === m.id));
+          const ladderOf = (id: string) => internal?.priceLadder.byLineMaterial.find((e) => e.materialId === id)?.ladder ?? null;
+          // Doanh thu + lãi gộp (trên giá thành đầy đủ) 1 dòng theo mix; vắng compound 2 ⇒ 1 loại full.
+          const lineRG = (mats: typeof pipeMats, totalKg: number, allocApct: number) => {
+            const a = mats[0] ? ladderOf(mats[0].id) : null;
+            const b = mats[1] ? ladderOf(mats[1].id) : null;
+            if (!a) return null;
+            const wA = b ? allocApct / 100 : 1;
+            const kgA = totalKg * wA, kgB = totalKg * (1 - wA);
+            const rev = kgA * a.targetPrice + (b ? kgB * b.targetPrice : 0);
+            const grossFC = kgA * (a.targetPrice - a.breakEvenFullCost) + (b ? kgB * (b.targetPrice - b.breakEvenFullCost) : 0);
+            return { rev, grossFC, two: !!b, kgA, kgB };
+          };
+          let pnl: { revenue: number; cogs: number; gross: number; nonProd: number; ebit: number; tax: number; net: number; pipeRev: number; fitRev: number } | null = null;
+          let pipeRG: ReturnType<typeof lineRG> = null, fitRG: ReturnType<typeof lineRG> = null;
           try {
-            const k = calculateDashboardKpis(form).investment;
+            if (!internal) throw new Error('no internal');
+            pipeRG = lineRG(pipeMats, pipeCap.normalCapacityKgYear, allocPipePct);
+            fitRG = lineRG(fitMats, fitCap.estimatedProductionKgYear, allocFitPct);
             const nonProd = form.costPool.nonProductionCosts.operatingCostPerYear + form.costPool.nonProductionCosts.financialCostPerYear;
-            const revenue = k.expectedRevenueVf;
-            const ebit = k.ebitAtNormalCapacityVfPrice; // = lãi gộp (trên giá thành đầy đủ) − ngoài SX
-            const gross = ebit + nonProd;
+            const revenue = (pipeRG?.rev ?? 0) + (fitRG?.rev ?? 0);
+            const gross = (pipeRG?.grossFC ?? 0) + (fitRG?.grossFC ?? 0);
+            const ebit = gross - nonProd;
             const tax = ebit > 0 ? ebit * CIT_RATE : 0;
-            pnl = { revenue, cogs: revenue - gross, gross, nonProd, ebit, tax, net: ebit - tax };
+            pnl = { revenue, cogs: revenue - gross, gross, nonProd, ebit, tax, net: ebit - tax, pipeRev: pipeRG?.rev ?? 0, fitRev: fitRG?.rev ?? 0 };
           } catch { pnl = null; }
           if (!pnl) return <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 30, color: '#737373', fontSize: 12 }}>Chưa tính được báo cáo — kiểm tra lại dữ liệu thiết lập (nguyên liệu / công suất).</div>;
+          const short = (n: string) => n.replace(/\s*\(.*\)/, '');
+          const allocRow = (title: string, mats: typeof pipeMats, pct: number, setPct: (v: number) => void, rg: ReturnType<typeof lineRG>) => {
+            if (!rg?.two) return (
+              <div style={{ fontSize: 11.5, color: '#737373' }}>{title}: chạy 1 compound (<b>{mats[0] ? short(mats[0].name) : '—'}</b>) — không phân bổ.</div>
+            );
+            return (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{title} — chia thời gian máy</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums' }}><b style={{ color: '#1f5fd0' }}>{short(mats[0]!.name)} {pct}%</b>{'  ·  '}<b style={{ color: '#7a3fc0' }}>{short(mats[1]!.name)} {100 - pct}%</b></span>
+                </div>
+                <input type="range" min={0} max={100} step={5} value={pct} onChange={(e) => setPct(Number(e.target.value))} style={{ width: '100%', accentColor: '#a8003b' }} />
+              </div>
+            );
+          };
           const pct = (v: number) => (pnl!.revenue > 0 ? `${((v / pnl!.revenue) * 100).toFixed(1)}%` : '—');
           const rows: Array<{ label: string; v: number; kind: 'rev' | 'sub' | 'total' | 'grand'; neg?: boolean }> = [
             { label: 'Doanh thu thuần (giá VF)', v: pnl.revenue, kind: 'rev' },
@@ -721,8 +756,25 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
             { label: `(−) Thuế TNDN (${Math.round(CIT_RATE * 100)}%)`, v: pnl.tax, kind: 'sub', neg: true },
             { label: '= Lợi nhuận sau thuế', v: pnl.net, kind: 'grand' },
           ];
+          const anyTwo = !!pipeRG?.two || !!fitRG?.two;
           return (
             <div>
+              {/* Bước phân bổ mix + breakdown doanh thu theo loại sản phẩm */}
+              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#a8003b', fontWeight: 700, marginBottom: 8 }}>Doanh thu = Ống + Phụ kiện{anyTwo ? ' · chọn tỷ lệ 2 compound chung máy' : ''}</div>
+                {anyTwo && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 12 }}>
+                    {allocRow('Máy đùn ống', pipeMats, allocPipePct, setAllocPipePct, pipeRG)}
+                    {allocRow('Máy ép phụ kiện', fitMats, allocFitPct, setAllocFitPct, fitRG)}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
+                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Doanh thu Ống</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 700, color: '#1f5fd0', marginTop: 3 }}>{fmtVnd(pnl.pipeRev)} đ</div></div>
+                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Doanh thu Phụ kiện</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 700, color: '#7a3fc0', marginTop: 3 }}>{fmtVnd(pnl.fitRev)} đ</div></div>
+                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Tổng doanh thu VF</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 700, marginTop: 3 }}>{fmtVnd(pnl.revenue)} đ</div></div>
+                </div>
+              </div>
+
               <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
                 <div style={{ padding: '13px 16px', borderBottom: '1px solid #e6e8ec', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                   <div><div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#16A34A', fontWeight: 700 }}>Báo cáo kết quả kinh doanh</div><div style={{ fontSize: 14.5, fontWeight: 700 }}>Lãi/lỗ cả năm — đọc số từ Thiết lập</div></div>

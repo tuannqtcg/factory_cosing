@@ -19,7 +19,6 @@ import AssistantChat from './AssistantChat.js';
 import DataSetupScreen from '../data-setup/DataSetupScreen.js';
 import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
 import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
-import SensitivityScreen from '../sensitivity/SensitivityScreen.js';
 import ScenarioCompareScreen from '../scenario-compare/ScenarioCompareScreen.js';
 import OrderAcceptanceScreen from '../order-acceptance/OrderAcceptanceScreen.js';
 import ProductMixScreen from '../product-mix/ProductMixScreen.js';
@@ -65,8 +64,7 @@ const NAV_GROUPS: Array<{ title: string; role: ScreenRole; caption: string; tabs
       { id: 'ceo-planner', label: 'Trợ Lý CEO', caption: 'kịch bản ca/biên → lợi nhuận' },
       { id: 'order-acceptance', label: 'Quyết Định Nhận Đơn', caption: 'đơn này nhận không?' },
       { id: 'lot-costing', label: 'Giá Vốn Theo Lô', caption: 'lô mới về — chốt lại giá?' },
-      { id: 'scenario-compare', label: 'So Sánh Kịch Bản', caption: 'xấu · base · tốt' },
-      { id: 'sensitivity', label: 'Độ Nhạy', caption: 'biến nào bào EBIT mạnh nhất?' },
+      { id: 'scenario-compare', label: 'So Sánh Kịch Bản', caption: 'kịch bản · độ nhạy (tornado)' },
       { id: 'product-mix', label: 'Tối Ưu Product-mix', caption: 'dồn lực vào dòng nào?' },
     ],
   },
@@ -249,8 +247,8 @@ export default function AppShell() {
                 user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
               />
             )}
-            {tabId === 'sensitivity' && <SensitivityScreen scenario={data.scenario} onNavigate={go} />}
-            {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} />}
+            {tabId === 'sensitivity' && <ScenarioCompareScreen scenario={data.scenario} onNavigate={go} initialTab="tornado" />}
+            {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} onNavigate={go} />}
             {tabId === 'order-acceptance' && <OrderAcceptanceScreen scenario={data.scenario} priceList={data.priceList} onNavigate={go} />}
             {tabId === 'product-mix' && <ProductMixScreen scenario={data.scenario} />}
             {tabId === 'lot-costing' && tabSub !== 'edit' && (

@@ -32,24 +32,6 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       { tab: 'ceo-planner', label: 'Trợ Lý CEO — thử kịch bản ca/biên lời' },
     ],
   },
-  'order-acceptance': {
-    question: 'Khách chào một đơn giá X — nhận thì lãi hay lỗ, và nên nhận không?',
-    source: [
-      'Nhập đơn đúng cách khách đặt: NHIỀU dòng sản phẩm trong một đơn (ống và phụ kiện, BlazeMaster lẫn Corzan), mỗi dòng số mét/cái + giá chào theo mét/cái — máy tự quy về kg bằng đơn trọng danh mục, tính sàn theo đúng nguyên liệu từng dòng.',
-      'Kết luận có 2 tầng: từng dòng (dòng nào đang kéo cả đơn xuống thì mặc cả đúng dòng đó) và cả đơn (cộng tổng mọi dòng).',
-      'Giá chào của khách được so với 2 mức sàn. Sàn thứ nhất — "sàn tiền tươi": tiền nguyên liệu MUA MỚI theo giá thị trường + chi phí biến đổi. Bán dưới mức này là mất tiền mặt ngay lập tức.',
-      'Sàn thứ hai — giá thành đầy đủ (đã gánh cả khấu hao, lương, chi phí chung). Trên mức này là đơn có lãi thật.',
-      'Vì sao tính theo giá mua MỚI dù kho còn hàng? Vì nguyên liệu dùng cho đơn này rồi sẽ phải mua bù theo giá hiện tại — giá nhập kho cũ là chuyện đã rồi, lãi/lỗ của kho được tách riêng ở màn Giá Vốn Theo Lô, không được phép làm nhiễu quyết định nhận đơn.',
-    ],
-    action: [
-      'Kết luận CÂN NHẮC → chỉ nhận khi còn công suất trống, và đừng để đơn giá thấp chiếm chỗ đơn giá tốt.',
-      'Chỉnh thử ngưỡng khóa giá ở đây chỉ là THỬ — muốn áp dụng chính thức phải sang Tham Số.',
-    ],
-    related: [
-      { tab: 'lot-costing', label: 'Giá Vốn Theo Lô — kho đang lãi/lỗ giữ bao nhiêu' },
-      { tab: 'data-setup', label: 'Thiết Lập Dữ Liệu — đổi ngưỡng khóa giá (mục ④ Nguyên liệu)' },
-    ],
-  },
   'lot-costing': {
     question: 'Các lô nguyên liệu trong kho giá khác nhau — đang lãi hay lỗ giữ kho, và có cần chốt lại giá bán không?',
     source: [
@@ -63,7 +45,6 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
     ],
     related: [
       { tab: 'pricing', label: 'Bảng Giá — chốt lại giá bán' },
-      { tab: 'order-acceptance', label: 'Quyết Định Nhận Đơn — đơn đang chào có ổn không' },
     ],
   },
   pricing: {
@@ -122,7 +103,7 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       'Có tính đến giá thị trường thực tế từng dòng — dòng biên cao chưa chắc thắng nếu thị trường không mua ở giá đó.',
     ],
     action: ['Kết quả chỉ đổi khi anh nhập giá thị trường thật của từng dòng — số này càng sát, kết luận càng đáng tin.'],
-    related: [{ tab: 'order-acceptance', label: 'Quyết Định Nhận Đơn — áp dụng cho một đơn cụ thể' }],
+    related: [{ tab: 'ceo-planner', label: 'Trợ Lý CEO — kịch bản lợi nhuận cả năm' }],
   },
   products: {
     question: 'Danh mục sản phẩm gốc: tên, tiêu chuẩn, kích thước, đơn trọng, và khuôn nào sản xuất SKU nào.',

@@ -26,6 +26,12 @@ Thêm `setupCostVnd` (chi phí một lần cho dòng đơn: đổi khuôn/khởi
   (test cũ giữ). Suite 382/382 (thêm 2 test: parity setup=0 + đơn 1 kg + setup 1 triệu → hết accept).
 - UI: ô "Chi phí setup / dòng" ở footer đơn (mặc định 0), rải cho từng dòng; ghi chú ở kết luận.
 
+## Cập nhật (cùng phiên)
+User quyết định **gỡ hẳn màn Quyết Định Nhận Đơn** khỏi menu ngay sau đó (dọn nhóm "Thử &
+Hoạch định"). Engine `order-acceptance.ts` + schema + test (gồm setup ADR-051) GIỮ trong repo
+(không xóa, như ConfigScreen/AssumptionsScreen) nhưng KHÔNG còn lối vào UI. Nếu cần dùng lại
+sau, chỉ việc thêm lại tab + component.
+
 ## Còn treo
 - Có thể chuyển setup thành cấu hình theo dòng/khuôn ở Thiết Lập Dữ Liệu (hiện nhập what-if tại màn).
 - Chưa mô hình "đơn tối thiểu" cứng — dùng setup/kg thay cho ngưỡng cứng (mềm hơn, đủ mục tiêu).

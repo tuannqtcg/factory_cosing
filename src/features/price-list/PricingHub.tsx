@@ -4,24 +4,19 @@
 // giá). Thuần trình bày — 3 màn con giữ nguyên, chỉ bọc điều hướng.
 import PriceList from './PriceList.js';
 import DistributorPriceList from './DistributorPriceList.js';
-import PricingAnalyticsScreen from '../pricing-analytics/PricingAnalyticsScreen.js';
-import type { AppRole } from '../../lib/firebase.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 
-export type PricingSub = 'vf' | 'npp' | 'analytics';
+export type PricingSub = 'vf' | 'npp';
 
 const SUBS: Array<{ id: PricingSub; label: string; hint: string }> = [
   { id: 'vf', label: 'Giá VF (chốt ở đây)', hint: 'giá xuất xưởng — tầng CEO quyết' },
   { id: 'npp', label: 'Bảng giá NPP', hint: 'niêm yết dẫn xuất từ VF, chỉ đọc' },
-  { id: 'analytics', label: 'Phân tích', hint: 'soi thang giá của giá đang chốt' },
 ];
 
 export default function PricingHub({
   sub,
   onSubChange,
   onNavigate,
-  role,
-  scenarioId,
   priceList,
   scenario,
   internal,
@@ -29,8 +24,6 @@ export default function PricingHub({
   sub: PricingSub;
   onSubChange: (sub: PricingSub) => void;
   onNavigate: (tab: string) => void;
-  role: AppRole;
-  scenarioId: string;
   priceList: PriceListDoc | null;
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
@@ -64,9 +57,6 @@ export default function PricingHub({
         <PriceList priceList={priceList} scenario={scenario} internal={internal} onNavigate={onNavigate} />
       )}
       {active.id === 'npp' && <DistributorPriceList priceList={priceList} />}
-      {active.id === 'analytics' && (
-        <PricingAnalyticsScreen role={role} scenarioId={scenarioId} scenario={scenario} internal={internal} />
-      )}
     </div>
   );
 }

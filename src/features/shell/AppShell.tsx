@@ -268,8 +268,6 @@ export default function AppShell() {
                 sub={(tabSub as PricingSub | undefined) ?? 'vf'}
                 onSubChange={(s) => setActiveTab(`pricing:${s}`)}
                 onNavigate={go}
-                role={role}
-                scenarioId={SCENARIO_ID}
                 priceList={data.priceList}
                 scenario={data.scenario}
                 internal={data.internal}

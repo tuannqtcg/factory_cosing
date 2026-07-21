@@ -276,11 +276,13 @@ export default function AppShell() {
             {tabId === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {tabId === 'data-setup' && (
               <DataSetupScreen
+                key={activeTab}
                 role={role}
                 user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
                 scenarioId={SCENARIO_ID}
                 scenario={data.scenario}
                 internal={data.internal}
+                initialSection={tabSub as Parameters<typeof DataSetupScreen>[0]['initialSection']}
               />
             )}
           </>

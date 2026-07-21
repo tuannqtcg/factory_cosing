@@ -23,7 +23,6 @@ import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { calculatePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
-import { CIT_RATE } from '../../engine/ceo-planner.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
@@ -89,27 +88,26 @@ function GridCell({ label, derived, children }: { label: React.ReactNode; derive
   );
 }
 
-export default function DataSetupScreen({ role, user, scenarioId, scenario, internal }: {
+export default function DataSetupScreen({ role, user, scenarioId, scenario, internal, initialSection }: {
   role: AppRole;
   user: { uid: string; email: string | null } | null;
   scenarioId: string;
   scenario: ScenarioInput | null;
   internal: ScenarioOutput | null;
+  // ADR-052 — deep-link từ Dashboard "xem chi tiết" mở thẳng mục tương ứng.
+  initialSection?: SectionId;
 }) {
   // Master-data tài sản khóa cho vai Định Giá (khớp firestore.rules — chỉ admin
   // sửa giá máy/khấu hao/CAPEX; ranh giới bảo mật, không phải điều hướng vai).
   const locked = role !== 'admin';
   const isAdmin = role === 'admin';
-  const [section, setSection] = useState<SectionId>('assets');
+  const [section, setSection] = useState<SectionId>(initialSection ?? 'assets');
   const [form, setForm] = useState<ScenarioInput | null>(null);
   const loadedRef = useRef(false);
   const lastPersistedMaterialsRef = useRef<Material[] | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showMoldModal, setShowMoldModal] = useState(false);
-  // Báo cáo: % thời gian máy cho compound A của mỗi dòng khi chạy 2 compound (ADR-042).
-  const [allocPipePct, setAllocPipePct] = useState(60);
-  const [allocFitPct, setAllocFitPct] = useState(60);
 
   if (scenario && !loadedRef.current) {
     loadedRef.current = true;
@@ -280,11 +278,9 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
             </button>
           );
         })}
-        <div style={{ margin: '16px 6px 6px', paddingTop: 14, borderTop: '1px solid #e6e8ec', fontSize: 9, letterSpacing: '.13em', textTransform: 'uppercase', color: '#a3a3a3', fontWeight: 700 }}>Báo cáo (đọc số)</div>
-        <button onClick={() => setSection('pnl')} style={{ display: 'flex', gap: 10, width: '100%', textAlign: 'left', alignItems: 'flex-start', padding: '10px 11px', borderRadius: 9, border: 'none', cursor: 'pointer', background: section === 'pnl' ? '#0d0e11' : 'transparent', color: section === 'pnl' ? '#fff' : '#1a1a1a' }}>
-          <span style={{ fontSize: 13, color: section === 'pnl' ? '#fff' : '#a3a3a3', paddingTop: 1 }}>↳</span>
-          <span><span style={{ display: 'block', fontSize: 13, fontWeight: 600 }}>Báo cáo lãi/lỗ</span><span style={{ display: 'block', fontSize: 10.5, color: section === 'pnl' ? 'rgba(255,255,255,.72)' : '#9aa0aa', marginTop: 1 }}>nhận số → tính lãi/lỗ · chỉ xem</span></span>
-        </button>
+        <div style={{ margin: '16px 6px 6px', paddingTop: 14, borderTop: '1px solid #e6e8ec', fontSize: 10.5, color: '#9aa0aa', lineHeight: 1.5 }}>
+          Xem kết quả lãi/lỗ ở màn <b>Tổng Quan</b> (đã dời lên đó).
+        </div>
       </nav>
 
       {/* Nội dung */}
@@ -700,111 +696,6 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
           );
         })()}
 
-        {/* ── BÁO CÁO LÃI/LỖ (đọc ladder engine; mix 2 compound/dòng theo ADR-042) ── */}
-        {section === 'pnl' && (() => {
-          // Compound theo dòng (giữ thứ tự materials[]). ≥2 ⇒ có bước phân bổ % chung máy.
-          const pipeMats = form.materials.filter((m) => form.products.some((p) => p.kind === 'pipe' && p.materialId === m.id));
-          const fitMats = form.materials.filter((m) => form.products.some((p) => p.kind === 'fitting' && p.materialId === m.id));
-          const ladderOf = (id: string) => internal?.priceLadder.byLineMaterial.find((e) => e.materialId === id)?.ladder ?? null;
-          // Doanh thu + lãi gộp (trên giá thành đầy đủ) 1 dòng theo mix; vắng compound 2 ⇒ 1 loại full.
-          const lineRG = (mats: typeof pipeMats, totalKg: number, allocApct: number) => {
-            const a = mats[0] ? ladderOf(mats[0].id) : null;
-            const b = mats[1] ? ladderOf(mats[1].id) : null;
-            if (!a) return null;
-            const wA = b ? allocApct / 100 : 1;
-            const kgA = totalKg * wA, kgB = totalKg * (1 - wA);
-            const rev = kgA * a.targetPrice + (b ? kgB * b.targetPrice : 0);
-            const grossFC = kgA * (a.targetPrice - a.breakEvenFullCost) + (b ? kgB * (b.targetPrice - b.breakEvenFullCost) : 0);
-            return { rev, grossFC, two: !!b, kgA, kgB };
-          };
-          let pnl: { revenue: number; cogs: number; gross: number; nonProd: number; ebit: number; tax: number; net: number; pipeRev: number; fitRev: number } | null = null;
-          let pipeRG: ReturnType<typeof lineRG> = null, fitRG: ReturnType<typeof lineRG> = null;
-          try {
-            if (!internal) throw new Error('no internal');
-            pipeRG = lineRG(pipeMats, pipeCap.normalCapacityKgYear, allocPipePct);
-            fitRG = lineRG(fitMats, fitCap.estimatedProductionKgYear, allocFitPct);
-            const nonProd = form.costPool.nonProductionCosts.operatingCostPerYear + form.costPool.nonProductionCosts.financialCostPerYear;
-            const revenue = (pipeRG?.rev ?? 0) + (fitRG?.rev ?? 0);
-            const gross = (pipeRG?.grossFC ?? 0) + (fitRG?.grossFC ?? 0);
-            const ebit = gross - nonProd;
-            const tax = ebit > 0 ? ebit * CIT_RATE : 0;
-            pnl = { revenue, cogs: revenue - gross, gross, nonProd, ebit, tax, net: ebit - tax, pipeRev: pipeRG?.rev ?? 0, fitRev: fitRG?.rev ?? 0 };
-          } catch { pnl = null; }
-          if (!pnl) return <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 30, color: '#737373', fontSize: 12 }}>Chưa tính được báo cáo — kiểm tra lại dữ liệu thiết lập (nguyên liệu / công suất).</div>;
-          const short = (n: string) => n.replace(/\s*\(.*\)/, '');
-          const allocRow = (title: string, mats: typeof pipeMats, pct: number, setPct: (v: number) => void, rg: ReturnType<typeof lineRG>) => {
-            if (!rg?.two) return (
-              <div style={{ fontSize: 11.5, color: '#737373' }}>{title}: chạy 1 compound (<b>{mats[0] ? short(mats[0].name) : '—'}</b>) — không phân bổ.</div>
-            );
-            return (
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
-                  <span style={{ fontWeight: 600 }}>{title} — chia thời gian máy</span>
-                  <span style={{ fontVariantNumeric: 'tabular-nums' }}><b style={{ color: '#1f5fd0' }}>{short(mats[0]!.name)} {pct}%</b>{'  ·  '}<b style={{ color: '#7a3fc0' }}>{short(mats[1]!.name)} {100 - pct}%</b></span>
-                </div>
-                <input type="range" min={0} max={100} step={5} value={pct} onChange={(e) => setPct(Number(e.target.value))} style={{ width: '100%', accentColor: '#a8003b' }} />
-              </div>
-            );
-          };
-          const pct = (v: number) => (pnl!.revenue > 0 ? `${((v / pnl!.revenue) * 100).toFixed(1)}%` : '—');
-          const rows: Array<{ label: string; v: number; kind: 'rev' | 'sub' | 'total' | 'grand'; neg?: boolean }> = [
-            { label: 'Doanh thu thuần (giá VF)', v: pnl.revenue, kind: 'rev' },
-            { label: '(−) Giá vốn hàng bán (giá thành đầy đủ)', v: pnl.cogs, kind: 'sub', neg: true },
-            { label: '= Lãi gộp', v: pnl.gross, kind: 'total' },
-            { label: '(−) Chi phí ngoài sản xuất', v: pnl.nonProd, kind: 'sub', neg: true },
-            { label: '= Lợi nhuận trước thuế (EBIT)', v: pnl.ebit, kind: 'total' },
-            { label: `(−) Thuế TNDN (${Math.round(CIT_RATE * 100)}%)`, v: pnl.tax, kind: 'sub', neg: true },
-            { label: '= Lợi nhuận sau thuế', v: pnl.net, kind: 'grand' },
-          ];
-          const anyTwo = !!pipeRG?.two || !!fitRG?.two;
-          return (
-            <div>
-              {/* Bước phân bổ mix + breakdown doanh thu theo loại sản phẩm */}
-              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#a8003b', fontWeight: 700, marginBottom: 8 }}>Doanh thu = Ống + Phụ kiện{anyTwo ? ' · chọn tỷ lệ 2 compound chung máy' : ''}</div>
-                {anyTwo && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 12 }}>
-                    {allocRow('Máy đùn ống', pipeMats, allocPipePct, setAllocPipePct, pipeRG)}
-                    {allocRow('Máy ép phụ kiện', fitMats, allocFitPct, setAllocFitPct, fitRG)}
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap' }}>
-                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Doanh thu Ống</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 700, color: '#1f5fd0', marginTop: 3 }}>{fmtVnd(pnl.pipeRev)} đ</div></div>
-                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Doanh thu Phụ kiện</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 700, color: '#7a3fc0', marginTop: 3 }}>{fmtVnd(pnl.fitRev)} đ</div></div>
-                  <div><div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Tổng doanh thu VF</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 15, fontWeight: 700, marginTop: 3 }}>{fmtVnd(pnl.revenue)} đ</div></div>
-                </div>
-              </div>
-
-              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
-                <div style={{ padding: '13px 16px', borderBottom: '1px solid #e6e8ec', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-                  <div><div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#16A34A', fontWeight: 700 }}>Báo cáo kết quả kinh doanh</div><div style={{ fontSize: 14.5, fontWeight: 700 }}>Lãi/lỗ cả năm — đọc số từ Thiết lập</div></div>
-                  <span style={{ fontSize: 11, color: '#737373' }}>Toàn bộ là số tự tính · engine, không nhập</span>
-                </div>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 520 }}>
-                    <tbody>
-                      {rows.map((r) => {
-                        const isTotal = r.kind === 'total', isGrand = r.kind === 'grand', isRev = r.kind === 'rev';
-                        return (
-                          <tr key={r.label} style={{ background: isTotal || isGrand ? '#fafbfc' : 'transparent', borderTop: isGrand ? '2px solid #0d0e11' : isTotal ? '1px solid #d3d7dd' : '1px solid #f0f0f0' }}>
-                            <td style={{ padding: isGrand ? '12px 16px' : '9px 16px', fontWeight: isRev || isTotal || isGrand ? 700 : 400, color: r.kind === 'sub' ? '#565b64' : '#1a1a1a', paddingLeft: r.kind === 'sub' ? 30 : 16, fontSize: isGrand ? 14 : 13 }}>{r.label}</td>
-                            <td style={{ padding: isGrand ? '12px 16px' : '9px 16px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontWeight: isRev || isTotal || isGrand ? 700 : 500, fontVariantNumeric: 'tabular-nums', color: isGrand ? (pnl!.net >= 0 ? '#16A34A' : '#DC2626') : '#1a1a1a', fontSize: isGrand ? 15 : 13 }}>
-                              {r.neg ? `(${fmtVnd(r.v)})` : fmtVnd(r.v)}
-                            </td>
-                            <td style={{ padding: '9px 16px', textAlign: 'right', color: '#9aa0aa', fontSize: 11.5, width: 70, fontVariantNumeric: 'tabular-nums' }}>{r.kind === 'sub' ? '' : pct(r.v)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <div style={{ fontSize: 11, color: '#a3a3a3', padding: '11px 16px', lineHeight: 1.5 }}>
-                  Nguồn: <b>doanh thu VF</b> và <b>EBIT</b> lấy từ engine (KPI Dashboard, giá bán markup chuẩn); lãi gộp = EBIT + chi phí ngoài SX; thuế TNDN {Math.round(CIT_RATE * 100)}%. <b>Chi phí ngoài SX chỉ xuất hiện ở đây (P&amp;L), không vào giá thành/kg.</b> Cập nhật theo số bạn đang thiết lập.
-                </div>
-              </div>
-            </div>
-          );
-        })()}
       </div>
 
       {showMoldModal && (

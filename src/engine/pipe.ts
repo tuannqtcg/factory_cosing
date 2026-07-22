@@ -12,6 +12,7 @@
 //   replacement — ADR-002) CHƯA làm ở đây, thuộc M5 (giá vốn kép).
 import type { ContinuousKgResource } from '../schemas/resource.js';
 import type { CostPool } from '../schemas/cost-pool.js';
+import type { PipeProduct } from '../schemas/product.js';
 import { landedCostPerKgVnd, sharedFixedCostsTotalPerYear, type MaterialPricingInput } from './cost-pool.js';
 
 export interface PipeCapacity {
@@ -49,6 +50,43 @@ export function calculatePipeCapacity(
     normalOperatingHours,
     normalCapacityKgYear,
   };
+}
+
+/**
+ * ADR-054 — tốc độ THÀNH PHẨM kg/giờ hiệu dụng theo phương pháp phân bổ (ADR-047).
+ * Gói chung logic override m/giờ (ADR-048) để MỌI tầng dùng lại, không mỗi nơi
+ * tự nhớ truyền tay:
+ * - method 'kg' ⇒ `undefined` (dùng tốc độ danh nghĩa → parity Excel tuyệt đối).
+ * - method 'meters' ⇒ trung bình (m/giờ × đơn trọng) các size đã nhập m/giờ; size
+ *   chưa nhập dùng tốc độ danh nghĩa. KHÔNG size nào nhập ⇒ `undefined` (trùng khít kg).
+ */
+export function effectivePipeFinishedKgPerHour(
+  resource: ContinuousKgResource,
+  pipeProducts: readonly PipeProduct[],
+  method: 'kg' | 'meters',
+): number | undefined {
+  if (method !== 'meters') return undefined;
+  const hasRate = pipeProducts.some((p) => p.capacityMetersPerHour !== undefined);
+  if (!hasRate) return undefined;
+  const fallback = resource.actualCapacityKgPerHour * resource.yieldRate;
+  const rates = pipeProducts.map((p) =>
+    p.capacityMetersPerHour !== undefined ? p.capacityMetersPerHour * p.unitWeightKgPerM : fallback,
+  );
+  return rates.reduce((sum, r) => sum + r, 0) / rates.length;
+}
+
+/**
+ * ADR-054 — công suất Ống NHẤT QUÁN phương pháp phân bổ. Thay `calculatePipeCapacity`
+ * trần ở mọi tầng (scenario/dashboard/ceo/plan/UI) để chế độ m/giờ áp ĐỒNG NHẤT,
+ * không lệch số giữa Tổng Quan / Trợ Lý CEO / Thiết Lập.
+ */
+export function effectivePipeCapacity(
+  resource: ContinuousKgResource,
+  pipeProducts: readonly PipeProduct[],
+  method: 'kg' | 'meters',
+): PipeCapacity {
+  const eff = effectivePipeFinishedKgPerHour(resource, pipeProducts, method);
+  return calculatePipeCapacity(resource, eff !== undefined ? { effectiveFinishedKgPerHour: eff } : undefined);
 }
 
 export interface PipeCostAtNormalCapacityInputs {

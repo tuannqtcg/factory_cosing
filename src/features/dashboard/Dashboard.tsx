@@ -14,6 +14,7 @@ import { fmtVnd, fmtUsd, fmtPct, fmtTyVnd } from '../../lib/format.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import { referenceMaterialOf } from '../../engine/scenario.js';
 import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
+import { CIT_RATE } from '../../engine/ceo-planner.js';
 import { solve } from '../../engine/solver.js';
 import { calculateScenario } from '../../engine/scenario.js';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ReferenceLine } from 'recharts';
@@ -372,6 +373,68 @@ export default function Dashboard({
                   <CardNote>Bình quân theo trọng lượng</CardNote>
                 </Card>
               </div>
+
+              {/* ── Kết quả kinh doanh (P&L) — dời từ Thiết Lập lên đây (ADR-052) ── */}
+              {(() => {
+                const nonProd = scenario.costPool.nonProductionCosts.operatingCostPerYear + scenario.costPool.nonProductionCosts.financialCostPerYear;
+                const revenue = kpis.investment.expectedRevenueVf;
+                const ebit = kpis.investment.ebitAtNormalCapacityVfPrice;
+                const gross = ebit + nonProd;
+                const tax = ebit > 0 ? ebit * CIT_RATE : 0;
+                const cogs = revenue - gross, net = ebit - tax;
+                // ADR-055 — doanh thu Ống/PK lấy TRỰC TIẾP từ KPI (đã gộp tỷ lệ đáy
+                // chính+phụ) để khớp tuyệt đối expectedRevenueVf, không tự nhân lại.
+                const pipeRev = kpis.investment.expectedRevenuePipeVf;
+                const fitRev = kpis.investment.expectedRevenueFittingVf;
+                const pct = (v: number) => (revenue > 0 ? `${((v / revenue) * 100).toFixed(1)}%` : '—');
+                const detail = (s: string) => onNavigate?.(`data-setup:${s}`);
+                const rows: Array<{ label: string; v: number; kind: 'rev' | 'sub' | 'total' | 'grand'; neg?: boolean; to?: string }> = [
+                  { label: 'Doanh thu thuần (giá VF)', v: revenue, kind: 'rev', to: 'pricing' },
+                  { label: '(−) Giá vốn hàng bán', v: cogs, kind: 'sub', neg: true, to: 'conv' },
+                  { label: '= Lãi gộp', v: gross, kind: 'total' },
+                  { label: '(−) Chi phí ngoài sản xuất', v: nonProd, kind: 'sub', neg: true, to: 'oh' },
+                  { label: '= Lợi nhuận trước thuế (EBIT)', v: ebit, kind: 'total' },
+                  { label: `(−) Thuế TNDN (${Math.round(CIT_RATE * 100)}%)`, v: tax, kind: 'sub', neg: true },
+                  { label: '= Lợi nhuận sau thuế', v: net, kind: 'grand' },
+                ];
+                return (
+                  <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
+                    <div style={{ padding: '13px 18px', borderBottom: '1px solid #e6e8ec', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                      <div><div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#16A34A', fontWeight: 700 }}>Kết quả kinh doanh (P&L)</div><div style={{ fontSize: 14.5, fontWeight: 700 }}>Lãi/lỗ cả năm — theo dữ liệu đã thiết lập</div></div>
+                      {onNavigate && (
+                        <button onClick={() => onNavigate('data-setup')} style={{ padding: '7px 14px', background: '#0a0a0a', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>⚙ Thiết lập dữ liệu →</button>
+                      )}
+                    </div>
+                    {/* Breakdown doanh thu theo loại */}
+                    <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', padding: '12px 18px', borderBottom: '1px solid #f0f0f0', background: '#fafbfc' }}>
+                      <div><div style={{ fontSize: 10, color: '#a3a3a3', textTransform: 'uppercase', fontWeight: 700 }}>Doanh thu Ống</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 700, color: '#1f5fd0' }}>{fmtVnd(pipeRev)} đ</div></div>
+                      <div><div style={{ fontSize: 10, color: '#a3a3a3', textTransform: 'uppercase', fontWeight: 700 }}>Doanh thu Phụ kiện</div><div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 14, fontWeight: 700, color: '#7a3fc0' }}>{fmtVnd(fitRev)} đ</div></div>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 560 }}>
+                        <tbody>
+                          {rows.map((r) => {
+                            const isT = r.kind === 'total', isG = r.kind === 'grand', isR = r.kind === 'rev';
+                            return (
+                              <tr key={r.label} style={{ background: isT || isG ? '#fafbfc' : 'transparent', borderTop: isG ? '2px solid #0a0a0a' : isT ? '1px solid #d3d7dd' : '1px solid #f0f0f0' }}>
+                                <td style={{ padding: isG ? '12px 18px' : '9px 18px', fontWeight: isR || isT || isG ? 700 : 400, color: r.kind === 'sub' ? '#565b64' : '#1a1a1a', paddingLeft: r.kind === 'sub' ? 34 : 18, fontSize: isG ? 14 : 13 }}>{r.label}</td>
+                                <td style={{ padding: isG ? '12px 12px' : '9px 12px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontWeight: isR || isT || isG ? 700 : 500, fontVariantNumeric: 'tabular-nums', color: isG ? (net >= 0 ? '#16A34A' : '#DC2626') : '#1a1a1a', fontSize: isG ? 15 : 13 }}>{r.neg ? `(${fmtVnd(r.v)})` : fmtVnd(r.v)}</td>
+                                <td style={{ padding: '9px 12px', textAlign: 'right', color: '#9aa0aa', fontSize: 11.5, width: 60, fontVariantNumeric: 'tabular-nums' }}>{r.kind === 'sub' ? '' : pct(r.v)}</td>
+                                <td style={{ padding: '9px 18px 9px 6px', textAlign: 'right', width: 96 }}>
+                                  {r.to && onNavigate && <button onClick={() => detail(r.to!)} style={{ fontSize: 10.5, color: '#a8003b', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, whiteSpace: 'nowrap' }}>xem chi tiết →</button>}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#a3a3a3', padding: '10px 18px', lineHeight: 1.5 }}>
+                      Số từ engine theo dữ liệu đã lưu (giá bán markup chuẩn). Bấm <b>“xem chi tiết →”</b> để nhảy đúng mục trong Thiết Lập Dữ Liệu mà xem/sửa. Chi phí ngoài SX chỉ ở P&L, không vào giá thành/kg.
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()

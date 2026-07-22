@@ -16,8 +16,9 @@
 // đổi, cần ADR mới.
 import type { ScenarioInput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
+import type { PipeProduct } from '../schemas/product.js';
 import { calculateScenario, referenceMaterialOf, lastLotPriceOf } from './scenario.js';
-import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
+import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from './fitting.js';
 import { evaluatePriceLock } from './price-lock.js';
 import type { MaterialPricingInput } from './cost-pool.js';
@@ -38,6 +39,10 @@ export interface InvestmentKpis {
   enterpriseBreakEvenRevenuePerYear: number;
   /** Doanh thu VF dự kiến (tại năng suất bình thường). */
   expectedRevenueVf: number;
+  /** Doanh thu VF dòng Ống (ADR-055 — đã gộp phần chính + phụ theo tỷ lệ đáy). */
+  expectedRevenuePipeVf: number;
+  /** Doanh thu VF dòng Phụ kiện (ADR-055 — đã gộp phần chính + phụ theo tỷ lệ đáy). */
+  expectedRevenueFittingVf: number;
   /** Doanh thu VF − giá thành đầy đủ − chi phí ngoài SX, tại CS bình thường. */
   ebitAtNormalCapacityVfPrice: number;
   /** totalFixedCapitalInvested ÷ (EBIT + tổng khấu hao năm) — khấu hao khuôn theo asOfYear (ADR-007). */
@@ -61,6 +66,8 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   const pipeResource = resources.pipe as ContinuousKgResource;
   const fittingResource = resources.fitting as MachineHourResource;
   const fittingProducts = products.filter((p) => p.kind === 'fitting');
+  const pipeProducts = products.filter((p) => p.kind === 'pipe');
+  const pipeCostMethod = scenario.pipeCostMethod ?? 'kg'; // ADR-047/054 — công suất nhất quán m/giờ
 
   const pipeRefMaterial = referenceMaterialOf(materials, products, 'pipe');
   const fittingRefMaterial = referenceMaterialOf(materials, products, 'fitting');
@@ -84,7 +91,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   // 2 object cost nội bộ (sharedCostAllocated, khấu hao) gọi lại hàm pure
   // (đánh đổi "gọi 2 lần" đã chấp nhận ở ADR-010).
   const output = calculateScenario(scenario);
-  const pipeCapacity = calculatePipeCapacity(pipeResource);
+  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
   const pipeCost = calculatePipeCostAtNormalCapacity({
     resource: pipeResource,
@@ -127,7 +134,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   // trả lời "nếu chỉ chạy X ca thì giá thành thật là bao nhiêu").
   const capacityLevels: PipeCapacityLevel[] = ([1, 2, 3] as const).map((shifts) => {
     const resourceAtShifts = { ...pipeResource, normalShifts: shifts };
-    const capacityAtShifts = calculatePipeCapacity(resourceAtShifts);
+    const capacityAtShifts = effectivePipeCapacity(resourceAtShifts, pipeProducts as PipeProduct[], pipeCostMethod);
     const costAtShifts = calculatePipeCostAtNormalCapacity({
       resource: resourceAtShifts,
       capacity: capacityAtShifts,
@@ -163,13 +170,41 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   const fittingKg = fittingCapacity.estimatedProductionKgYear;
   const nonProductionPerYear = nonProductionCosts.operatingCostPerYear + nonProductionCosts.financialCostPerYear;
 
+  // ── ADR-055 — TỶ LỆ ĐÁY: doanh thu/EBIT/biến phí gộp từ 2 material chung dòng.
+  // material phụ = material thứ 2 (khác tham chiếu) có ≥1 SP của dòng dùng. Vắng
+  // material phụ ⇒ frac chính = 1 ⇒ phần phụ 0kg ⇒ trùng khít mô hình 1-material.
+  // Mặc định pct=100 ⇒ frac=1 ⇒ parity tuyệt đối dù có material phụ hay không.
+  const pipeSecondaryMat = materials.find(
+    (m) => m.id !== pipeRefMaterial.id && products.some((p) => p.kind === 'pipe' && p.materialId === m.id),
+  );
+  const fittingSecondaryMat = materials.find(
+    (m) => m.id !== fittingRefMaterial.id && products.some((p) => p.kind === 'fitting' && p.materialId === m.id),
+  );
+  const pipePrimaryFrac = pipeSecondaryMat ? (scenario.productionMixPipePrimaryPct ?? 100) / 100 : 1;
+  const fittingPrimaryFrac = fittingSecondaryMat ? (scenario.productionMixFittingPrimaryPct ?? 100) / 100 : 1;
+  const pipeSecondaryLadder = pipeSecondaryMat ? ladderOf('pipe', pipeSecondaryMat.id) : undefined;
+  const fittingSecondaryLadder = fittingSecondaryMat ? ladderOf('fitting', fittingSecondaryMat.id) : undefined;
+  // Σ (phần kg × chỉ số thang giá của loại đó) — chính + phụ.
+  const splitBy = (
+    totalKg: number,
+    primaryFrac: number,
+    primary: typeof pipeLadder,
+    secondary: typeof pipeLadder | undefined,
+    pick: (l: typeof pipeLadder) => number,
+  ): number =>
+    totalKg * primaryFrac * pick(primary) + (secondary ? totalKg * (1 - primaryFrac) * pick(secondary) : 0);
+
+  const pipeRevenueVf = splitBy(pipeKg, pipePrimaryFrac, pipeLadder, pipeSecondaryLadder, (l) => l.targetPrice);
+  const fittingRevenueVf = splitBy(fittingKg, fittingPrimaryFrac, fittingLadder, fittingSecondaryLadder, (l) => l.targetPrice);
   const ebitAtNormalCapacityVfPrice =
-    pipeKg * (pipeLadder.targetPrice - pipeLadder.breakEvenFullCost) +
-    fittingKg * (fittingLadder.targetPrice - fittingLadder.breakEvenFullCost) -
+    splitBy(pipeKg, pipePrimaryFrac, pipeLadder, pipeSecondaryLadder, (l) => l.targetPrice - l.breakEvenFullCost) +
+    splitBy(fittingKg, fittingPrimaryFrac, fittingLadder, fittingSecondaryLadder, (l) => l.targetPrice - l.breakEvenFullCost) -
     nonProductionPerYear;
 
-  const revenueVf = pipeKg * pipeLadder.targetPrice + fittingKg * fittingLadder.targetPrice;
-  const variableCostTotal = pipeKg * pipeLadder.variableCostFloor + fittingKg * fittingLadder.variableCostFloor;
+  const revenueVf = pipeRevenueVf + fittingRevenueVf;
+  const variableCostTotal =
+    splitBy(pipeKg, pipePrimaryFrac, pipeLadder, pipeSecondaryLadder, (l) => l.variableCostFloor) +
+    splitBy(fittingKg, fittingPrimaryFrac, fittingLadder, fittingSecondaryLadder, (l) => l.variableCostFloor);
   const contributionMarginRatio = 1 - variableCostTotal / revenueVf;
   const enterpriseBreakEvenRevenuePerYear =
     (pipeCvp.fixedCostPerYear + fittingCvp.fixedCostPerYear + nonProductionPerYear) / contributionMarginRatio;
@@ -194,6 +229,8 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
       totalFixedCapitalInvested,
       enterpriseBreakEvenRevenuePerYear,
       expectedRevenueVf: revenueVf,
+      expectedRevenuePipeVf: pipeRevenueVf,
+      expectedRevenueFittingVf: fittingRevenueVf,
       ebitAtNormalCapacityVfPrice,
       paybackYears,
     },

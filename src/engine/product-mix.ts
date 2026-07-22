@@ -6,8 +6,9 @@
 import type { ScenarioInput, ScenarioOutput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
 import type { ProductMixProfile, LineMixMetrics, MixEbit, MarketPriceOverride } from '../schemas/product-mix.js';
+import type { PipeProduct } from '../schemas/product.js';
 import { calculateScenario, referenceMaterialOf } from './scenario.js';
-import { calculatePipeCapacity } from './pipe.js';
+import { effectivePipeCapacity } from './pipe.js';
 
 interface LineBasis {
   materialName: string;
@@ -40,7 +41,7 @@ function readLine(baseline: ScenarioInput, out: ScenarioOutput, line: 'pipe' | '
     variableCostPerKg: cvp.variableCostPerKg,
     fixedCostPerYear: cvp.fixedCostPerYear,
     volumeKg: line === 'pipe' ? out.capacity.pipe.normalCapacityKgYear : out.capacity.fitting.estimatedProductionKgYear,
-    machineHours: line === 'pipe' ? calculatePipeCapacity(pipeR).normalOperatingHours : out.capacity.fitting.normalMachineHoursUtilized,
+    machineHours: line === 'pipe' ? effectivePipeCapacity(pipeR, baseline.products.filter((p): p is PipeProduct => p.kind === 'pipe'), baseline.pipeCostMethod ?? 'kg').normalOperatingHours : out.capacity.fitting.normalMachineHoursUtilized,
     fixedCapitalVnd: line === 'pipe' ? pipeFixedCapital(pipeR) : fittingFixedCapital(fitR),
   };
 }

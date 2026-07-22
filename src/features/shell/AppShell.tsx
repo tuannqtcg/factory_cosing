@@ -268,8 +268,6 @@ export default function AppShell() {
                 sub={(tabSub as PricingSub | undefined) ?? 'vf'}
                 onSubChange={(s) => setActiveTab(`pricing:${s}`)}
                 onNavigate={go}
-                role={role}
-                scenarioId={SCENARIO_ID}
                 priceList={data.priceList}
                 scenario={data.scenario}
                 internal={data.internal}
@@ -278,11 +276,13 @@ export default function AppShell() {
             {tabId === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
             {tabId === 'data-setup' && (
               <DataSetupScreen
+                key={activeTab}
                 role={role}
                 user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
                 scenarioId={SCENARIO_ID}
                 scenario={data.scenario}
                 internal={data.internal}
+                initialSection={tabSub as Parameters<typeof DataSetupScreen>[0]['initialSection']}
               />
             )}
           </>

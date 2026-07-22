@@ -12,6 +12,7 @@ import type { CeoPlannerRequest, CeoPlannerResult, CeoAdviceResult, MarginMode, 
 import { calculateCeoPlanner } from '../../engine/ceo-planner.js';
 import { generateCeoAdviceMock } from '../../engine/ceo-advice-mock.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
+import CeoReverseTools from './CeoReverseTools.js';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e9) + ' tỷ đ';
 const fmt1 = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v);
@@ -228,6 +229,15 @@ export default function CeoPlannerScreen({
   const markupVfFromReq = (m: number, mode: MarginMode) => (mode === 'markup_on_cost' ? m : m / (1 - m));
   const [applyState, setApplyState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [applyErr, setApplyErr] = useState<string | null>(null);
+  // C (ADR-041 mở rộng) — chọn ghi thêm tỷ giá / tiền thuê vào dữ liệu thật.
+  const [applyFx, setApplyFx] = useState(true);
+  const [applyLease, setApplyLease] = useState(true);
+  const appliedFx = result?.request.fxRateUsdVnd ?? 0;
+  const appliedLeaseVnd = result?.request.annualPremiseLeaseVnd ?? 0;
+  const fxChanged = !!result && !!scenario && Math.abs(scenario.costPool.currency.usdVndRate - appliedFx) > 1e-9;
+  const leaseChanged = !!result && !!scenario && scenario.costPool.sharedFixedCosts.annualLandRent !== appliedLeaseVnd;
+  const willWriteFx = fxChanged && applyFx;
+  const willWriteLease = leaseChanged && applyLease;
   const applyPlan = result
     ? [result.request.pipe, result.request.fitting].map((line) => ({
         id: line.materialId,
@@ -240,9 +250,10 @@ export default function CeoPlannerScreen({
     if (!result || !scenario || !canApply) return;
     const lines = applyPlan
       .filter((c) => c.mat)
-      .map((c) => `• ${c.mat!.name}: giá ${fmtUsd(c.mat!.inventory.replacementPriceUsdPerKg)} → ${fmtUsd(c.newPrice)}/kg · markup ${Math.round(c.mat!.markupVf * 100)}% → ${Math.round(c.newMarkup * 100)}%`)
-      .join('\n');
-    if (!window.confirm(`GHI VÀO DỮ LIỆU THẬT? Mọi màn (Bảng Giá, Tổng Quan…) sẽ tính lại theo.\n\n${lines}\n\nSố ca & tỷ lệ dùng máy KHÔNG đổi. Bấm OK để áp dụng.`)) return;
+      .map((c) => `• ${c.mat!.name}: giá ${fmtUsd(c.mat!.inventory.replacementPriceUsdPerKg)} → ${fmtUsd(c.newPrice)}/kg · markup ${Math.round(c.mat!.markupVf * 100)}% → ${Math.round(c.newMarkup * 100)}%`);
+    if (willWriteFx) lines.push(`• Tỷ giá USD/VND: ${fmtVnd(scenario.costPool.currency.usdVndRate)} → ${fmtVnd(appliedFx)}  (⚠ ảnh hưởng MỌI chi phí quy đổi USD)`);
+    if (willWriteLease) lines.push(`• Thuê mặt bằng/năm: ${fmtVnd(scenario.costPool.sharedFixedCosts.annualLandRent)} → ${fmtVnd(appliedLeaseVnd)} đ`);
+    if (!window.confirm(`GHI VÀO DỮ LIỆU THẬT? Mọi màn (Bảng Giá, Tổng Quan…) sẽ tính lại theo.\n\n${lines.join('\n')}\n\nSố ca & tỷ lệ dùng máy KHÔNG đổi. Bấm OK để áp dụng.`)) return;
     setApplyState('saving');
     setApplyErr(null);
     try {
@@ -252,7 +263,13 @@ export default function CeoPlannerScreen({
         // Ghi giá tái tạo + KHÓA baseline tại giá vừa áp (commit ở giá đã thử) + markup.
         return { ...m, markupVf: c.newMarkup, inventory: { ...m.inventory, replacementPriceUsdPerKg: c.newPrice, priceLock: { ...m.inventory.priceLock, baseline: c.newPrice } } };
       });
-      const parsed = ScenarioInputSchema.safeParse({ ...scenario, materials });
+      // C — ghi thêm tỷ giá / tiền thuê nếu người dùng chọn (mô hình đi thuê ADR-021).
+      const costPool = {
+        ...scenario.costPool,
+        ...(willWriteFx ? { currency: { ...scenario.costPool.currency, usdVndRate: appliedFx } } : {}),
+        ...(willWriteLease ? { sharedFixedCosts: { ...scenario.costPool.sharedFixedCosts, annualLandRent: appliedLeaseVnd } } : {}),
+      };
+      const parsed = ScenarioInputSchema.safeParse({ ...scenario, materials, costPool });
       if (!parsed.success) {
         setApplyState('error');
         setApplyErr(`Dữ liệu không hợp lệ: ${parsed.error.issues[0]?.message ?? 'lỗi không rõ'}`);
@@ -396,6 +413,9 @@ export default function CeoPlannerScreen({
         {err && <div style={{ marginTop: 10, color: '#DC2626', fontSize: 11 }}>Lỗi tính: {err}</div>}
       </div>
 
+      {/* ── CÂU HỎI NGƯỢC (A/B) — goal-seek độc lập luồng xuôi ── */}
+      <CeoReverseTools scenario={scenario} />
+
       {/* ── BƯỚC 2 ── */}
       {result && (
         <>
@@ -457,6 +477,22 @@ export default function CeoPlannerScreen({
                   })}
                 </tbody>
               </table>
+              {(fxChanged || leaseChanged) && (
+                <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', padding: '10px 12px', background: '#fff7f9', border: '1px dashed #e0a3ba', borderRadius: 6, marginBottom: 14 }}>
+                  {fxChanged && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={applyFx} onChange={(e) => setApplyFx(e.target.checked)} />
+                      <span>Ghi cả <b>tỷ giá</b>: {fmtVnd(scenario.costPool.currency.usdVndRate)} → <b style={{ color: '#a8003b' }}>{fmtVnd(appliedFx)}</b> <span style={{ color: '#b45309' }}>(ảnh hưởng mọi chi phí USD)</span></span>
+                    </label>
+                  )}
+                  {leaseChanged && (
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={applyLease} onChange={(e) => setApplyLease(e.target.checked)} />
+                      <span>Ghi cả <b>tiền thuê/năm</b>: {fmtVnd(scenario.costPool.sharedFixedCosts.annualLandRent)} → <b style={{ color: '#a8003b' }}>{fmtVnd(appliedLeaseVnd)}</b> đ</span>
+                    </label>
+                  )}
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
                 <button
                   onClick={() => void applyToReal()}

@@ -16,9 +16,9 @@
 // ADR-012 đầu src/engine/scenario.ts.
 import type { MoldAsset } from '../schemas/resource.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
-import type { FittingProduct } from '../schemas/product.js';
+import type { FittingProduct, PipeProduct } from '../schemas/product.js';
 import type { ScenarioInput, PlanInput, PlanResult } from '../schemas/scenario.js';
-import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
+import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
 import { calculateFittingCapacity } from './fitting.js';
 import { calculatePipeCvp } from './cvp.js';
 import { calculatePlan, type PlanMaterialPricing } from './plan.js';
@@ -91,7 +91,7 @@ export function calculatePlanForScenario(scenario: ScenarioInput, planInput: Pla
     markupVf: pipeRefMaterial.markupVf,
   };
 
-  const pipeCapacity = calculatePipeCapacity(pipeResource);
+  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], scenario.pipeCostMethod ?? 'kg');
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
   const pipeCost = calculatePipeCostAtNormalCapacity({
     resource: pipeResource,

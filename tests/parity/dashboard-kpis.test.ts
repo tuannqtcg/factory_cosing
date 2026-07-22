@@ -59,6 +59,48 @@ describe('Dashboard KPI — multi-material (ADR-012): thêm Corzan không đổi
   it('kịch bản Corzan (BlazeMaster đứng đầu materials[]) giữ nguyên capacityLevels + investment', () => {
     const corzanKpis = calculateDashboardKpis(ScenarioInputSchema.parse(buildCorzanScenarioInput()));
     expect(corzanKpis.capacityLevels).toEqual(kpis.capacityLevels);
-    expect(corzanKpis.investment).toEqual(kpis.investment);
+    // ADR-055 — tỷ lệ đáy mặc định 100% cho compound CHÍNH ⇒ thêm Corzan (material
+    // phụ dòng) KHÔNG đổi KPI tham chiếu. Doanh thu per-line đi qua splitBy (chính +
+    // phụ×0) nên lệch tối đa 1 ULP so với đường nhân 1-material cũ — so gần đúng.
+    const inv = corzanKpis.investment;
+    expect(inv.totalFixedCapitalInvested).toBe(kpis.investment.totalFixedCapitalInvested);
+    expect(inv.ebitAtNormalCapacityVfPrice).toBeCloseTo(kpis.investment.ebitAtNormalCapacityVfPrice, 4);
+    expect(inv.expectedRevenueVf).toBeCloseTo(kpis.investment.expectedRevenueVf, 4);
+    expect(inv.expectedRevenuePipeVf).toBeCloseTo(kpis.investment.expectedRevenuePipeVf, 4);
+    expect(inv.expectedRevenueFittingVf).toBeCloseTo(kpis.investment.expectedRevenueFittingVf, 4);
+    expect(inv.enterpriseBreakEvenRevenuePerYear).toBeCloseTo(kpis.investment.enterpriseBreakEvenRevenuePerYear, 2);
+    expect(inv.paybackYears).toBeCloseTo(kpis.investment.paybackYears, 8);
+  });
+});
+
+describe('ADR-055 — tỷ lệ đáy chia doanh thu giữa 2 compound chung dòng', () => {
+  const withPipeMix = (pipePct: number) =>
+    calculateDashboardKpis(
+      ScenarioInputSchema.parse({ ...(buildCorzanScenarioInput() as object), productionMixPipePrimaryPct: pipePct }),
+    );
+  const at100 = withPipeMix(100);
+  const at0 = withPipeMix(0);
+  const at50 = withPipeMix(50);
+
+  it('doanh thu Ống 50/50 = trung bình cộng của 100% chính và 0% chính (tuyến tính theo kg)', () => {
+    expect(at50.investment.expectedRevenuePipeVf).toBeCloseTo(
+      (at100.investment.expectedRevenuePipeVf + at0.investment.expectedRevenuePipeVf) / 2,
+      2,
+    );
+  });
+
+  it('đổi tỷ lệ đáy ⇒ doanh thu Ống đổi (Corzan giá khác BlazeMaster)', () => {
+    expect(at0.investment.expectedRevenuePipeVf).not.toBeCloseTo(at100.investment.expectedRevenuePipeVf, 0);
+  });
+
+  it('chỉnh tỷ lệ đáy dòng Ống KHÔNG đụng doanh thu Phụ kiện', () => {
+    expect(at0.investment.expectedRevenueFittingVf).toBeCloseTo(at100.investment.expectedRevenueFittingVf, 6);
+  });
+
+  it('tổng doanh thu = Ống + Phụ kiện (mọi tỷ lệ)', () => {
+    expect(at50.investment.expectedRevenueVf).toBeCloseTo(
+      at50.investment.expectedRevenuePipeVf + at50.investment.expectedRevenueFittingVf,
+      4,
+    );
   });
 });

@@ -16,11 +16,11 @@ import type { AppRole } from '../../lib/firebase.js';
 import { fmtVnd } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '../../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
-import type { FittingProduct } from '../../schemas/product.js';
+import type { FittingProduct, PipeProduct } from '../../schemas/product.js';
 import type { Material } from '../../schemas/material.js';
 import ProductsScreen from '../products/ProductsScreen.js';
 import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
-import { calculatePipeCapacity } from '../../engine/pipe.js';
+import { effectivePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
@@ -169,6 +169,9 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
     setForm((f) => (f ? { ...f, costPool: { ...f.costPool, currency: { ...f.costPool.currency, [key]: v } } } : f));
   const setMarkup = (key: 'markupTcg' | 'listPriceMargin', v: number) =>
     setForm((f) => (f ? { ...f, costPool: { ...f.costPool, markup: { ...f.costPool.markup, [key]: v } } } : f));
+  // ADR-055 — tỷ lệ đáy (production mix) % cho compound CHÍNH của dòng
+  const setProductionMix = (key: 'productionMixPipePrimaryPct' | 'productionMixFittingPrimaryPct', v: number) =>
+    setForm((f) => (f ? { ...f, [key]: v } : f));
   const setSolvent = (v: number) => setForm((f) => (f ? { ...f, costPool: { ...f.costPool, solvent550PricePerBox: v } } : f));
 
   // ── Khấu hao/năm — CÙNG công thức engine (thẳng = nguyên giá×SL/đời; khuôn = ADR-007) ──
@@ -187,7 +190,11 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
 
   // ── MỤC ②: chi phí chế biến/năm theo dòng — CÙNG công thức engine (pipe.ts / fitting.ts) ──
   const insurance = form.costPool.currency.mandatoryInsuranceRate;
-  const pipeCap = calculatePipeCapacity(pipe);
+  const pipeCap = effectivePipeCapacity(
+    pipe,
+    form.products.filter((p): p is PipeProduct => p.kind === 'pipe'),
+    form.pipeCostMethod ?? 'kg',
+  );
   const pipeHours = pipeCap.normalOperatingHours;
   const fittingProducts = form.products.filter((p): p is FittingProduct => p.kind === 'fitting');
   const fitCap = calculateFittingCapacity(fitting, fittingProducts);
@@ -683,6 +690,53 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   Markup áp trên <b>giá thành đầy đủ</b> (đã gồm NVL + chế biến + chi phí chung phân bổ), không phải trên giá NL. Giá thành/hòa vốn đọc từ engine (thang giá 5 bậc); giá VF = giá thành × (1+markup) — đúng công thức engine.
                 </div>
               </div>
+
+              {/* ── ADR-055 — TỶ LỆ ĐÁY: chia % công suất dòng giữa 2 compound chung máy ── */}
+              {(() => {
+                const pipeMats = form.materials.filter((m) => form.products.some((p) => p.kind === 'pipe' && p.materialId === m.id));
+                const fitMats = form.materials.filter((m) => form.products.some((p) => p.kind === 'fitting' && p.materialId === m.id));
+                const pipeKg = internal?.capacity.pipe.normalCapacityKgYear;
+                const fitKg = internal?.capacity.fitting.estimatedProductionKgYear;
+                const fmtKg = (v?: number) => (v === undefined ? '—' : `${Math.round(v).toLocaleString('vi-VN')} kg`);
+                const mixRow = (label: string, mats: Material[], pct: number, onPct: (v: number) => void, totalKg?: number) => {
+                  const primary = mats[0], secondary = mats[1];
+                  if (!primary) return null;
+                  if (!secondary)
+                    return (
+                      <div key={label} style={{ padding: '10px 14px', border: '1px solid #eef0f3', borderRadius: 8, fontSize: 12, color: '#6b7280', background: '#fafbfc' }}>
+                        <b>Dòng {label}:</b> chỉ 1 compound (<b>{primary?.name ?? '—'}</b>) chạy dòng này — chưa cần chia đáy.
+                      </div>
+                    );
+                  const frac = Math.min(100, Math.max(0, pct)) / 100;
+                  return (
+                    <div key={label} style={{ padding: '12px 14px', border: '1px solid #eef0f3', borderRadius: 8 }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 700 }}>Dòng {label}</div>
+                        <div style={{ fontSize: 11, color: '#8a5a12' }}>% cho <b>{primary.name}</b> · còn lại → <b>{secondary.name}</b></div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                        <input type="range" min={0} max={100} step={1} value={pct} onChange={(e) => onPct(Number(e.target.value))} style={{ flex: '1 1 200px', minWidth: 180, accentColor: '#16A34A' }} />
+                        <div style={{ width: 120 }}><InCell width="100%" value={pct} onChange={onPct} unit="%" /></div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 24, marginTop: 8, fontSize: 12 }}>
+                        <div><span style={{ color: '#9aa0aa' }}>{primary.name}:</span> <b style={{ fontFamily: 'ui-monospace, monospace' }}>{fmtKg(totalKg !== undefined ? totalKg * frac : undefined)}</b></div>
+                        <div><span style={{ color: '#9aa0aa' }}>{secondary.name}:</span> <b style={{ fontFamily: 'ui-monospace, monospace' }}>{fmtKg(totalKg !== undefined ? totalKg * (1 - frac) : undefined)}</b></div>
+                      </div>
+                    </div>
+                  );
+                };
+                return (
+                  <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#16A34A', fontWeight: 700, marginBottom: 2 }}>Tỷ lệ đáy · Cơ cấu sản lượng</div>
+                    <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 4 }}>Chia công suất dòng giữa 2 compound (vd BlazeMaster / Corzan)</div>
+                    <div style={{ fontSize: 11, color: '#a3a3a3', marginBottom: 12 }}>Doanh thu = phần chính × giá chính + phần phụ × giá phụ (mỗi loại theo thang giá riêng). Trợ Lý CEO có thể ghi đè tạm khi mô phỏng.</div>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      {mixRow('Ống', pipeMats, form.productionMixPipePrimaryPct ?? 100, (v) => setProductionMix('productionMixPipePrimaryPct', v), pipeKg)}
+                      {mixRow('Phụ kiện', fitMats, form.productionMixFittingPrimaryPct ?? 100, (v) => setProductionMix('productionMixFittingPrimaryPct', v), fitKg)}
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, padding: 16 }}>
                 <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#8a5a12', fontWeight: 700, marginBottom: 2 }}>Markup kênh phân phối</div>

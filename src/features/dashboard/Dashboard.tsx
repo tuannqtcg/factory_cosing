@@ -382,10 +382,10 @@ export default function Dashboard({
                 const gross = ebit + nonProd;
                 const tax = ebit > 0 ? ebit * CIT_RATE : 0;
                 const cogs = revenue - gross, net = ebit - tax;
-                const pipeKg = internal.capacity.pipe.normalCapacityKgYear;
-                const fitKg = kpis.fittingCapacity.productionKgYear;
-                const pipeRev = pipeLadder ? pipeKg * pipeLadder.targetPrice : 0;
-                const fitRev = fittingLadder ? fitKg * fittingLadder.targetPrice : 0;
+                // ADR-055 — doanh thu Ống/PK lấy TRỰC TIẾP từ KPI (đã gộp tỷ lệ đáy
+                // chính+phụ) để khớp tuyệt đối expectedRevenueVf, không tự nhân lại.
+                const pipeRev = kpis.investment.expectedRevenuePipeVf;
+                const fitRev = kpis.investment.expectedRevenueFittingVf;
                 const pct = (v: number) => (revenue > 0 ? `${((v / revenue) * 100).toFixed(1)}%` : '—');
                 const detail = (s: string) => onNavigate?.(`data-setup:${s}`);
                 const rows: Array<{ label: string; v: number; kind: 'rev' | 'sub' | 'total' | 'grand'; neg?: boolean; to?: string }> = [

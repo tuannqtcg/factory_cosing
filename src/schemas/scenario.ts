@@ -37,6 +37,15 @@ export const ScenarioInputSchema = z
     // giá cao hơn. TỔNG chi phí máy giữ nguyên, chỉ đổi cách chia giữa các size.
     // Mặc định 'kg' → doc cũ không có field vẫn parse đúng, không vỡ parity.
     pipeCostMethod: z.enum(['kg', 'meters']).default('kg'),
+    // ADR-055 — TỶ LỆ ĐÁY (production mix): % công suất DÒNG dành cho material
+    // THAM CHIẾU (chính, vd BlazeMaster); phần còn lại cho material thứ 2 của
+    // dòng (vd Corzan). Doanh thu/EBIT/biến phí VF = chính×giá_chính +
+    // phụ×giá_phụ (mỗi loại theo thang giá riêng). Chỉ áp khi dòng có ≥2
+    // material; mặc định 100 = 100% chính ⇒ parity tuyệt đối (doc cũ không field
+    // → 100, phần phụ = 0kg, trùng khít mô hình 1-material cũ). Trợ Lý CEO GHI
+    // ĐÈ tạm 2 field này khi what-if (allocation*PrimaryPct).
+    productionMixPipePrimaryPct: z.number().min(0).max(100).default(100),
+    productionMixFittingPrimaryPct: z.number().min(0).max(100).default(100),
   })
   .superRefine((input, ctx) => {
     // materialId của mọi product phải tồn tại trong materials[] (contract material.md)

@@ -20,7 +20,7 @@ import type {
 } from '../schemas/ceo-planner.js';
 import { calculateScenario } from './scenario.js';
 import { calculateDashboardKpis } from './dashboard-support.js';
-import { calculatePipeCapacity } from './pipe.js';
+import { effectivePipeCapacity } from './pipe.js';
 import { landedCostPerKgVnd } from './cost-pool.js';
 
 /** ADR-021 §6 — thuế TNDN 20% (user xác nhận 2026-07-16). Đổi 1 nơi duy nhất. */
@@ -88,7 +88,11 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
 
   // Sản lượng / giờ máy cả năm (tái dùng output orchestrator).
   const pipeCapKg = out.capacity.pipe.normalCapacityKgYear;
-  const pipeHours = calculatePipeCapacity(pipeResource).normalOperatingHours;
+  const pipeHours = effectivePipeCapacity(
+    pipeResource,
+    s.products.filter((p): p is PipeProduct => p.kind === 'pipe'),
+    s.pipeCostMethod ?? 'kg',
+  ).normalOperatingHours;
   const fitProdKg = out.capacity.fitting.estimatedProductionKgYear;
   const fitHours = out.capacity.fitting.normalMachineHoursUtilized;
 
@@ -150,8 +154,10 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
   // ADR-042 — CHIA công suất DÒNG cho 2 thương hiệu (dùng chung máy). Vắng
   // *Second ⇒ thương hiệu chính giữ 100% (chạy 1 loại) ⇒ parity giữ nguyên.
   // Tổng phần chia = 100% công suất dòng (KHÔNG cộng dồn vượt trần vật lý).
-  const allocPipe = request.pipeSecond ? (request.allocationPipePrimaryPct ?? 100) / 100 : 1;
-  const allocFit = request.fittingSecond ? (request.allocationFittingPrimaryPct ?? 100) / 100 : 1;
+  // ADR-055 — thiếu allocation trong request ⇒ dùng TỶ LỆ ĐÁY đã thiết lập ở
+  // baseline (Thiết Lập ⑦); request chỉ GHI ĐÈ tạm khi what-if.
+  const allocPipe = request.pipeSecond ? (request.allocationPipePrimaryPct ?? baseline.productionMixPipePrimaryPct ?? 100) / 100 : 1;
+  const allocFit = request.fittingSecond ? (request.allocationFittingPrimaryPct ?? baseline.productionMixFittingPrimaryPct ?? 100) / 100 : 1;
 
   const pipe = buildLine('pipe', pipeMat, pipeLadder, pipeCvp, request.pipe.desiredMargin, pipeMaterialPerKg, pipeResource.packagingCostPerKg, pipeCapKg * allocPipe, pipeHours * allocPipe, pipeResource.yieldRate);
   const fitting = buildLine('fitting', fitMat, fitLadder, fitCvp, request.fitting.desiredMargin, fitMaterialPerKg, fittingResource.packagingCostPerKg, fitProdKg * allocFit, fitHours * allocFit, fittingResource.yieldRate, out.mhrPerMachineHour);

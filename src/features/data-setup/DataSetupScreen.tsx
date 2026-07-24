@@ -13,7 +13,7 @@ import { useRef, useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
 import type { AppRole } from '../../lib/firebase.js';
-import { fmtVnd } from '../../lib/format.js';
+import { fmtVnd, fmtUsd } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '../../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource, MoldAsset } from '../../schemas/resource.js';
 import type { FittingProduct, PipeProduct } from '../../schemas/product.js';
@@ -23,6 +23,7 @@ import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { effectivePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
+import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
@@ -144,6 +145,16 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, [key]: v })));
   const updReplacement = (id: string, v: number) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, replacementPriceUsdPerKg: v } })));
+  // ── Lô nhập compound (ADR-002 — bình quân gia quyền). Cùng ngữ nghĩa InventoryScreen. ──
+  const updLot = (id: string, i: number, key: 'tons' | 'priceUsdPerKg', v: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, ix) => (ix === i ? { ...l, [key]: v } : l)) } })));
+  const addLot = (id: string) =>
+    setMaterials((ms) => ms.map((m) => {
+      if (m.id !== id || m.inventory.lots.length >= 5) return m; // schema max 5 lô
+      return { ...m, inventory: { ...m.inventory, lots: [{ tons: 0, priceUsdPerKg: m.inventory.replacementPriceUsdPerKg }, ...m.inventory.lots] } };
+    }));
+  const removeLot = (id: string, i: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.filter((_, ix) => ix !== i) } })));
   const updThreshold = (id: string, v: number) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, thresholdPct: v } } })));
   const chotBaseline = (id: string) =>
@@ -475,6 +486,8 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 12 }}>Chi phí chế biến / năm</div>
                 <div style={gridStyle}>
                   <GridCell label="Số ca / ngày"><InCell width="100%" value={pipe.normalShifts} onChange={(v) => setPipe('normalShifts', v)} unit="ca (1-3)" /></GridCell>
+                  <GridCell label="Số giờ / ca"><InCell width="100%" value={pipe.hoursPerShift} onChange={(v) => setPipe('hoursPerShift', v)} unit="giờ/ca" /></GridCell>
+                  <GridCell derived label={<>Giờ vận hành / năm {fxTag}</>}><FxCell value={pipeHours} unit="giờ" /></GridCell>
                   <GridCell label="Số người / ca"><InCell width="100%" value={pipe.peoplePerShift} onChange={(v) => setPipe('peoplePerShift', v)} unit="người" /></GridCell>
                   <GridCell label="Lương bình quân / tháng"><InCell width="100%" value={pipe.avgSalaryMonthly} onChange={(v) => setPipe('avgSalaryMonthly', v)} unit="đ" /></GridCell>
                   <GridCell label="Số tháng lương / năm"><InCell width="100%" value={pipe.monthsSalaryPerYear} onChange={(v) => setPipe('monthsSalaryPerYear', v)} unit="tháng" /></GridCell>
@@ -496,7 +509,9 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 <div style={{ fontSize: 14.5, fontWeight: 700, marginBottom: 12 }}>Chi phí chế biến / năm</div>
                 <div style={gridStyle}>
                   <GridCell label="Số ca / ngày"><InCell width="100%" value={fitting.normalShifts} onChange={(v) => setFitting('normalShifts', v)} unit="ca (1-3)" /></GridCell>
+                  <GridCell label="Số giờ / ca"><InCell width="100%" value={fitting.hoursPerShift} onChange={(v) => setFitting('hoursPerShift', v)} unit="giờ/ca" /></GridCell>
                   <GridCell label="Hệ số huy động giờ máy"><InCell width="100%" value={fitting.normalUtilizationFactor} onChange={(v) => setFitting('normalUtilizationFactor', v)} unit="tỷ lệ (0,6=60%)" /></GridCell>
+                  <GridCell derived label={<>Giờ máy huy động / năm {fxTag}</>}><FxCell value={fitHours} unit="giờ" /></GridCell>
                   <GridCell label="Số người / ca"><InCell width="100%" value={fitting.peoplePerShift} onChange={(v) => setFitting('peoplePerShift', v)} unit="người" /></GridCell>
                   <GridCell label="Lương bình quân / tháng"><InCell width="100%" value={fitting.avgSalaryMonthly} onChange={(v) => setFitting('avgSalaryMonthly', v)} unit="đ" /></GridCell>
                   <GridCell label="Số tháng lương / năm"><InCell width="100%" value={fitting.monthsSalaryPerYear} onChange={(v) => setFitting('monthsSalaryPerYear', v)} unit="tháng" /></GridCell>
@@ -512,7 +527,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 </div>
                 {kpi('Tổng chế biến Phụ kiện', fitConvTotal, '#7a3fc0', depFit)}
               </div>
-              <div style={{ fontSize: 11, color: '#a3a3a3' }}>Nhân công/điện/nước/tổng là số <b>tự tính</b> theo công thức engine (nhân công = ca×người×lương×tháng×(1+BH); điện/nước theo giờ vận hành). Bao bì tính theo kg thành phẩm, không gộp vào tổng/năm.</div>
+              <div style={{ fontSize: 11, color: '#a3a3a3' }}>Nhân công/điện/nước/tổng là số <b>tự tính</b> theo công thức engine (nhân công = ca×người×lương×tháng×(1+BH); điện/nước = định mức × <b>giờ vận hành/năm</b>). <b>Giờ vận hành/năm</b> = số mẻ × ngày chạy liên tục × số ca × <b>số giờ/ca</b> (Ống) — đổi <b>số giờ/ca</b> (vd 1 ca 12 giờ, 2 ca = 24 giờ) là điện/nước tính lại đúng thực tế nhà máy. Bao bì tính theo kg thành phẩm, không gộp vào tổng/năm.</div>
             </div>
           );
         })()}
@@ -562,57 +577,118 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
         {/* ── MỤC 04: NGUYÊN LIỆU (COMPOUND) ── */}
         {section === 'mat' && (() => {
           const usdRate = form.costPool.currency.usdVndRate;
-          const th4: React.CSSProperties = { ...th };
+          const fxTag = <span style={{ fontSize: 8.5, fontWeight: 700, color: '#6b7280', border: '1px solid #c8cdd5', borderRadius: 3, padding: '0 3px' }}>fx</span>;
+          const ratesOf = (m: Material) => ({ importTaxRate: m.importTaxRate, customsLogisticsFeeRate: m.customsLogisticsFeeRate, usdVndRate: usdRate });
+          const gridStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', border: '1px solid #eef0f3', borderRadius: 10, overflow: 'hidden' };
           return (
             <div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                 {isAdmin && <button onClick={addMaterial} style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>➕ Thêm nguyên liệu</button>}
               </div>
-              <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, minWidth: 960 }}>
-                    <thead><tr>
-                      <th style={th4}>Compound</th><th style={{ ...th4, ...rNum }}>Giá tái tạo (USD/kg)</th>
-                      <th style={{ ...th4, ...rNum }}>Thuế NK</th><th style={{ ...th4, ...rNum }}>Phí HQ</th>
-                      <th style={{ ...th4, ...rNum }}>Ngưỡng khóa</th>
-                      <th style={{ ...th4, ...rNum }}>Giá NL/kg (nhập về)</th><th style={th4}>Khóa giá</th>{isAdmin && <th style={th4}></th>}
-                    </tr></thead>
-                    <tbody>
-                      {form.materials.map((m) => {
-                        const landed = landedCostPerKgVnd(m.inventory.replacementPriceUsdPerKg, { importTaxRate: m.importTaxRate, customsLogisticsFeeRate: m.customsLogisticsFeeRate, usdVndRate: usdRate });
-                        const lockEntry = internal?.priceLock.byMaterial.find((e) => e.materialId === m.id);
-                        const isLocked = lockEntry?.evaluation.isLocked ?? null;
-                        return (
-                          <tr key={m.id}>
-                            <td style={td}>
-                              {isAdmin ? (
-                                <input className="ds-in" value={m.name} onChange={(e) => updMatText(m.id, 'name', e.target.value)} style={{ width: 150, padding: '5px 8px', border: '1px solid #c8cdd5', borderRadius: 6, fontSize: 12.5, fontWeight: 600, outline: 'none' }} />
-                              ) : <b>{m.name}</b>}
-                              <div style={{ fontSize: 10, color: '#9aa0aa', marginTop: 2 }}>{m.code || '—'} · {m.originLabel || '—'}</div>
-                            </td>
-                            <td style={{ ...td, ...rNum }}><InCell value={m.inventory.replacementPriceUsdPerKg} onChange={(v) => updReplacement(m.id, v)} width={78} /></td>
-                            <td style={{ ...td, ...rNum }}><InCell value={m.importTaxRate} onChange={(v) => updMatNum(m.id, 'importTaxRate', v)} unit="tỷ lệ" width={64} /></td>
-                            <td style={{ ...td, ...rNum }}><InCell value={m.customsLogisticsFeeRate} onChange={(v) => updMatNum(m.id, 'customsLogisticsFeeRate', v)} unit="tỷ lệ" width={64} /></td>
-                            <td style={{ ...td, ...rNum }}><InCell value={m.inventory.priceLock.thresholdPct} onChange={(v) => updThreshold(m.id, v)} unit="0,03=3%" width={64} disabled={!isAdmin} /></td>
-                            <td style={{ ...td, ...rNum }}><FxCell value={landed} unit="đ" /></td>
-                            <td style={td}>
-                              {isLocked === null ? <span style={{ fontSize: 10.5, color: '#9aa0aa' }}>—</span> : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-                                  <span style={{ fontSize: 10.5, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? '🔒 KHÓA' : '🔓 MỞ KHÓA'}</span>
-                                  {!isLocked && <button onClick={() => chotBaseline(m.id)} style={{ fontSize: 9.5, padding: '3px 7px', borderRadius: 5, border: '1px solid #a8003b', background: '#fff', color: '#a8003b', cursor: 'pointer', fontWeight: 700 }}>Chốt baseline</button>}
-                                </div>
+              <div style={{ display: 'grid', gap: 14 }}>
+                {form.materials.map((m) => {
+                  const replLanded = landedCostPerKgVnd(m.inventory.replacementPriceUsdPerKg, ratesOf(m));
+                  // Giá vốn BÌNH QUÂN GIA QUYỀN từ các lô mua (bản nháp) — hàm pure đã xuất (dual-costing.ts), không phải công thức bịa.
+                  const wAvg = weightedAvgUsdPerKg(m.inventory.lots); // null nếu chưa nhập lô nào → giá vốn = giá tái tạo
+                  const invKg = totalInventoryKg(m.inventory.lots);
+                  const bookUsd = wAvg ?? m.inventory.replacementPriceUsdPerKg;
+                  const bookLanded = landedCostPerKgVnd(bookUsd, ratesOf(m));
+                  // Lãi/lỗ giữ kho + cảnh báo VAS-02 lấy THẲNG từ engine (đã tính trên dữ liệu ĐÃ LƯU) — không tính lại ở client.
+                  const dualEntry = internal?.dualCosting.byMaterial.find((e) => e.materialId === m.id);
+                  const lockEntry = internal?.priceLock.byMaterial.find((e) => e.materialId === m.id);
+                  const isLocked = lockEntry?.evaluation.isLocked ?? null;
+                  const usedByLines = form.products.filter((p) => p.materialId === m.id).map((p) => p.kind);
+                  const lineLabel = usedByLines.includes('pipe') && usedByLines.includes('fitting') ? 'Ống + Phụ kiện' : usedByLines.includes('pipe') ? 'Ống' : usedByLines.includes('fitting') ? 'Phụ kiện' : 'chưa gán SKU';
+                  return (
+                    <div key={m.id} style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 12, overflow: 'hidden' }}>
+                      {/* Header */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', padding: '12px 16px', borderBottom: '1px solid #eef0f3' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                          {isAdmin ? (
+                            <input className="ds-in" value={m.name} onChange={(e) => updMatText(m.id, 'name', e.target.value)} style={{ width: 190, padding: '5px 8px', border: '1px solid #c8cdd5', borderRadius: 6, fontSize: 13.5, fontWeight: 700, outline: 'none' }} />
+                          ) : <b style={{ fontSize: 14 }}>{m.name}</b>}
+                          <span style={{ fontSize: 10, color: '#9aa0aa' }}>{m.code || '—'} · {m.originLabel || '—'}</span>
+                          <span style={{ fontSize: 10.5, fontWeight: 700, padding: '2px 8px', borderRadius: 999, background: '#eef1f4', color: '#565b64' }}>{lineLabel}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          {isLocked !== null && (
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? '🔒 KHÓA' : '🔓 MỞ KHÓA'}</span>
+                          )}
+                          {isLocked === false && <button onClick={() => chotBaseline(m.id)} style={{ fontSize: 9.5, padding: '3px 7px', borderRadius: 5, border: '1px solid #a8003b', background: '#fff', color: '#a8003b', cursor: 'pointer', fontWeight: 700 }}>Chốt baseline</button>}
+                          {isAdmin && <button onClick={() => removeMaterial(m.id)} disabled={productRefsMaterial(m.id)} title={productRefsMaterial(m.id) ? 'Còn SKU dùng' : 'Xóa'} style={{ fontSize: 11, color: productRefsMaterial(m.id) ? '#c9c9c9' : '#DC2626', background: 'none', border: 'none', cursor: productRefsMaterial(m.id) ? 'not-allowed' : 'pointer' }}>Xóa</button>}
+                        </div>
+                      </div>
+
+                      {/* Tham số thương mại/thuế + giá tái tạo */}
+                      <div style={{ padding: 14 }}>
+                        <div style={gridStyle}>
+                          <GridCell label="Giá tái tạo (thị trường hiện hành)"><InCell width="100%" value={m.inventory.replacementPriceUsdPerKg} onChange={(v) => updReplacement(m.id, v)} unit="USD/kg" /></GridCell>
+                          <GridCell label="Thuế nhập khẩu"><InCell width="100%" value={m.importTaxRate} onChange={(v) => updMatNum(m.id, 'importTaxRate', v)} unit="tỷ lệ (0,06=6%)" /></GridCell>
+                          <GridCell label="Phí hải quan + vận chuyển"><InCell width="100%" value={m.customsLogisticsFeeRate} onChange={(v) => updMatNum(m.id, 'customsLogisticsFeeRate', v)} unit="tỷ lệ" /></GridCell>
+                          <GridCell label="Ngưỡng khóa giá"><InCell width="100%" value={m.inventory.priceLock.thresholdPct} onChange={(v) => updThreshold(m.id, v)} unit="0,03=3%" disabled={!isAdmin} /></GridCell>
+                          <GridCell derived label={<>Giá tái tạo nhập về / kg {fxTag}</>}><FxCell value={replLanded} unit="đ" /></GridCell>
+                        </div>
+
+                        {/* Đợt nhập (lô mua) — nhiều lô giá khác nhau → bình quân gia quyền */}
+                        <div style={{ marginTop: 14, border: '1px solid #eef0f3', borderRadius: 10, overflow: 'hidden' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 13px', background: '#fafbfc', borderBottom: '1px solid #eef0f3' }}>
+                            <div>
+                              <div style={{ fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: '#8a5a12', fontWeight: 700 }}>Đợt nhập (lô mua)</div>
+                              <div style={{ fontSize: 11, color: '#737373', marginTop: 1 }}>Mỗi lô = số tấn × giá USD/kg khi mua (vd lô 2025: 2,9 · lô 2026: 2,6). Giá vốn sổ sách = bình quân gia quyền các lô.</div>
+                            </div>
+                            <button onClick={() => addLot(m.id)} disabled={m.inventory.lots.length >= 5} title={m.inventory.lots.length >= 5 ? 'Tối đa 5 lô' : 'Thêm lô'} style={{ padding: '5px 12px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: m.inventory.lots.length >= 5 ? '#c9c9c9' : '#16A34A', fontSize: 11, fontWeight: 600, cursor: m.inventory.lots.length >= 5 ? 'not-allowed' : 'pointer' }}>➕ Thêm lô</button>
+                          </div>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                            <thead><tr>
+                              <th style={{ ...th, padding: '8px 13px' }}>Lô</th>
+                              <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Số lượng (tấn)</th>
+                              <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Giá mua (USD/kg)</th>
+                              <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Giá trị lô (USD)</th>
+                              <th style={{ ...th, padding: '8px 13px' }}></th>
+                            </tr></thead>
+                            <tbody>
+                              {m.inventory.lots.length === 0 && (
+                                <tr><td colSpan={5} style={{ ...td, color: '#9aa0aa', fontSize: 11.5, padding: '12px 13px' }}>Chưa nhập lô nào — giá vốn sổ sách tạm lấy theo <b>giá tái tạo</b> ({fmtUsd(m.inventory.replacementPriceUsdPerKg)} USD/kg). Thêm lô để phản ánh giá mua thực tế.</td></tr>
                               )}
-                            </td>
-                            {isAdmin && <td style={{ ...td, ...rNum }}><button onClick={() => removeMaterial(m.id)} disabled={productRefsMaterial(m.id)} title={productRefsMaterial(m.id) ? 'Còn SKU dùng' : 'Xóa'} style={{ fontSize: 11, color: productRefsMaterial(m.id) ? '#c9c9c9' : '#DC2626', background: 'none', border: 'none', cursor: productRefsMaterial(m.id) ? 'not-allowed' : 'pointer' }}>Xóa</button></td>}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                              {m.inventory.lots.map((lot, i) => (
+                                <tr key={i}>
+                                  <td style={{ ...td, padding: '8px 13px', color: '#737373', fontSize: 11.5 }}>{i === 0 ? 'Lô gần nhất' : `Lô #${i + 1}`}</td>
+                                  <td style={{ ...td, ...rNum, padding: '8px 13px' }}><InCell value={lot.tons} onChange={(v) => updLot(m.id, i, 'tons', v)} unit="tấn" width={90} /></td>
+                                  <td style={{ ...td, ...rNum, padding: '8px 13px' }}><InCell value={lot.priceUsdPerKg} onChange={(v) => updLot(m.id, i, 'priceUsdPerKg', v)} unit="USD/kg" width={90} /></td>
+                                  <td style={{ ...td, ...rNum, padding: '8px 13px', fontFamily: 'ui-monospace, monospace', color: '#565b64' }}>{fmtUsd(lot.tons * 1000 * lot.priceUsdPerKg)}</td>
+                                  <td style={{ ...td, padding: '8px 13px' }}><button onClick={() => removeLot(m.id, i)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer' }}>Xóa</button></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* KPI giá vốn bình quân + lãi/lỗ giữ kho */}
+                        <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', padding: '13px 4px 2px' }}>
+                          <div>
+                            <div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Giá vốn bình quân {wAvg === null && '(≈ giá tái tạo)'}</div>
+                            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, marginTop: 3 }}>{fmtUsd(bookUsd)} <span style={{ fontSize: 11, color: '#9aa0aa' }}>USD/kg</span></div>
+                            <div style={{ fontSize: 11, color: '#565b64', marginTop: 2 }}>≈ {fmtVnd(bookLanded)} đ/kg (đã gồm thuế/phí)</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Tồn kho</div>
+                            <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, marginTop: 3 }}>{Math.round(invKg).toLocaleString('vi-VN')} <span style={{ fontSize: 11, color: '#9aa0aa' }}>kg</span></div>
+                          </div>
+                          {dualEntry && (
+                            <div>
+                              <div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Lãi/lỗ giữ kho <span style={{ textTransform: 'none', fontWeight: 500 }}>(đã lưu)</span></div>
+                              <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, marginTop: 3, color: dualEntry.holdingGainLossVnd < 0 ? '#DC2626' : '#16A34A' }}>{dualEntry.holdingGainLossVnd >= 0 ? '+' : ''}{fmtVnd(dualEntry.holdingGainLossVnd)} <span style={{ fontSize: 11, color: '#9aa0aa' }}>đ</span></div>
+                              {dualEntry.holdingGainLossVnd < 0 && <div style={{ fontSize: 10.5, color: '#DC2626', marginTop: 2, maxWidth: '32ch' }}>⚠ Giá tái tạo dưới bình quân — cân nhắc dự phòng giảm giá tồn kho (VAS-02)</div>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 10 }}>
-                <b>Giá NL/kg (nhập về)</b> là số <b>tự tính</b> = giá USD × (1 + thuế NK + phí HQ) × tỷ giá (hàm <code>landedCostPerKgVnd</code>). Trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-004), không tính lại. Thuế/phí khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
+              <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 12 }}>
+                <b>Giá vốn bình quân</b> = Σ(tấn × giá lô) ÷ Σtấn (hàm <code>weightedAvgUsdPerKg</code>) — chính là giá vốn SỔ SÁCH (ADR-002), khác <b>giá tái tạo</b> (thị trường hiện hành) dùng để định giá bán. Lãi/lỗ giữ kho + trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-002/004), cập nhật sau khi <b>Lưu</b>. Thuế/phí khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
               </div>
             </div>
           );

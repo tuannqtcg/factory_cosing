@@ -28,6 +28,14 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **Thiết Lập: lộ 'số giờ/ca' + lô nguyên liệu nhiều giá** (thuần trình bày, KHÔNG
+  đổi schema/engine — cả 2 field đã đóng băng, engine đã dùng). (1) Mục ② Chi phí chế
+  biến: thêm ô **Số giờ/ca** (`hoursPerShift`, Ống + Phụ kiện) + số tự tính **Giờ vận
+  hành/năm** & **Giờ máy huy động/năm** — CEO chỉnh 1 ca 12h / 2 ca 24h thì điện/nước
+  tính lại đúng (không còn kẹt thông lệ 3×8h). (2) Mục ④ Nguyên liệu đổi sang thẻ/compound:
+  lộ **các lô mua** (`inventory.lots[]`, tấn × USD/kg — vd lô 2,9 / lô 2,6) + **giá vốn
+  bình quân gia quyền** (`weightedAvgUsdPerKg`) tách rõ khỏi **giá tái tạo**, kèm lãi/lỗ
+  giữ kho + cảnh báo VAS-02 đọc thẳng engine. Suite 389/389, typecheck xanh.
 - [x] **ADR-048 — 'meters' làm nghẽn tổng công suất**: chế độ m/giờ nay tính tổng
   sản lượng dòng ống từ tốc độ per-size (m/giờ × đơn trọng, chia đều thời gian máy)
   thay 1 tốc độ pha trộn → size chậm kéo tổng kg/năm xuống → Trợ Lý CEO ra doanh thu/

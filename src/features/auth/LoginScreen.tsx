@@ -2,7 +2,9 @@
 // và email/mật khẩu (dự phòng, kèm "Quên mật khẩu" gửi email đặt lại). Lối tắt
 // đăng nhập demo theo vai đã gỡ bỏ hoàn toàn. Phân quyền vẫn qua custom claim
 // `role` — đăng nhập kiểu nào cũng không tự có quyền.
+// ADR-033 roll-out: trình bày qua design tokens (đen–trắng tối giản).
 import { useState } from 'react';
+import { color, font, radius, shadow } from '../../design/tokens.js';
 
 export default function LoginScreen({
   onSignIn,
@@ -50,21 +52,21 @@ export default function LoginScreen({
     setBusy(false);
   };
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 14, outline: 'none', boxSizing: 'border-box' };
+  const inputStyle: React.CSSProperties = { width: '100%', padding: '10px 12px', border: `1px solid ${color.borderStrong}`, borderRadius: radius.sm, fontSize: font.size.md, outline: 'none', boxSizing: 'border-box', color: color.ink };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ebe6d4', fontFamily: 'Roboto,Helvetica Neue,sans-serif' }}>
-      <div style={{ width: 360, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, boxShadow: '0 8px 30px rgba(0,0,0,.08)', overflow: 'hidden' }}>
-        <div style={{ background: '#1a1a1a', padding: '22px 24px' }}>
-          <div style={{ color: '#a8003b', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
-          <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>Costing Engine</div>
-          <div style={{ color: '#555', fontSize: 10, marginTop: 2 }}>Đăng nhập để vào bảng điều khiển</div>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: color.canvas, fontFamily: font.family }}>
+      <div style={{ width: 360, background: color.surface, border: `1px solid ${color.border}`, borderRadius: radius.lg, boxShadow: shadow.lg, overflow: 'hidden' }}>
+        <div style={{ background: color.sidebar, padding: '22px 24px' }}>
+          <div style={{ color: color.sidebarMuted, fontSize: font.size.eyebrow, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: font.weight.bold, marginBottom: 4 }}>BlazeMaster CPVC</div>
+          <div style={{ color: color.inkInverse, fontSize: font.size.xl, fontWeight: font.weight.bold }}>Costing Engine</div>
+          <div style={{ color: color.sidebarText, fontSize: font.size.xs, marginTop: 2 }}>Đăng nhập để vào bảng điều khiển</div>
         </div>
         <div style={{ padding: 24 }}>
           <button
             onClick={() => void googleSignIn()}
             disabled={busy}
-            style={{ width: '100%', padding: '11px', background: '#fff', color: '#1a1a1a', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 14, fontWeight: 600, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}
+            style={{ width: '100%', padding: '11px', background: color.surface, color: color.ink, border: `1px solid ${color.borderStrong}`, borderRadius: radius.sm, fontSize: font.size.md, fontWeight: font.weight.semibold, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}
           >
             <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
               <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -75,27 +77,27 @@ export default function LoginScreen({
             {busy ? 'Đang xử lý…' : 'Đăng nhập bằng Google'}
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <div style={{ flex: 1, height: 1, background: '#e5e0d0' }} />
-            <span style={{ fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em' }}>hoặc email</span>
-            <div style={{ flex: 1, height: 1, background: '#e5e0d0' }} />
+            <div style={{ flex: 1, height: 1, background: color.border }} />
+            <span style={{ fontSize: font.size.xs, color: color.inkFaint, textTransform: 'uppercase', letterSpacing: '.08em' }}>hoặc email</span>
+            <div style={{ flex: 1, height: 1, background: color.border }} />
           </div>
           <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 5 }}>Email</div>
+            <div style={{ fontSize: font.size.xs, fontWeight: font.weight.semibold, marginBottom: 5, color: color.ink }}>Email</div>
             <input style={inputStyle} type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="ban@congty.com" />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 5 }}>Mật khẩu</div>
+            <div style={{ fontSize: font.size.xs, fontWeight: font.weight.semibold, marginBottom: 5, color: color.ink }}>Mật khẩu</div>
             <input style={inputStyle} type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void submit()} placeholder="••••••••" />
           </div>
-          {error && <div style={{ color: '#DC2626', fontSize: 11, marginBottom: 12 }}>{error}</div>}
-          {info && <div style={{ color: '#15803D', fontSize: 11, marginBottom: 12 }}>{info}</div>}
-          <button onClick={() => void submit()} disabled={busy} style={{ width: '100%', padding: '11px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 6, fontSize: 14, fontWeight: 700, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+          {error && <div style={{ color: color.dangerInk, fontSize: font.size.xs, marginBottom: 12 }}>{error}</div>}
+          {info && <div style={{ color: color.successInk, fontSize: font.size.xs, marginBottom: 12 }}>{info}</div>}
+          <button onClick={() => void submit()} disabled={busy} style={{ width: '100%', padding: '11px', background: color.brand, color: color.inkInverse, border: 'none', borderRadius: radius.sm, fontSize: font.size.md, fontWeight: font.weight.bold, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>
             {busy ? 'Đang xử lý…' : 'Đăng nhập'}
           </button>
           <button
             onClick={() => void resetPassword()}
             disabled={busy}
-            style={{ width: '100%', marginTop: 10, padding: 0, background: 'none', border: 'none', color: '#737373', fontSize: 11, textDecoration: 'underline', cursor: busy ? 'default' : 'pointer' }}
+            style={{ width: '100%', marginTop: 10, padding: 0, background: 'none', border: 'none', color: color.inkMuted, fontSize: font.size.xs, textDecoration: 'underline', cursor: busy ? 'default' : 'pointer' }}
           >
             Quên mật khẩu? Gửi email đặt lại
           </button>

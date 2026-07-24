@@ -2,9 +2,11 @@
 // Phân Tích Định Giá) thành MỘT mục sidebar với sub-tab, vì cả 3 là 3 góc nhìn
 // của cùng một bảng giá (VF là gốc, NPP dẫn xuất, Phân tích là soi sâu thang
 // giá). Thuần trình bày — 3 màn con giữ nguyên, chỉ bọc điều hướng.
+// ADR-033 roll-out: sub-tab dùng primitive Segmented thay vì tự dựng.
 import PriceList from './PriceList.js';
 import DistributorPriceList from './DistributorPriceList.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
+import { Segmented, tk, ft } from '../../design/primitives.js';
 
 export type PricingSub = 'vf' | 'npp';
 
@@ -32,26 +34,8 @@ export default function PricingHub({
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '18px 36px 0' }}>
-        <div style={{ display: 'flex', border: '1px solid #b3b3b3', borderRadius: 2, overflow: 'hidden' }}>
-          {SUBS.map((s) => (
-            <div
-              key={s.id}
-              onClick={() => onSubChange(s.id)}
-              style={{
-                padding: '7px 16px',
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 600,
-                background: s.id === active.id ? '#0a0a0a' : '#fff',
-                color: s.id === active.id ? '#fff' : '#1a1a1a',
-                borderRight: '1px solid #d8d8d8',
-              }}
-            >
-              {s.label}
-            </div>
-          ))}
-        </div>
-        <span style={{ fontSize: 10, color: '#999' }}>{active.hint}</span>
+        <Segmented options={SUBS.map((s) => ({ id: s.id, label: s.label }))} value={active.id} onChange={onSubChange} />
+        <span style={{ fontSize: ft.size.xs, color: tk.inkFaint }}>{active.hint}</span>
       </div>
       {active.id === 'vf' && (
         <PriceList priceList={priceList} scenario={scenario} internal={internal} onNavigate={onNavigate} />

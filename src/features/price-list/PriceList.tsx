@@ -15,10 +15,15 @@
 // - Không có dòng "Dung môi 550": PriceList Excel (99 dòng, nguồn chân lý)
 //   không có; solvent550PricePerBox là vật tư phụ dùng chung trong CostPool
 //   (cost-pool.md), không phải SKU thương mại.
+// ADR-033 roll-out: trình bày qua design tokens (đen–trắng tối giản) — accent
+// burgundy/be cũ thay bằng đen (tk.brand) + xám trung tính; màu chỉ giữ cho
+// tín hiệu khóa giá (thành công/cảnh báo) và chip thương hiệu.
 import { useMemo, useState } from 'react';
 import { fmtVnd, fmtPct } from '../../lib/format.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TermInfo from '../shell/TermInfo.js';
+import { Screen, PageHeader, Card, Banner, tk, sp, ft, rd, tnum } from '../../design/primitives.js';
+import { eyebrowStyle } from '../../design/tokens.js';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Prototype đóng băng: 8 nút loại chính + Tất cả + Khác.
@@ -164,17 +169,17 @@ export default function PriceList({
     )?.chain;
     const markupImplied = full && full.breakEvenPerUnit > 0 ? full.vfPricePerUnit / full.breakEvenPerUnit - 1 : null;
     const priceStep = (label: string, value: string, note?: string, strong?: boolean) => (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: '6px 0', borderBottom: '1px dashed #ece8dc' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: '6px 0', borderBottom: `1px dashed ${tk.border}` }}>
         <div>
-          <span style={{ fontSize: 12, fontWeight: strong ? 700 : 500 }}>{label}</span>
-          {note && <span style={{ fontSize: 10, color: '#999' }}> — {note}</span>}
+          <span style={{ fontSize: ft.size.sm, fontWeight: strong ? ft.weight.bold : ft.weight.medium, color: tk.ink }}>{label}</span>
+          {note && <span style={{ fontSize: ft.size.xs, color: tk.inkFaint }}> — {note}</span>}
         </div>
-        <div style={{ fontSize: strong ? 14 : 12, fontWeight: 700, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{value}</div>
+        <div style={{ fontSize: strong ? ft.size.md : ft.size.sm, fontWeight: ft.weight.bold, ...tnum, whiteSpace: 'nowrap', color: tk.ink }}>{value}</div>
       </div>
     );
     return (
       <>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: '#a8003b', marginBottom: 8 }}>
+        <div style={{ ...eyebrowStyle, marginBottom: 8 }}>
           Giá này từ đâu ra? — {row.name} {row.size} (đ/{row.unit})
         </div>
         <div style={{ maxWidth: 560 }}>
@@ -215,13 +220,13 @@ export default function PriceList({
           {priceStep('⑥ Giá niêm yết tới nhà phân phối', fmtVnd(row.chain.listPriceBeforeVat), `có VAT: ${fmtVnd(row.chain.listPriceWithVat)}`)}
         </div>
         {mat && lock && (
-          <div style={{ marginTop: 10, fontSize: 11, fontWeight: 600, color: lock.evaluation.isLocked ? '#15803d' : '#b45309' }}>
+          <div style={{ marginTop: 10, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, color: lock.evaluation.isLocked ? tk.successInk : tk.warningInk }}>
             {lock.evaluation.isLocked
               ? `✅ Giá đang ổn định: ${mat.name} ngoài thị trường lệch ${fmtPct(Math.abs(lock.evaluation.deviationPct))} so với lúc chốt giá — còn trong ngưỡng cho phép ±${fmtPct(mat.inventory.priceLock.thresholdPct)}, giữ nguyên giá bán.`
               : `⚠ ${mat.name} ngoài thị trường đã lệch ${fmtPct(Math.abs(lock.evaluation.deviationPct))} — vượt ngưỡng ±${fmtPct(mat.inventory.priceLock.thresholdPct)}, giá trên đây đã tính theo giá mới; cân nhắc công bố lại bảng giá.`}
           </div>
         )}
-        <div style={{ marginTop: 8, fontSize: 10.5, color: '#737373', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 8, fontSize: ft.size.xs, color: tk.inkMuted, lineHeight: 1.5 }}>
           Vì sao chốt ở giá VF? Đây là tầng giá duy nhất nhà máy kiểm soát được — các tầng sau (TCG, nhà phân phối, VAT)
           chỉ là phép nhân theo chính sách phân phối, tự tính, không chốt tay từng tầng.
         </div>
@@ -235,56 +240,55 @@ export default function PriceList({
   };
 
   if (!priceList) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải bảng giá…</div>;
+    return <Screen><div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Đang tải bảng giá…</div></Screen>;
   }
 
   return (
-    <div style={{ padding: '32px 36px' }}>
-      <div style={{ marginBottom: 18 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Xuất Xưởng (VF)</div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
-          {multiBrand
+    <Screen>
+      <PageHeader
+        eyebrow="Bảng Giá Xuất Xưởng (VF)"
+        title={
+          multiBrand
             ? `BlazeMaster & Corzan CPVC — ${rows.length} SKU`
-            : `${[...new Set(allMaterials.map(([id]) => brandOf(id as string)))][0] ?? 'BlazeMaster'} CPVC — ${rows.length} SKU`}
-        </h1>
-        <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
-          Giá bán xuất xưởng của nhà máy (VF) = giá thành đầy đủ + phần lời của nhà máy, giữ ổn định theo cơ chế khóa giá.
-          Giá tới nhà phân phối là bước suy tiếp tự động — xem tab <b>Bảng giá NPP</b>. <b>Bấm vào từng dòng</b> để xem giá đó từ đâu ra.
-        </div>
-      </div>
+            : `${[...new Set(allMaterials.map(([id]) => brandOf(id as string)))][0] ?? 'BlazeMaster'} CPVC — ${rows.length} SKU`
+        }
+        subtitle={<>Giá bán xuất xưởng của nhà máy (VF) = giá thành đầy đủ + phần lời của nhà máy, giữ ổn định theo cơ chế khóa giá. Giá tới nhà phân phối là bước suy tiếp tự động — xem tab <b>Bảng giá NPP</b>. <b>Bấm vào từng dòng</b> để xem giá đó từ đâu ra.</>}
+      />
 
       {/* ADR-025 — tín hiệu QUYẾT ĐỊNH GIÁ (không phải kiểm kho): giá vật liệu lệch
           quá ngưỡng → giá VF niêm yết có thể cũ → cân nhắc chốt lại. */}
       {internal && (
         staleMaterials.length > 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 14, padding: '11px 16px', borderRadius: 6, border: '1px solid #b45309', background: '#fffbeb', color: '#92400e' }}>
-            <div style={{ flex: 1, minWidth: 280, fontSize: 12, fontWeight: 600 }}>
+          <div style={{ marginBottom: sp[4] }}>
+            <Banner
+              tone="warning"
+              action={onNavigate && (
+                <button onClick={() => onNavigate('lot-costing')} style={{ flexShrink: 0, padding: '7px 14px', background: tk.warningInk, color: tk.inkInverse, border: 'none', borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.bold, cursor: 'pointer' }}>
+                  Xem Giá Vốn Theo Lô →
+                </button>
+              )}
+            >
               ⚠ Chi phí vật liệu thị trường đã đổi:{' '}
               {staleMaterials.map((m, i) => (
                 <span key={m.name}>{i > 0 ? ', ' : ''}{m.name} ({m.deviationPct >= 0 ? '+' : ''}{fmtPct(m.deviationPct)}, ngưỡng {fmtPct(m.thresholdPct)})</span>
               ))}
               . Giá bán VF đang niêm yết có thể không còn phản ánh chi phí hiện tại — cân nhắc <b>chốt lại giá</b>.
-            </div>
-            {onNavigate && (
-              <button onClick={() => onNavigate('lot-costing')} style={{ flexShrink: 0, padding: '7px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                Xem Giá Vốn Theo Lô →
-              </button>
-            )}
+            </Banner>
           </div>
         ) : (
-          <div style={{ marginBottom: 14, padding: '9px 16px', borderRadius: 6, border: '1px solid #16A34A', background: '#f0fdf4', color: '#15803d', fontSize: 12, fontWeight: 600 }}>
-            ✅ Giá VF đang phản ánh đúng chi phí thị trường — mọi nguyên liệu còn trong ngưỡng, chưa cần điều chỉnh giá.
+          <div style={{ marginBottom: sp[4] }}>
+            <Banner tone="success">✅ Giá VF đang phản ánh đúng chi phí thị trường — mọi nguyên liệu còn trong ngưỡng, chưa cần điều chỉnh giá.</Banner>
           </div>
         )
       )}
 
       {/* ADR-036 — 2 dạng xem: danh sách liệt kê gọn | phiếu giá từng sản phẩm */}
-      <div style={{ display: 'flex', border: '1px solid #b3b3b3', borderRadius: 2, overflow: 'hidden', width: 'fit-content', marginBottom: 14 }}>
+      <div style={{ display: 'flex', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, overflow: 'hidden', width: 'fit-content', marginBottom: sp[4] }}>
         {([['list', '☰ Danh sách'], ['card', '🗎 Phiếu giá từng sản phẩm']] as const).map(([id, label]) => (
           <div
             key={id}
             onClick={() => setViewMode(id)}
-            style={{ padding: '7px 18px', cursor: 'pointer', background: viewMode === id ? '#0a0a0a' : '#fff', color: viewMode === id ? '#fff' : '#1a1a1a', fontSize: 12, fontWeight: 600, borderRight: '1px solid #d8d8d8' }}
+            style={{ padding: '7px 18px', cursor: 'pointer', background: viewMode === id ? tk.brand : tk.surface, color: viewMode === id ? tk.inkInverse : tk.ink, fontSize: ft.size.sm, fontWeight: ft.weight.semibold, borderRight: `1px solid ${tk.borderStrong}` }}
           >
             {label}
           </div>
@@ -301,12 +305,12 @@ export default function PriceList({
         const activeCardGroup = cardGroup && cardGroups.includes(cardGroup) ? cardGroup : cardGroups[0] ?? '';
         const cardRows = matRows.filter((r) => r.name === activeCardGroup);
         const cardRow = cardRows.find((r) => r.key === cardKey) ?? cardRows[0];
-        if (!cardRow) return <div style={{ fontSize: 12, color: '#737373' }}>Chưa có sản phẩm.</div>;
+        if (!cardRow) return <div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Chưa có sản phẩm.</div>;
         return (
           <div style={{ maxWidth: 700, margin: '0 auto' }}>
             {/* Chọn 3 tầng: Nguyên liệu → Sản phẩm → Kích cỡ */}
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>① Nguyên liệu (compound)</div>
+              <div style={{ ...eyebrowStyle, marginBottom: 4 }}>① Nguyên liệu (compound)</div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {cardMaterials.map(([id]) => {
                   const active = id === activeMatId;
@@ -314,7 +318,7 @@ export default function PriceList({
                     <div
                       key={id}
                       onClick={() => { setCardMaterial(id); setCardGroup(null); setCardKey(null); }}
-                      style={{ padding: '8px 20px', cursor: 'pointer', border: `2px solid ${active ? '#a8003b' : '#d8d8d8'}`, background: active ? '#a8003b' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 6, fontSize: 13, fontWeight: 700 }}
+                      style={{ padding: '8px 20px', cursor: 'pointer', border: `2px solid ${active ? tk.brand : tk.borderStrong}`, background: active ? tk.brand : tk.surface, color: active ? tk.inkInverse : tk.ink, borderRadius: rd.md, fontSize: ft.size.md, fontWeight: ft.weight.bold }}
                     >
                       {matChipLabel(id as string)}
                     </div>
@@ -324,17 +328,17 @@ export default function PriceList({
             </div>
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: 14 }}>
               <div>
-                <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>② Sản phẩm</div>
+                <div style={{ ...eyebrowStyle, marginBottom: 4 }}>② Sản phẩm</div>
                 <select
                   value={activeCardGroup}
                   onChange={(e) => { setCardGroup(e.target.value); setCardKey(null); }}
-                  style={{ padding: '8px 12px', fontSize: 13, fontWeight: 600, border: '1px solid #b3b3b3', borderRadius: 2, outline: 'none', background: '#fff', minWidth: 180 }}
+                  style={{ padding: '8px 12px', fontSize: ft.size.md, fontWeight: ft.weight.semibold, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, outline: 'none', background: tk.surface, color: tk.ink, minWidth: 180 }}
                 >
                   {cardGroups.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
               <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', marginBottom: 4 }}>③ Kích cỡ · tiêu chuẩn</div>
+                <div style={{ ...eyebrowStyle, marginBottom: 4 }}>③ Kích cỡ · tiêu chuẩn</div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                   {cardRows.map((r) => {
                     const active = r.key === cardRow.key;
@@ -342,7 +346,7 @@ export default function PriceList({
                       <div
                         key={r.key}
                         onClick={() => setCardKey(r.key)}
-                        style={{ padding: '5px 12px', cursor: 'pointer', border: `1px solid ${active ? '#0a0a0a' : '#b3b3b3'}`, background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 12, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}
+                        style={{ padding: '5px 12px', cursor: 'pointer', border: `1px solid ${active ? tk.brand : tk.borderStrong}`, background: active ? tk.brand : tk.surface, color: active ? tk.inkInverse : tk.ink, borderRadius: rd.sm, fontSize: ft.size.sm, fontWeight: ft.weight.semibold, ...tnum }}
                       >
                         {r.size}{r.spec ? ` · ${r.spec}` : ''}
                       </div>
@@ -353,46 +357,46 @@ export default function PriceList({
             </div>
 
             {/* PHIẾU GIÁ */}
-            <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 8, overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,.06)' }}>
-              <div style={{ background: '#0a0a0a', padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
+            <Card pad={0} style={{ overflow: 'hidden' }}>
+              <div style={{ background: tk.sidebar, padding: '14px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, flexWrap: 'wrap' }}>
                 <div>
-                  <div style={{ color: '#a3a3a3', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700 }}>Phiếu giá xuất xưởng (VF)</div>
-                  <div style={{ color: '#fff', fontSize: 18, fontWeight: 700 }}>
+                  <div style={{ color: tk.sidebarText, fontSize: ft.size.eyebrow, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: ft.weight.bold }}>Phiếu giá xuất xưởng (VF)</div>
+                  <div style={{ color: tk.inkInverse, fontSize: ft.size.lg, fontWeight: ft.weight.bold }}>
                     {cardRow.name} — {cardRow.matName}{cardRow.spec ? ` — ${cardRow.spec}` : ''} — {cardRow.size}
                   </div>
                 </div>
-                <div style={{ color: '#a3a3a3', fontSize: 10 }}>Model v3.7</div>
+                <div style={{ color: tk.sidebarText, fontSize: ft.size.xs }}>Model v3.7</div>
               </div>
               <div style={{ padding: '18px 22px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12, marginBottom: 16 }}>
                   {([['Nguyên liệu', cardRow.matName], ['Tiêu chuẩn', cardRow.spec || '—'], ['Đơn vị tính', cardRow.unit], ['Mã định danh', cardRow.designationCode], ['Phân lớp', cardRow.classificationCode]] as const).map(([l, val]) => (
                     <div key={l}>
-                      <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '.05em' }}>{l}</div>
-                      <div style={{ fontSize: 12, fontWeight: 600 }}>{val}</div>
+                      <div style={{ ...eyebrowStyle }}>{l}</div>
+                      <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.semibold, color: tk.ink }}>{val}</div>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                  <div style={{ background: '#0a0a0a', color: '#fff', borderRadius: 6, padding: '14px 16px' }}>
-                    <div style={{ fontSize: 9, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em' }}>Giá VF trước VAT</div>
-                    <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(cardRow.priceBeforeVat)} <span style={{ fontSize: 11, color: '#999', fontWeight: 400 }}>đ/{cardRow.unit}</span></div>
-                  </div>
-                  <div style={{ background: '#f7f7f7', border: '1px solid #e5e5e5', borderRadius: 6, padding: '14px 16px' }}>
-                    <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.05em' }}>Giá VF có VAT ({vatPctLabel}%)</div>
-                    <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(cardRow.priceWithVat)} <span style={{ fontSize: 11, color: '#999', fontWeight: 400 }}>đ/{cardRow.unit}</span></div>
-                  </div>
+                  <Card pad={0} inverse style={{ padding: '14px 16px' }}>
+                    <div style={{ ...eyebrowStyle, color: tk.sidebarText }}>Giá VF trước VAT</div>
+                    <div style={{ fontSize: ft.size.xxl, fontWeight: ft.weight.extrabold, ...tnum }}>{fmtVnd(cardRow.priceBeforeVat)} <span style={{ fontSize: ft.size.xs, color: tk.sidebarText, fontWeight: ft.weight.regular }}>đ/{cardRow.unit}</span></div>
+                  </Card>
+                  <Card pad={0} style={{ background: tk.surfaceMuted, padding: '14px 16px' }}>
+                    <div style={{ ...eyebrowStyle }}>Giá VF có VAT ({vatPctLabel}%)</div>
+                    <div style={{ fontSize: ft.size.xxl, fontWeight: ft.weight.extrabold, ...tnum, color: tk.ink }}>{fmtVnd(cardRow.priceWithVat)} <span style={{ fontSize: ft.size.xs, color: tk.inkFaint, fontWeight: ft.weight.regular }}>đ/{cardRow.unit}</span></div>
+                  </Card>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 18 }}>
                   {([['Giá TCG (khâu thương mại)', cardRow.chain.tcgPricePerUnit], ['Niêm yết NPP trước VAT', cardRow.chain.listPriceBeforeVat], ['Niêm yết NPP có VAT', cardRow.chain.listPriceWithVat]] as const).map(([l, val]) => (
-                    <div key={l} style={{ border: '1px solid #ece8dc', borderRadius: 6, padding: '10px 12px', background: '#faf9f4' }}>
-                      <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '.04em' }}>{l}</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(val)} <span style={{ fontSize: 10, color: '#b3b3b3', fontWeight: 400 }}>đ/{cardRow.unit}</span></div>
+                    <div key={l} style={{ border: `1px solid ${tk.border}`, borderRadius: rd.md, padding: '10px 12px', background: tk.surfaceMuted }}>
+                      <div style={{ ...eyebrowStyle }}>{l}</div>
+                      <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, ...tnum, color: tk.ink }}>{fmtVnd(val)} <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint, fontWeight: ft.weight.regular }}>đ/{cardRow.unit}</span></div>
                     </div>
                   ))}
                 </div>
                 {renderOrigin(cardRow)}
               </div>
-            </div>
+            </Card>
           </div>
         );
       })() : (<>
@@ -401,9 +405,9 @@ export default function PriceList({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Tìm theo tên, kích cỡ..."
-          style={{ padding: '7px 12px', border: '1px solid #b3b3b3', borderRadius: 2, fontSize: 12, background: '#fff', outline: 'none', minWidth: 200, maxWidth: 260, width: '100%' }}
+          style={{ padding: '7px 12px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.sm, background: tk.surface, outline: 'none', minWidth: 200, maxWidth: 260, width: '100%', color: tk.ink }}
         />
-        <div style={{ display: 'flex', border: '1px solid #b3b3b3', borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
+        <div style={{ display: 'flex', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, overflow: 'hidden', flexShrink: 0 }}>
           {(
             [
               ['before', 'Trước VAT'],
@@ -413,7 +417,7 @@ export default function PriceList({
             <div
               key={id}
               onClick={() => setPriceType(id)}
-              style={{ padding: '6px 14px', cursor: 'pointer', background: priceType === id ? '#a8003b' : '#fff', color: priceType === id ? '#fff' : '#1a1a1a', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', borderRight: '1px solid #d8d8d8' }}
+              style={{ padding: '6px 14px', cursor: 'pointer', background: priceType === id ? tk.brand : tk.surface, color: priceType === id ? tk.inkInverse : tk.ink, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, whiteSpace: 'nowrap', borderRight: `1px solid ${tk.borderStrong}` }}
             >
               {label}
             </div>
@@ -423,14 +427,14 @@ export default function PriceList({
 
       {allMaterials.length > 1 && (
         <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 10, color: '#999', marginRight: 4 }}>Nguyên liệu:</span>
+          <span style={{ fontSize: ft.size.xs, color: tk.inkFaint, marginRight: 4 }}>Nguyên liệu:</span>
           {[['all', 'Tất cả'] as [string, string], ...allMaterials].map(([id, name]) => {
             const active = materialFilter === id;
             return (
               <div
                 key={id}
                 onClick={() => setMaterialFilter(id)}
-                style={{ padding: '4px 12px', cursor: 'pointer', border: `1px solid ${active ? '#0a0a0a' : '#b3b3b3'}`, background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 11, fontWeight: 600 }}
+                style={{ padding: '4px 12px', cursor: 'pointer', border: `1px solid ${active ? tk.brand : tk.borderStrong}`, background: active ? tk.brand : tk.surface, color: active ? tk.inkInverse : tk.ink, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.semibold }}
               >
                 {id === 'all' ? name : matChipLabel(id as string)}
               </div>
@@ -445,7 +449,7 @@ export default function PriceList({
             <div
               key={c}
               onClick={() => setProductFilter(c)}
-              style={{ padding: '4px 10px', cursor: 'pointer', border: `1px solid ${active ? '#a8003b' : '#b3b3b3'}`, background: active ? '#a8003b' : '#fff', color: active ? '#fff' : '#1a1a1a', borderRadius: 2, fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap' }}
+              style={{ padding: '4px 10px', cursor: 'pointer', border: `1px solid ${active ? tk.brand : tk.borderStrong}`, background: active ? tk.brand : tk.surface, color: active ? tk.inkInverse : tk.ink, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.medium, whiteSpace: 'nowrap' }}
             >
               {c === 'all' ? 'Tất cả' : c === 'khác' ? 'Khác' : c}
             </div>
@@ -453,14 +457,14 @@ export default function PriceList({
         })}
       </div>
 
-      <div style={{ fontSize: 10, color: '#737373', marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
+      <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
+      <Card pad={0} style={{ overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'Mã định danh', 'Phân lớp', 'ĐVT'].map((h) => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
+            <div key={h} style={{ ...eyebrowStyle }}>{h}</div>
           ))}
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{colHeader}</div>
+          <div style={{ ...eyebrowStyle, textAlign: 'right' }}>{colHeader}</div>
         </div>
         {filteredRows.map((row) => {
           const expanded = expandedKey === row.key;
@@ -468,32 +472,32 @@ export default function PriceList({
             <div key={row.key}>
               <div
                 onClick={() => setExpandedKey(expanded ? null : row.key)}
-                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? '#faf9f4' : '#fff' }}
+                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? tk.surfaceMuted : tk.surface }}
               >
-                <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
-                <div style={{ fontSize: 12, fontWeight: 500 }}>
+                <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum }}>{row.stt}</div>
+                <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>
                   {expanded ? '▾ ' : '▸ '}{row.name}
-                  {multiBrand && <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, color: '#6b5e00', background: '#fef9c3', padding: '1px 5px', borderRadius: 3, verticalAlign: 'middle' }}>{row.brand}</span>}
+                  {multiBrand && <span style={{ marginLeft: 5, fontSize: ft.size.eyebrow, fontWeight: ft.weight.bold, color: tk.ink, background: tk.surfaceMuted, border: `1px solid ${tk.border}`, padding: '1px 5px', borderRadius: 3, verticalAlign: 'middle' }}>{row.brand}</span>}
                 </div>
-                <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
-                <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.spec}</div>
-                <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.designationCode}</div>
-                <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.classificationCode}</div>
-                <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, ...tnum }}>{row.size}</div>
+                <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.spec}</div>
+                <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.designationCode}</div>
+                <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.classificationCode}</div>
+                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{row.unit}</div>
+                <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: tk.ink }}>
                   {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}
                 </div>
               </div>
               {expanded && (
-                <div style={{ padding: '14px 20px 16px', background: '#faf9f4', borderBottom: '1px solid #e5e0d0' }}>
+                <div style={{ padding: '14px 20px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}` }}>
                   {renderOrigin(row)}
                 </div>
               )}
             </div>
           );
         })}
-      </div>
+      </Card>
       </>)}
-    </div>
+    </Screen>
   );
 }

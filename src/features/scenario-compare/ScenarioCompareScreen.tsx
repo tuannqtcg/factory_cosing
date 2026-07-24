@@ -1,12 +1,16 @@
 // ADR-028 — màn "So Sánh Kịch Bản" (tab `scenario-compare`, nhóm Phân Tích & Quyết
 // Định). CEO đặt 2 kịch bản (chỉnh % các driver, có preset) → xem EBIT/doanh thu/
 // biên/Δ song song với Cơ sở. CHỈ đọc engine giá-bán-cố-định (calculateScenarioCompare).
+// ADR-033 roll-out: trình bày qua design tokens (đen–trắng tối giản); cột A/B
+// phân biệt bằng nhãn/viền chứ không dùng màu hue riêng (accent tương tác = đen).
 import { useMemo, useState } from 'react';
 import type { ScenarioInput } from '../../schemas/scenario.js';
 import SensitivityScreen from '../sensitivity/SensitivityScreen.js';
 import { calculateScenarioCompare } from '../../engine/scenario-compare.js';
 import type { DriverMultipliers } from '../../engine/scenario-drivers.js';
 import { DRIVER_LABELS } from '../../engine/scenario-drivers.js';
+import { Screen, PageHeader, Card, tk, ft, rd, tnum } from '../../design/primitives.js';
+import { eyebrowStyle } from '../../design/tokens.js';
 
 const DRIVER_KEYS: (keyof DriverMultipliers)[] = ['compound', 'fx', 'wage', 'electricity', 'overhead', 'volume'];
 
@@ -59,13 +63,13 @@ export default function ScenarioCompareScreen({ scenario, onNavigate, initialTab
   );
 
   if (!scenario || !result) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản…</div>;
+    return <Screen><div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Đang tải kịch bản…</div></Screen>;
   }
 
   const cols = [
-    { key: 'base', outcome: result.base, pct: null as PctChange | null, setPct: null as ((p: PctChange) => void) | null, name: 'Cơ sở', setName: null as ((s: string) => void) | null, accent: '#737373' },
-    { key: 'a', outcome: result.scenarios[0]!, pct: pctA, setPct: setPctA, name: nameA, setName: setNameA, accent: '#a8003b' },
-    { key: 'b', outcome: result.scenarios[1]!, pct: pctB, setPct: setPctB, name: nameB, setName: setNameB, accent: '#2563eb' },
+    { key: 'base', outcome: result.base, pct: null as PctChange | null, setPct: null as ((p: PctChange) => void) | null, name: 'Cơ sở', setName: null as ((s: string) => void) | null },
+    { key: 'a', outcome: result.scenarios[0]!, pct: pctA, setPct: setPctA, name: nameA, setName: setNameA },
+    { key: 'b', outcome: result.scenarios[1]!, pct: pctB, setPct: setPctB, name: nameB, setName: setNameB },
   ];
   const grid = '190px 1fr 1fr 1fr';
 
@@ -79,38 +83,38 @@ export default function ScenarioCompareScreen({ scenario, onNavigate, initialTab
   return (
     <div>
       {/* ADR-050 — 2 tab: So Sánh Kịch Bản · Độ Nhạy (tornado) — chung nền scenario-drivers */}
-      <div style={{ display: 'flex', gap: 4, padding: '14px 36px 0', borderBottom: '1px solid #ececec' }}>
+      <div style={{ display: 'flex', gap: 4, padding: '14px 36px 0', borderBottom: `1px solid ${tk.border}` }}>
         {([['compare', 'So Sánh Kịch Bản'], ['tornado', 'Độ Nhạy (Tornado)']] as const).map(([v, label]) => (
-          <button key={v} onClick={() => setTab(v)} style={{ padding: '8px 14px', border: 'none', borderBottom: `2px solid ${tab === v ? '#a8003b' : 'transparent'}`, background: 'none', cursor: 'pointer', fontSize: 12.5, fontWeight: 700, color: tab === v ? '#a8003b' : '#737373', marginBottom: -1 }}>{label}</button>
+          <button key={v} onClick={() => setTab(v)} style={{ padding: '8px 14px', border: 'none', borderBottom: `2px solid ${tab === v ? tk.brand : 'transparent'}`, background: 'none', cursor: 'pointer', fontSize: ft.size.sm, fontWeight: ft.weight.bold, color: tab === v ? tk.ink : tk.inkMuted, marginBottom: -1 }}>{label}</button>
         ))}
       </div>
       {tab === 'tornado' ? (
         <SensitivityScreen scenario={scenario} onNavigate={(t) => (t === 'scenario-compare' ? setTab('compare') : onNavigate?.(t))} />
       ) : (
-      <div style={{ padding: '24px 36px 32px', maxWidth: 1040, margin: '0 auto' }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373' }}>So Sánh Kịch Bản</div>
-      <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>Nếu thế giới thành X thì tôi ở đâu?</h1>
-      <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
-        Đặt 2 kịch bản (chỉnh % các yếu tố, hoặc chọn preset) → EBIT / doanh thu / biên đặt cạnh Cơ sở. Giữ NGUYÊN giá bán hiện hành (đo rủi ro nén biên, đồng bộ màn Độ Nhạy).
-      </p>
+      <Screen maxWidth={1040}>
+        <PageHeader
+          eyebrow="So Sánh Kịch Bản"
+          title="Nếu thế giới thành X thì tôi ở đâu?"
+          subtitle="Đặt 2 kịch bản (chỉnh % các yếu tố, hoặc chọn preset) → EBIT / doanh thu / biên đặt cạnh Cơ sở. Giữ NGUYÊN giá bán hiện hành (đo rủi ro nén biên, đồng bộ màn Độ Nhạy)."
+        />
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 6, overflow: 'hidden', marginTop: 16 }}>
+      <Card pad={0} style={{ overflow: 'hidden' }}>
         {/* Header: tên kịch bản + preset */}
-        <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '12px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', alignItems: 'start' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase', alignSelf: 'center' }}>Yếu tố</div>
+        <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '12px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, alignItems: 'start' }}>
+          <div style={{ ...eyebrowStyle, alignSelf: 'center' }}>Yếu tố</div>
           {cols.map((c) => (
             <div key={c.key} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {c.setName ? (
                 <input value={c.name} onChange={(e) => c.setName!(e.target.value)}
-                  style={{ fontSize: 13, fontWeight: 700, color: c.accent, border: '1px solid #d8d8d8', borderRadius: 3, padding: '3px 6px', outline: 'none', width: '100%' }} />
+                  style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, color: tk.ink, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, padding: '3px 6px', outline: 'none', width: '100%' }} />
               ) : (
-                <div style={{ fontSize: 13, fontWeight: 700, color: c.accent, padding: '4px 0' }}>{c.name}</div>
+                <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, color: tk.ink, padding: '4px 0' }}>{c.name}</div>
               )}
               {c.setPct && (
                 <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
                   {PRESETS.map((p) => (
                     <div key={p.label} onClick={() => applyPreset(c.setPct!, p)}
-                      style={{ fontSize: 9, padding: '2px 6px', border: '1px solid #d8d8d8', borderRadius: 3, cursor: 'pointer', color: '#555', background: '#fff' }}>
+                      style={{ fontSize: ft.size.eyebrow, padding: '2px 6px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, cursor: 'pointer', color: tk.inkMuted, background: tk.surface }}>
                       {p.label}
                     </div>
                   ))}
@@ -122,18 +126,18 @@ export default function ScenarioCompareScreen({ scenario, onNavigate, initialTab
 
         {/* Driver rows (chỉnh %) */}
         {DRIVER_KEYS.map((dk) => (
-          <div key={dk} style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '6px 16px', borderBottom: '1px solid #f5f5f5', alignItems: 'center' }}>
-            <div style={{ fontSize: 11, color: '#404040' }}>{DRIVER_LABELS[dk]}</div>
+          <div key={dk} style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '6px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, alignItems: 'center' }}>
+            <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{DRIVER_LABELS[dk]}</div>
             {cols.map((c) => (
               <div key={c.key} style={{ textAlign: 'right' }}>
                 {c.setPct ? (
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
                     <input type="number" value={c.pct![dk]} onChange={(e) => c.setPct!({ ...c.pct!, [dk]: Number(e.target.value) || 0 })}
-                      style={{ width: 54, fontSize: 12, textAlign: 'right', border: '1px solid #d8d8d8', borderRadius: 3, padding: '2px 4px', outline: 'none', fontVariantNumeric: 'tabular-nums', color: c.pct![dk] === 0 ? '#999' : c.pct![dk] > 0 ? '#16A34A' : '#DC2626' }} />
-                    <span style={{ fontSize: 10, color: '#999' }}>%</span>
+                      style={{ width: 54, fontSize: ft.size.sm, textAlign: 'right', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, padding: '2px 4px', outline: 'none', ...tnum, color: c.pct![dk] === 0 ? tk.inkFaint : c.pct![dk] > 0 ? tk.successInk : tk.dangerInk }} />
+                    <span style={{ fontSize: ft.size.xs, color: tk.inkFaint }}>%</span>
                   </div>
                 ) : (
-                  <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
+                  <span style={{ fontSize: ft.size.sm, color: tk.inkFaint }}>—</span>
                 )}
               </div>
             ))}
@@ -143,33 +147,33 @@ export default function ScenarioCompareScreen({ scenario, onNavigate, initialTab
         {/* Result rows */}
         <ResultRow grid={grid} label="Doanh thu (VF)" cols={cols} render={(o) => fmtTyAbs(o.revenueVnd)} />
         <ResultRow grid={grid} label="Biên EBIT" cols={cols} render={(o) => fmtPct1(o.ebitMarginPct).replace('+', '')} />
-        <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '11px 16px', borderTop: '2px solid #e5e0d0', background: '#faf8f2', alignItems: 'center' }}>
-          <div style={{ fontSize: 12, fontWeight: 700 }}>EBIT (lợi nhuận trước thuế)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '11px 16px', borderTop: `2px solid ${tk.border}`, background: tk.surfaceMuted, alignItems: 'center' }}>
+          <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.bold, color: tk.ink }}>EBIT (lợi nhuận trước thuế)</div>
           {cols.map((c) => {
             const isBest = c.outcome.ebitVnd === bestEbit;
             const isWorst = c.outcome.ebitVnd === worstEbit && bestEbit !== worstEbit;
             return (
               <div key={c.key} style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 17, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: isWorst ? '#DC2626' : isBest ? '#16A34A' : '#1a1a1a' }}>{fmtTyAbs(c.outcome.ebitVnd)}</div>
-                {(isBest || isWorst) && <div style={{ fontSize: 9, fontWeight: 700, color: isWorst ? '#DC2626' : '#16A34A' }}>{isWorst ? '▼ THẤP NHẤT' : '▲ CAO NHẤT'}</div>}
+                <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, ...tnum, color: isWorst ? tk.dangerInk : isBest ? tk.successInk : tk.ink }}>{fmtTyAbs(c.outcome.ebitVnd)}</div>
+                {(isBest || isWorst) && <div style={{ fontSize: ft.size.eyebrow, fontWeight: ft.weight.bold, color: isWorst ? tk.dangerInk : tk.successInk }}>{isWorst ? '▼ THẤP NHẤT' : '▲ CAO NHẤT'}</div>}
               </div>
             );
           })}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '8px 16px', alignItems: 'center' }}>
-          <div style={{ fontSize: 11, color: '#737373' }}>Δ so với Cơ sở</div>
+          <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>Δ so với Cơ sở</div>
           {cols.map((c) => (
-            <div key={c.key} style={{ textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums', color: c.outcome.deltaVsBaseVnd < 0 ? '#DC2626' : c.outcome.deltaVsBaseVnd > 0 ? '#16A34A' : '#999' }}>
+            <div key={c.key} style={{ textAlign: 'right', fontSize: ft.size.sm, ...tnum, color: c.outcome.deltaVsBaseVnd < 0 ? tk.dangerInk : c.outcome.deltaVsBaseVnd > 0 ? tk.successInk : tk.inkFaint }}>
               {c.key === 'base' ? '—' : `${fmtTySigned(c.outcome.deltaVsBaseVnd)} (${fmtPct1(c.outcome.deltaVsBasePct)})`}
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
-      <p style={{ fontSize: 10, color: '#999', marginTop: 12 }}>
+      <p style={{ fontSize: ft.size.xs, color: tk.inkFaint, marginTop: 12 }}>
         Ghi chú: EBIT giữ GIÁ BÁN cố định ở mức hiện hành (đo rủi ro nén biên). Các yếu tố áp đồng thời trong mỗi kịch bản. Preset chỉ là điểm khởi đầu — chỉnh % tuỳ ý.
       </p>
-      </div>
+      </Screen>
       )}
     </div>
   );
@@ -187,10 +191,10 @@ function ResultRow({
   render: (o: import('../../schemas/scenario-compare.js').ScenarioOutcome) => string;
 }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '7px 16px', borderBottom: '1px solid #f5f5f5', alignItems: 'center' }}>
-      <div style={{ fontSize: 11, color: '#404040' }}>{label}</div>
+    <div style={{ display: 'grid', gridTemplateColumns: grid, gap: 8, padding: '7px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, alignItems: 'center' }}>
+      <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{label}</div>
       {cols.map((c) => (
-        <div key={c.key} style={{ textAlign: 'right', fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{render(c.outcome)}</div>
+        <div key={c.key} style={{ textAlign: 'right', fontSize: ft.size.sm, ...tnum }}>{render(c.outcome)}</div>
       ))}
     </div>
   );

@@ -2,7 +2,9 @@
 // đưa cho CEO phải tự giải thích được gốc gác NGAY TẠI CHỖ, bằng ngôn ngữ
 // kinh doanh — người xem là CEO, không phải lập trình viên. Nội dung tĩnh,
 // đúc từ tài liệu quyết định của dự án; khung cố định 4 mục.
+// ADR-033 roll-out: khung trình bày dùng design tokens.
 import { useState } from 'react';
+import { color, font, radius, shadow, eyebrowStyle } from '../../design/tokens.js';
 
 export interface ScreenExplain {
   /** Màn này trả lời câu hỏi gì (1 câu). */
@@ -144,7 +146,7 @@ export default function ExplainPanel({ tabId, onNavigate }: { tabId: string; onN
 
   const section = (title: string, body: React.ReactNode) => (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: '#999', marginBottom: 6 }}>{title}</div>
+      <div style={{ ...eyebrowStyle, marginBottom: 6 }}>{title}</div>
       {body}
     </div>
   );
@@ -154,26 +156,26 @@ export default function ExplainPanel({ tabId, onNavigate }: { tabId: string; onN
       <button
         onClick={() => setOpen(true)}
         title="Giải thích màn này"
-        style={{ position: 'fixed', top: 14, right: 18, zIndex: 40, padding: '7px 14px', background: '#fff', color: '#0a0a0a', border: '1px solid #d8d8d8', borderRadius: 20, fontSize: 11, fontWeight: 700, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,.08)' }}
+        style={{ position: 'fixed', top: 14, right: 18, zIndex: 40, padding: '7px 14px', background: color.surface, color: color.ink, border: `1px solid ${color.borderStrong}`, borderRadius: radius.pill, fontSize: font.size.xs, fontWeight: font.weight.bold, cursor: 'pointer', boxShadow: shadow.sm }}
       >
         ⓘ Giải thích màn này
       </button>
       {open && (
         <>
-          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.25)', zIndex: 50 }} />
-          <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 400, maxWidth: '90vw', background: '#fff', borderLeft: '1px solid #e5e5e5', boxShadow: '-8px 0 30px rgba(0,0,0,.12)', zIndex: 51, overflowY: 'auto', padding: '22px 24px' }}>
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,10,.3)', zIndex: 50 }} />
+          <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 400, maxWidth: '90vw', background: color.surface, borderLeft: `1px solid ${color.border}`, boxShadow: shadow.lg, zIndex: 51, overflowY: 'auto', padding: '22px 24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.4 }}>{content.question}</div>
-              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#999', flexShrink: 0, lineHeight: 1 }}>✕</button>
+              <div style={{ fontSize: font.size.lg, fontWeight: font.weight.bold, lineHeight: 1.4, color: color.ink }}>{content.question}</div>
+              <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: color.inkFaint, flexShrink: 0, lineHeight: 1 }}>✕</button>
             </div>
             {section('Các con số từ đâu ra', (
               <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {content.source.map((s, i) => <li key={i} style={{ fontSize: 12, color: '#404040', lineHeight: 1.55, marginBottom: 6 }}>{s}</li>)}
+                {content.source.map((s, i) => <li key={i} style={{ fontSize: font.size.sm, color: color.inkMuted, lineHeight: 1.55, marginBottom: 6 }}>{s}</li>)}
               </ul>
             ))}
             {section('Khi nào cần hành động', (
               <ul style={{ margin: 0, paddingLeft: 16 }}>
-                {content.action.map((s, i) => <li key={i} style={{ fontSize: 12, color: '#404040', lineHeight: 1.55, marginBottom: 6 }}>{s}</li>)}
+                {content.action.map((s, i) => <li key={i} style={{ fontSize: font.size.sm, color: color.inkMuted, lineHeight: 1.55, marginBottom: 6 }}>{s}</li>)}
               </ul>
             ))}
             {section('Màn liên quan', (
@@ -182,7 +184,7 @@ export default function ExplainPanel({ tabId, onNavigate }: { tabId: string; onN
                   <button
                     key={r.tab}
                     onClick={() => { setOpen(false); onNavigate(r.tab); }}
-                    style={{ textAlign: 'left', padding: '8px 12px', background: '#f7f7f7', border: '1px solid #e5e5e5', borderRadius: 6, fontSize: 12, fontWeight: 600, color: '#0a0a0a', cursor: 'pointer' }}
+                    style={{ textAlign: 'left', padding: '8px 12px', background: color.surfaceMuted, border: `1px solid ${color.border}`, borderRadius: radius.sm, fontSize: font.size.sm, fontWeight: font.weight.semibold, color: color.ink, cursor: 'pointer' }}
                   >
                     → {r.label}
                   </button>

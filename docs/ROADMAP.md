@@ -12,20 +12,22 @@
   Tất cả tái dùng engine đóng băng, đồng bộ EBIT **giá-bán-cố-định** (nền `scenario-drivers.ts`).
 - **Định giá** (ADR-025): Bảng Giá neo giá **VF** + Bảng Giá **NPP** dẫn xuất + dải cảnh báo chốt giá.
 - **Design system** (ADR-033): tokens + primitives, phong cách **TỐI GIẢN ĐEN–TRẮNG**
-  (màu chỉ cho biểu đồ + ghi chú). ⚠ **MỚI DEMO 1 màn (Độ Nhạy)** — cần roll-out ~13 màn còn lại.
+  (màu chỉ cho biểu đồ + ghi chú). **✅ ROLL-OUT XONG toàn bộ 14 file sống** (2026-07-24):
+  9 màn nhỏ/vừa + CeoReverseTools/PriceList/Inventory + CeoPlanner/Products/Dashboard +
+  DataSetupScreen (863 dòng) + chrome AppShell + MoldAssetModal. Không còn hex gõ tay
+  ngoài màu logo Google. 3 nhóm phân bổ (Ống/PK/Chung) + vai màn (view/sim/edit)
+  ánh xạ về token có sẵn thay vì hue tự chế.
+- **Dọn màn mồ côi** (ADR-057, 2026-07-24): xoá 8 màn UI đã gỡ khỏi nav (Nhận Đơn,
+  Product-mix, Plan, Production-report, Assumptions, Config, Pricing-analytics,
+  Target-costing) — engine/schema/test giữ nguyên, chỉ mất lối vào UI.
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
-1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 3
-   công cụ if–then còn lại, Bảng Giá VF/NPP, Lot-costing, Pricing-analytics, Tham Số,
-   Cấu Hình). Di trú lên `src/design/primitives.tsx` — thuần trình bày, KHÔNG đụng logic.
-   Gu đã user duyệt: đen/trắng/xám chủ đạo, màu chỉ cho biểu đồ/ghi chú. Sửa ở
-   `src/design/tokens.ts` là cả app đổi. (Font hiện Roboto; cân nhắc nạp Inter.)
-2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
-   luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
-3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`
+1. **Product-mix**: đã gỡ khỏi UI (ADR-057) — nếu cần lại, khôi phục từ git rồi mới
+   chờ user cấp **giá thị trường thật của ống** + phân bổ **vốn dùng chung/lưu động** vào ROIC.
+2. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`
    gọi Claude thật (đang fallback mock).
-4. (Tuỳ chọn) Google Sign-In cho owner; tắt tài khoản demo trên production; SCH80 catalog;
-   trích lại fixture khi có Excel v3.7 chính thức.
+3. (Tuỳ chọn) Google Sign-In cho owner; tắt tài khoản demo trên production; SCH80 catalog;
+   trích lại fixture khi có Excel v3.7 chính thức; nạp font Inter (hiện Roboto, vẫn sạch).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
 - [x] **Thác chi phí đ/kg — "tiền đi đâu?"** (thuần trình bày, engine helper thuần +

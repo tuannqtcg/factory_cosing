@@ -28,6 +28,16 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **Thác chi phí đ/kg — "tiền đi đâu?"** (thuần trình bày, engine helper thuần +
+  test parity). Tách giá thành đầy đủ mỗi dòng thành 4 tầng: **gia công tiền mặt**
+  (nhân công·điện·nước·bảo trì·bao bì — phần quản đốc "cảm" được) → **+chi phí chung**
+  → **+khấu hao máy/khuôn** → **+nguyên liệu nhập USD**. Giải thích khoảng vênh giữa
+  cảm nhận vận hành (ống ~10.000 · phụ kiện ~14.000 đ/kg gia công) và giá thành đầy đủ
+  (ống 108.712 · phụ kiện 180.604 đ/kg) — 88% giá ống là hạt CPVC nhập; phụ kiện khấu
+  hao/kg tới 43.454đ vì chạy 1 ca × 60% (lấp công suất → tụt mạnh). `cost-breakdown.ts`
+  (`pipe/fittingCostLayersPerKg`, GOM cấu phần đã tính, tổng = fullCostPerKg — 2 test
+  parity), component `CostWaterfall`, cắm vào **Tổng Quan › Sản Xuất** + **Thiết Lập ②**.
+  Suite 391/391, typecheck + build xanh.
 - [x] **Thiết Lập: lộ 'số giờ/ca' + lô nguyên liệu nhiều giá** (thuần trình bày, KHÔNG
   đổi schema/engine — cả 2 field đã đóng băng, engine đã dùng). (1) Mục ② Chi phí chế
   biến: thêm ô **Số giờ/ca** (`hoursPerShift`, Ống + Phụ kiện) + số tự tính **Giờ vận

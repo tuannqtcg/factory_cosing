@@ -24,6 +24,8 @@ import { effectivePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
 import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
+import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
+import CostWaterfall from '../shared/CostWaterfall.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
 
@@ -527,6 +529,26 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 </div>
                 {kpi('Tổng chế biến Phụ kiện', fitConvTotal, '#7a3fc0', depFit)}
               </div>
+
+              {/* Thác chi phí đ/kg — tách 4 tầng để đối chiếu cảm nhận vận hành với giá thành đầy đủ */}
+              {(() => {
+                let layers: { pipe: import('../../engine/cost-breakdown.js').CostLayersPerKg; fitting: import('../../engine/cost-breakdown.js').CostLayersPerKg } | null = null;
+                try { const k = calculateDashboardKpis(form); layers = { pipe: k.pipeCostLayers, fitting: k.fittingCostLayers }; } catch { layers = null; }
+                if (!layers) return null;
+                return (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#565b64', fontWeight: 700, marginBottom: 3 }}>Thác chi phí — tiền đi đâu?</div>
+                    <div style={{ fontSize: 11.5, color: '#737373', marginBottom: 12, maxWidth: '72ch' }}>
+                      Cùng một giá thành đầy đủ, tách rõ 4 tầng. <b>Gia công tiền mặt</b> là phần quản đốc thường "cảm" được (nhân công·điện·nước·bảo trì·bao bì); <b>khấu hao</b> và <b>nguyên liệu nhập</b> là 2 tầng dễ bị bỏ quên nhưng chiếm phần lớn.
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }}>
+                      <CostWaterfall layers={layers.pipe} title="Dòng Ống CPVC" subtitle="giá thành đầy đủ / kg — tại công suất bình thường" />
+                      <CostWaterfall layers={layers.fitting} title="Dòng Phụ kiện" subtitle="giá thành đầy đủ / kg — khấu hao/kg cao khi công suất chưa lấp đầy" />
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div style={{ fontSize: 11, color: '#a3a3a3' }}>Nhân công/điện/nước/tổng là số <b>tự tính</b> theo công thức engine (nhân công = ca×người×lương×tháng×(1+BH); điện/nước = định mức × <b>giờ vận hành/năm</b>). <b>Giờ vận hành/năm</b> = số mẻ × ngày chạy liên tục × số ca × <b>số giờ/ca</b> (Ống) — đổi <b>số giờ/ca</b> (vd 1 ca 12 giờ, 2 ca = 24 giờ) là điện/nước tính lại đúng thực tế nhà máy. Bao bì tính theo kg thành phẩm, không gộp vào tổng/năm.</div>
             </div>
           );

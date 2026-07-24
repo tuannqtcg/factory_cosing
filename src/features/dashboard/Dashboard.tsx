@@ -14,6 +14,7 @@ import { fmtVnd, fmtUsd, fmtPct, fmtTyVnd } from '../../lib/format.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import { referenceMaterialOf } from '../../engine/scenario.js';
 import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
+import CostWaterfall from '../shared/CostWaterfall.js';
 import { CIT_RATE } from '../../engine/ceo-planner.js';
 import { solve } from '../../engine/solver.js';
 import { calculateScenario } from '../../engine/scenario.js';
@@ -563,6 +564,13 @@ export default function Dashboard({
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+            <div style={{ marginTop: 24 }}>
+              <SectionHeader index="" title="THÁC CHI PHÍ / KG — TIỀN ĐI ĐÂU?" note="Tách giá thành đầy đủ thành 4 tầng: gia công tiền mặt (phần quản đốc 'cảm' được) · chi phí chung · khấu hao máy/khuôn · nguyên liệu nhập. Giải thích vì sao giá thành cao hơn nhiều so với chi phí gia công cảm nhận." />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px,1fr))', gap: 14 }}>
+                <CostWaterfall layers={kpis.pipeCostLayers} title="Dòng Ống CPVC" subtitle="giá thành đầy đủ / kg — tại công suất bình thường" />
+                <CostWaterfall layers={kpis.fittingCostLayers} title="Dòng Phụ kiện" subtitle="giá thành đầy đủ / kg — khấu hao/kg cao khi công suất chưa lấp đầy" />
               </div>
             </div>
           </div>

@@ -1,3 +1,4 @@
+// ADR-033 roll-out: trình bày qua design tokens (đen–trắng tối giản).
 import { useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
@@ -7,6 +8,8 @@ import { managementStatusOf, type PipeProduct, type FittingProduct, type Product
 import type { MoldAsset } from '../../schemas/resource.js';
 import type { Material } from '../../schemas/material.js';
 import { calculateScenario } from '../../engine/scenario.js';
+import { Screen, tk, ft, rd } from '../../design/primitives.js';
+import { eyebrowStyle } from '../../design/tokens.js';
 
 // ADR-044 — bộ nguyên liệu Corzan CHUẨN (đúng 1 bộ). "Chuẩn hóa Corzan" = XÓA mọi
 // Corzan cũ (kể cả trùng/gõ tay lệch) rồi tạo lại đúng bộ này + mirror SKU từ
@@ -25,7 +28,7 @@ const InputNode = ({ value, onChange, type = 'text', width = 60, placeholder = '
     value={value}
     placeholder={placeholder}
     onChange={(e) => onChange(type === 'number' ? (e.target.value ? Number(e.target.value) : e.target.value) : e.target.value)}
-    style={{ width, padding: '4px 6px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 11 }}
+    style={{ width, padding: '4px 6px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, color: tk.ink }}
   />
 );
 
@@ -70,14 +73,14 @@ export default function ProductsScreen({
 
   if (!canView) {
     return (
-      <div style={{ padding: '32px 36px' }}>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Danh Mục Sản Phẩm</h1>
-        <p style={{ fontSize: 12, color: '#737373' }}>Màn hình này chỉ dành cho vai Toàn Quyền / Định Giá.</p>
-      </div>
+      <Screen>
+        <h1 style={{ margin: 0, fontSize: ft.size.xxl, fontWeight: ft.weight.bold, color: tk.ink }}>Danh Mục Sản Phẩm</h1>
+        <p style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Màn hình này chỉ dành cho vai Toàn Quyền / Định Giá.</p>
+      </Screen>
     );
   }
   if (!form) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải danh mục sản phẩm…</div>;
+    return <Screen><div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Đang tải danh mục sản phẩm…</div></Screen>;
   }
 
   const materials = form.materials;
@@ -295,24 +298,24 @@ export default function ProductsScreen({
       {!hideChrome && (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
-          <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Danh Mục Sản Phẩm</h1>
-          <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
+          <div style={{ ...eyebrowStyle, marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
+          <h1 style={{ margin: 0, fontSize: ft.size.xxl, fontWeight: ft.weight.bold, letterSpacing: '-.3px', color: tk.ink }}>Danh Mục Sản Phẩm</h1>
+          <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginTop: 4 }}>
             Quản lý các mã Ống và Phụ kiện tham gia vào bài toán tính giá thành. Phụ kiện chỉ LÊN BẢNG GIÁ khi đã gán khuôn — nhiều SKU dùng chung một khuôn là bình thường (cùng khuôn, khác nguyên liệu).
           </div>
           {!canEditMolds && (
-            <div style={{ fontSize: 11, color: '#92400e', background: '#fffbeb', border: '1px solid #b45309', borderRadius: 6, padding: '7px 12px', marginTop: 8, fontWeight: 600 }}>
+            <div style={{ fontSize: ft.size.xs, color: tk.warningInk, background: tk.warningTint, border: `1px solid ${tk.warning}`, borderRadius: rd.md, padding: '7px 12px', marginTop: 8, fontWeight: ft.weight.semibold }}>
               Bạn tạo/sửa được danh mục sản phẩm. Riêng GÁN KHUÔN là thao tác trên tài sản vốn — chỉ vai Toàn Quyền làm được: SKU mới của bạn sẽ ở trạng thái "chờ khuôn" cho tới khi được gán.
             </div>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {saveState === 'saved' && <span style={{ fontSize: 11, color: '#16A34A', fontWeight: 600 }}>✓ Đã lưu</span>}
-          {saveState === 'error' && <span style={{ fontSize: 11, color: '#DC2626' }}>{saveError}</span>}
+          {saveState === 'saved' && <span style={{ fontSize: ft.size.xs, color: tk.successInk, fontWeight: ft.weight.semibold }}>✓ Đã lưu</span>}
+          {saveState === 'error' && <span style={{ fontSize: ft.size.xs, color: tk.dangerInk }}>{saveError}</span>}
           <button
             onClick={() => void handleSave()}
             disabled={saveState === 'saving' || !canEdit}
-            style={{ padding: '10px 22px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}
+            style={{ padding: '10px 22px', background: tk.brand, color: tk.inkInverse, border: 'none', borderRadius: rd.sm, cursor: 'pointer', fontSize: ft.size.xs, fontWeight: ft.weight.bold, letterSpacing: '.06em', textTransform: 'uppercase' }}
           >
             {saveState === 'saving' ? 'Đang lưu…' : 'Lưu & Cập Nhật'}
           </button>
@@ -327,12 +330,12 @@ export default function ProductsScreen({
             onClick={() => setActiveTab(t)}
             style={{
               padding: '6px 14px',
-              borderRadius: 14,
-              border: `1px solid ${activeTab === t ? '#a8003b' : '#d8d8d8'}`,
-              background: activeTab === t ? '#a8003b' : '#fff',
-              color: activeTab === t ? '#fff' : '#555',
-              fontSize: 11,
-              fontWeight: 600,
+              borderRadius: rd.pill,
+              border: `1px solid ${activeTab === t ? tk.brand : tk.borderStrong}`,
+              background: activeTab === t ? tk.brand : tk.surface,
+              color: activeTab === t ? tk.inkInverse : tk.inkMuted,
+              fontSize: ft.size.xs,
+              fontWeight: ft.weight.semibold,
               cursor: 'pointer',
             }}
           >
@@ -349,14 +352,15 @@ export default function ProductsScreen({
             gap: 8,
             marginBottom: 12,
             padding: '9px 13px',
-            borderRadius: 6,
-            border: `1px solid ${costByMeters ? '#1f5fd0' : '#b45309'}`,
-            background: costByMeters ? '#f4f8ff' : '#fffbeb',
-            fontSize: 11.5,
+            borderRadius: rd.md,
+            border: `1px solid ${costByMeters ? tk.ink : tk.warning}`,
+            background: costByMeters ? tk.surfaceMuted : tk.warningTint,
+            fontSize: ft.size.sm,
             lineHeight: 1.5,
+            color: tk.ink,
           }}
         >
-          <span style={{ fontWeight: 700 }}>{costByMeters ? '⏱' : '⚖'}</span>
+          <span style={{ fontWeight: ft.weight.bold }}>{costByMeters ? '⏱' : '⚖'}</span>
           <span>
             Đang tính giá thành Ống <b>{costByMeters ? 'theo m/giờ (giờ máy per-size)' : 'theo kg (rải đều — chuẩn Excel)'}</b>.{' '}
             {costByMeters ? (
@@ -375,23 +379,23 @@ export default function ProductsScreen({
         </div>
       )}
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflowX: 'auto' }}>
+      <div style={{ background: tk.surface, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, overflowX: 'auto' }}>
         {activeTab === 'pipe' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
-            <thead style={{ background: '#f5f5f5', fontSize: 10, textTransform: 'uppercase', color: '#555' }}>
+            <thead style={{ background: tk.surfaceMuted, fontSize: ft.size.xs, textTransform: 'uppercase', color: tk.inkMuted }}>
               <tr>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>DN</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Tiêu chuẩn (Spec)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>OD (mm)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Dày min (mm)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Đơn trọng (kg/m)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>DN</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Tiêu chuẩn (Spec)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>OD (mm)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Dày min (mm)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Đơn trọng (kg/m)</th>
                 <th
                   style={{
                     padding: '8px 12px',
-                    borderBottom: `1px solid ${costByMeters ? '#1f5fd0' : '#d8d8d8'}`,
-                    background: costByMeters ? '#eef4ff' : undefined,
-                    color: costByMeters ? '#1f5fd0' : '#9a9a9a',
-                    fontWeight: costByMeters ? 700 : 400,
+                    borderBottom: `1px solid ${costByMeters ? tk.ink : tk.borderStrong}`,
+                    background: costByMeters ? tk.surfaceMuted : undefined,
+                    color: costByMeters ? tk.ink : tk.inkFaint,
+                    fontWeight: costByMeters ? ft.weight.bold : ft.weight.regular,
                   }}
                   title={
                     costByMeters
@@ -401,13 +405,13 @@ export default function ProductsScreen({
                 >
                   CS đùn (m/giờ){costByMeters ? ' → giá' : ' · chỉ cảnh báo'}
                 </th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Nguyên liệu (Compound)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 60 }}></th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Nguyên liệu (Compound)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}`, width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {pipeProducts.map((p, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                <tr key={i} style={{ borderBottom: `1px solid ${tk.surfaceMuted}` }}>
                   <td style={{ padding: '8px 12px' }}>
                     <InputNode value={p.dn} onChange={(v: string) => updateProduct(i, 'pipe', { ...p, dn: v })} width={60} />
                   </td>
@@ -439,7 +443,7 @@ export default function ProductsScreen({
                           />
                           {kgh !== undefined && (
                             <span title={over ? `Vượt công suất máy: ${Math.round(kgh)} kg/giờ > ${pipeMaxKgPerHour} kg/giờ. Giảm m/giờ.` : `≈ ${Math.round(kgh)} kg/giờ (trong ngưỡng)`}
-                              style={{ fontSize: 10, fontWeight: 700, color: over ? '#DC2626' : '#16A34A', whiteSpace: 'nowrap' }}>
+                              style={{ fontSize: ft.size.eyebrow, fontWeight: ft.weight.bold, color: over ? tk.dangerInk : tk.successInk, whiteSpace: 'nowrap' }}>
                               {over ? `⚠ ${Math.round(kgh)}kg/h` : `✓ ${Math.round(kgh)}kg/h`}
                             </span>
                           )}
@@ -451,7 +455,7 @@ export default function ProductsScreen({
                     <select
                       value={p.materialId}
                       onChange={(e) => updateProduct(i, 'pipe', { ...p, materialId: e.target.value })}
-                      style={{ width: 140, padding: '4px 6px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 11, background: '#fff' }}
+                      style={{ width: 140, padding: '4px 6px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, background: tk.surface, color: tk.ink }}
                     >
                       {materials.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -461,7 +465,7 @@ export default function ProductsScreen({
                     </select>
                   </td>
                   <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    <button onClick={() => removeProduct(i, 'pipe')} style={{ color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>Xóa</button>
+                    <button onClick={() => removeProduct(i, 'pipe')} style={{ color: tk.dangerInk, background: 'none', border: 'none', cursor: 'pointer', fontSize: ft.size.sm }}>Xóa</button>
                   </td>
                 </tr>
               ))}
@@ -469,23 +473,23 @@ export default function ProductsScreen({
           </table>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 1000 }}>
-            <thead style={{ background: '#f5f5f5', fontSize: 10, textTransform: 'uppercase', color: '#555' }}>
+            <thead style={{ background: tk.surfaceMuted, fontSize: ft.size.xs, textTransform: 'uppercase', color: tk.inkMuted }}>
               <tr>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Tên SP</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Size</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Khuôn (DN)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Chu kỳ (s)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Khoang</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Đơn trọng (kg)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8' }}>Nguyên liệu</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 170 }}>Khuôn (dùng chung được)</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 140 }}>Ren Kim Loại</th>
-                <th style={{ padding: '8px 12px', borderBottom: '1px solid #d8d8d8', width: 60 }}></th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Tên SP</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Size</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Khuôn (DN)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Chu kỳ (s)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Khoang</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Đơn trọng (kg)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Nguyên liệu</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}`, width: 170 }}>Khuôn (dùng chung được)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}`, width: 140 }}>Ren Kim Loại</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}`, width: 60 }}></th>
               </tr>
             </thead>
             <tbody>
               {fittingProducts.map((p, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', verticalAlign: 'top' }}>
+                <tr key={i} style={{ borderBottom: `1px solid ${tk.surfaceMuted}`, verticalAlign: 'top' }}>
                   <td style={{ padding: '8px 12px' }}>
                     <InputNode value={p.productName} onChange={(v: string) => updateProduct(i, 'fitting', { ...p, productName: v })} width={100} />
                   </td>
@@ -508,7 +512,7 @@ export default function ProductsScreen({
                     <select
                       value={p.materialId}
                       onChange={(e) => updateProduct(i, 'fitting', { ...p, materialId: e.target.value })}
-                      style={{ width: 120, padding: '4px 6px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 11, background: '#fff' }}
+                      style={{ width: 120, padding: '4px 6px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, background: tk.surface, color: tk.ink }}
                     >
                       {materials.map((m) => (
                         <option key={m.id} value={m.id}>
@@ -526,14 +530,14 @@ export default function ProductsScreen({
                             value={mold?.id ?? ''}
                             disabled={!canEditMolds}
                             onChange={(e) => assignMold(p, e.target.value)}
-                            style={{ width: 160, padding: '4px 6px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 10.5, background: '#fff' }}
+                            style={{ width: 160, padding: '4px 6px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.eyebrow, background: tk.surface, color: tk.ink }}
                           >
                             <option value="">— Chưa có khuôn —</option>
                             {moldAssets.map((a) => (
                               <option key={a.id} value={a.id}>{a.label}</option>
                             ))}
                           </select>
-                          <div style={{ fontSize: 9, marginTop: 3, fontWeight: 700, color: managementStatusOf(p, moldAssets) === 'active' ? '#16A34A' : '#b45309' }}>
+                          <div style={{ fontSize: ft.size.eyebrow, marginTop: 3, fontWeight: ft.weight.bold, color: managementStatusOf(p, moldAssets) === 'active' ? tk.successInk : tk.warningInk }}>
                             {managementStatusOf(p, moldAssets) === 'active'
                               ? `✅ Có khuôn — lên bảng giá${mold && mold.producesSkus.length > 1 ? ` (chung với ${mold.producesSkus.length - 1} SKU khác)` : ''}`
                               : '⏳ Chờ khuôn — ẨN khỏi bảng giá'}
@@ -544,12 +548,12 @@ export default function ProductsScreen({
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     {p.metalInsert ? (
-                      <div style={{ fontSize: 10, background: '#f5f5f3', padding: 6, borderRadius: 2, border: '1px dashed #d8d8d8' }}>
+                      <div style={{ fontSize: ft.size.eyebrow, background: tk.surfaceMuted, padding: 6, borderRadius: rd.sm, border: `1px dashed ${tk.borderStrong}` }}>
                         <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
                           <select
                             value={p.metalInsert.renType}
                             onChange={(e) => updateProduct(i, 'fitting', { ...p, metalInsert: { ...p.metalInsert!, renType: e.target.value as any } })}
-                            style={{ padding: '2px 4px', fontSize: 10, outline: 'none', border: '1px solid #d8d8d8', borderRadius: 2, background: '#fff' }}
+                            style={{ padding: '2px 4px', fontSize: ft.size.eyebrow, outline: 'none', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, background: tk.surface, color: tk.ink }}
                           >
                             <option value="trong">Trong</option>
                             <option value="ngoài">Ngoài</option>
@@ -560,15 +564,15 @@ export default function ProductsScreen({
                           SL: <InputNode type="number" value={p.metalInsert.insertQtyPerUnit} onChange={(v: number) => updateProduct(i, 'fitting', { ...p, metalInsert: { ...p.metalInsert!, insertQtyPerUnit: v } })} width={40} />
                         </div>
                         <div style={{ textAlign: 'right', marginTop: 4 }}>
-                          <button onClick={() => { const { metalInsert, ...rest } = p; updateProduct(i, 'fitting', rest as FittingProduct); }} style={{ fontSize: 9, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Xóa ren</button>
+                          <button onClick={() => { const { metalInsert, ...rest } = p; updateProduct(i, 'fitting', rest as FittingProduct); }} style={{ fontSize: ft.size.eyebrow, color: tk.dangerInk, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Xóa ren</button>
                         </div>
                       </div>
                     ) : (
-                      <button onClick={() => updateProduct(i, 'fitting', { ...p, metalInsert: { renType: 'trong', ptSize: '1/2"', insertQtyPerUnit: 1 } })} style={{ fontSize: 10, padding: '4px 8px', borderRadius: 2, border: '1px dashed #a8003b', background: '#fff', color: '#a8003b', cursor: 'pointer' }}>+ Thêm ren</button>
+                      <button onClick={() => updateProduct(i, 'fitting', { ...p, metalInsert: { renType: 'trong', ptSize: '1/2"', insertQtyPerUnit: 1 } })} style={{ fontSize: ft.size.eyebrow, padding: '4px 8px', borderRadius: rd.sm, border: `1px dashed ${tk.borderStrong}`, background: tk.surface, color: tk.ink, cursor: 'pointer' }}>+ Thêm ren</button>
                     )}
                   </td>
                   <td style={{ padding: '8px 12px', textAlign: 'right' }}>
-                    <button onClick={() => removeProduct(i, 'fitting')} style={{ color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12 }}>Xóa</button>
+                    <button onClick={() => removeProduct(i, 'fitting')} style={{ color: tk.dangerInk, background: 'none', border: 'none', cursor: 'pointer', fontSize: ft.size.sm }}>Xóa</button>
                   </td>
                 </tr>
               ))}
@@ -580,7 +584,7 @@ export default function ProductsScreen({
       <div style={{ marginTop: 14, display: canEdit ? 'flex' : 'none', gap: 10 }}>
         <button
           onClick={activeTab === 'pipe' ? addPipe : addFitting}
-          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #a8003b', background: '#fff', color: '#a8003b', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.borderStrong}`, background: tk.surface, color: tk.ink, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
         >
           + Thêm {activeTab === 'pipe' ? 'Ống CPVC' : 'Phụ Kiện'} mới
         </button>
@@ -588,7 +592,7 @@ export default function ProductsScreen({
           <button
             onClick={standardizeCorzan}
             title="Xóa sạch Corzan trùng/loạn rồi tạo lại đúng 1 bộ mirror BlazeMaster (dùng chung khuôn). Idempotent. Bấm xong nhớ Lưu."
-            style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #1f5fd0', background: '#f7faff', color: '#1f5fd0', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+            style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.borderStrong}`, background: tk.surfaceMuted, color: tk.ink, fontSize: ft.size.xs, fontWeight: ft.weight.bold, cursor: 'pointer' }}
           >
             ♻ Chuẩn hóa Corzan (xóa trùng → mirror BlazeMaster)
           </button>
@@ -596,13 +600,13 @@ export default function ProductsScreen({
         <button
           onClick={checkPriceListData}
           title="Chạy engine ngay trên dữ liệu đang sửa để biết vì sao bảng giá thiếu (dữ liệu lỗi / thiếu khuôn / máy chủ chưa tính)."
-          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #6b6b6b', background: '#fff', color: '#4b4b4b', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.borderStrong}`, background: tk.surface, color: tk.inkMuted, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
         >
           🔎 Kiểm tra dữ liệu bảng giá
         </button>
       </div>
       {diag && (
-        <div style={{ marginTop: 10, padding: '11px 14px', borderRadius: 6, border: `1px solid ${diag.ok ? '#16A34A' : '#DC2626'}`, background: diag.ok ? '#f0fdf4' : '#fef2f2', color: diag.ok ? '#15803d' : '#b91c1c', fontSize: 11.5, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+        <div style={{ marginTop: 10, padding: '11px 14px', borderRadius: rd.md, border: `1px solid ${diag.ok ? tk.success : tk.danger}`, background: diag.ok ? tk.successTint : tk.dangerTint, color: diag.ok ? tk.successInk : tk.dangerInk, fontSize: ft.size.sm, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
           {diag.msg}
         </div>
       )}

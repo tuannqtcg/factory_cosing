@@ -22,6 +22,7 @@ import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from './fitting.js';
 import { evaluatePriceLock } from './price-lock.js';
 import type { MaterialPricingInput } from './cost-pool.js';
+import { pipeCostLayersPerKg, fittingCostLayersPerKg, type CostLayersPerKg } from './cost-breakdown.js';
 
 export interface PipeCapacityLevel {
   shifts: 1 | 2 | 3;
@@ -59,6 +60,10 @@ export interface DashboardKpis {
   capacityLevels: PipeCapacityLevel[];
   fittingCapacity: FittingCapacityLevel;
   investment: InvestmentKpis;
+  /** Thác chi phí đ/kg dòng Ống (tại CS bình thường) — tách tiền mặt · chung · khấu hao · nguyên liệu. */
+  pipeCostLayers: CostLayersPerKg;
+  /** Thác chi phí đ/kg dòng Phụ kiện — cùng 4 tầng. */
+  fittingCostLayers: CostLayersPerKg;
 }
 
 export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
@@ -234,5 +239,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
       ebitAtNormalCapacityVfPrice,
       paybackYears,
     },
+    pipeCostLayers: pipeCostLayersPerKg(pipeCost, pipeResource, pipeCapacity.normalCapacityKgYear),
+    fittingCostLayers: fittingCostLayersPerKg(fittingCost, fittingResource, fittingCapacity.estimatedProductionKgYear),
   };
 }

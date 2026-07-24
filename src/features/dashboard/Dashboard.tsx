@@ -340,6 +340,7 @@ export default function Dashboard({
       {activeTab === 'overview' && kpis && internal && scenario && (
         (() => {
           const shifts = scenario.resources.pipe.driverType === 'continuous_kg' ? scenario.resources.pipe.normalShifts : 3;
+          const pipeLevel = kpis.capacityLevels.find(l => l.shifts === shifts);
           return (
             <div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 16, marginBottom: 24 }}>
@@ -365,13 +366,13 @@ export default function Dashboard({
                 </Card>
                 <Card>
                   <CardLabel>Phí gia công Ống (không NVL)</CardLabel>
-                  <CardValue color="#ea580c">{fmtVnd(kpis.capacityLevels.find(l => l.shifts === shifts)?.processingCostPerKg || 0)} đ/kg</CardValue>
-                  <CardNote>Tại năng suất {shifts} ca</CardNote>
+                  <CardValue color="#ea580c">{fmtVnd(pipeLevel?.processingCostPerKg || 0)} đ/kg</CardValue>
+                  <CardNote><span style={{ color: '#16A34A' }}>tiền mặt {fmtVnd(pipeLevel?.cashProcessingPerKg || 0)}</span> · <span style={{ color: '#d97706' }}>khấu hao {fmtVnd(pipeLevel?.depreciationPerKg || 0)}</span></CardNote>
                 </Card>
                 <Card>
                   <CardLabel>Phí gia công Phụ Kiện (BGGQ)</CardLabel>
                   <CardValue color="#9333ea">{fmtVnd(kpis.fittingCapacity.processingCostPerKg || 0)} đ/kg</CardValue>
-                  <CardNote>Bình quân theo trọng lượng</CardNote>
+                  <CardNote><span style={{ color: '#16A34A' }}>tiền mặt {fmtVnd(kpis.fittingCapacity.cashProcessingPerKg || 0)}</span> · <span style={{ color: '#d97706' }}>khấu hao {fmtVnd(kpis.fittingCapacity.depreciationPerKg || 0)}</span></CardNote>
                 </Card>
               </div>
 

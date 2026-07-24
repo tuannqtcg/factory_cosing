@@ -29,10 +29,12 @@ export interface PipeCapacityLevel {
   productionKgYear: number;
   /** Giá thành đầy đủ/kg nếu chỉ chạy `shifts` ca (Dashboard mục II). */
   costPerKg: number;
-  /** Phí gia công/kg (không gồm NVL) = cashProcessingPerKg + depreciationPerKg */
+  /** Phí gia công/kg (không gồm NVL) = directProcessingPerKg + sharedOverheadPerKg + depreciationPerKg */
   processingCostPerKg: number;
-  /** Tầng tiền mặt của phí gia công (nhân công·điện·nước·bảo trì·chung — phần quản đốc "cảm" được). */
-  cashProcessingPerKg: number;
+  /** Tầng GIA CÔNG TRỰC TIẾP: nhân công·điện·nước·bảo trì (phần quản đốc "cảm" được — KHÔNG gồm chung/khấu hao). */
+  directProcessingPerKg: number;
+  /** Tầng chi phí chung phân bổ (kiểm định·thuê đất·khấu hao tài sản chung). */
+  sharedOverheadPerKg: number;
   /** Tầng khấu hao máy/khuôn của phí gia công (giảm khi tăng ca). */
   depreciationPerKg: number;
 }
@@ -58,8 +60,10 @@ export interface FittingCapacityLevel {
   productionKgYear: number;
   costPerKg: number;
   processingCostPerKg: number;
-  /** Tầng tiền mặt của phí gia công (phần quản đốc "cảm" được). */
-  cashProcessingPerKg: number;
+  /** Tầng GIA CÔNG TRỰC TIẾP (nhân công·điện·nước·bảo trì — phần quản đốc "cảm" được). */
+  directProcessingPerKg: number;
+  /** Tầng chi phí chung phân bổ. */
+  sharedOverheadPerKg: number;
   /** Tầng khấu hao máy/khuôn — rất cao khi công suất chưa lấp đầy. */
   depreciationPerKg: number;
 }
@@ -163,10 +167,12 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     const processingCostPerKg =
       costAtShifts.unitProcessingCostPerKg +
       (pipeCost.sharedCostAllocated - costAtShifts.sharedCostAllocated) / capacityAtShifts.normalCapacityKgYear;
-    // Tách 2 tầng: khấu hao (biến động theo ca vì cùng cục khấu hao ÷ sản lượng khác) + tiền mặt (phần còn lại).
+    // Tách 3 tầng: khấu hao (cùng cục ÷ sản lượng khác nhau theo ca) + chung phân bổ
+    // (giữ mức CS bình thường, xem trên) + gia công trực tiếp (phần còn lại — khớp cảm nhận quản đốc).
     const depreciationPerKg = costAtShifts.extruderDepreciationPerYear / capacityAtShifts.normalCapacityKgYear;
-    const cashProcessingPerKg = processingCostPerKg - depreciationPerKg;
-    return { shifts, productionKgYear: capacityAtShifts.normalCapacityKgYear, costPerKg, processingCostPerKg, cashProcessingPerKg, depreciationPerKg };
+    const sharedOverheadPerKg = pipeCost.sharedCostAllocated / capacityAtShifts.normalCapacityKgYear;
+    const directProcessingPerKg = processingCostPerKg - sharedOverheadPerKg - depreciationPerKg;
+    return { shifts, productionKgYear: capacityAtShifts.normalCapacityKgYear, costPerKg, processingCostPerKg, directProcessingPerKg, sharedOverheadPerKg, depreciationPerKg };
   });
 
   // ── Mục IV: Đầu tư ─────────────────────────────────────────────────────────
@@ -241,9 +247,11 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
       costPerKg: fittingCost.fullCostPerKgRef,
       processingCostPerKg: fittingCost.processingCostPerKgRef,
       depreciationPerKg: (fittingCost.machineDepreciationPerYear + fittingCost.moldDepreciationPerYear) / fittingKg,
-      cashProcessingPerKg:
+      sharedOverheadPerKg: fittingCost.sharedCostAllocated / fittingKg,
+      directProcessingPerKg:
         fittingCost.processingCostPerKgRef -
-        (fittingCost.machineDepreciationPerYear + fittingCost.moldDepreciationPerYear) / fittingKg,
+        (fittingCost.machineDepreciationPerYear + fittingCost.moldDepreciationPerYear) / fittingKg -
+        fittingCost.sharedCostAllocated / fittingKg,
     },
     investment: {
       totalFixedCapitalInvested,

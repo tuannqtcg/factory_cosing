@@ -367,12 +367,12 @@ export default function Dashboard({
                 <Card>
                   <CardLabel>Phí gia công Ống (không NVL)</CardLabel>
                   <CardValue color="#ea580c">{fmtVnd(pipeLevel?.processingCostPerKg || 0)} đ/kg</CardValue>
-                  <CardNote><span style={{ color: '#16A34A' }}>tiền mặt {fmtVnd(pipeLevel?.cashProcessingPerKg || 0)}</span> · <span style={{ color: '#d97706' }}>khấu hao {fmtVnd(pipeLevel?.depreciationPerKg || 0)}</span></CardNote>
+                  <CardNote><span style={{ color: '#16A34A' }}>trực tiếp {fmtVnd(pipeLevel?.directProcessingPerKg || 0)}</span> · chung {fmtVnd(pipeLevel?.sharedOverheadPerKg || 0)} · <span style={{ color: '#d97706' }}>khấu hao {fmtVnd(pipeLevel?.depreciationPerKg || 0)}</span></CardNote>
                 </Card>
                 <Card>
                   <CardLabel>Phí gia công Phụ Kiện (BGGQ)</CardLabel>
                   <CardValue color="#9333ea">{fmtVnd(kpis.fittingCapacity.processingCostPerKg || 0)} đ/kg</CardValue>
-                  <CardNote><span style={{ color: '#16A34A' }}>tiền mặt {fmtVnd(kpis.fittingCapacity.cashProcessingPerKg || 0)}</span> · <span style={{ color: '#d97706' }}>khấu hao {fmtVnd(kpis.fittingCapacity.depreciationPerKg || 0)}</span></CardNote>
+                  <CardNote><span style={{ color: '#16A34A' }}>trực tiếp {fmtVnd(kpis.fittingCapacity.directProcessingPerKg || 0)}</span> · chung {fmtVnd(kpis.fittingCapacity.sharedOverheadPerKg || 0)} · <span style={{ color: '#d97706' }}>khấu hao {fmtVnd(kpis.fittingCapacity.depreciationPerKg || 0)}</span></CardNote>
                 </Card>
               </div>
 
@@ -510,7 +510,8 @@ export default function Dashboard({
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Phí gia công/kg</div>
                         <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#ea580c' }}>{fmtVnd(level.processingCostPerKg)} đ</div>
-                        <div style={{ fontSize: 9, color: '#16A34A', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>· tiền mặt {fmtVnd(level.cashProcessingPerKg)}</div>
+                        <div style={{ fontSize: 9, color: '#16A34A', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>· trực tiếp {fmtVnd(level.directProcessingPerKg)}</div>
+                        <div style={{ fontSize: 9, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>· chung {fmtVnd(level.sharedOverheadPerKg)}</div>
                         <div style={{ fontSize: 9, color: '#d97706', fontVariantNumeric: 'tabular-nums' }}>· khấu hao {fmtVnd(level.depreciationPerKg)}</div>
                       </div>
                     </div>
@@ -548,7 +549,8 @@ export default function Dashboard({
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Phí gia công/kg</div>
                       <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#ea580c' }}>{fmtVnd(kpis.fittingCapacity.processingCostPerKg)} đ</div>
-                      <div style={{ fontSize: 9, color: '#16A34A', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>· tiền mặt {fmtVnd(kpis.fittingCapacity.cashProcessingPerKg)}</div>
+                      <div style={{ fontSize: 9, color: '#16A34A', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>· trực tiếp {fmtVnd(kpis.fittingCapacity.directProcessingPerKg)}</div>
+                      <div style={{ fontSize: 9, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>· chung {fmtVnd(kpis.fittingCapacity.sharedOverheadPerKg)}</div>
                       <div style={{ fontSize: 9, color: '#d97706', fontVariantNumeric: 'tabular-nums' }}>· khấu hao {fmtVnd(kpis.fittingCapacity.depreciationPerKg)}</div>
                     </div>
                   </div>

@@ -29,8 +29,12 @@ export interface PipeCapacityLevel {
   productionKgYear: number;
   /** Giá thành đầy đủ/kg nếu chỉ chạy `shifts` ca (Dashboard mục II). */
   costPerKg: number;
-  /** Phí gia công/kg (không gồm NVL) */
+  /** Phí gia công/kg (không gồm NVL) = cashProcessingPerKg + depreciationPerKg */
   processingCostPerKg: number;
+  /** Tầng tiền mặt của phí gia công (nhân công·điện·nước·bảo trì·chung — phần quản đốc "cảm" được). */
+  cashProcessingPerKg: number;
+  /** Tầng khấu hao máy/khuôn của phí gia công (giảm khi tăng ca). */
+  depreciationPerKg: number;
 }
 
 export interface InvestmentKpis {
@@ -54,6 +58,10 @@ export interface FittingCapacityLevel {
   productionKgYear: number;
   costPerKg: number;
   processingCostPerKg: number;
+  /** Tầng tiền mặt của phí gia công (phần quản đốc "cảm" được). */
+  cashProcessingPerKg: number;
+  /** Tầng khấu hao máy/khuôn — rất cao khi công suất chưa lấp đầy. */
+  depreciationPerKg: number;
 }
 
 export interface DashboardKpis {
@@ -155,7 +163,10 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     const processingCostPerKg =
       costAtShifts.unitProcessingCostPerKg +
       (pipeCost.sharedCostAllocated - costAtShifts.sharedCostAllocated) / capacityAtShifts.normalCapacityKgYear;
-    return { shifts, productionKgYear: capacityAtShifts.normalCapacityKgYear, costPerKg, processingCostPerKg };
+    // Tách 2 tầng: khấu hao (biến động theo ca vì cùng cục khấu hao ÷ sản lượng khác) + tiền mặt (phần còn lại).
+    const depreciationPerKg = costAtShifts.extruderDepreciationPerYear / capacityAtShifts.normalCapacityKgYear;
+    const cashProcessingPerKg = processingCostPerKg - depreciationPerKg;
+    return { shifts, productionKgYear: capacityAtShifts.normalCapacityKgYear, costPerKg, processingCostPerKg, cashProcessingPerKg, depreciationPerKg };
   });
 
   // ── Mục IV: Đầu tư ─────────────────────────────────────────────────────────
@@ -229,6 +240,10 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
       productionKgYear: fittingKg,
       costPerKg: fittingCost.fullCostPerKgRef,
       processingCostPerKg: fittingCost.processingCostPerKgRef,
+      depreciationPerKg: (fittingCost.machineDepreciationPerYear + fittingCost.moldDepreciationPerYear) / fittingKg,
+      cashProcessingPerKg:
+        fittingCost.processingCostPerKgRef -
+        (fittingCost.machineDepreciationPerYear + fittingCost.moldDepreciationPerYear) / fittingKg,
     },
     investment: {
       totalFixedCapitalInvested,

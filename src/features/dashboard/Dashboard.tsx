@@ -509,6 +509,8 @@ export default function Dashboard({
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Phí gia công/kg</div>
                         <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#ea580c' }}>{fmtVnd(level.processingCostPerKg)} đ</div>
+                        <div style={{ fontSize: 9, color: '#16A34A', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>· tiền mặt {fmtVnd(level.cashProcessingPerKg)}</div>
+                        <div style={{ fontSize: 9, color: '#d97706', fontVariantNumeric: 'tabular-nums' }}>· khấu hao {fmtVnd(level.depreciationPerKg)}</div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', marginTop: 10 }}>
@@ -545,6 +547,8 @@ export default function Dashboard({
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: 9, color: '#737373', marginBottom: 2 }}>Phí gia công/kg</div>
                       <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: '#ea580c' }}>{fmtVnd(kpis.fittingCapacity.processingCostPerKg)} đ</div>
+                      <div style={{ fontSize: 9, color: '#16A34A', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>· tiền mặt {fmtVnd(kpis.fittingCapacity.cashProcessingPerKg)}</div>
+                      <div style={{ fontSize: 9, color: '#d97706', fontVariantNumeric: 'tabular-nums' }}>· khấu hao {fmtVnd(kpis.fittingCapacity.depreciationPerKg)}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', marginTop: 10 }}>

@@ -34,19 +34,21 @@ describe('Dashboard mục II — 3 mức công suất Ống (dashboard.json capa
   });
 });
 
-describe('Dashboard — tách phí gia công 2 tầng (tiền mặt + khấu hao) trên scorecard', () => {
-  it('Ống: mỗi mức ca, tiền mặt + khấu hao = phí gia công/kg; khấu hao/kg giảm khi tăng ca', () => {
+describe('Dashboard — tách phí gia công 3 tầng (tiền mặt trực tiếp + chung + khấu hao) trên scorecard', () => {
+  it('Ống: mỗi mức ca, tiền mặt + chung + khấu hao = phí gia công/kg; khấu hao/kg giảm khi tăng ca', () => {
     for (const level of kpis.capacityLevels) {
-      expect(level.cashProcessingPerKg + level.depreciationPerKg).toBeCloseTo(level.processingCostPerKg, 6);
+      expect(level.directProcessingPerKg + level.sharedOverheadPerKg + level.depreciationPerKg).toBeCloseTo(level.processingCostPerKg, 6);
     }
     // Cùng cục khấu hao ÷ sản lượng lớn hơn ⇒ khấu hao/kg giảm dần theo số ca
     expect(kpis.capacityLevels[0]!.depreciationPerKg).toBeGreaterThan(kpis.capacityLevels[2]!.depreciationPerKg);
   });
 
-  it('Phụ kiện: tiền mặt + khấu hao = phí gia công/kg; khấu hao/kg là tầng lớn nhất (công suất chưa lấp đầy)', () => {
+  it('Phụ kiện: 3 tầng cộng lại = phí gia công/kg; khấu hao là tầng lớn nhất; tiền mặt trực tiếp KHÔNG gồm chung', () => {
     const f = kpis.fittingCapacity;
-    expect(f.cashProcessingPerKg + f.depreciationPerKg).toBeCloseTo(f.processingCostPerKg, 6);
-    expect(f.depreciationPerKg).toBeGreaterThan(f.cashProcessingPerKg);
+    expect(f.directProcessingPerKg + f.sharedOverheadPerKg + f.depreciationPerKg).toBeCloseTo(f.processingCostPerKg, 6);
+    expect(f.depreciationPerKg).toBeGreaterThan(f.directProcessingPerKg);
+    // Tiền mặt trực tiếp nhỏ hơn (tiền mặt + chung) vì đã tách riêng phần chung
+    expect(f.directProcessingPerKg).toBeLessThan(f.directProcessingPerKg + f.sharedOverheadPerKg);
   });
 });
 

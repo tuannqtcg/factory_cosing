@@ -6,7 +6,7 @@ import { fmtVnd } from '../../lib/format.js';
 
 type LayerKey = 'cashDirect' | 'sharedOverhead' | 'depreciation' | 'material';
 const LAYER_META: Array<{ key: LayerKey; label: string; color: string; note: string }> = [
-  { key: 'cashDirect', label: 'Gia công tiền mặt', color: '#16A34A', note: 'nhân công · điện · nước · bảo trì · bao bì — phần "tiền túi" nhà máy cảm nhận được' },
+  { key: 'cashDirect', label: 'Gia công trực tiếp', color: '#16A34A', note: 'nhân công · điện · nước · bảo trì · bao bì — chi phí gia công trực tiếp, khớp cảm nhận quản đốc (KHÔNG gánh chung/khấu hao)' },
   { key: 'sharedOverhead', label: 'Chi phí chung phân bổ', color: '#8a5a12', note: 'kiểm định · thuê đất · khấu hao tài sản chung' },
   { key: 'depreciation', label: 'Khấu hao máy + khuôn', color: '#d97706', note: 'không chi bằng tiền mặt → dễ bỏ quên; GIẢM mạnh khi tăng ca / lấp công suất' },
   { key: 'material', label: 'Nguyên liệu (nhập USD)', color: '#64748b', note: 'sàn giá cứng — bán dưới mức này là lỗ ngay từ hạt nhựa' },

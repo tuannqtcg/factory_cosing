@@ -34,6 +34,22 @@ describe('Dashboard mục II — 3 mức công suất Ống (dashboard.json capa
   });
 });
 
+describe('Dashboard — tách phí gia công 2 tầng (tiền mặt + khấu hao) trên scorecard', () => {
+  it('Ống: mỗi mức ca, tiền mặt + khấu hao = phí gia công/kg; khấu hao/kg giảm khi tăng ca', () => {
+    for (const level of kpis.capacityLevels) {
+      expect(level.cashProcessingPerKg + level.depreciationPerKg).toBeCloseTo(level.processingCostPerKg, 6);
+    }
+    // Cùng cục khấu hao ÷ sản lượng lớn hơn ⇒ khấu hao/kg giảm dần theo số ca
+    expect(kpis.capacityLevels[0]!.depreciationPerKg).toBeGreaterThan(kpis.capacityLevels[2]!.depreciationPerKg);
+  });
+
+  it('Phụ kiện: tiền mặt + khấu hao = phí gia công/kg; khấu hao/kg là tầng lớn nhất (công suất chưa lấp đầy)', () => {
+    const f = kpis.fittingCapacity;
+    expect(f.cashProcessingPerKg + f.depreciationPerKg).toBeCloseTo(f.processingCostPerKg, 6);
+    expect(f.depreciationPerKg).toBeGreaterThan(f.cashProcessingPerKg);
+  });
+});
+
 describe('Dashboard mục IV — KPI đầu tư (dashboard.json investment, v3.7)', () => {
   const golden = dashboardGolden.investment;
 

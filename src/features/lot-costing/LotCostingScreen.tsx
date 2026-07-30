@@ -89,12 +89,12 @@ export default function LotCostingScreen({
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#737373', textTransform: 'uppercase', marginBottom: 6 }}>Các lô đang tồn (tối đa 5)</div>
                 <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ textAlign: 'left', color: '#999', fontSize: 10 }}><th>Lô</th><th style={{ textAlign: 'right' }}>Tồn (tấn)</th><th style={{ textAlign: 'right' }}>Giá (USD/kg)</th></tr></thead>
+                  <thead><tr style={{ textAlign: 'left', color: '#999', fontSize: 10 }}><th>Lô</th><th style={{ textAlign: 'right' }}>Tồn (kg)</th><th style={{ textAlign: 'right' }}>Giá (USD/kg)</th></tr></thead>
                   <tbody>
                     {c.lots.map((l, i) => (
                       <tr key={i} style={{ borderTop: '1px solid #f0ece0' }}>
                         <td>Lô {i + 1}</td>
-                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(l.tons)}</td>
+                        <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 0 }).format(l.tons * 1000)}</td>
                         <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{fmtUsd(l.priceUsdPerKg)}</td>
                       </tr>
                     ))}

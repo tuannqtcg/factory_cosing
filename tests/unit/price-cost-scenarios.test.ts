@@ -9,6 +9,8 @@ import { calculateScenario } from '../../src/engine/scenario.js';
 import { weightedAvgUsdPerKg } from '../../src/engine/dual-costing.js';
 import { scenarioWithCostBasis } from '../../src/engine/price-cost-scenarios.js';
 import { makeFixedPriceModel } from '../../src/engine/scenario-drivers.js';
+import { weightedAvgLandedCostPerKgVnd } from '../../src/engine/dual-costing.js';
+import { landedCostPerKgVnd } from '../../src/engine/cost-pool.js';
 
 const baseline = ScenarioInputSchema.parse(buildBaselineScenarioInput());
 
@@ -45,6 +47,27 @@ describe('scenarioWithCostBasis', () => {
     const before = JSON.stringify(baseline);
     scenarioWithCostBasis(baseline, 'weighted-avg');
     expect(JSON.stringify(baseline)).toBe(before);
+  });
+
+  it('ADR-058 — lô có thuế/logistics RIÊNG: landed cost sau khi ép khớp weightedAvgLandedCostPerKgVnd (không phải bình quân giá thô × 1 rate chung)', () => {
+    const mixed = structuredClone(baseline);
+    const mat = mixed.materials[0]!;
+    // 2 lô CÙNG giá mua nhưng 1 lô có C/O ưu đãi (thuế/logistics 0%) — nếu bình
+    // quân giá thô rồi nhân 1 rate chung thì 2 kịch bản này sẽ RA CÙNG SỐ (sai).
+    mat.inventory.lots = [
+      { tons: 100, priceUsdPerKg: 3 },
+      { tons: 100, priceUsdPerKg: 3, importTaxRate: 0, customsLogisticsFeeRate: 0 },
+    ];
+    const s = scenarioWithCostBasis(mixed, 'weighted-avg');
+    const matAfter = s.materials.find((m) => m.id === mat.id)!;
+    const rates = { importTaxRate: mat.importTaxRate, customsLogisticsFeeRate: mat.customsLogisticsFeeRate, usdVndRate: mixed.costPool.currency.usdVndRate };
+    const expectedLanded = weightedAvgLandedCostPerKgVnd(mat.inventory.lots, rates, rates.usdVndRate)!;
+    const actualLanded = landedCostPerKgVnd(matAfter.inventory.replacementPriceUsdPerKg, rates);
+    expect(actualLanded).toBeCloseTo(expectedLanded, 3);
+    // Landed cost đúng phải THẤP hơn cách tính cũ (bình quân giá thô 3 × rate material)
+    // vì lô AIFTA rẻ hơn nhờ thuế 0% không được phản ánh trong cách cũ.
+    const oldWrongLanded = landedCostPerKgVnd(3, rates);
+    expect(actualLanded).toBeLessThan(oldWrongLanded);
   });
 });
 

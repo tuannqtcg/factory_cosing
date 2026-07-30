@@ -23,7 +23,7 @@ import { moldDepreciationPerYear } from '../../engine/mold-depreciation.js';
 import { effectivePipeCapacity } from '../../engine/pipe.js';
 import { calculateFittingCapacity } from '../../engine/fitting.js';
 import { sharedFixedCostsTotalPerYear, landedCostPerKgVnd } from '../../engine/cost-pool.js';
-import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
+import { weightedAvgUsdPerKg, weightedAvgLandedCostPerKgVnd, totalInventoryKg } from '../../engine/dual-costing.js';
 import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
 import CostWaterfall from '../shared/CostWaterfall.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
@@ -69,6 +69,22 @@ function InCell({ value, onChange, unit, disabled, width = 130 }: { value: numbe
   );
 }
 // ── SỐ TỰ TÍNH (nền xám + nhãn fx, chỉ đọc) ──
+// ADR-058 — ô nhập tỷ lệ THUẾ/PHÍ RIÊNG TỪNG LÔ, để trống = kế thừa rate của
+// material (ADR-012). Khác InCell (luôn có số): value có thể undefined.
+function OptRateCell({ value, onChange, placeholder }: { value: number | undefined; onChange: (v: number | undefined) => void; placeholder: string }) {
+  return (
+    <input
+      type="number"
+      step="0.01"
+      className="ds-in"
+      value={value ?? ''}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
+      title="Để trống = dùng theo nguyên liệu (mục thuế NK/phí HQ ở trên)"
+      style={{ width: 78, padding: '6px 8px', borderRadius: 6, fontSize: 12, fontWeight: 600, textAlign: 'right', fontVariantNumeric: 'tabular-nums', outline: 'none', border: '1px solid #c8cdd5', background: '#fff' }}
+    />
+  );
+}
 function FxCell({ value, unit }: { value: number; unit?: string }) {
   return (
     <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6, background: '#eef1f4', borderRadius: 6, padding: '6px 10px', minWidth: 130 }}>
@@ -150,6 +166,9 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, replacementPriceUsdPerKg: v } })));
   // ── Lô nhập compound (ADR-002 — bình quân gia quyền). Cùng ngữ nghĩa InventoryScreen. ──
   const updLot = (id: string, i: number, key: 'tons' | 'priceUsdPerKg', v: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, ix) => (ix === i ? { ...l, [key]: v } : l)) } })));
+  // ADR-058 — thuế NK/phí logistics RIÊNG từng lô (undefined = kế thừa material).
+  const updLotRate = (id: string, i: number, key: 'importTaxRate' | 'customsLogisticsFeeRate', v: number | undefined) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, ix) => (ix === i ? { ...l, [key]: v } : l)) } })));
   const addLot = (id: string) =>
     setMaterials((ms) => ms.map((m) => {
@@ -619,7 +638,11 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   const wAvg = weightedAvgUsdPerKg(m.inventory.lots); // null nếu chưa nhập lô nào → giá vốn = giá mua mới hôm nay
                   const invKg = totalInventoryKg(m.inventory.lots);
                   const bookUsd = wAvg ?? m.inventory.replacementPriceUsdPerKg;
-                  const bookLanded = landedCostPerKgVnd(bookUsd, ratesOf(m));
+                  // ADR-058 — landed cost TÍNH TỪNG LÔ (rate riêng lô, thiếu thì lấy rate
+                  // material) rồi mới bình quân — ĐÚNG khi các lô khác thuế/logistics
+                  // (xuất xứ khác nhau); khác landedCostPerKgVnd(bookUsd,...) vốn bình
+                  // quân giá thô rồi nhân 1 rate chung — chỉ đúng khi mọi lô CÙNG rate.
+                  const bookLanded = weightedAvgLandedCostPerKgVnd(m.inventory.lots, ratesOf(m), usdRate) ?? replLanded;
                   // Lãi/lỗ giữ kho + cảnh báo VAS-02 lấy THẲNG từ engine (đã tính trên dữ liệu ĐÃ LƯU) — không tính lại ở client.
                   const dualEntry = internal?.dualCosting.byMaterial.find((e) => e.materialId === m.id);
                   const lockEntry = internal?.priceLock.byMaterial.find((e) => e.materialId === m.id);
@@ -662,7 +685,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: '10px 13px', background: '#fafbfc', borderBottom: '1px solid #eef0f3' }}>
                             <div>
                               <div style={{ fontSize: 10, letterSpacing: '.1em', textTransform: 'uppercase', color: '#8a5a12', fontWeight: 700 }}>Đợt nhập (lô mua)</div>
-                              <div style={{ fontSize: 11, color: '#737373', marginTop: 1 }}>Mỗi lô = số tấn × giá USD/kg khi mua (vd lô 2025: 2,9 · lô 2026: 2,6). Giá vốn sổ sách = bình quân gia quyền các lô.</div>
+                              <div style={{ fontSize: 11, color: '#737373', marginTop: 1 }}>Mỗi lô = số tấn × giá USD/kg khi mua (vd lô 2025: 2,9 · lô 2026: 2,6). Giá vốn sổ sách = bình quân gia quyền các lô (landed cost — tính đúng thuế/phí TỪNG lô nếu lô đó xuất xứ khác, để trống 2 cột thuế/phí thì lô dùng chung mức của nguyên liệu).</div>
                             </div>
                             <button onClick={() => addLot(m.id)} disabled={m.inventory.lots.length >= 5} title={m.inventory.lots.length >= 5 ? 'Tối đa 5 lô' : 'Thêm lô'} style={{ padding: '5px 12px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: m.inventory.lots.length >= 5 ? '#c9c9c9' : '#16A34A', fontSize: 11, fontWeight: 600, cursor: m.inventory.lots.length >= 5 ? 'not-allowed' : 'pointer' }}>➕ Thêm lô</button>
                           </div>
@@ -671,18 +694,22 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                               <th style={{ ...th, padding: '8px 13px' }}>Lô</th>
                               <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Số lượng (tấn)</th>
                               <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Giá mua (USD/kg)</th>
+                              <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Thuế NK riêng</th>
+                              <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Phí HQ+logistics riêng</th>
                               <th style={{ ...th, ...rNum, padding: '8px 13px' }}>Giá trị lô (USD)</th>
                               <th style={{ ...th, padding: '8px 13px' }}></th>
                             </tr></thead>
                             <tbody>
                               {m.inventory.lots.length === 0 && (
-                                <tr><td colSpan={5} style={{ ...td, color: '#9aa0aa', fontSize: 11.5, padding: '12px 13px' }}>Chưa nhập lô nào — giá vốn sổ sách tạm lấy theo <b>giá mua mới hôm nay</b> ({fmtUsd(m.inventory.replacementPriceUsdPerKg)} USD/kg). Thêm lô để phản ánh giá mua thực tế.</td></tr>
+                                <tr><td colSpan={7} style={{ ...td, color: '#9aa0aa', fontSize: 11.5, padding: '12px 13px' }}>Chưa nhập lô nào — giá vốn sổ sách tạm lấy theo <b>giá mua mới hôm nay</b> ({fmtUsd(m.inventory.replacementPriceUsdPerKg)} USD/kg). Thêm lô để phản ánh giá mua thực tế.</td></tr>
                               )}
                               {m.inventory.lots.map((lot, i) => (
                                 <tr key={i}>
                                   <td style={{ ...td, padding: '8px 13px', color: '#737373', fontSize: 11.5 }}>{i === 0 ? 'Lô gần nhất' : `Lô #${i + 1}`}</td>
                                   <td style={{ ...td, ...rNum, padding: '8px 13px' }}><InCell value={lot.tons} onChange={(v) => updLot(m.id, i, 'tons', v)} unit="tấn" width={90} /></td>
                                   <td style={{ ...td, ...rNum, padding: '8px 13px' }}><InCell value={lot.priceUsdPerKg} onChange={(v) => updLot(m.id, i, 'priceUsdPerKg', v)} unit="USD/kg" width={90} /></td>
+                                  <td style={{ ...td, ...rNum, padding: '8px 13px' }}><OptRateCell value={lot.importTaxRate} onChange={(v) => updLotRate(m.id, i, 'importTaxRate', v)} placeholder={`${m.importTaxRate}`} /></td>
+                                  <td style={{ ...td, ...rNum, padding: '8px 13px' }}><OptRateCell value={lot.customsLogisticsFeeRate} onChange={(v) => updLotRate(m.id, i, 'customsLogisticsFeeRate', v)} placeholder={`${m.customsLogisticsFeeRate}`} /></td>
                                   <td style={{ ...td, ...rNum, padding: '8px 13px', fontFamily: 'ui-monospace, monospace', color: '#565b64' }}>{fmtUsd(lot.tons * 1000 * lot.priceUsdPerKg)}</td>
                                   <td style={{ ...td, padding: '8px 13px' }}><button onClick={() => removeLot(m.id, i)} style={{ fontSize: 11, color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer' }}>Xóa</button></td>
                                 </tr>

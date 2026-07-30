@@ -24,7 +24,7 @@ import { fmtVnd, fmtUsd } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '../../schemas/scenario.js';
 import type { Material } from '../../schemas/material.js';
 import type { MetalInsertCatalogEntry } from '../../schemas/pricing-chain.js';
-import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
+import { weightedAvgUsdPerKg, weightedAvgLandedCostPerKgVnd, totalInventoryKg } from '../../engine/dual-costing.js';
 import { weightedAvgInsertPriceVnd } from '../../engine/metal-insert.js';
 
 const USD_VND_FALLBACK = 25000; // chỉ dùng để ước lượng ≈tỷ đ hiển thị nhanh khi gõ — KHÔNG dùng cho tính giá thành
@@ -89,6 +89,11 @@ export default function InventoryScreen({
     setForm((f) => (f ? { ...f, materials: updater(f.materials) } : f));
 
   const updateLot = (matId: string, idx: number, key: 'tons' | 'priceUsdPerKg', value: number) =>
+    setMaterials((mats) =>
+      mats.map((m) => (m.id !== matId ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, i) => (i === idx ? { ...l, [key]: value } : l)) } })),
+    );
+  // ADR-058 — thuế NK/phí logistics RIÊNG từng lô (undefined = kế thừa material — mỗi lô có thể xuất xứ khác nhau).
+  const updateLotRate = (matId: string, idx: number, key: 'importTaxRate' | 'customsLogisticsFeeRate', value: number | undefined) =>
     setMaterials((mats) =>
       mats.map((m) => (m.id !== matId ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, i) => (i === idx ? { ...l, [key]: value } : l)) } })),
     );
@@ -241,6 +246,15 @@ export default function InventoryScreen({
   };
 
   const wAvg = material ? weightedAvgUsdPerKg(material.inventory.lots) : null;
+  // ADR-058 — landed cost TÍNH TỪNG LÔ (rate riêng lô, thiếu thì lấy rate
+  // material) rồi mới bình quân — khác wAvg (chỉ bình quân giá mua thô).
+  const wAvgLandedVnd = material
+    ? weightedAvgLandedCostPerKgVnd(
+        material.inventory.lots,
+        { importTaxRate: material.importTaxRate, customsLogisticsFeeRate: material.customsLogisticsFeeRate },
+        form?.costPool.currency.usdVndRate ?? USD_VND_FALLBACK,
+      )
+    : null;
   const totalKg = material ? totalInventoryKg(material.inventory.lots) : 0;
   const dualEntry = material ? internal.dualCosting.byMaterial.find((e) => e.materialId === material.id) : null;
   const linesUsingMaterial = material ? form.products.filter((p) => p.materialId === material.id).map((p) => p.kind) : [];
@@ -367,7 +381,7 @@ export default function InventoryScreen({
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
               <thead>
                 <tr>
-                  {['Đợt nhập', 'Tấn', 'USD/kg', '≈ tỷ đ', ''].map((h, i) => (
+                  {['Đợt nhập', 'Tấn', 'USD/kg', 'Thuế NK riêng', 'Phí HQ riêng', '≈ tỷ đ', ''].map((h, i) => (
                     <th key={h} style={{ fontSize: 8.5, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', textAlign: i === 0 ? 'left' : 'right', padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{h}</th>
                   ))}
                 </tr>
@@ -381,6 +395,22 @@ export default function InventoryScreen({
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
                       <input type="number" step="0.01" value={lot.priceUsdPerKg} onChange={(e) => updateLot(material.id, i, 'priceUsdPerKg', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: '1px solid #2563eb', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
+                    </td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
+                      <input
+                        type="number" step="0.01" value={lot.importTaxRate ?? ''} placeholder={`${material.importTaxRate}`}
+                        onChange={(e) => updateLotRate(material.id, i, 'importTaxRate', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
+                        title="Để trống = dùng theo nguyên liệu"
+                        style={{ width: 70, padding: '5px 8px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#fff', fontVariantNumeric: 'tabular-nums' }}
+                      />
+                    </td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
+                      <input
+                        type="number" step="0.01" value={lot.customsLogisticsFeeRate ?? ''} placeholder={`${material.customsLogisticsFeeRate}`}
+                        onChange={(e) => updateLotRate(material.id, i, 'customsLogisticsFeeRate', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
+                        title="Để trống = dùng theo nguyên liệu"
+                        style={{ width: 70, padding: '5px 8px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#fff', fontVariantNumeric: 'tabular-nums' }}
+                      />
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: 12, borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums' }}>
                       {((lot.tons * 1000 * lot.priceUsdPerKg * USD_VND_FALLBACK) / 1e9).toFixed(2)} tỷ
@@ -403,7 +433,8 @@ export default function InventoryScreen({
               <div style={{ background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2, padding: '10px 12px' }}>
                 <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Bình quân gia quyền (xem trước)</div>
                 <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{wAvg !== null ? fmtUsd(wAvg) : '—'}</div>
-                <div style={{ fontSize: 9, color: '#737373', marginTop: 2 }}>USD/kg · từ đợt nhập đang sửa</div>
+                <div style={{ fontSize: 9, color: '#737373', marginTop: 2 }}>USD/kg (giá mua thô) · từ đợt nhập đang sửa</div>
+                {wAvgLandedVnd !== null && <div style={{ fontSize: 9, color: '#565b64', marginTop: 2 }}>≈ {fmtVnd(wAvgLandedVnd)} đ/kg đã gồm thuế/phí (từng lô)</div>}
               </div>
               <div style={{ background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2, padding: '10px 12px' }}>
                 <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Tổng tồn kho</div>

@@ -56,6 +56,10 @@ export const MetalInsertPriceLockEvaluationSchema = makePriceLockEvaluationSchem
 export const InventoryLotSchema = z.object({
   tons: z.number().nonnegative(),
   priceUsdPerKg: z.number().nonnegative(),
+  // ADR-058 — thuế NK/phí logistics RIÊNG từng lô (optional — bỏ trống thì lấy
+  // theo material, ADR-012). Mỗi lô có thể xuất xứ khác nhau.
+  importTaxRate: z.number().min(0).max(1).optional(),
+  customsLogisticsFeeRate: z.number().min(0).max(1).optional(),
 });
 
 // Bổ sung `replacementPriceUsdPerKg` 2026-07-06 (Pha 3 M12) — xem ADR-009
@@ -63,14 +67,19 @@ export const InventoryLotSchema = z.object({
 export const CompoundInventorySchema = z.object({
   lots: z.array(InventoryLotSchema).max(5), // Excel giữ tối đa 5 đợt nhập gần nhất, [0] = gần nhất
   priceLock: CompoundPriceLockPolicySchema, // baseline/threshold cho bảng giá dòng SP này
-  replacementPriceUsdPerKg: z.number().nonnegative(), // giá tái tạo thị trường hiện hành — input cho evaluatePriceLock()
+  replacementPriceUsdPerKg: z.number().nonnegative(), // giá mua mới hôm nay (ADR-057, trước gọi "giá tái tạo") — input cho evaluatePriceLock()
 });
 export type CompoundInventory = z.infer<typeof CompoundInventorySchema>;
 ```
 
-Output tính ra: `weightedAvgUsdPerKg = Σ(tons×priceUsdPerKg)/Σtons`,
-`totalInventoryKg`, `holdingGainLossVnd` (công thức BUSINESS_MODEL.md §5),
-`provisionWarning` (cảnh báo VAS 02 khi `replacement < weightedAvg`).
+Output tính ra: `weightedAvgUsdPerKg = Σ(tons×priceUsdPerKg)/Σtons` (giá mua
+thô, KHÔNG gồm thuế/phí), `weightedAvgLandedCostPerKgVnd` (ADR-058 — landed
+cost đ/kg tính TỪNG lô theo rate riêng của lô, thiếu thì lấy rate material,
+rồi mới bình quân theo tấn — ĐÚNG khi các lô khác thuế/phí, khác
+`landedCostPerKgVnd(weightedAvgUsdPerKg(...), rate)` vốn chỉ đúng khi mọi lô
+CÙNG rate), `totalInventoryKg`, `holdingGainLossVnd` (nhận thẳng 2 landed cost
+đã tính — công thức BUSINESS_MODEL.md §5), `provisionWarning` (cảnh báo VAS 02
+khi landed cost mua mới hôm nay < landed cost bình quân gia quyền).
 
 ## Schema — Tồn kho ren kim loại (ADR-008, granularity theo `(renType, ptSize)`, KHÔNG theo SKU)
 

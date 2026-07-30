@@ -28,6 +28,18 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-058 — Thuế NK/phí logistics RIÊNG từng lô**: `InventoryLotSchema`
+  thêm 2 field optional `importTaxRate`/`customsLogisticsFeeRate` (bỏ trống =
+  kế thừa material, parity tuyệt đối với dữ liệu cũ). Hàm mới
+  `weightedAvgLandedCostPerKgVnd` (dual-costing.ts) tính landed cost TỪNG lô
+  rồi mới bình quân — thay vì bình quân giá thô rồi nhân 1 rate chung (SAI khi
+  lô khác xuất xứ/thuế). `holdingGainLossVnd` đổi sang nhận 2 landed cost đã
+  tính sẵn. `usdPerKgForLandedCostVnd` (cost-pool.ts, nghịch đảo landedCostPerKgVnd)
+  giúp `price-cost-scenarios.ts` quy đổi lại "giá tương đương" chảy đúng qua
+  pipeline hiện có. UI: `InventoryScreen`/`DataSetupScreen` mục ④ thêm 2 cột
+  thuế/phí riêng mỗi lô. Mọi nơi hiển thị "bình quân gia quyền" (Giá Vốn Theo
+  Lô, Bảng Giá, Tổng Quan — ADR-057) giờ đúng theo từng lô. Suite 404/404 (+8
+  test), typecheck + build xanh.
 - [x] **ADR-057 — Đặt lại tên "giá tái tạo" + gộp nơi nhập baseline + góc nhìn
   giá vốn kép**: "giá tái tạo" → **"Giá mua mới hôm nay"** khắp UI + 1 chuỗi
   cảnh báo engine (`dual-costing.ts`); `baseline` hiển thị tường minh (USD/kg)
@@ -169,13 +181,11 @@
 - [ ] Vận hành: tắt/vô hiệu hoá tài khoản demo trên project thật (Firebase Console).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
-- [ ] **(2026-07-30) Thuế NK/logistics/xuất xứ + trạng thái "đã nhập kho" THEO
-  TỪNG LÔ** — user nêu ở phiên ADR-057: mỗi lô có thể xuất xứ khác nhau (thuế
-  khác nhau), hiện `importTaxRate`/`customsLogisticsFeeRate` vẫn ở cấp Material
-  (ADR-012), không phải cấp Lô (`InventoryLotSchema` chỉ có `{tons,
-  priceUsdPerKg}`). User tạm gác lại để làm phần thuật ngữ + dual-cost view
-  (ADR-057) trước. Cần ADR mới + đổi schema đã đóng băng nếu làm tiếp — hỏi lại
-  user trước khi bắt đầu.
+- [ ] **(2026-07-30) Trạng thái "đã nhập kho" THEO TỪNG LÔ** — phần còn lại của
+  yêu cầu gốc (thuế/logistics riêng lô đã xong — ADR-058): user cũng nhắc lô
+  cần xác định "đã nhập kho" hay chưa (khác lô kế hoạch/đang đàm phán).
+  `InventoryLotSchema` hiện ngầm định mọi lô đều đã về kho. CHƯA làm — cần ADR
+  riêng nếu muốn tiếp tục.
 - [ ] **(2026-07-20) Cơ cấu sản lượng theo size (chế độ m/giờ)** — nâng cấp ADR-048:
   hiện giả định chia ĐỀU thời gian máy giữa các size (trung bình cộng). Cho nhập
   **tỷ trọng sản lượng %/size** (hoặc lấy từ nhu cầu/đơn hàng thực) → thay bằng

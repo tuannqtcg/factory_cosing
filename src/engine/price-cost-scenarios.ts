@@ -6,7 +6,8 @@
 // để `pricingPrice` sau khóa CHẮC CHẮN ra đúng giá này, bất kể ngưỡng khóa/
 // trạng thái khóa thật của scenario gốc.
 import type { ScenarioInput } from '../schemas/scenario.js';
-import { weightedAvgUsdPerKg } from './dual-costing.js';
+import { weightedAvgLandedCostPerKgVnd } from './dual-costing.js';
+import { landedCostPerKgVnd, usdPerKgForLandedCostVnd, type LandedCostRates } from './cost-pool.js';
 
 export type CostBasis = 'market-today' | 'weighted-avg';
 
@@ -22,14 +23,28 @@ export const COST_BASIS_LABEL: Record<CostBasis, string> = {
  * để tính lại giá bán/giá thành/EBIT "nếu toàn bộ nguyên liệu định giá theo
  * cơ sở X", so sánh song song với số liệu chính thức (đang tính theo baseline
  * thật của scenario gốc).
+ *
+ * ADR-058 — 'weighted-avg' tính LANDED COST đúng theo thuế/phí TỪNG LÔ
+ * (`weightedAvgLandedCostPerKgVnd`, mỗi lô có thể xuất xứ khác nhau) rồi mới
+ * quy ngược ra "giá USD/kg tương đương" (`usdPerKgForLandedCostVnd`) theo mức
+ * thuế/phí HIỆN HÀNH của material — để giá trị này chảy đúng qua
+ * `calculateScenario` (vốn chỉ nhận 1 mức thuế/phí/material, ADR-012), không
+ * cần sửa pipeline tính giá.
  */
 export function scenarioWithCostBasis(scenario: ScenarioInput, basis: CostBasis): ScenarioInput {
   const s = structuredClone(scenario);
+  const usdVndRate = s.costPool.currency.usdVndRate;
   for (const mat of s.materials) {
-    const price =
-      basis === 'market-today'
-        ? mat.inventory.replacementPriceUsdPerKg
-        : weightedAvgUsdPerKg(mat.inventory.lots) ?? mat.inventory.replacementPriceUsdPerKg;
+    let price: number;
+    if (basis === 'market-today') {
+      price = mat.inventory.replacementPriceUsdPerKg;
+    } else {
+      const rates: LandedCostRates = { importTaxRate: mat.importTaxRate, customsLogisticsFeeRate: mat.customsLogisticsFeeRate, usdVndRate };
+      const bookLandedVnd =
+        weightedAvgLandedCostPerKgVnd(mat.inventory.lots, rates, usdVndRate) ??
+        landedCostPerKgVnd(mat.inventory.replacementPriceUsdPerKg, rates);
+      price = usdPerKgForLandedCostVnd(bookLandedVnd, rates);
+    }
     mat.inventory.replacementPriceUsdPerKg = price;
     mat.inventory.priceLock.baseline = price;
   }

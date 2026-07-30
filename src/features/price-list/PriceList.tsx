@@ -36,6 +36,10 @@ const matChipLabel = (matId: string): string => {
   return brand;
 };
 const CAT_LIST = ['all', ...MAIN_CATEGORIES, 'khác'] as const;
+// ADR-057 — thêm cột "Giá VF BQGQ" + "Chênh lệch" vào bảng danh sách (trước đây
+// chỉ thấy khi bấm mở dòng): CEO cần quét nhanh cả danh sách, không phải bấm
+// từng dòng mới thấy lệch bao nhiêu so với giá vốn bình quân gia quyền.
+const LIST_GRID_COLS = '32px 1.2fr 56px 58px 82px 54px 40px 112px 112px 96px';
 
 interface Row {
   stt: number;
@@ -504,19 +508,29 @@ export default function PriceList({
       <div style={{ fontSize: 10, color: '#737373', marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
 
       <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
+        <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLS, padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8, minWidth: 920 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'Mã định danh', 'Phân lớp', 'ĐVT'].map((h) => (
             <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
           ))}
           <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{colHeader}</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: '#2563eb', textAlign: 'right', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 3 }}>
+            Giá VF BQGQ (đ) <TermInfo term="baseline-mechanism" />
+          </div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>Chênh lệch</div>
         </div>
         {filteredRows.map((row) => {
           const expanded = expandedKey === row.key;
+          const bookChain = findChain(bookOutput, row);
+          const officialVal = priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat;
+          const bookVal = bookChain ? (priceType === 'vat' ? Math.round(bookChain.vfPricePerUnit * (1 + vatRate)) : bookChain.vfPricePerUnit) : null;
+          const diff = bookVal !== null ? officialVal - bookVal : null;
+          const diffColor = diff === null || diff === 0 ? '#737373' : diff > 0 ? '#16A34A' : '#DC2626';
           return (
             <div key={row.key}>
               <div
                 onClick={() => setExpandedKey(expanded ? null : row.key)}
-                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? '#faf9f4' : '#fff' }}
+                style={{ display: 'grid', gridTemplateColumns: LIST_GRID_COLS, padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? '#faf9f4' : '#fff', minWidth: 920 }}
               >
                 <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
                 <div style={{ fontSize: 12, fontWeight: 500 }}>
@@ -529,7 +543,13 @@ export default function PriceList({
                 <div style={{ fontSize: 10, color: '#b3b3b3' }}>{row.classificationCode}</div>
                 <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
                 <div style={{ fontSize: 13, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                  {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}
+                  {fmtVnd(officialVal)}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 600, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: '#2563eb' }}>
+                  {bookVal !== null ? fmtVnd(bookVal) : '—'}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 700, textAlign: 'right', fontVariantNumeric: 'tabular-nums', color: diffColor }}>
+                  {diff !== null ? `${diff >= 0 ? '+' : ''}${fmtVnd(diff)}` : '—'}
                 </div>
               </div>
               {expanded && (
@@ -540,6 +560,10 @@ export default function PriceList({
             </div>
           );
         })}
+        </div>
+      </div>
+      <div style={{ fontSize: 10, color: '#999', marginTop: 6 }}>
+        Giá VF BQGQ = giá bán xuất xưởng nếu tính theo giá nguyên liệu bình quân gia quyền đã thực nhập kho (sổ sách) thay vì giá mua mới hôm nay. Chênh lệch = giá đang niêm yết − giá VF BQGQ (dương = còn dư địa biên lợi nhuận so với giá vốn sổ sách).
       </div>
       </>)}
     </div>

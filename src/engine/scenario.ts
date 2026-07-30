@@ -39,7 +39,7 @@ import {
   calculateMachineHoursPerUnit,
 } from './price-ladder.js';
 import { evaluatePriceLock } from './price-lock.js';
-import { weightedAvgUsdPerKg, totalInventoryKg, holdingGainLossVnd, provisionWarning } from './dual-costing.js';
+import { weightedAvgLandedCostPerKgVnd, totalInventoryKg, holdingGainLossVnd, provisionWarning } from './dual-costing.js';
 import { materialCostPerUnitWithInsert, weightedAvgInsertPriceVnd, metalInsertHoldingGainLossVnd } from './metal-insert.js';
 import { landedCostPerKgVnd, type MaterialPricingInput } from './cost-pool.js';
 import { managementStatusOf } from '../schemas/product.js';
@@ -308,14 +308,20 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   const dualCostingByMaterial: ScenarioOutput['dualCosting']['byMaterial'] = [];
   const pushDualCosting = (materialId: string, line: 'pipe' | 'fitting') => {
     const m = requireMaterial(materialId);
-    const weightedAvg = weightedAvgUsdPerKg(m.inventory.lots) ?? m.inventory.replacementPriceUsdPerKg;
     const inventoryKg = totalInventoryKg(m.inventory.lots);
     const rates = {
       importTaxRate: m.importTaxRate,
       customsLogisticsFeeRate: m.customsLogisticsFeeRate,
       usdVndRate: costPool.currency.usdVndRate,
     };
-    const bookMaterialPerKgFinished = landedCostPerKgVnd(weightedAvg, rates) / (line === 'pipe' ? pipeResource : fittingResource).yieldRate;
+    // ADR-058 — mỗi lô có thể có thuế NK/phí logistics RIÊNG (xuất xứ khác
+    // material fallback) — landed cost phải tính TỪNG lô rồi mới bình quân,
+    // không bình quân giá mua thô rồi nhân 1 mức thuế/phí chung (SAI khi lô
+    // khác xuất xứ). Không có lô nào ⇒ fallback landed cost của giá mua mới hôm nay.
+    const bookLandedCostPerKgVnd =
+      weightedAvgLandedCostPerKgVnd(m.inventory.lots, rates, rates.usdVndRate) ??
+      landedCostPerKgVnd(m.inventory.replacementPriceUsdPerKg, rates);
+    const bookMaterialPerKgFinished = bookLandedCostPerKgVnd / (line === 'pipe' ? pipeResource : fittingResource).yieldRate;
     const bookCostPerKg =
       line === 'pipe'
         ? bookMaterialPerKgFinished + pipeResource.packagingCostPerKg + pipeCostByMaterial.get(materialId)!.unitProcessingCostPerKg
@@ -323,12 +329,9 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
           fittingResource.packagingCostPerKg +
           fittingCostByMaterial.get(materialId)!.processingCostPerKgRef;
     const gainLoss = holdingGainLossVnd({
-      replacementPriceUsdPerKg: m.inventory.replacementPriceUsdPerKg,
-      weightedAvgUsdPerKg: weightedAvg,
+      replacementLandedCostPerKgVnd: landedCostPerKgVnd(m.inventory.replacementPriceUsdPerKg, rates),
+      bookLandedCostPerKgVnd,
       inventoryKg,
-      importTaxRate: m.importTaxRate,
-      customsLogisticsFeeRate: m.customsLogisticsFeeRate,
-      usdVndRate: costPool.currency.usdVndRate,
     });
     dualCostingByMaterial.push({
       materialId,

@@ -41,6 +41,11 @@ export type MetalInsertPriceLockEvaluation = z.infer<typeof MetalInsertPriceLock
 export const InventoryLotSchema = z.object({
   tons: z.number().nonnegative(),
   priceUsdPerKg: z.number().nonnegative(),
+  // ADR-058 — thuế NK/phí logistics RIÊNG từng lô (optional — bỏ trống thì lấy
+  // theo material, ADR-012). Mỗi lô có thể xuất xứ khác nhau (vd lô có C/O
+  // AIFTA 0% xen giữa các lô chịu thuế MFN của cùng 1 nguyên liệu).
+  importTaxRate: z.number().min(0).max(1).optional(),
+  customsLogisticsFeeRate: z.number().min(0).max(1).optional(),
 });
 export type InventoryLot = z.infer<typeof InventoryLotSchema>;
 

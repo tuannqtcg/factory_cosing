@@ -33,6 +33,19 @@ export function landedCostPerKgVnd(priceUsdPerKg: number, rates: LandedCostRates
 }
 
 /**
+ * Nghịch đảo `landedCostPerKgVnd` (ADR-058) — dùng khi đã có landed cost VND/kg
+ * tính đúng theo THUẾ/PHÍ TỪNG LÔ (vd `weightedAvgLandedCostPerKgVnd`, mỗi lô 1
+ * mức thuế khác nhau) và cần "giá USD/kg tương đương" để giá trị đó chảy đúng
+ * qua các hàm chỉ nhận 1 mức thuế/phí DUY NHẤT của material (vd
+ * `scenarioWithCostBasis`, ép `replacementPriceUsdPerKg` để tái dùng nguyên
+ * pipeline landed cost hiện có).
+ */
+export function usdPerKgForLandedCostVnd(landedCostVnd: number, rates: LandedCostRates): number {
+  const divisor = (1 + rates.importTaxRate + rates.customsLogisticsFeeRate) * rates.usdVndRate;
+  return divisor > 0 ? landedCostVnd / divisor : 0;
+}
+
+/**
  * Bộ tham số THEO NGUYÊN LIỆU mà pipe.ts/fitting.ts cần để tính giá thành
  * (ADR-012): giá ĐÃ QUA khóa (ADR-004, tầng scenario evaluate rồi truyền vào),
  * thuế/phí landed riêng, markup VF riêng. KHÔNG truyền cả Material vào engine

@@ -114,7 +114,7 @@ describe('calculateScenario() — khớp tuyệt đối số vàng đã biết (
     // export ra 1 giá trị duy nhất, khác pipe.json (có cả 2 field, cùng giá trị).
     expect(dualOf('fitting', 'bm-fitting').bookCostPerKg).toBeCloseTo(fittingFixture.costAtNormalCapacity.bookFullCostPerKgRef, 3);
     expect(dualOf('pipe', 'bm-orange-pipe').holdingGainLossVnd).toBeCloseTo(0, 3);
-    expect(dualOf('pipe', 'bm-orange-pipe').provisionWarning).toBe('Giá tái tạo ≥ bình quân kho — không cần dự phòng');
+    expect(dualOf('pipe', 'bm-orange-pipe').provisionWarning).toBe('Giá mua mới hôm nay ≥ bình quân kho — không cần dự phòng');
   });
 
   it('priceLock — Ống/Phụ kiện KHÓA (lệch 0%, đúng ADR-004 kịch bản mặc định)', () => {

@@ -67,7 +67,7 @@
     "pipeReplacementCostPerKg": 108711.86314473968,
     "fittingBookOrReplacementCostPerKg": 180604.1201344706,
     "compoundHoldingGainLoss": 0,
-    "provisionWarning": "Giá tái tạo ≥ bình quân kho — không cần dự phòng",
+    "provisionWarning": "Giá mua mới hôm nay ≥ bình quân kho — không cần dự phòng",
     "deltaPipeCostPer01UsdCompoundChange": 3150.555555555556,
     "deltaListPriceCorresponding": 7313.789682539685
   },

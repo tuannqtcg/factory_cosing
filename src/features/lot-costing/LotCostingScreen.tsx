@@ -5,10 +5,11 @@
 import { fmtVnd, fmtUsd, fmtPct } from '../../lib/format.js';
 import type { ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
+import TermInfo from '../shell/TermInfo.js';
 
 const fmtTy = (v: number) => new Intl.NumberFormat('vi-VN', { maximumFractionDigits: 1 }).format(v / 1e6) + ' triệu đ';
 
-function Stat({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+function Stat({ label, value, sub, color }: { label: React.ReactNode; value: string; sub?: string; color?: string }) {
   return (
     <div>
       <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
@@ -61,7 +62,7 @@ export default function LotCostingScreen({
       </div>
       <h1 style={{ margin: '4px 0 2px', fontSize: 24, fontWeight: 700 }}>5 lô khác giá → giá bán nào là đúng?</h1>
       <p style={{ fontSize: 12, color: '#737373', margin: 0 }}>
-        Giá vốn bình quân (hàng đang có) vs giá tái tạo (mua mới) → lãi/lỗ giữ kho → giá bán theo sổ sách vs giá chính thức, và có cần chốt lại giá không (khóa giá ±ngưỡng, ADR-004).
+        Giá vốn bình quân (hàng đang có) vs Giá mua mới hôm nay → lãi/lỗ giữ kho → giá bán theo sổ sách vs giá chính thức, và có cần chốt lại giá không (khóa giá ±ngưỡng, ADR-004).
       </p>
 
       {cards.map((c) => {
@@ -75,8 +76,8 @@ export default function LotCostingScreen({
         const bannerText = loss
           ? `⚠ LỖ giữ kho — hàng tồn đắt hơn giá thị trường hiện tại, cần dự phòng giảm giá tồn kho (VAS-02).${c.dc.provisionWarning ? ' ' + c.dc.provisionWarning : ''}`
           : reprice
-            ? `⚠ Giá tái tạo lệch ${fmtPct(Math.abs(c.ev.deviationPct))} (vượt ngưỡng ${fmtPct(c.mat.inventory.priceLock.thresholdPct)}) → NÊN CHỐT LẠI giá bán theo giá tái tạo (giá chính thức bên phải đã dùng giá tái tạo).`
-            : `✅ Giá tái tạo còn trong ngưỡng ±${fmtPct(c.mat.inventory.priceLock.thresholdPct)} — giữ nguyên giá bán hiện hành.`;
+            ? `⚠ Giá mua mới hôm nay lệch ${fmtPct(Math.abs(c.ev.deviationPct))} (vượt ngưỡng ${fmtPct(c.mat.inventory.priceLock.thresholdPct)}) → NÊN CHỐT LẠI giá bán theo giá mua mới hôm nay (giá chính thức bên phải đã dùng giá này).`
+            : `✅ Giá mua mới hôm nay còn trong ngưỡng ±${fmtPct(c.mat.inventory.priceLock.thresholdPct)} — giữ nguyên giá bán hiện hành.`;
         return (
           <div key={`${c.mat.id}-${c.line}`} style={{ background: '#fff', border: '1px solid #e5e0d0', borderRadius: 8, padding: 18, marginTop: 16 }}>
             <div style={{ fontSize: 14, fontWeight: 700 }}>
@@ -106,8 +107,8 @@ export default function LotCostingScreen({
                 </table>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, alignContent: 'start' }}>
-                <Stat label="Giá tái tạo (mua mới)" value={`${fmtUsd(c.ev.replacement)} USD/kg`} sub={`Baseline khóa ${fmtUsd(c.mat.inventory.priceLock.baseline)} · lệch ${fmtPct(c.ev.deviationPct)}`} />
-                <Stat label="Trạng thái khóa giá" value={c.ev.isLocked ? 'ĐANG KHÓA' : 'MỞ KHÓA'} color={c.ev.isLocked ? '#16A34A' : '#DC2626'} sub={c.ev.stalenessWarning ?? undefined} />
+                <Stat label="Giá mua mới hôm nay" value={`${fmtUsd(c.ev.replacement)} USD/kg`} sub={`Baseline ${fmtUsd(c.mat.inventory.priceLock.baseline)} USD/kg · lệch ${fmtPct(c.ev.deviationPct)}`} />
+                <Stat label={<>Trạng thái khóa giá <TermInfo term="baseline-mechanism" /></>} value={c.ev.isLocked ? 'ĐANG KHÓA' : 'MỞ KHÓA'} color={c.ev.isLocked ? '#16A34A' : '#DC2626'} sub={c.ev.stalenessWarning ?? undefined} />
                 <Stat label="Lãi/lỗ giữ kho" value={fmtTy(c.dc.holdingGainLossVnd)} color={c.dc.holdingGainLossVnd >= 0 ? '#16A34A' : '#DC2626'} sub={c.dc.holdingGainLossVnd >= 0 ? 'Giữ hàng rẻ hơn thị trường' : 'Hàng đắt hơn thị trường'} />
                 <Stat label="Giá thành sổ sách" value={`${fmtVnd(c.dc.bookCostPerKg)} đ/kg`} sub="Theo bình quân lô đang có" />
               </div>
@@ -124,7 +125,7 @@ export default function LotCostingScreen({
                 <div style={{ fontSize: 10, color: '#ff9db8', textTransform: 'uppercase', letterSpacing: '.06em' }}>Giá bán chính thức (theo khóa giá)</div>
                 <div style={{ fontSize: 20, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(c.officialSalePrice)} <span style={{ fontSize: 11, color: '#999' }}>đ/kg</span></div>
                 <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>
-                  {c.ev.isLocked ? 'Dùng giá vốn baseline (còn trong ngưỡng)' : 'Dùng giá vốn tái tạo (đã vượt ngưỡng)'} · chênh {fmtVnd(c.officialSalePrice - c.bookSalePrice)} đ/kg vs sổ sách
+                  {c.ev.isLocked ? 'Dùng giá vốn baseline (còn trong ngưỡng)' : 'Dùng giá mua mới hôm nay (đã vượt ngưỡng)'} · chênh {fmtVnd(c.officialSalePrice - c.bookSalePrice)} đ/kg vs sổ sách
                 </div>
               </div>
             </div>

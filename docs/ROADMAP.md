@@ -28,6 +28,36 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-058 — Thuế NK/phí logistics RIÊNG từng lô**: `InventoryLotSchema`
+  thêm 2 field optional `importTaxRate`/`customsLogisticsFeeRate` (bỏ trống =
+  kế thừa material, parity tuyệt đối với dữ liệu cũ). Hàm mới
+  `weightedAvgLandedCostPerKgVnd` (dual-costing.ts) tính landed cost TỪNG lô
+  rồi mới bình quân — thay vì bình quân giá thô rồi nhân 1 rate chung (SAI khi
+  lô khác xuất xứ/thuế). `holdingGainLossVnd` đổi sang nhận 2 landed cost đã
+  tính sẵn. `usdPerKgForLandedCostVnd` (cost-pool.ts, nghịch đảo landedCostPerKgVnd)
+  giúp `price-cost-scenarios.ts` quy đổi lại "giá tương đương" chảy đúng qua
+  pipeline hiện có. UI: `InventoryScreen`/`DataSetupScreen` mục ④ thêm 2 cột
+  thuế/phí riêng mỗi lô. Mọi nơi hiển thị "bình quân gia quyền" (Giá Vốn Theo
+  Lô, Bảng Giá, Tổng Quan — ADR-057) giờ đúng theo từng lô. Suite 404/404 (+8
+  test), typecheck + build xanh. **User CHỐT KHÔNG làm** trạng thái "lô kế
+  hoạch/đang về" (chỉ đã-nhập-kho) — thêm sẽ gây rối, không cần nữa.
+- [x] **ADR-057 — Đặt lại tên "giá tái tạo" + gộp nơi nhập baseline + góc nhìn
+  giá vốn kép**: "giá tái tạo" → **"Giá mua mới hôm nay"** khắp UI + 1 chuỗi
+  cảnh báo engine (`dual-costing.ts`); `baseline` hiển thị tường minh (USD/kg)
+  mọi nơi + term `'baseline-mechanism'` (TermInfo/ⓘ) giải thích cơ chế khóa giá.
+  Gộp nơi NHẬP baseline về **một chỗ duy nhất** — `Thiết Lập Dữ Liệu → mục ④`
+  (thêm ô gõ tay, `AssumptionsScreen`/Tham Số đã là dead code từ ADR-049, không
+  đụng thêm). Module mới `price-cost-scenarios.ts` (`scenarioWithCostBasis` —
+  ép mọi material theo 1 cơ sở giá: giá mua mới hôm nay | bình quân gia quyền,
+  tái dùng NGUYÊN `calculateScenario`/`makeFixedPriceModel`, không công thức
+  mới) → (1) **Bảng Giá**: panel "Giá này từ đâu ra?" mỗi SKU thêm so sánh Giá
+  VF dự kiến vs Giá VF bình quân gia quyền + chênh lệch; (2) **Tổng Quan**:
+  khối mới "So sánh giá vốn: Baseline vs Bình quân gia quyền" — GIỮ NGUYÊN giá
+  bán, đổi cơ sở nguyên liệu, hiện song song giá thành/kg + EBIT cả năm + chênh
+  lệch (giúp CEO thấy dư địa giảm giá bán khi tồn kho đang rẻ hơn baseline).
+  Suite 399/399 (+6 test mới), typecheck + build xanh. (Thuế NK/logistics
+  riêng từng lô đã làm tiếp ngay sau đó — xem ADR-058 bên dưới; KHÔNG làm
+  trạng thái "lô kế hoạch/đang về" — user chốt không cần, sẽ gây rối.)
 - [x] **Thác chi phí đ/kg — "tiền đi đâu?"** (thuần trình bày, engine helper thuần +
   test parity). Tách giá thành đầy đủ mỗi dòng thành 4 tầng: **gia công tiền mặt**
   (nhân công·điện·nước·bảo trì·bao bì — phần quản đốc "cảm" được) → **+chi phí chung**

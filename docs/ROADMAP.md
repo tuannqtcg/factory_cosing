@@ -28,6 +28,23 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **ADR-057 — Đặt lại tên "giá tái tạo" + gộp nơi nhập baseline + góc nhìn
+  giá vốn kép**: "giá tái tạo" → **"Giá mua mới hôm nay"** khắp UI + 1 chuỗi
+  cảnh báo engine (`dual-costing.ts`); `baseline` hiển thị tường minh (USD/kg)
+  mọi nơi + term `'baseline-mechanism'` (TermInfo/ⓘ) giải thích cơ chế khóa giá.
+  Gộp nơi NHẬP baseline về **một chỗ duy nhất** — `Thiết Lập Dữ Liệu → mục ④`
+  (thêm ô gõ tay, `AssumptionsScreen`/Tham Số đã là dead code từ ADR-049, không
+  đụng thêm). Module mới `price-cost-scenarios.ts` (`scenarioWithCostBasis` —
+  ép mọi material theo 1 cơ sở giá: giá mua mới hôm nay | bình quân gia quyền,
+  tái dùng NGUYÊN `calculateScenario`/`makeFixedPriceModel`, không công thức
+  mới) → (1) **Bảng Giá**: panel "Giá này từ đâu ra?" mỗi SKU thêm so sánh Giá
+  VF dự kiến vs Giá VF bình quân gia quyền + chênh lệch; (2) **Tổng Quan**:
+  khối mới "So sánh giá vốn: Baseline vs Bình quân gia quyền" — GIỮ NGUYÊN giá
+  bán, đổi cơ sở nguyên liệu, hiện song song giá thành/kg + EBIT cả năm + chênh
+  lệch (giúp CEO thấy dư địa giảm giá bán khi tồn kho đang rẻ hơn baseline).
+  Suite 399/399 (+6 test mới), typecheck + build xanh. CÒN TREO (user tạm gác):
+  thuế NK/logistics/xuất xứ + trạng thái "đã nhập kho" THEO TỪNG LÔ (hiện vẫn
+  theo material — ADR-012), cần ADR schema riêng nếu làm tiếp.
 - [x] **Thác chi phí đ/kg — "tiền đi đâu?"** (thuần trình bày, engine helper thuần +
   test parity). Tách giá thành đầy đủ mỗi dòng thành 4 tầng: **gia công tiền mặt**
   (nhân công·điện·nước·bảo trì·bao bì — phần quản đốc "cảm" được) → **+chi phí chung**
@@ -152,6 +169,13 @@
 - [ ] Vận hành: tắt/vô hiệu hoá tài khoản demo trên project thật (Firebase Console).
 
 ### 2. Tinh chỉnh và Vá lỗi nghiệp vụ (nếu có)
+- [ ] **(2026-07-30) Thuế NK/logistics/xuất xứ + trạng thái "đã nhập kho" THEO
+  TỪNG LÔ** — user nêu ở phiên ADR-057: mỗi lô có thể xuất xứ khác nhau (thuế
+  khác nhau), hiện `importTaxRate`/`customsLogisticsFeeRate` vẫn ở cấp Material
+  (ADR-012), không phải cấp Lô (`InventoryLotSchema` chỉ có `{tons,
+  priceUsdPerKg}`). User tạm gác lại để làm phần thuật ngữ + dual-cost view
+  (ADR-057) trước. Cần ADR mới + đổi schema đã đóng băng nếu làm tiếp — hỏi lại
+  user trước khi bắt đầu.
 - [ ] **(2026-07-20) Cơ cấu sản lượng theo size (chế độ m/giờ)** — nâng cấp ADR-048:
   hiện giả định chia ĐỀU thời gian máy giữa các size (trung bình cộng). Cho nhập
   **tỷ trọng sản lượng %/size** (hoặc lấy từ nhu cầu/đơn hàng thực) → thay bằng

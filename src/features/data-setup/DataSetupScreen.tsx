@@ -28,6 +28,7 @@ import { calculateDashboardKpis } from '../../engine/dashboard-support.js';
 import CostWaterfall from '../shared/CostWaterfall.js';
 import { writePriceLockAuditEntry } from '../../lib/priceLockAudit.js';
 import { MoldAssetModal } from '../config/MoldAssetModal.js';
+import TermInfo from '../shell/TermInfo.js';
 
 type SectionId = 'assets' | 'conv' | 'oh' | 'mat' | 'sku' | 'fin' | 'pricing' | 'pnl';
 const SETUP_SECTIONS: Array<{ id: SectionId; no: string; t: string; cap: string }> = [
@@ -159,6 +160,10 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.filter((_, ix) => ix !== i) } })));
   const updThreshold = (id: string, v: number) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, thresholdPct: v } } })));
+  // ADR-057 — nơi NHẬP baseline DUY NHẤT của app (Tham Số đã gỡ khỏi nav từ
+  // ADR-049, không còn màn nào khác cho gõ tay baseline).
+  const updBaseline = (id: string, v: number) =>
+    setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, baseline: v } } })));
   const chotBaseline = (id: string) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, priceLock: { ...m.inventory.priceLock, baseline: m.inventory.replacementPriceUsdPerKg } } })));
   const updMatText = (id: string, key: 'name' | 'code' | 'originLabel', v: string) =>
@@ -318,7 +323,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   : section === 'oh'
                     ? 'Chi phí chung sản xuất (khấu hao tài sản chung + kiểm định + thuê đất) phân bổ 2 dòng theo sản lượng. Chi phí ngoài SX tách riêng — chỉ tính lãi/lỗ.'
                     : section === 'mat'
-                      ? 'Từng compound: giá tái tạo, thuế NK, phí HQ, ngưỡng khóa. Giá NL/kg nhập về + trạng thái khóa giá tự tính. (Markup VF đã chuyển sang mục ⑦ Chính sách giá — đặt sau giá thành/hòa vốn.)'
+                      ? 'Từng compound: giá mua mới hôm nay, baseline (mốc neo Giá VF), thuế NK, phí HQ, ngưỡng khóa. Giá NL/kg nhập về + trạng thái khóa giá tự tính. (Markup VF đã chuyển sang mục ⑦ Chính sách giá — đặt sau giá thành/hòa vốn.)'
                       : section === 'sku'
                         ? 'Danh sách SKU + quy cách từng sản phẩm (đơn trọng, CS đùn m/giờ, gán khuôn) — nhúng màn Danh Mục Sản Phẩm có sẵn.'
                         : section === 'fin'
@@ -611,7 +616,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 {form.materials.map((m) => {
                   const replLanded = landedCostPerKgVnd(m.inventory.replacementPriceUsdPerKg, ratesOf(m));
                   // Giá vốn BÌNH QUÂN GIA QUYỀN từ các lô mua (bản nháp) — hàm pure đã xuất (dual-costing.ts), không phải công thức bịa.
-                  const wAvg = weightedAvgUsdPerKg(m.inventory.lots); // null nếu chưa nhập lô nào → giá vốn = giá tái tạo
+                  const wAvg = weightedAvgUsdPerKg(m.inventory.lots); // null nếu chưa nhập lô nào → giá vốn = giá mua mới hôm nay
                   const invKg = totalInventoryKg(m.inventory.lots);
                   const bookUsd = wAvg ?? m.inventory.replacementPriceUsdPerKg;
                   const bookLanded = landedCostPerKgVnd(bookUsd, ratesOf(m));
@@ -634,21 +639,22 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           {isLocked !== null && (
-                            <span style={{ fontSize: 10.5, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? '🔒 KHÓA' : '🔓 MỞ KHÓA'}</span>
+                            <span style={{ fontSize: 10.5, fontWeight: 700, color: isLocked ? '#16A34A' : '#DC2626' }}>{isLocked ? '🔒 KHÓA' : '🔓 MỞ KHÓA'} · baseline {fmtUsd(m.inventory.priceLock.baseline)}/kg</span>
                           )}
-                          {isLocked === false && <button onClick={() => chotBaseline(m.id)} style={{ fontSize: 9.5, padding: '3px 7px', borderRadius: 5, border: '1px solid #a8003b', background: '#fff', color: '#a8003b', cursor: 'pointer', fontWeight: 700 }}>Chốt baseline</button>}
+                          {isLocked === false && <button onClick={() => chotBaseline(m.id)} title="Đặt baseline = Giá mua mới hôm nay hiện tại" style={{ fontSize: 9.5, padding: '3px 7px', borderRadius: 5, border: '1px solid #a8003b', background: '#fff', color: '#a8003b', cursor: 'pointer', fontWeight: 700 }}>Chốt baseline = giá hôm nay</button>}
                           {isAdmin && <button onClick={() => removeMaterial(m.id)} disabled={productRefsMaterial(m.id)} title={productRefsMaterial(m.id) ? 'Còn SKU dùng' : 'Xóa'} style={{ fontSize: 11, color: productRefsMaterial(m.id) ? '#c9c9c9' : '#DC2626', background: 'none', border: 'none', cursor: productRefsMaterial(m.id) ? 'not-allowed' : 'pointer' }}>Xóa</button>}
                         </div>
                       </div>
 
-                      {/* Tham số thương mại/thuế + giá tái tạo */}
+                      {/* Tham số thương mại/thuế + giá mua mới hôm nay + baseline */}
                       <div style={{ padding: 14 }}>
                         <div style={gridStyle}>
-                          <GridCell label="Giá tái tạo (thị trường hiện hành)"><InCell width="100%" value={m.inventory.replacementPriceUsdPerKg} onChange={(v) => updReplacement(m.id, v)} unit="USD/kg" /></GridCell>
+                          <GridCell label="Giá mua mới hôm nay (thị trường)"><InCell width="100%" value={m.inventory.replacementPriceUsdPerKg} onChange={(v) => updReplacement(m.id, v)} unit="USD/kg" /></GridCell>
+                          <GridCell label={<>Giá baseline (đang neo giá bán) <TermInfo term="baseline-mechanism" /></>}><InCell width="100%" value={m.inventory.priceLock.baseline} onChange={(v) => updBaseline(m.id, v)} unit="USD/kg" disabled={!isAdmin} /></GridCell>
                           <GridCell label="Thuế nhập khẩu"><InCell width="100%" value={m.importTaxRate} onChange={(v) => updMatNum(m.id, 'importTaxRate', v)} unit="tỷ lệ (0,06=6%)" /></GridCell>
                           <GridCell label="Phí hải quan + vận chuyển"><InCell width="100%" value={m.customsLogisticsFeeRate} onChange={(v) => updMatNum(m.id, 'customsLogisticsFeeRate', v)} unit="tỷ lệ" /></GridCell>
                           <GridCell label="Ngưỡng khóa giá"><InCell width="100%" value={m.inventory.priceLock.thresholdPct} onChange={(v) => updThreshold(m.id, v)} unit="0,03=3%" disabled={!isAdmin} /></GridCell>
-                          <GridCell derived label={<>Giá tái tạo nhập về / kg {fxTag}</>}><FxCell value={replLanded} unit="đ" /></GridCell>
+                          <GridCell derived label={<>Giá mua mới hôm nay quy đổi / kg {fxTag}</>}><FxCell value={replLanded} unit="đ" /></GridCell>
                         </div>
 
                         {/* Đợt nhập (lô mua) — nhiều lô giá khác nhau → bình quân gia quyền */}
@@ -670,7 +676,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                             </tr></thead>
                             <tbody>
                               {m.inventory.lots.length === 0 && (
-                                <tr><td colSpan={5} style={{ ...td, color: '#9aa0aa', fontSize: 11.5, padding: '12px 13px' }}>Chưa nhập lô nào — giá vốn sổ sách tạm lấy theo <b>giá tái tạo</b> ({fmtUsd(m.inventory.replacementPriceUsdPerKg)} USD/kg). Thêm lô để phản ánh giá mua thực tế.</td></tr>
+                                <tr><td colSpan={5} style={{ ...td, color: '#9aa0aa', fontSize: 11.5, padding: '12px 13px' }}>Chưa nhập lô nào — giá vốn sổ sách tạm lấy theo <b>giá mua mới hôm nay</b> ({fmtUsd(m.inventory.replacementPriceUsdPerKg)} USD/kg). Thêm lô để phản ánh giá mua thực tế.</td></tr>
                               )}
                               {m.inventory.lots.map((lot, i) => (
                                 <tr key={i}>
@@ -688,7 +694,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                         {/* KPI giá vốn bình quân + lãi/lỗ giữ kho */}
                         <div style={{ display: 'flex', gap: 26, flexWrap: 'wrap', padding: '13px 4px 2px' }}>
                           <div>
-                            <div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Giá vốn bình quân {wAvg === null && '(≈ giá tái tạo)'}</div>
+                            <div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Giá vốn bình quân {wAvg === null && '(≈ giá mua mới hôm nay)'}</div>
                             <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, marginTop: 3 }}>{fmtUsd(bookUsd)} <span style={{ fontSize: 11, color: '#9aa0aa' }}>USD/kg</span></div>
                             <div style={{ fontSize: 11, color: '#565b64', marginTop: 2 }}>≈ {fmtVnd(bookLanded)} đ/kg (đã gồm thuế/phí)</div>
                           </div>
@@ -700,7 +706,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                             <div>
                               <div style={{ fontSize: 10.5, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em', fontWeight: 700 }}>Lãi/lỗ giữ kho <span style={{ textTransform: 'none', fontWeight: 500 }}>(đã lưu)</span></div>
                               <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: 16, fontWeight: 700, marginTop: 3, color: dualEntry.holdingGainLossVnd < 0 ? '#DC2626' : '#16A34A' }}>{dualEntry.holdingGainLossVnd >= 0 ? '+' : ''}{fmtVnd(dualEntry.holdingGainLossVnd)} <span style={{ fontSize: 11, color: '#9aa0aa' }}>đ</span></div>
-                              {dualEntry.holdingGainLossVnd < 0 && <div style={{ fontSize: 10.5, color: '#DC2626', marginTop: 2, maxWidth: '32ch' }}>⚠ Giá tái tạo dưới bình quân — cân nhắc dự phòng giảm giá tồn kho (VAS-02)</div>}
+                              {dualEntry.holdingGainLossVnd < 0 && <div style={{ fontSize: 10.5, color: '#DC2626', marginTop: 2, maxWidth: '32ch' }}>⚠ Giá mua mới hôm nay dưới bình quân — cân nhắc dự phòng giảm giá tồn kho (VAS-02)</div>}
                             </div>
                           )}
                         </div>
@@ -710,7 +716,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 })}
               </div>
               <div style={{ fontSize: 11, color: '#a3a3a3', marginTop: 12 }}>
-                <b>Giá vốn bình quân</b> = Σ(tấn × giá lô) ÷ Σtấn (hàm <code>weightedAvgUsdPerKg</code>) — chính là giá vốn SỔ SÁCH (ADR-002), khác <b>giá tái tạo</b> (thị trường hiện hành) dùng để định giá bán. Lãi/lỗ giữ kho + trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-002/004), cập nhật sau khi <b>Lưu</b>. Thuế/phí khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
+                <b>Giá vốn bình quân</b> = Σ(tấn × giá lô) ÷ Σtấn (hàm <code>weightedAvgUsdPerKg</code>) — chính là giá vốn SỔ SÁCH (ADR-002), khác <b>giá mua mới hôm nay</b> (thị trường hiện hành) và khác <b>giá baseline</b> (mốc neo giá bán ổn định — xem ⓘ cạnh ô Baseline). Lãi/lỗ giữ kho + trạng thái KHÓA/MỞ đọc thẳng từ engine (ADR-002/004), cập nhật sau khi <b>Lưu</b>. Thuế/phí khác nhau theo compound (BlazeMaster EU 6% · Corzan AIFTA 0%).
               </div>
             </div>
           );

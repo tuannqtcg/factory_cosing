@@ -18,6 +18,9 @@ import CostWaterfall from '../shared/CostWaterfall.js';
 import { CIT_RATE } from '../../engine/ceo-planner.js';
 import { solve } from '../../engine/solver.js';
 import { calculateScenario } from '../../engine/scenario.js';
+import { makeFixedPriceModel } from '../../engine/scenario-drivers.js';
+import { scenarioWithCostBasis } from '../../engine/price-cost-scenarios.js';
+import TermInfo from '../shell/TermInfo.js';
 import { ResponsiveContainer, ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, ReferenceLine } from 'recharts';
 
 const TIER_DEFS = [
@@ -214,6 +217,20 @@ export default function Dashboard({
   const fittingCvp = fittingCvpEntry && fittingCvpEntry.line === 'fitting' ? fittingCvpEntry : null;
 
   const kpis = useMemo(() => (scenario ? calculateDashboardKpis(scenario) : null), [scenario]);
+
+  // ── ADR-057 — kịch bản "Bình quân gia quyền" song song với Bảng Giá chính
+  // thức (baseline): GIỮ NGUYÊN giá bán (bậc 5 thang giá hiện hành), chỉ đổi cơ
+  // sở giá nguyên liệu, xem lợi nhuận/giá thành lệch bao nhiêu. Dùng lại nguyên
+  // `makeFixedPriceModel` (ADR-028) — không công thức mới. CHÚ Ý: giống mọi công
+  // cụ if-then khác (ADR-027/050), model này chỉ theo material THAM CHIẾU từng
+  // dòng — có material phụ (Corzan) thì đây là XẤP XỈ, không phải số chính xác.
+  const bookScenario = useMemo(() => (scenario ? scenarioWithCostBasis(scenario, 'weighted-avg') : null), [scenario]);
+  const fixedPriceModel = useMemo(() => (scenario ? makeFixedPriceModel(scenario) : null), [scenario]);
+  const bookOutput = useMemo(() => (bookScenario ? calculateScenario(bookScenario) : null), [bookScenario]);
+  const bookEbit = useMemo(
+    () => (fixedPriceModel && bookScenario ? fixedPriceModel.ebitAt(bookScenario, 1) : null),
+    [fixedPriceModel, bookScenario],
+  );
 
   const pipeCvpChartData = useMemo(() => {
     if (!pipeCvp || !pipeLadder || !kpis) return [];
@@ -437,6 +454,61 @@ export default function Dashboard({
                   </div>
                 );
               })()}
+
+              {/* ── So sánh giá vốn: Baseline (chính thức) vs Bình quân gia quyền (ADR-057) ── */}
+              {bookOutput && fixedPriceModel && bookEbit !== null && (() => {
+                const bookPipeLadder = bookOutput.priceLadder.byLineMaterial.find((e) => e.line === 'pipe' && e.materialId === activePipeMatId)?.ladder;
+                const bookFittingLadder = bookOutput.priceLadder.byLineMaterial.find((e) => e.line === 'fitting' && e.materialId === activeFittingMatId)?.ladder;
+                const ebitOfficial = fixedPriceModel.baseEbitVnd;
+                const ebitDiff = bookEbit - ebitOfficial;
+                const diffColor = (d: number) => (d === 0 ? '#737373' : d > 0 ? '#16A34A' : '#DC2626');
+                const costRow = (label: string, official: number, book: number) => {
+                  const diff = book - official;
+                  return (
+                    <tr style={{ borderTop: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '9px 18px', fontSize: 13 }}>{label}</td>
+                      <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(official)} đ</td>
+                      <td style={{ padding: '9px 12px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 13, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(book)} đ</td>
+                      <td style={{ padding: '9px 18px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: diffColor(diff) }}>{diff >= 0 ? '+' : ''}{fmtVnd(diff)} đ</td>
+                    </tr>
+                  );
+                };
+                return (
+                  <div style={{ background: '#fff', border: '1px solid #e6e8ec', borderRadius: 10, overflow: 'hidden', marginBottom: 24 }}>
+                    <div style={{ padding: '13px 18px', borderBottom: '1px solid #e6e8ec' }}>
+                      <div style={{ fontSize: 10, letterSpacing: '.12em', textTransform: 'uppercase', color: '#2563eb', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        So sánh giá vốn: Baseline vs Bình quân gia quyền <TermInfo term="baseline-mechanism" />
+                      </div>
+                      <div style={{ fontSize: 14.5, fontWeight: 700 }}>Giữ NGUYÊN giá bán hiện hành — chỉ đổi cơ sở giá nguyên liệu, xem lợi nhuận lệch bao nhiêu</div>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 640 }}>
+                        <thead>
+                          <tr style={{ background: '#f5f5f3' }}>
+                            <th style={{ padding: '8px 18px', textAlign: 'left', fontSize: 9, textTransform: 'uppercase', color: '#737373' }}>Chỉ tiêu</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 9, textTransform: 'uppercase', color: '#737373' }}>Theo Baseline (chính thức)</th>
+                            <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 9, textTransform: 'uppercase', color: '#737373' }}>Theo Bình quân gia quyền</th>
+                            <th style={{ padding: '8px 18px', textAlign: 'right', fontSize: 9, textTransform: 'uppercase', color: '#737373' }}>Chênh lệch</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pipeLadder && bookPipeLadder && costRow('Giá thành đầy đủ — Ống (đ/kg)', pipeLadder.breakEvenFullCost, bookPipeLadder.breakEvenFullCost)}
+                          {fittingLadder && bookFittingLadder && costRow('Giá thành đầy đủ — Phụ kiện (đ/kg)', fittingLadder.breakEvenFullCost, bookFittingLadder.breakEvenFullCost)}
+                          <tr style={{ borderTop: '2px solid #0a0a0a', background: '#fafbfc' }}>
+                            <td style={{ padding: '12px 18px', fontWeight: 700, fontSize: 14 }}>Lợi nhuận trước thuế (EBIT) cả năm</td>
+                            <td style={{ padding: '12px 12px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontWeight: 700, fontSize: 14 }}>{fmtTyVnd(ebitOfficial)}</td>
+                            <td style={{ padding: '12px 12px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontWeight: 700, fontSize: 14 }}>{fmtTyVnd(bookEbit)}</td>
+                            <td style={{ padding: '12px 18px', textAlign: 'right', fontFamily: 'ui-monospace, monospace', fontWeight: 700, fontSize: 14, color: diffColor(ebitDiff) }}>{ebitDiff >= 0 ? '+' : ''}{fmtTyVnd(ebitDiff)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div style={{ fontSize: 11, color: '#a3a3a3', padding: '10px 18px', lineHeight: 1.5 }}>
+                      Doanh thu GIỮ NGUYÊN ở cả 2 cột (cùng giá bán) — chỉ đổi cơ sở giá nguyên liệu đầu vào. Chênh lệch dương = nguyên liệu tồn kho đang RẺ hơn baseline (có dư địa giảm giá bán nếu cần); âm = tồn kho ĐẮT hơn baseline (lợi nhuận thực tế thấp hơn số theo baseline).
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           );
         })()
@@ -456,7 +528,7 @@ export default function Dashboard({
                     {label} — {ev.isLocked ? 'KHÓA' : 'MỞ KHÓA'}
                   </div>
                   <div style={{ fontSize: 9, color: '#737373', marginTop: 1 }}>
-                    Baseline {fmtUsd(material!.inventory.priceLock.baseline)} · Replacement {fmtUsd(ev.replacement)} · Lệch{' '}
+                    Giá baseline {fmtUsd(material!.inventory.priceLock.baseline)} USD/kg · Giá mua mới hôm nay {fmtUsd(ev.replacement)} USD/kg · Lệch{' '}
                     {Number.isFinite(ev.deviationPct) ? fmtPct(ev.deviationPct) : '∞'}
                     {ev.stalenessWarning ? ` · ⚠ ${ev.stalenessWarning}` : ''}
                   </div>

@@ -19,6 +19,8 @@ import { useMemo, useState } from 'react';
 import { fmtVnd, fmtPct } from '../../lib/format.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TermInfo from '../shell/TermInfo.js';
+import { calculateScenario } from '../../engine/scenario.js';
+import { scenarioWithCostBasis } from '../../engine/price-cost-scenarios.js';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Prototype đóng băng: 8 nút loại chính + Tất cả + Khác.
@@ -80,7 +82,7 @@ export default function PriceList({
   const [materialFilter, setMaterialFilter] = useState<string>('all');
 
   // ADR-025 §nối 2 màn — TÍN HIỆU QUYẾT ĐỊNH GIÁ cho CEO (KHÔNG phải kiểm tra tồn
-  // kho): nguyên liệu nào có giá thị trường (tái tạo) lệch khỏi baseline đã khóa
+  // kho): nguyên liệu nào có giá mua mới hôm nay lệch khỏi baseline đã khóa
   // quá ngưỡng → giá bán VF niêm yết có thể không còn phản ánh chi phí hiện tại →
   // nên cân nhắc chốt lại giá. Chi tiết + quyết định nằm ở màn "Giá Vốn Theo Lô".
   const staleMaterials = useMemo(() => {
@@ -96,6 +98,22 @@ export default function PriceList({
         };
       });
   }, [internal, scenario]);
+
+  // ADR-057 — 2 kịch bản giá vốn SONG SONG để so sánh với Giá VF chính thức
+  // (đang tính theo baseline/khóa giá của scenario gốc): "Giá VF dự kiến" (luôn
+  // neo theo Giá mua mới hôm nay, bỏ qua trạng thái khóa) và "Giá VF bình quân
+  // gia quyền" (giá đã thực nhập kho, sổ sách). Tái dùng NGUYÊN calculateScenario
+  // — không công thức mới (xem price-cost-scenarios.ts).
+  const marketOutput = useMemo(() => (scenario ? calculateScenario(scenarioWithCostBasis(scenario, 'market-today')) : null), [scenario]);
+  const bookOutput = useMemo(() => (scenario ? calculateScenario(scenarioWithCostBasis(scenario, 'weighted-avg')) : null), [scenario]);
+  const findChain = (output: ScenarioOutput | null, row: { materialId: string; name: string; size: string }) =>
+    output?.skuPriceChains.find(
+      (s) =>
+        s.productKey.materialId === row.materialId &&
+        (s.productKey.dn !== undefined
+          ? s.productKey.dn === row.size
+          : s.productKey.productName === row.name && s.productKey.sizeLabel === row.size),
+    )?.chain ?? null;
 
   // Dòng hiển thị: chỉ SKU active (pending_mold ẩn theo ADR-007/008), STT đánh
   // trên danh sách active ĐẦY ĐỦ (giữ nguyên khi search/filter — giống prototype).
@@ -221,6 +239,36 @@ export default function PriceList({
               : `⚠ ${mat.name} ngoài thị trường đã lệch ${fmtPct(Math.abs(lock.evaluation.deviationPct))} — vượt ngưỡng ±${fmtPct(mat.inventory.priceLock.thresholdPct)}, giá trên đây đã tính theo giá mới; cân nhắc công bố lại bảng giá.`}
           </div>
         )}
+        {(() => {
+          const marketChain = findChain(marketOutput, row);
+          const bookChain = findChain(bookOutput, row);
+          if (!marketChain || !bookChain) return null;
+          const diff = marketChain.vfPricePerUnit - bookChain.vfPricePerUnit;
+          return (
+            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px dashed #ece8dc' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#2563eb', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                So sánh 2 kịch bản giá vốn nguyên liệu <TermInfo term="baseline-mechanism" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                <div style={{ background: '#faf9f4', border: '1px solid #ece8dc', borderRadius: 6, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Giá VF dự kiến</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(marketChain.vfPricePerUnit)} đ</div>
+                  <div style={{ fontSize: 9.5, color: '#999', marginTop: 2 }}>neo theo Giá mua mới hôm nay</div>
+                </div>
+                <div style={{ background: '#faf9f4', border: '1px solid #ece8dc', borderRadius: 6, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Giá VF bình quân gia quyền</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(bookChain.vfPricePerUnit)} đ</div>
+                  <div style={{ fontSize: 9.5, color: '#999', marginTop: 2 }}>theo giá đã thực nhập kho (sổ sách)</div>
+                </div>
+                <div style={{ background: diff === 0 ? '#f5f5f3' : diff > 0 ? '#f0fdf4' : '#fef2f2', border: `1px solid ${diff === 0 ? '#e5e5e5' : diff > 0 ? '#16A34A' : '#DC2626'}`, borderRadius: 6, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Chênh lệch</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: diff === 0 ? '#1a1a1a' : diff > 0 ? '#16A34A' : '#DC2626' }}>{diff >= 0 ? '+' : ''}{fmtVnd(diff)} đ</div>
+                  <div style={{ fontSize: 9.5, color: '#999', marginTop: 2 }}>dự kiến − bình quân gia quyền</div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
         <div style={{ marginTop: 8, fontSize: 10.5, color: '#737373', lineHeight: 1.5 }}>
           Vì sao chốt ở giá VF? Đây là tầng giá duy nhất nhà máy kiểm soát được — các tầng sau (TCG, nhà phân phối, VAT)
           chỉ là phép nhân theo chính sách phân phối, tự tính, không chốt tay từng tầng.

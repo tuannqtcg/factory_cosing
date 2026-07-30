@@ -35,7 +35,7 @@ describe('weightedAvgUsdPerKg + holdingGainLossVnd — kịch bản kho 2 đợt
       ...currency,
     });
     expect(gain).toBeCloseTo(1_332_685_000, 0);
-    expect(provisionWarning(gain)).toBe('Giá tái tạo ≥ bình quân kho — không cần dự phòng');
+    expect(provisionWarning(gain)).toBe('Giá mua mới hôm nay ≥ bình quân kho — không cần dự phòng');
   });
 });
 

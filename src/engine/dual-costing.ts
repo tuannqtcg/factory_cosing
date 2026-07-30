@@ -38,7 +38,7 @@ export function holdingGainLossVnd(inputs: HoldingGainLossInputs): number {
 
 export function provisionWarning(holdingGainLoss: number): string {
   if (holdingGainLoss < 0) {
-    return 'CẢNH BÁO: giá tái tạo dưới bình quân gia quyền — cân nhắc trích dự phòng giảm giá hàng tồn kho (VAS 02) và reprice bảng giá';
+    return 'CẢNH BÁO: giá mua mới hôm nay dưới bình quân gia quyền — cân nhắc trích dự phòng giảm giá hàng tồn kho (VAS 02) và reprice bảng giá';
   }
-  return 'Giá tái tạo ≥ bình quân kho — không cần dự phòng';
+  return 'Giá mua mới hôm nay ≥ bình quân kho — không cần dự phòng';
 }

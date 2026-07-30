@@ -4,7 +4,7 @@
 // cả app nói cùng một thứ tiếng.
 import { useState } from 'react';
 
-export type PriceTerm = 'suggested-vf' | 'cash-floor' | 'full-cost' | 'locked-floor' | 'market-ceiling';
+export type PriceTerm = 'suggested-vf' | 'cash-floor' | 'full-cost' | 'locked-floor' | 'market-ceiling' | 'baseline-mechanism';
 
 const TERM_DEFS: Record<PriceTerm, { title: string; body: string[] }> = {
   'suggested-vf': {
@@ -45,6 +45,15 @@ const TERM_DEFS: Record<PriceTerm, { title: string; body: string[] }> = {
       'Giá trần KHÔNG nằm trong sổ sách — nó là mức cao nhất thị trường chịu trả, do đối thủ và khách quyết định. App không tự biết con số này; nó chỉ biết khi anh cho nó số.',
       'Muốn app tính theo giá trần, phải nhập giá thị trường thật của từng dòng — số này càng sát thực tế, kết luận càng đáng tin.',
       'Nguyên tắc điều hành: giá bán thực tế nằm GIỮA giá thành đầy đủ (sàn có lãi) và giá trần thị trường. Khoảng cách hai mức đó chính là dư địa mặc cả của công ty.',
+    ],
+  },
+  'baseline-mechanism': {
+    title: 'Baseline là gì, hoạt động thế nào?',
+    body: [
+      '"Baseline" là một mức giá nguyên liệu (USD/kg) admin/pricing tự đặt làm MỐC NEO, dùng để tính Giá VF — KHÁC với "Giá mua mới hôm nay" (giá nếu mua ngay bây giờ theo thị trường).',
+      'Mỗi lần tính lại, hệ thống so Baseline với Giá mua mới hôm nay. Lệch trong ngưỡng cho phép (chỉnh ở đây, ví dụ ±3%) → Giá VF vẫn tính theo Baseline, giữ nguyên giá bán dù nguyên liệu nhích nhẹ — khách không bị đổi giá liên tục.',
+      'Lệch VƯỢT ngưỡng → hệ thống tự "mở khóa": Giá VF chuyển sang tính theo Giá mua mới hôm nay ngay lập tức. Đây là tín hiệu CẦN CHỐT LẠI GIÁ — bấm "Chốt baseline = giá hôm nay" (hoặc tự gõ một mức khác đã đàm phán) để khóa lại.',
+      'Đây là cơ chế NGẮN HẠN (chống đổi giá vặt vãnh ngày-qua-ngày). Nó KHÔNG phải giá vốn thực tế đã trả — giá đã thực nhập kho là "bình quân gia quyền" (xem màn Giá Vốn Theo Lô).',
     ],
   },
 };

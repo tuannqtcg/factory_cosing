@@ -381,7 +381,7 @@ export default function InventoryScreen({
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
               <thead>
                 <tr>
-                  {['Đợt nhập', 'Tấn', 'USD/kg', 'Thuế NK riêng', 'Phí HQ riêng', '≈ tỷ đ', ''].map((h, i) => (
+                  {['Đợt nhập', 'Kg', 'USD/kg', 'Thuế NK riêng', 'Phí HQ riêng', '≈ tỷ đ', ''].map((h, i) => (
                     <th key={h} style={{ fontSize: 8.5, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', textAlign: i === 0 ? 'left' : 'right', padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{h}</th>
                   ))}
                 </tr>
@@ -391,7 +391,8 @@ export default function InventoryScreen({
                   <tr key={i}>
                     <td style={{ padding: '6px 8px', fontSize: 11, color: '#737373', borderBottom: '1px solid #f8f8f6' }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                      <input type="number" step="0.5" value={lot.tons} onChange={(e) => updateLot(material.id, i, 'tons', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: '1px solid #2563eb', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
+                      {/* Nhập theo kg (thân thiện hơn tấn cho lô nhỏ) — lưu trữ vẫn ở `tons` (schema đóng băng), quy đổi 2 chiều ngay tại ô nhập. */}
+                      <input type="number" step="100" value={lot.tons * 1000} onChange={(e) => updateLot(material.id, i, 'tons', (parseFloat(e.target.value) || 0) / 1000)} style={{ width: 100, padding: '5px 8px', border: '1px solid #2563eb', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
                     </td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
                       <input type="number" step="0.01" value={lot.priceUsdPerKg} onChange={(e) => updateLot(material.id, i, 'priceUsdPerKg', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: '1px solid #2563eb', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />

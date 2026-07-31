@@ -1,6 +1,7 @@
-# ADR-057 — Đặt lại tên "giá tái tạo", gộp nơi nhập baseline, thêm góc nhìn giá vốn kép (Giá VF dự kiến vs Bình quân gia quyền, dual EBIT Dashboard)
+# ADR-061 — Đặt lại tên "giá tái tạo", gộp nơi nhập baseline, thêm góc nhìn giá vốn kép (Giá VF dự kiến vs Bình quân gia quyền, dual EBIT Dashboard)
 
 - **Ngày**: 2026-07-30 | **Trạng thái**: CHẤP NHẬN
+- **Đổi số 2026-07-31**: file này ban đầu đánh số ADR-057, trùng với `ADR-057-delete-orphan-screens.md` tạo độc lập trên nhánh `main` cùng lúc (2 nhánh phân kỳ, không biết nhau) — đổi sang 061 (số trống kế tiếp sau ADR-060) khi merge lại `main`, nội dung giữ nguyên.
 - **Kế thừa**: ADR-002 (giá vốn kép), ADR-004 (khóa giá), ADR-012 (landed cost theo material), ADR-024 (Giá Vốn Theo Lô), ADR-025 (Bảng Giá neo VF), ADR-035 (giải thích tại chỗ), ADR-049 (Thiết Lập Dữ Liệu)
 
 ## Bối cảnh

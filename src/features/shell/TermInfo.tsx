@@ -1,8 +1,9 @@
-// ADR-035 (mở rộng) — chú giải KHÁI NIỆM GIÁ ngay tại chỗ: bấm ⓘ cạnh con số
-// là ra modal giải thích bằng ngôn ngữ kinh doanh (giá đề xuất là gì, sàn nào,
-// trần ở đâu). Một bộ định nghĩa duy nhất, dùng chung mọi màn — sửa 1 chỗ,
-// cả app nói cùng một thứ tiếng.
+// ADR-035 (mở rộng) + ADR-033 — chú giải KHÁI NIỆM GIÁ ngay tại chỗ: bấm ⓘ cạnh
+// con số là ra modal giải thích bằng ngôn ngữ kinh doanh (giá đề xuất là gì, sàn
+// nào, trần ở đâu). Một bộ định nghĩa duy nhất, dùng chung mọi màn — sửa 1 chỗ,
+// cả app nói cùng một thứ tiếng. Trình bày qua design tokens (ADR-033 roll-out).
 import { useState } from 'react';
+import { color, font, radius, shadow } from '../../design/tokens.js';
 
 export type PriceTerm = 'suggested-vf' | 'cash-floor' | 'full-cost' | 'locked-floor' | 'market-ceiling' | 'baseline-mechanism';
 
@@ -66,20 +67,20 @@ export default function TermInfo({ term, label }: { term: PriceTerm; label?: str
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(true); }}
         title={def.title}
-        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: '#a8003b', fontSize: label ? 11 : 12, fontWeight: 600, textDecoration: label ? 'underline' : 'none', lineHeight: 1 }}
+        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: color.ink, fontSize: label ? font.size.xs : font.size.sm, fontWeight: font.weight.semibold, textDecoration: label ? 'underline' : 'none', lineHeight: 1 }}
       >
         {label ?? 'ⓘ'}
       </button>
       {open && (
         <>
-          <div onClick={(e) => { e.stopPropagation(); setOpen(false); }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.35)', zIndex: 60 }} />
-          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 440, maxWidth: '92vw', maxHeight: '80vh', overflowY: 'auto', background: '#fff', borderRadius: 8, boxShadow: '0 20px 60px rgba(0,0,0,.25)', zIndex: 61, padding: '20px 24px' }}>
+          <div onClick={(e) => { e.stopPropagation(); setOpen(false); }} style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,10,.4)', zIndex: 60 }} />
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 440, maxWidth: '92vw', maxHeight: '80vh', overflowY: 'auto', background: color.surface, borderRadius: radius.lg, boxShadow: shadow.lg, zIndex: 61, padding: '20px 24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35 }}>{def.title}</div>
-              <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#999', flexShrink: 0, lineHeight: 1 }}>✕</button>
+              <div style={{ fontSize: font.size.lg, fontWeight: font.weight.bold, lineHeight: 1.35, color: color.ink }}>{def.title}</div>
+              <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: color.inkFaint, flexShrink: 0, lineHeight: 1 }}>✕</button>
             </div>
             {def.body.map((p, i) => (
-              <p key={i} style={{ fontSize: 12.5, color: '#404040', lineHeight: 1.6, margin: '0 0 10px' }}>{p}</p>
+              <p key={i} style={{ fontSize: font.size.sm, color: color.inkMuted, lineHeight: 1.6, margin: '0 0 10px' }}>{p}</p>
             ))}
           </div>
         </>

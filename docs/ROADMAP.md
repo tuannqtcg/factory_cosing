@@ -3,7 +3,7 @@
 > **Mục đích:** File này là điểm neo (Anchor) cho AI ở đầu mỗi phiên. AI đọc file này để hiểu tổng quan dự án đang ở giai đoạn nào, những gì đã hoàn tất, và những gì cần làm tiếp theo. Không cần đọc lại toàn bộ lịch sử chat.
 
 ## 🟢 Tóm tắt trạng thái hiện tại
-- **Pha 1 & 2:** Xong. **Pha 3 (Engine):** Xong — **suite 404/404 test** (parity Excel).
+- **Pha 1 & 2:** Xong. **Pha 3 (Engine):** Xong — **suite 370/370 test** (parity Excel).
 - **App = công cụ QUYẾT ĐỊNH của CEO** (ADR-020/026): MỘT view, đăng nhập production
   (admin/pricing), nav 2 nhóm (Phân Tích & Quyết Định + Điều Chỉnh Tham Số). Đã bỏ
   hết tab vận hành vai khác + guard vai chết.
@@ -12,87 +12,24 @@
   Tất cả tái dùng engine đóng băng, đồng bộ EBIT **giá-bán-cố-định** (nền `scenario-drivers.ts`).
 - **Định giá** (ADR-025): Bảng Giá neo giá **VF** + Bảng Giá **NPP** dẫn xuất + dải cảnh báo chốt giá.
 - **Design system** (ADR-033): tokens + primitives, phong cách **TỐI GIẢN ĐEN–TRẮNG**
-  (màu chỉ cho biểu đồ + ghi chú). ⚠ **MỚI DEMO 1 màn (Độ Nhạy)** — cần roll-out ~13 màn còn lại.
+  (màu chỉ cho biểu đồ + ghi chú). **✅ ROLL-OUT XONG toàn bộ 14 file sống** (2026-07-24):
+  9 màn nhỏ/vừa + CeoReverseTools/PriceList/Inventory + CeoPlanner/Products/Dashboard +
+  DataSetupScreen (863 dòng) + chrome AppShell + MoldAssetModal. Không còn hex gõ tay
+  ngoài màu logo Google. 3 nhóm phân bổ (Ống/PK/Chung) + vai màn (view/sim/edit)
+  ánh xạ về token có sẵn thay vì hue tự chế.
+- **Dọn màn mồ côi** (ADR-061, 2026-07-24): xoá 8 màn UI đã gỡ khỏi nav (Nhận Đơn,
+  Product-mix, Plan, Production-report, Assumptions, Config, Pricing-analytics,
+  Target-costing) — engine/schema/test giữ nguyên, chỉ mất lối vào UI.
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
-0. **⚠ Kiểm tra click-through thật trên trình duyệt cho ADR-059** (tái thiết kế
-   điều hướng — ĐÃ CODE XONG, chưa từng thấy chạy bằng mắt): sidebar 5 mục
-   (Tổng Quan/Nguyên Liệu/Bảng Giá/Kịch Bản & Hoạch Định/Thiết Lập) + Trợ Giúp
-   ghim, panel lồng nhau kiểu Twenty CRM (`MaterialsScreen`, `PriceList` panel,
-   `PlanningHub`, `HelpScreen`, `SlideOverPanel`). `typecheck`/`test`(404/404)/
-   `build` đều xanh, nhưng phiên này KHÔNG click-through được trên trình duyệt
-   vì Firebase Auth JS SDK báo `auth/internal-error` ngay tại màn đăng nhập
-   trong sandbox headless Chromium (xác nhận KHÔNG phải lỗi code — emulator +
-   user demo hoạt động đúng qua REST trực tiếp; xem chi tiết cách cô lập nguyên
-   nhân ở `docs/sessions/SESSION_2026-07-31.md` phần 2). Phiên sau chạy trên máy
-   thật (không sandbox) nên `npm run seed:emulator` + `npm run dev` rồi click
-   thử 1 lượt: mở Nguyên Liệu → panel → panel con sửa lô; Bảng Giá → panel;
-   Trợ Giúp; Kịch Bản & Hoạch Định 2 tab.
-   - Theo dõi thêm: layout Tổng Quan (3 thẻ tóm tắt + bảng "Nguyên liệu + Chi
-     phí SX = Giá thành đầy đủ") ở mục 3 của `prototype/layout-redesign-proposal.html`
-     CHƯA rebuild — Tổng Quan vẫn giữ layout cũ. Làm tiếp nếu user muốn khớp
-     100% mockup.
-1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 3
-   công cụ if–then còn lại, Bảng Giá VF/NPP, Lot-costing, Pricing-analytics, Tham Số,
-   Cấu Hình). Di trú lên `src/design/primitives.tsx` — thuần trình bày, KHÔNG đụng logic.
-   Gu đã user duyệt: đen/trắng/xám chủ đạo, màu chỉ cho biểu đồ/ghi chú. Sửa ở
-   `src/design/tokens.ts` là cả app đổi. (Font hiện Roboto; cân nhắc nạp Inter.)
-2. **Product-mix**: chờ user cấp **giá thị trường thật của ống** (gõ vào ô là ra kết
-   luận sát) + phân bổ **vốn dùng chung/lưu động** vào ROIC (mới tính vốn trực tiếp dòng).
-3. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`
+1. **Product-mix**: đã gỡ khỏi UI (ADR-061) — nếu cần lại, khôi phục từ git rồi mới
+   chờ user cấp **giá thị trường thật của ống** + phân bổ **vốn dùng chung/lưu động** vào ROIC.
+2. **Trợ Lý CEO**: `firebase functions:secrets:set ANTHROPIC_API_KEY` để `adviseScenario`
    gọi Claude thật (đang fallback mock).
-4. (Tuỳ chọn) Google Sign-In cho owner; tắt tài khoản demo trên production; SCH80 catalog;
-   trích lại fixture khi có Excel v3.7 chính thức.
+3. (Tuỳ chọn) Google Sign-In cho owner; tắt tài khoản demo trên production; SCH80 catalog;
+   trích lại fixture khi có Excel v3.7 chính thức; nạp font Inter (hiện Roboto, vẫn sạch).
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
-- [x] **(2026-07-31) ADR-059 — Tối giản điều hướng: 5 mục + panel lồng nhau (Twenty CRM)**:
-  sidebar 7 mục/3 nhóm → 5 mục phẳng + Trợ Giúp ghim (Tổng Quan/Nguyên Liệu/
-  Bảng Giá/Kịch Bản & Hoạch Định/Thiết Lập). Màn mới `MaterialsScreen` (danh
-  sách nguyên liệu + panel 2 cấp: xem baseline/giá mua mới/BQGQ + chốt lại giá,
-  panel con sửa lô) thay `LotCostingScreen`; `PriceList` bấm dòng mở panel thay
-  vì mở rộng tại chỗ; `PlanningHub` gộp Trợ Lý CEO + So Sánh Kịch Bản (2 tab);
-  bỏ tab `products` trùng lặp (đã có sẵn trong Thiết Lập mục ⑤); `HelpScreen`
-  mới (nội dung từ TermInfo + glossary, có tìm kiếm). Component dùng chung
-  `SlideOverPanel` (lồng tối đa 2 cấp). KHÔNG schema/công thức mới — mọi ghi
-  (chốt baseline, sửa lô) tái dùng nguyên pattern `safeParse`+`setDoc` đã có.
-  `typecheck`/404 test/`build` xanh. **Chưa click-through được trên trình
-  duyệt** (sandbox chặn Firebase Auth SDK ở màn login — xem mục 0 "Bàn giao").
-- [x] **(2026-07-31) Bảng Giá — cột Giá VF BQGQ + Chênh lệch trong danh sách chính**:
-  trước chỉ hiện khi bấm mở dòng; giờ CEO quét cả bảng không cần bấm (PR #32).
-- [x] **(2026-07-31) Nhập lô nguyên liệu theo kg thay vì tấn** (UI-level, 3 màn:
-  Thiết Lập Dữ Liệu/Tồn Kho Compound/Giá Vốn Theo Lô) — lưu trữ vẫn ở field
-  `tons` (schema đóng băng), quy đổi ×1000/÷1000 tại ô nhập, không đụng schema/
-  công thức/dữ liệu Firestore cũ (PR #33).
-- [x] **ADR-058 — Thuế NK/phí logistics RIÊNG từng lô**: `InventoryLotSchema`
-  thêm 2 field optional `importTaxRate`/`customsLogisticsFeeRate` (bỏ trống =
-  kế thừa material, parity tuyệt đối với dữ liệu cũ). Hàm mới
-  `weightedAvgLandedCostPerKgVnd` (dual-costing.ts) tính landed cost TỪNG lô
-  rồi mới bình quân — thay vì bình quân giá thô rồi nhân 1 rate chung (SAI khi
-  lô khác xuất xứ/thuế). `holdingGainLossVnd` đổi sang nhận 2 landed cost đã
-  tính sẵn. `usdPerKgForLandedCostVnd` (cost-pool.ts, nghịch đảo landedCostPerKgVnd)
-  giúp `price-cost-scenarios.ts` quy đổi lại "giá tương đương" chảy đúng qua
-  pipeline hiện có. UI: `InventoryScreen`/`DataSetupScreen` mục ④ thêm 2 cột
-  thuế/phí riêng mỗi lô. Mọi nơi hiển thị "bình quân gia quyền" (Giá Vốn Theo
-  Lô, Bảng Giá, Tổng Quan — ADR-057) giờ đúng theo từng lô. Suite 404/404 (+8
-  test), typecheck + build xanh. **User CHỐT KHÔNG làm** trạng thái "lô kế
-  hoạch/đang về" (chỉ đã-nhập-kho) — thêm sẽ gây rối, không cần nữa.
-- [x] **ADR-057 — Đặt lại tên "giá tái tạo" + gộp nơi nhập baseline + góc nhìn
-  giá vốn kép**: "giá tái tạo" → **"Giá mua mới hôm nay"** khắp UI + 1 chuỗi
-  cảnh báo engine (`dual-costing.ts`); `baseline` hiển thị tường minh (USD/kg)
-  mọi nơi + term `'baseline-mechanism'` (TermInfo/ⓘ) giải thích cơ chế khóa giá.
-  Gộp nơi NHẬP baseline về **một chỗ duy nhất** — `Thiết Lập Dữ Liệu → mục ④`
-  (thêm ô gõ tay, `AssumptionsScreen`/Tham Số đã là dead code từ ADR-049, không
-  đụng thêm). Module mới `price-cost-scenarios.ts` (`scenarioWithCostBasis` —
-  ép mọi material theo 1 cơ sở giá: giá mua mới hôm nay | bình quân gia quyền,
-  tái dùng NGUYÊN `calculateScenario`/`makeFixedPriceModel`, không công thức
-  mới) → (1) **Bảng Giá**: panel "Giá này từ đâu ra?" mỗi SKU thêm so sánh Giá
-  VF dự kiến vs Giá VF bình quân gia quyền + chênh lệch; (2) **Tổng Quan**:
-  khối mới "So sánh giá vốn: Baseline vs Bình quân gia quyền" — GIỮ NGUYÊN giá
-  bán, đổi cơ sở nguyên liệu, hiện song song giá thành/kg + EBIT cả năm + chênh
-  lệch (giúp CEO thấy dư địa giảm giá bán khi tồn kho đang rẻ hơn baseline).
-  Suite 399/399 (+6 test mới), typecheck + build xanh. (Thuế NK/logistics
-  riêng từng lô đã làm tiếp ngay sau đó — xem ADR-058 bên dưới; KHÔNG làm
-  trạng thái "lô kế hoạch/đang về" — user chốt không cần, sẽ gây rối.)
 - [x] **Thác chi phí đ/kg — "tiền đi đâu?"** (thuần trình bày, engine helper thuần +
   test parity). Tách giá thành đầy đủ mỗi dòng thành 4 tầng: **gia công tiền mặt**
   (nhân công·điện·nước·bảo trì·bao bì — phần quản đốc "cảm" được) → **+chi phí chung**

@@ -5,9 +5,12 @@
 //   Giá VF → ×(1+markupTcg) = Giá TCG → ROUNDUP(TCG/(1−biên NPP)) = niêm yết NPP
 //           → ×(1+VAT) = giá có VAT.
 // markupTcg / biên NPP suy ngược per-SKU từ chuỗi đã persist (đồng nhất toàn cục).
+// ADR-033 roll-out: trình bày qua design tokens/primitives (đen–trắng tối giản).
 import { useMemo, useState } from 'react';
 import { fmtVnd } from '../../lib/format.js';
 import type { PriceListDoc } from '../../schemas/scenario.js';
+import { Screen, PageHeader, Card, tk, sp, ft, rd, tnum } from '../../design/primitives.js';
+import { eyebrowStyle } from '../../design/tokens.js';
 
 const PIPE_LABEL = 'Ống CPVC';
 // Suất quy trình là chính sách số tròn (markupTcg/biên NPP/VAT) — hiển thị tròn %
@@ -67,68 +70,66 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
   });
 
   if (!priceList) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải bảng giá…</div>;
+    return <Screen><div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Đang tải bảng giá…</div></Screen>;
   }
 
-  const Step = ({ n, title, formula, color }: { n: string; title: string; formula: string; color: string }) => (
-    <div style={{ flex: 1, minWidth: 150, background: '#fff', border: '1px solid #e5e0d0', borderRadius: 6, padding: '10px 12px' }}>
-      <div style={{ fontSize: 9, color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>{n}. {title}</div>
-      <div style={{ fontSize: 11, color: '#555', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>{formula}</div>
-    </div>
+  const Step = ({ n, title, formula }: { n: string; title: string; formula: string }) => (
+    <Card pad={12} style={{ flex: 1, minWidth: 150 }}>
+      <div style={{ ...eyebrowStyle, color: tk.inkMuted }}>{n}. {title}</div>
+      <div style={{ fontSize: ft.size.sm, color: tk.inkMuted, marginTop: 3, ...tnum }}>{formula}</div>
+    </Card>
   );
 
   const cols = '36px 1.4fr 70px 52px 1fr 1fr 1fr 1fr';
 
   return (
-    <div className="px-4 py-6 md:px-9 md:py-8">
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Nhà Phân Phối</div>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Từ giá VF → giá tới nhà phân phối</h1>
-        <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>
-          Dẫn xuất từ <b>Giá Xuất Xưởng (VF)</b> — bảng này tự đổi theo VF, không nhập tay. VF ổn định theo khóa giá (ADR-004) nên giá NPP cũng ổn định theo.
-        </div>
-      </div>
+    <Screen>
+      <PageHeader
+        eyebrow="Bảng Giá Nhà Phân Phối"
+        title="Từ giá VF → giá tới nhà phân phối"
+        subtitle={<>Dẫn xuất từ <b>Giá Xuất Xưởng (VF)</b> — bảng này tự đổi theo VF, không nhập tay. VF ổn định theo khóa giá (ADR-004) nên giá NPP cũng ổn định theo.</>}
+      />
 
       {/* Quy trình 4 bước */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16, alignItems: 'stretch' }}>
-        <Step n="1" title="Giá VF (xuất xưởng)" formula="Giá gốc — tab Bảng Giá" color="#a8003b" />
-        <Step n="2" title="Markup TCG" formula={`× (1 + ${pctWhole(rates.markupTcg)})`} color="#b45309" />
-        <Step n="3" title="Biên nhà phân phối" formula={`÷ (1 − ${pctWhole(rates.listMargin)}), làm tròn lên trăm`} color="#b45309" />
-        <Step n="4" title="Giá niêm yết NPP" formula={`+ VAT ${pctWhole(rates.vat)}`} color="#16A34A" />
+      <div style={{ display: 'flex', gap: sp[2], flexWrap: 'wrap', marginBottom: sp[4], alignItems: 'stretch' }}>
+        <Step n="1" title="Giá VF (xuất xưởng)" formula="Giá gốc — tab Bảng Giá" />
+        <Step n="2" title="Markup TCG" formula={`× (1 + ${pctWhole(rates.markupTcg)})`} />
+        <Step n="3" title="Biên nhà phân phối" formula={`÷ (1 − ${pctWhole(rates.listMargin)}), làm tròn lên trăm`} />
+        <Step n="4" title="Giá niêm yết NPP" formula={`+ VAT ${pctWhole(rates.vat)}`} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 11, gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: sp[3], gap: 12, flexWrap: 'wrap' }}>
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Tìm theo tên, kích cỡ..."
-          style={{ padding: '7px 12px', border: '1px solid #b3b3b3', borderRadius: 2, fontSize: 12, background: '#fff', outline: 'none', minWidth: 200, maxWidth: 260, width: '100%' }}
+          style={{ padding: '7px 12px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.sm, background: tk.surface, outline: 'none', minWidth: 200, maxWidth: 260, width: '100%', color: tk.ink }}
         />
-        <div style={{ fontSize: 10, color: '#737373' }}>Hiển thị {filteredRows.length} sản phẩm</div>
+        <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>Hiển thị {filteredRows.length} sản phẩm</div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflowX: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8, minWidth: 760 }}>
+      <Card pad={0} style={{ overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'ĐVT'].map((h) => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
+            <div key={h} style={{ ...eyebrowStyle, color: tk.inkMuted }}>{h}</div>
           ))}
           {[`Giá VF (đ)`, `Giá TCG (đ)`, `Niêm yết NPP (đ)`, `Có VAT (đ)`].map((h) => (
-            <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textAlign: 'right', textTransform: 'uppercase' }}>{h}</div>
+            <div key={h} style={{ ...eyebrowStyle, color: tk.inkMuted, textAlign: 'right' }}>{h}</div>
           ))}
         </div>
         {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', minWidth: 760 }}>
-            <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
-            <div style={{ fontSize: 12, fontWeight: 500 }}>{row.name}</div>
-            <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>
-            <div style={{ fontSize: 11, color: '#737373' }}>{row.unit}</div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: '#a8003b', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.vf)}</div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.tcg)}</div>
-            <div style={{ fontSize: 13, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.listBeforeVat)}</div>
-            <div style={{ fontSize: 12, textAlign: 'right', color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(row.listWithVat)}</div>
+          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center' }}>
+            <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum }}>{row.stt}</div>
+            <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>{row.name}</div>
+            <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, ...tnum }}>{row.size}</div>
+            <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{row.unit}</div>
+            <div style={{ fontSize: ft.size.sm, textAlign: 'right', color: tk.ink, fontWeight: ft.weight.semibold, ...tnum }}>{fmtVnd(row.vf)}</div>
+            <div style={{ fontSize: ft.size.sm, textAlign: 'right', color: tk.inkMuted, ...tnum }}>{fmtVnd(row.tcg)}</div>
+            <div style={{ fontSize: ft.size.md, textAlign: 'right', fontWeight: ft.weight.bold, color: tk.ink, ...tnum }}>{fmtVnd(row.listBeforeVat)}</div>
+            <div style={{ fontSize: ft.size.sm, textAlign: 'right', color: tk.inkMuted, ...tnum }}>{fmtVnd(row.listWithVat)}</div>
           </div>
         ))}
-      </div>
-    </div>
+      </Card>
+    </Screen>
   );
 }

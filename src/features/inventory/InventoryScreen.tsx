@@ -16,6 +16,9 @@
 // Khóa vai: `thresholdPct` admin-only theo TỪNG phần tử mảng (ADR-015) — form
 // disable cho pricing khớp đúng rules đã vá; mọi field khác (lots, replacement,
 // thêm nguyên liệu mới) mở cho cả pricing/admin (material.md).
+// ADR-033 roll-out: trình bày qua design tokens (đen–trắng tối giản). Ô đang
+// sửa (lots) trước dùng viền/nền xanh dương — nay dùng viền đen đậm + nền xám
+// nhạt để nhất quán "accent = đen" toàn app; đỏ/xanh lá giữ cho tín hiệu lãi/lỗ.
 import { Fragment, useRef, useState } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
@@ -24,17 +27,19 @@ import { fmtVnd, fmtUsd } from '../../lib/format.js';
 import { ScenarioInputSchema, type ScenarioInput, type ScenarioOutput } from '../../schemas/scenario.js';
 import type { Material } from '../../schemas/material.js';
 import type { MetalInsertCatalogEntry } from '../../schemas/pricing-chain.js';
-import { weightedAvgUsdPerKg, weightedAvgLandedCostPerKgVnd, totalInventoryKg } from '../../engine/dual-costing.js';
+import { weightedAvgUsdPerKg, totalInventoryKg } from '../../engine/dual-costing.js';
 import { weightedAvgInsertPriceVnd } from '../../engine/metal-insert.js';
+import { Screen, Card, tk, sp, ft, rd, tnum } from '../../design/primitives.js';
+import { eyebrowStyle } from '../../design/tokens.js';
 
 const USD_VND_FALLBACK = 25000; // chỉ dùng để ước lượng ≈tỷ đ hiển thị nhanh khi gõ — KHÔNG dùng cho tính giá thành
 
-function SectionHeader({ title, color = '#a8003b', right }: { title: string; color?: string; right?: React.ReactNode }) {
+function SectionHeader({ title, right }: { title: string; right?: React.ReactNode }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11, gap: 12, flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 3, height: 14, background: color, borderRadius: 1, flexShrink: 0 }} />
-        <div style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', fontWeight: 700, color }}>{title}</div>
+        <div style={{ width: 3, height: 14, background: tk.brand, borderRadius: 1, flexShrink: 0 }} />
+        <div style={{ ...eyebrowStyle, color: tk.ink }}>{title}</div>
       </div>
       {right}
     </div>
@@ -72,14 +77,14 @@ export default function InventoryScreen({
 
   if (!canEdit) {
     return (
-      <div style={{ padding: '32px 36px' }}>
-        <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Tồn Kho Compound</h1>
-        <p style={{ fontSize: 12, color: '#737373' }}>Màn hình này chỉ dành cho vai Toàn Quyền / Định Giá.</p>
-      </div>
+      <Screen>
+        <h1 style={{ margin: 0, fontSize: ft.size.xxl, fontWeight: ft.weight.bold, color: tk.ink }}>Tồn Kho Compound</h1>
+        <p style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Màn hình này chỉ dành cho vai Toàn Quyền / Định Giá.</p>
+      </Screen>
     );
   }
   if (!form || !internal) {
-    return <div style={{ padding: '32px 36px', fontSize: 12, color: '#737373' }}>Đang tải kịch bản + kết quả tính…</div>;
+    return <Screen><div style={{ fontSize: ft.size.sm, color: tk.inkMuted }}>Đang tải kịch bản + kết quả tính…</div></Screen>;
   }
 
   const activeMaterialId = materialId ?? form.materials[0]?.id ?? null;
@@ -89,11 +94,6 @@ export default function InventoryScreen({
     setForm((f) => (f ? { ...f, materials: updater(f.materials) } : f));
 
   const updateLot = (matId: string, idx: number, key: 'tons' | 'priceUsdPerKg', value: number) =>
-    setMaterials((mats) =>
-      mats.map((m) => (m.id !== matId ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, i) => (i === idx ? { ...l, [key]: value } : l)) } })),
-    );
-  // ADR-058 — thuế NK/phí logistics RIÊNG từng lô (undefined = kế thừa material — mỗi lô có thể xuất xứ khác nhau).
-  const updateLotRate = (matId: string, idx: number, key: 'importTaxRate' | 'customsLogisticsFeeRate', value: number | undefined) =>
     setMaterials((mats) =>
       mats.map((m) => (m.id !== matId ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, i) => (i === idx ? { ...l, [key]: value } : l)) } })),
     );
@@ -246,51 +246,42 @@ export default function InventoryScreen({
   };
 
   const wAvg = material ? weightedAvgUsdPerKg(material.inventory.lots) : null;
-  // ADR-058 — landed cost TÍNH TỪNG LÔ (rate riêng lô, thiếu thì lấy rate
-  // material) rồi mới bình quân — khác wAvg (chỉ bình quân giá mua thô).
-  const wAvgLandedVnd = material
-    ? weightedAvgLandedCostPerKgVnd(
-        material.inventory.lots,
-        { importTaxRate: material.importTaxRate, customsLogisticsFeeRate: material.customsLogisticsFeeRate },
-        form?.costPool.currency.usdVndRate ?? USD_VND_FALLBACK,
-      )
-    : null;
   const totalKg = material ? totalInventoryKg(material.inventory.lots) : 0;
   const dualEntry = material ? internal.dualCosting.byMaterial.find((e) => e.materialId === material.id) : null;
   const linesUsingMaterial = material ? form.products.filter((p) => p.materialId === material.id).map((p) => p.kind) : [];
   const lineLabel = linesUsingMaterial.includes('pipe') && linesUsingMaterial.includes('fitting') ? 'Ống + Phụ Kiện' : linesUsingMaterial.includes('pipe') ? 'Ống CPVC' : linesUsingMaterial.includes('fitting') ? 'Phụ Kiện' : 'Chưa gán SP nào';
 
   return (
-    <div style={{ padding: '32px 36px' }}>
+    <Screen>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
+        <div style={{ ...eyebrowStyle, marginBottom: 5 }}>Quản Trị Dữ Liệu Gốc</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Tồn Kho Compound</h1>
-            <div style={{ fontSize: 11, color: '#737373', marginTop: 4 }}>Đợt nhập compound theo từng nguyên liệu + ren kim loại mua ngoài (ADR-002/008)</div>
+            <h1 style={{ margin: 0, fontSize: ft.size.xxl, fontWeight: ft.weight.bold, letterSpacing: '-.3px', color: tk.ink }}>Tồn Kho Compound</h1>
+            <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginTop: 4 }}>Đợt nhập compound theo từng nguyên liệu + ren kim loại mua ngoài (ADR-002/008)</div>
           </div>
           <button
             onClick={() => void handleSave()}
             disabled={saveState === 'saving'}
-            style={{ padding: '10px 22px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, cursor: 'pointer', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}
+            style={{ padding: '10px 22px', background: tk.brand, color: tk.inkInverse, border: 'none', borderRadius: rd.sm, cursor: 'pointer', fontSize: ft.size.xs, fontWeight: ft.weight.bold, letterSpacing: '.06em', textTransform: 'uppercase' }}
           >
             {saveState === 'saving' ? 'Đang lưu…' : 'Lưu & Cập Nhật'}
           </button>
         </div>
-        {saveState === 'saved' && <div style={{ fontSize: 11, color: '#16A34A', fontWeight: 600, marginTop: 6 }}>✓ Đã lưu — Cloud Function sẽ tự tính lại toàn bộ giá thành</div>}
-        {saveState === 'error' && <div style={{ fontSize: 11, color: '#DC2626', marginTop: 6 }}>{saveError}</div>}
+        {saveState === 'saved' && <div style={{ fontSize: ft.size.xs, color: tk.successInk, fontWeight: ft.weight.semibold, marginTop: 6 }}>✓ Đã lưu — Cloud Function sẽ tự tính lại toàn bộ giá thành</div>}
+        {saveState === 'error' && <div style={{ fontSize: ft.size.xs, color: tk.dangerInk, marginTop: 6 }}>{saveError}</div>}
       </div>
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         <button
           onClick={() => setActiveMainTab('compound')}
-          style={{ padding: '6px 14px', borderRadius: 14, border: `1px solid ${activeMainTab === 'compound' ? '#a8003b' : '#d8d8d8'}`, background: activeMainTab === 'compound' ? '#a8003b' : '#fff', color: activeMainTab === 'compound' ? '#fff' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px solid ${activeMainTab === 'compound' ? tk.brand : tk.borderStrong}`, background: activeMainTab === 'compound' ? tk.brand : tk.surface, color: activeMainTab === 'compound' ? tk.inkInverse : tk.inkMuted, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
         >
           Hạt Nhựa (Compound)
         </button>
         <button
           onClick={() => setActiveMainTab('metal')}
-          style={{ padding: '6px 14px', borderRadius: 14, border: `1px solid ${activeMainTab === 'metal' ? '#a8003b' : '#d8d8d8'}`, background: activeMainTab === 'metal' ? '#a8003b' : '#fff', color: activeMainTab === 'metal' ? '#fff' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px solid ${activeMainTab === 'metal' ? tk.brand : tk.borderStrong}`, background: activeMainTab === 'metal' ? tk.brand : tk.surface, color: activeMainTab === 'metal' ? tk.inkInverse : tk.inkMuted, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
         >
           Ren Kim Loại (Metal Insert)
         </button>
@@ -298,33 +289,33 @@ export default function InventoryScreen({
 
       {activeMainTab === 'compound' && (
         <>
-          <SectionHeader title="Chọn nguyên liệu" right={<span style={{ fontSize: 9, color: '#737373' }}>materials[] hiện có {form.materials.length}</span>} />
+          <SectionHeader title="Chọn nguyên liệu" right={<span style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>materials[] hiện có {form.materials.length}</span>} />
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
         {form.materials.map((m) => (
           <button
             key={m.id}
             onClick={() => setMaterialId(m.id)}
-            style={{ padding: '6px 14px', borderRadius: 14, border: `1px solid ${m.id === activeMaterialId ? '#a8003b' : '#d8d8d8'}`, background: m.id === activeMaterialId ? '#a8003b' : '#fff', color: m.id === activeMaterialId ? '#fff' : '#555', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px solid ${m.id === activeMaterialId ? tk.brand : tk.borderStrong}`, background: m.id === activeMaterialId ? tk.brand : tk.surface, color: m.id === activeMaterialId ? tk.inkInverse : tk.inkMuted, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
           >
             {m.name}
           </button>
         ))}
         <button
           onClick={() => setAddingMaterial((v) => !v)}
-          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #a8003b', background: '#fff', color: '#a8003b', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.borderStrong}`, background: tk.surface, color: tk.ink, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
         >
           + Thêm nguyên liệu
         </button>
         <button
           onClick={seedCorzanMaterials}
-          style={{ padding: '6px 14px', borderRadius: 14, border: '1px dashed #16A34A', background: '#fff', color: '#16A34A', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.successInk}`, background: tk.surface, color: tk.successInk, fontSize: ft.size.xs, fontWeight: ft.weight.semibold, cursor: 'pointer' }}
         >
-          + Seed 2 Mã Corzan 
+          + Seed 2 Mã Corzan
         </button>
       </div>
 
       {addingMaterial && (
-        <div style={{ padding: 14, background: '#f5f5f3', border: '1px dashed #d8d8d8', borderRadius: 2, marginBottom: 16 }}>
+        <div style={{ padding: 14, background: tk.surfaceMuted, border: `1px dashed ${tk.borderStrong}`, borderRadius: rd.sm, marginBottom: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 10 }}>
             {(
               [
@@ -335,21 +326,21 @@ export default function InventoryScreen({
               ] as const
             ).map(([key, label, placeholder]) => (
               <label key={key} style={{ display: 'block' }}>
-                <span style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 4 }}>{label}</span>
+                <span style={{ ...eyebrowStyle, display: 'block', marginBottom: 4 }}>{label}</span>
                 <input
                   value={newMat[key]}
                   placeholder={placeholder}
                   onChange={(e) => setNewMat((v) => ({ ...v, [key]: e.target.value }))}
-                  style={{ width: '100%', padding: '6px 9px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, outline: 'none', background: '#fff' }}
+                  style={{ width: '100%', padding: '6px 9px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.sm, outline: 'none', background: tk.surface, color: tk.ink }}
                 />
               </label>
             ))}
             <label style={{ display: 'block' }}>
-              <span style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase', letterSpacing: '.05em', display: 'block', marginBottom: 4 }}>Dùng cho hệ</span>
+              <span style={{ ...eyebrowStyle, display: 'block', marginBottom: 4 }}>Dùng cho hệ</span>
               <select
                 value={newLineUsage}
                 onChange={(e) => setNewLineUsage(e.target.value as any)}
-                style={{ width: '100%', padding: '5px 9px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, outline: 'none', background: '#fff' }}
+                style={{ width: '100%', padding: '5px 9px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.sm, outline: 'none', background: tk.surface, color: tk.ink }}
               >
                 <option value="pipe">Ống</option>
                 <option value="fitting">Phụ kiện</option>
@@ -357,67 +348,50 @@ export default function InventoryScreen({
               </select>
             </label>
           </div>
-          <div style={{ fontSize: 10, color: '#737373', marginBottom: 10, lineHeight: 1.5 }}>
+          <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 10, lineHeight: 1.5 }}>
             Tạo nguyên liệu MỚI. Hệ thống sẽ tự động sinh thêm 1 sản phẩm mẫu (dummy) thuộc dòng (Ống/Phụ kiện) bạn vừa chọn để nguyên liệu có thể lập tức tham gia vào quá trình tính toán giá thành.
           </div>
-          <button onClick={addMaterial} style={{ padding: '8px 16px', background: '#a8003b', color: '#fff', border: 'none', borderRadius: 2, fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}>
+          <button onClick={addMaterial} style={{ padding: '8px 16px', background: tk.brand, color: tk.inkInverse, border: 'none', borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.bold, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer' }}>
             Tạo nguyên liệu
           </button>
-          <button onClick={() => setAddingMaterial(false)} style={{ padding: '8px 16px', background: '#fff', color: '#a8003b', border: '1px solid #a8003b', borderRadius: 2, fontSize: 10.5, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer', marginLeft: 8 }}>
+          <button onClick={() => setAddingMaterial(false)} style={{ padding: '8px 16px', background: tk.surface, color: tk.ink, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.bold, letterSpacing: '.04em', textTransform: 'uppercase', cursor: 'pointer', marginLeft: 8 }}>
             Hủy
           </button>
         </div>
       )}
 
       {material && (
-        <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflow: 'hidden', marginBottom: 20 }}>
-          <div style={{ padding: '12px 16px', background: '#f5f5f3', borderBottom: '1px solid #f0f0f0' }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>
-              {material.name} <span style={{ fontSize: 9, color: '#737373', fontWeight: 400 }}>· {material.code ?? '—'} · {material.originLabel ?? '—'}</span>
+        <Card pad={0} style={{ overflow: 'hidden', marginBottom: 20 }}>
+          <div style={{ padding: '12px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}` }}>
+            <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, color: tk.ink }}>
+              {material.name} <span style={{ fontSize: ft.size.eyebrow, color: tk.inkMuted, fontWeight: ft.weight.regular }}>· {material.code ?? '—'} · {material.originLabel ?? '—'}</span>
             </div>
-            <div style={{ fontSize: 9.5, color: '#737373', marginTop: 2 }}>{lineLabel} · replacementPriceUsdPerKg hiện tại: {fmtUsd(material.inventory.replacementPriceUsdPerKg)} USD/kg</div>
+            <div style={{ fontSize: ft.size.eyebrow, color: tk.inkMuted, marginTop: 2 }}>{lineLabel} · replacementPriceUsdPerKg hiện tại: {fmtUsd(material.inventory.replacementPriceUsdPerKg)} USD/kg</div>
           </div>
           <div style={{ padding: 16 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 10 }}>
               <thead>
                 <tr>
-                  {['Đợt nhập', 'Kg', 'USD/kg', 'Thuế NK riêng', 'Phí HQ riêng', '≈ tỷ đ', ''].map((h, i) => (
-                    <th key={h} style={{ fontSize: 8.5, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', textAlign: i === 0 ? 'left' : 'right', padding: '6px 8px', borderBottom: '1px solid #f0f0f0' }}>{h}</th>
+                  {['Đợt nhập', 'Tấn', 'USD/kg', '≈ tỷ đ', ''].map((h, i) => (
+                    <th key={h} style={{ ...eyebrowStyle, textAlign: i === 0 ? 'left' : 'right', padding: '6px 8px', borderBottom: `1px solid ${tk.border}` }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {material.inventory.lots.map((lot, i) => (
                   <tr key={i}>
-                    <td style={{ padding: '6px 8px', fontSize: 11, color: '#737373', borderBottom: '1px solid #f8f8f6' }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                      {/* Nhập theo kg (thân thiện hơn tấn cho lô nhỏ) — lưu trữ vẫn ở `tons` (schema đóng băng), quy đổi 2 chiều ngay tại ô nhập. */}
-                      <input type="number" step="100" value={lot.tons * 1000} onChange={(e) => updateLot(material.id, i, 'tons', (parseFloat(e.target.value) || 0) / 1000)} style={{ width: 100, padding: '5px 8px', border: '1px solid #2563eb', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
+                    <td style={{ padding: '6px 8px', fontSize: ft.size.xs, color: tk.inkMuted, borderBottom: `1px solid ${tk.surfaceMuted}` }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}` }}>
+                      <input type="number" step="0.5" value={lot.tons} onChange={(e) => updateLot(material.id, i, 'tons', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.sm, textAlign: 'right', outline: 'none', background: tk.surfaceMuted, color: tk.ink, ...tnum }} />
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                      <input type="number" step="0.01" value={lot.priceUsdPerKg} onChange={(e) => updateLot(material.id, i, 'priceUsdPerKg', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: '1px solid #2563eb', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}` }}>
+                      <input type="number" step="0.01" value={lot.priceUsdPerKg} onChange={(e) => updateLot(material.id, i, 'priceUsdPerKg', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.sm, textAlign: 'right', outline: 'none', background: tk.surfaceMuted, color: tk.ink, ...tnum }} />
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                      <input
-                        type="number" step="0.01" value={lot.importTaxRate ?? ''} placeholder={`${material.importTaxRate}`}
-                        onChange={(e) => updateLotRate(material.id, i, 'importTaxRate', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
-                        title="Để trống = dùng theo nguyên liệu"
-                        style={{ width: 70, padding: '5px 8px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#fff', fontVariantNumeric: 'tabular-nums' }}
-                      />
-                    </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                      <input
-                        type="number" step="0.01" value={lot.customsLogisticsFeeRate ?? ''} placeholder={`${material.customsLogisticsFeeRate}`}
-                        onChange={(e) => updateLotRate(material.id, i, 'customsLogisticsFeeRate', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
-                        title="Để trống = dùng theo nguyên liệu"
-                        style={{ width: 70, padding: '5px 8px', border: '1px solid #d8d8d8', borderRadius: 2, fontSize: 12, textAlign: 'right', outline: 'none', background: '#fff', fontVariantNumeric: 'tabular-nums' }}
-                      />
-                    </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: 12, borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums' }}>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: ft.size.sm, borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>
                       {((lot.tons * 1000 * lot.priceUsdPerKg * USD_VND_FALLBACK) / 1e9).toFixed(2)} tỷ
                     </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: '1px solid #f8f8f6' }}>
-                      <button disabled={material.inventory.lots.length <= 1} onClick={() => removeLot(material.id, i)} style={{ background: 'none', border: 'none', color: material.inventory.lots.length <= 1 ? '#b3b3b3' : '#DC2626', cursor: material.inventory.lots.length <= 1 ? 'not-allowed' : 'pointer', fontSize: 13 }}>✕</button>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}` }}>
+                      <button disabled={material.inventory.lots.length <= 1} onClick={() => removeLot(material.id, i)} style={{ background: 'none', border: 'none', color: material.inventory.lots.length <= 1 ? tk.inkFaint : tk.dangerInk, cursor: material.inventory.lots.length <= 1 ? 'not-allowed' : 'pointer', fontSize: ft.size.md }}>✕</button>
                     </td>
                   </tr>
                 ))}
@@ -426,49 +400,48 @@ export default function InventoryScreen({
             <button
               onClick={() => addLot(material.id)}
               disabled={material.inventory.lots.length >= 5}
-              style={{ padding: '6px 14px', background: '#fff', border: '1px dashed #2563eb', color: '#2563eb', borderRadius: 2, fontSize: 10.5, fontWeight: 600, cursor: material.inventory.lots.length >= 5 ? 'not-allowed' : 'pointer', opacity: material.inventory.lots.length >= 5 ? 0.5 : 1 }}
+              style={{ padding: '6px 14px', background: tk.surface, border: `1px dashed ${tk.ink}`, color: tk.ink, borderRadius: rd.sm, fontSize: ft.size.eyebrow, fontWeight: ft.weight.semibold, cursor: material.inventory.lots.length >= 5 ? 'not-allowed' : 'pointer', opacity: material.inventory.lots.length >= 5 ? 0.5 : 1 }}
             >
               + Thêm đợt nhập
             </button>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginTop: 14 }}>
-              <div style={{ background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2, padding: '10px 12px' }}>
-                <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Bình quân gia quyền (xem trước)</div>
-                <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{wAvg !== null ? fmtUsd(wAvg) : '—'}</div>
-                <div style={{ fontSize: 9, color: '#737373', marginTop: 2 }}>USD/kg (giá mua thô) · từ đợt nhập đang sửa</div>
-                {wAvgLandedVnd !== null && <div style={{ fontSize: 9, color: '#565b64', marginTop: 2 }}>≈ {fmtVnd(wAvgLandedVnd)} đ/kg đã gồm thuế/phí (từng lô)</div>}
-              </div>
-              <div style={{ background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2, padding: '10px 12px' }}>
-                <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Tổng tồn kho</div>
-                <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(totalKg)}</div>
-                <div style={{ fontSize: 9, color: '#737373', marginTop: 2 }}>kg</div>
-              </div>
-              <div style={{ background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2, padding: '10px 12px' }}>
-                <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Lãi/lỗ giữ kho (đã lưu)</div>
-                <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: dualEntry && dualEntry.holdingGainLossVnd >= 0 ? '#16A34A' : '#DC2626' }}>
+              <Card pad={0} style={{ background: tk.surfaceMuted, padding: '10px 12px' }}>
+                <div style={{ ...eyebrowStyle, marginBottom: 4 }}>Bình quân gia quyền (xem trước)</div>
+                <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, ...tnum, color: tk.ink }}>{wAvg !== null ? fmtUsd(wAvg) : '—'}</div>
+                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginTop: 2 }}>USD/kg · từ đợt nhập đang sửa</div>
+              </Card>
+              <Card pad={0} style={{ background: tk.surfaceMuted, padding: '10px 12px' }}>
+                <div style={{ ...eyebrowStyle, marginBottom: 4 }}>Tổng tồn kho</div>
+                <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, ...tnum, color: tk.ink }}>{fmtVnd(totalKg)}</div>
+                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginTop: 2 }}>kg</div>
+              </Card>
+              <Card pad={0} style={{ background: tk.surfaceMuted, padding: '10px 12px' }}>
+                <div style={{ ...eyebrowStyle, marginBottom: 4 }}>Lãi/lỗ giữ kho (đã lưu)</div>
+                <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, ...tnum, color: dualEntry && dualEntry.holdingGainLossVnd >= 0 ? tk.successInk : tk.dangerInk }}>
                   {dualEntry ? `${dualEntry.holdingGainLossVnd >= 0 ? '+' : ''}${fmtVnd(dualEntry.holdingGainLossVnd)}` : '—'}
                 </div>
-                <div style={{ fontSize: 9, color: '#737373', marginTop: 2 }}>đ · theo outputs/internal — Lưu để cập nhật</div>
-              </div>
-              <div style={{ background: '#f5f5f3', border: '1px solid #f0f0f0', borderRadius: 2, padding: '10px 12px' }}>
-                <div style={{ fontSize: 8.5, color: '#737373', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 4 }}>Cảnh báo VAS-02</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: dualEntry?.provisionWarning ? '#DC2626' : '#16A34A' }}>{dualEntry?.provisionWarning ?? 'Không có'}</div>
-              </div>
+                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginTop: 2 }}>đ · theo outputs/internal — Lưu để cập nhật</div>
+              </Card>
+              <Card pad={0} style={{ background: tk.surfaceMuted, padding: '10px 12px' }}>
+                <div style={{ ...eyebrowStyle, marginBottom: 4 }}>Cảnh báo VAS-02</div>
+                <div style={{ fontSize: ft.size.xs, fontWeight: ft.weight.bold, color: dualEntry?.provisionWarning ? tk.dangerInk : tk.successInk }}>{dualEntry?.provisionWarning ?? 'Không có'}</div>
+              </Card>
             </div>
           </div>
-        </div>
+        </Card>
       )}
       </>
       )}
 
       {activeMainTab === 'metal' && (
       <>
-      <SectionHeader title="Nguyên liệu ren kim loại mua ngoài (ADR-008)" color="#2563eb" right={<span style={{ fontSize: 9, color: '#737373' }}>{form.inventory.metalInsert.length} dòng theo (loại ren, size PT) · click để mở đợt nhập</span>} />
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
+      <SectionHeader title="Nguyên liệu ren kim loại mua ngoài (ADR-008)" right={<span style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{form.inventory.metalInsert.length} dòng theo (loại ren, size PT) · click để mở đợt nhập</span>} />
+      <Card pad={0} style={{ overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background: '#f5f5f3' }}>
+            <tr style={{ background: tk.surfaceMuted }}>
               {['Loại ren', 'Size PT', 'Giá tái tạo', 'Tồn kho', 'Bình quân gia quyền', 'Lãi/lỗ giữ kho', ''].map((h, i) => (
-                <th key={h} style={{ fontSize: 8.5, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '.05em', textAlign: i < 2 ? 'left' : 'right', padding: 8, borderBottom: '1px solid #f0f0f0' }}>{h}</th>
+                <th key={h} style={{ ...eyebrowStyle, textAlign: i < 2 ? 'left' : 'right', padding: 8, borderBottom: `1px solid ${tk.border}` }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -482,36 +455,36 @@ export default function InventoryScreen({
               return (
                 <Fragment key={key}>
                   <tr onClick={() => setExpandedInsert(isOpen ? null : key)} style={{ cursor: 'pointer' }}>
-                    <td style={{ padding: '7px 8px', fontSize: 11.5, borderBottom: '1px solid #f8f8f6' }}>Ren {entry.renType}</td>
-                    <td style={{ padding: '7px 8px', fontSize: 11.5, borderBottom: '1px solid #f8f8f6' }}>PT {entry.ptSize}</td>
-                    <td style={{ padding: '7px 8px', fontSize: 11.5, textAlign: 'right', borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(entry.replacementPriceVnd)} đ</td>
-                    <td style={{ padding: '7px 8px', fontSize: 11.5, textAlign: 'right', borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(qty)} cái</td>
-                    <td style={{ padding: '7px 8px', fontSize: 11.5, textAlign: 'right', borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums' }}>{iAvg !== null ? `${fmtVnd(iAvg)} đ` : '—'}</td>
-                    <td style={{ padding: '7px 8px', fontSize: 11.5, textAlign: 'right', borderBottom: '1px solid #f8f8f6', fontVariantNumeric: 'tabular-nums', color: dEntry && dEntry.holdingGainLossVnd >= 0 ? '#16A34A' : '#DC2626' }}>
+                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>Ren {entry.renType}</td>
+                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>PT {entry.ptSize}</td>
+                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>{fmtVnd(entry.replacementPriceVnd)} đ</td>
+                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>{fmtVnd(qty)} cái</td>
+                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>{iAvg !== null ? `${fmtVnd(iAvg)} đ` : '—'}</td>
+                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: dEntry && dEntry.holdingGainLossVnd >= 0 ? tk.successInk : tk.dangerInk }}>
                       {dEntry ? `${dEntry.holdingGainLossVnd >= 0 ? '+' : ''}${fmtVnd(dEntry.holdingGainLossVnd)} đ` : '—'}
                     </td>
-                    <td style={{ padding: '7px 8px', textAlign: 'right', color: '#b3b3b3', borderBottom: '1px solid #f8f8f6' }}>{isOpen ? '▴' : '▾'}</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', color: tk.inkFaint, borderBottom: `1px solid ${tk.surfaceMuted}` }}>{isOpen ? '▴' : '▾'}</td>
                   </tr>
                   {isOpen && (
                     <tr>
-                      <td colSpan={7} style={{ background: '#fafaf8', padding: '10px 14px' }}>
-                        <div style={{ fontSize: 10, color: '#737373', marginBottom: 8 }}>Đợt nhập ren {entry.renType} PT{entry.ptSize} — sổ sách bình quân gia quyền (ADR-002/008)</div>
+                      <td colSpan={7} style={{ background: tk.surfaceMuted, padding: '10px 14px' }}>
+                        <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 8 }}>Đợt nhập ren {entry.renType} PT{entry.ptSize} — sổ sách bình quân gia quyền (ADR-002/008)</div>
                         <table style={{ maxWidth: 440, borderCollapse: 'collapse', marginBottom: 8 }}>
                           <thead>
-                            <tr>{['Đợt', 'Số lượng', 'đ/cái', ''].map((h) => <th key={h} style={{ fontSize: 8.5, color: '#737373', textAlign: 'right', padding: '4px 8px' }}>{h}</th>)}</tr>
+                            <tr>{['Đợt', 'Số lượng', 'đ/cái', ''].map((h) => <th key={h} style={{ fontSize: ft.size.eyebrow, color: tk.inkMuted, textAlign: 'right', padding: '4px 8px' }}>{h}</th>)}</tr>
                           </thead>
                           <tbody>
                             {entry.lots.map((lot, i) => (
                               <tr key={i}>
-                                <td style={{ fontSize: 10.5, color: '#737373', padding: '4px 8px' }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
+                                <td style={{ fontSize: ft.size.xs, color: tk.inkMuted, padding: '4px 8px' }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
                                 <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                                  <input type="number" value={lot.qtyOnHand} onChange={(e) => updateInsertLot(key, i, 'qtyOnHand', parseInt(e.target.value, 10) || 0)} style={{ width: 80, padding: '4px 6px', border: '1px solid #93c5fd', borderRadius: 2, fontSize: 11, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
+                                  <input type="number" value={lot.qtyOnHand} onChange={(e) => updateInsertLot(key, i, 'qtyOnHand', parseInt(e.target.value, 10) || 0)} style={{ width: 80, padding: '4px 6px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.xs, textAlign: 'right', outline: 'none', background: tk.surface, color: tk.ink, ...tnum }} />
                                 </td>
                                 <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                                  <input type="number" value={lot.unitPriceVnd} onChange={(e) => updateInsertLot(key, i, 'unitPriceVnd', parseInt(e.target.value, 10) || 0)} style={{ width: 80, padding: '4px 6px', border: '1px solid #93c5fd', borderRadius: 2, fontSize: 11, textAlign: 'right', outline: 'none', background: '#eff6ff', fontVariantNumeric: 'tabular-nums' }} />
+                                  <input type="number" value={lot.unitPriceVnd} onChange={(e) => updateInsertLot(key, i, 'unitPriceVnd', parseInt(e.target.value, 10) || 0)} style={{ width: 80, padding: '4px 6px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.xs, textAlign: 'right', outline: 'none', background: tk.surface, color: tk.ink, ...tnum }} />
                                 </td>
                                 <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                                  <button disabled={entry.lots.length <= 1} onClick={() => removeInsertLot(key, i)} style={{ background: 'none', border: 'none', color: entry.lots.length <= 1 ? '#b3b3b3' : '#DC2626', cursor: entry.lots.length <= 1 ? 'not-allowed' : 'pointer', fontSize: 12 }}>✕</button>
+                                  <button disabled={entry.lots.length <= 1} onClick={() => removeInsertLot(key, i)} style={{ background: 'none', border: 'none', color: entry.lots.length <= 1 ? tk.inkFaint : tk.dangerInk, cursor: entry.lots.length <= 1 ? 'not-allowed' : 'pointer', fontSize: ft.size.sm }}>✕</button>
                                 </td>
                               </tr>
                             ))}
@@ -520,7 +493,7 @@ export default function InventoryScreen({
                         <button
                           onClick={() => addInsertLot(key)}
                           disabled={entry.lots.length >= 5}
-                          style={{ padding: '5px 12px', background: '#fff', border: '1px dashed #2563eb', color: '#2563eb', borderRadius: 2, fontSize: 10, fontWeight: 600, cursor: entry.lots.length >= 5 ? 'not-allowed' : 'pointer', opacity: entry.lots.length >= 5 ? 0.5 : 1 }}
+                          style={{ padding: '5px 12px', background: tk.surface, border: `1px dashed ${tk.ink}`, color: tk.ink, borderRadius: rd.sm, fontSize: ft.size.eyebrow, fontWeight: ft.weight.semibold, cursor: entry.lots.length >= 5 ? 'not-allowed' : 'pointer', opacity: entry.lots.length >= 5 ? 0.5 : 1 }}
                         >
                           + Thêm đợt nhập
                         </button>
@@ -532,15 +505,15 @@ export default function InventoryScreen({
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
       </>
       )}
 
       {!isAdmin && (
-        <div style={{ marginTop: 16, padding: '10px 14px', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 2, fontSize: 10, color: '#1e3a5f' }}>
+        <div style={{ marginTop: sp[4], padding: '10px 14px', background: tk.surfaceMuted, border: `1px solid ${tk.border}`, borderRadius: rd.sm, fontSize: ft.size.xs, color: tk.inkMuted }}>
           Ngưỡng khóa giá (<code>thresholdPct</code>) không sửa được ở màn này — quản lý ở tab <b>Tham Số</b>, chỉ Admin (ADR-015).
         </div>
       )}
-    </div>
+    </Screen>
   );
 }

@@ -1,4 +1,4 @@
-// ADR-057 — 2 kịch bản giá vốn nguyên liệu SONG SONG để so sánh với giá bán
+// ADR-061 — 2 kịch bản giá vốn nguyên liệu SONG SONG để so sánh với giá bán
 // đang niêm yết (baseline/khóa giá hiện hành): "Giá mua mới hôm nay" (thị
 // trường hiện hành, không qua khóa) và "Bình quân gia quyền" (giá thực đã
 // nhập kho, sổ sách — ADR-002). Tái dùng NGUYÊN `calculateScenario` — không

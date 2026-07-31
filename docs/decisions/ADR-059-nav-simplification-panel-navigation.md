@@ -2,8 +2,8 @@
 
 - **Ngày**: 2026-07-31
 - **Trạng thái**: Đã duyệt Pha 1 (user chốt layout qua `prototype/layout-redesign-proposal.html`, 3 vòng góp ý) → đang triển khai Pha 3.
-- **Kế thừa**: ADR-034 (sidebar theo tình huống CEO), ADR-041 (nhãn vai XEM/THỬ/CHỈNH THẬT), ADR-024 (Giá Vốn Theo Lô, chỉ đọc), ADR-049 (Thiết Lập Dữ Liệu), ADR-057 (gộp nơi nhập baseline).
-- **Bị sửa đổi**: ADR-057 mục "gộp nơi nhập baseline về MỘT chỗ (Thiết Lập Dữ Liệu → mục ④)" — chỗ đó nay CHUYỂN sang panel Nguyên Liệu (vẫn giữ nguyên tắc "một chỗ duy nhất", chỉ đổi địa chỉ).
+- **Kế thừa**: ADR-034 (sidebar theo tình huống CEO), ADR-041 (nhãn vai XEM/THỬ/CHỈNH THẬT), ADR-024 (Giá Vốn Theo Lô, chỉ đọc), ADR-049 (Thiết Lập Dữ Liệu), ADR-061 (gộp nơi nhập baseline).
+- **Bị sửa đổi**: ADR-061 mục "gộp nơi nhập baseline về MỘT chỗ (Thiết Lập Dữ Liệu → mục ④)" — chỗ đó nay CHUYỂN sang panel Nguyên Liệu (vẫn giữ nguyên tắc "một chỗ duy nhất", chỉ đổi địa chỉ).
 
 ## Bối cảnh
 Sau nhiều đợt thêm tính năng, sidebar có 7 mục + hub con (Bảng Giá gộp 3 sub-tab), Tổng

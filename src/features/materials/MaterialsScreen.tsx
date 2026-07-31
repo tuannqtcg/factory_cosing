@@ -1,5 +1,5 @@
 // ADR-059 — màn "Nguyên Liệu" (tab `materials`): thay thế Giá Vốn Theo Lô (đọc-only,
-// ADR-024) + vai trò "chốt lại giá" trước đây nằm ở Thiết Lập Dữ Liệu mục ④ (ADR-057).
+// ADR-024) + vai trò "chốt lại giá" trước đây nằm ở Thiết Lập Dữ Liệu mục ④ (ADR-061).
 // Danh sách 1 dòng/nguyên liệu → bấm mở SlideOverPanel: baseline/giá mua mới hôm
 // nay/bình quân gia quyền/trạng thái khóa + lô (bấm 1 lô → panel con lồng, cấp 2)
 // + nút "Chốt baseline". Mọi số đọc thẳng từ `internal`/dual-costing đã đóng băng —

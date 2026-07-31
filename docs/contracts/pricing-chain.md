@@ -67,7 +67,7 @@ export const InventoryLotSchema = z.object({
 export const CompoundInventorySchema = z.object({
   lots: z.array(InventoryLotSchema).max(5), // Excel giữ tối đa 5 đợt nhập gần nhất, [0] = gần nhất
   priceLock: CompoundPriceLockPolicySchema, // baseline/threshold cho bảng giá dòng SP này
-  replacementPriceUsdPerKg: z.number().nonnegative(), // giá mua mới hôm nay (ADR-057, trước gọi "giá tái tạo") — input cho evaluatePriceLock()
+  replacementPriceUsdPerKg: z.number().nonnegative(), // giá mua mới hôm nay (ADR-061, trước gọi "giá tái tạo") — input cho evaluatePriceLock()
 });
 export type CompoundInventory = z.infer<typeof CompoundInventorySchema>;
 ```

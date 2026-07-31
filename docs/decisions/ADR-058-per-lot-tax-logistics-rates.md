@@ -1,7 +1,7 @@
 # ADR-058 — Thuế NK/phí logistics RIÊNG từng lô (landed cost bình quân gia quyền chính xác)
 
 - **Ngày**: 2026-07-30 | **Trạng thái**: CHẤP NHẬN
-- **Kế thừa**: ADR-002 (giá vốn kép), ADR-012 (landed cost theo material), ADR-057 (đổi tên + dual-cost view)
+- **Kế thừa**: ADR-002 (giá vốn kép), ADR-012 (landed cost theo material), ADR-061 (đổi tên + dual-cost view)
 
 ## Bối cảnh
 
@@ -35,7 +35,7 @@ thuế thật của lô có C/O ưu đãi.
 4. **`src/engine/scenario.ts`** (`pushDualCosting`) và **`price-cost-scenarios.ts`**
    (`scenarioWithCostBasis('weighted-avg', ...)`) đổi sang dùng
    `weightedAvgLandedCostPerKgVnd` — mọi nơi hiển thị "giá vốn bình quân gia
-   quyền" (Giá Vốn Theo Lô, Bảng Giá, Tổng Quan — ADR-057) giờ phản ánh đúng
+   quyền" (Giá Vốn Theo Lô, Bảng Giá, Tổng Quan — ADR-061) giờ phản ánh đúng
    thuế/phí từng lô.
 5. **UI**: `InventoryScreen.tsx` (màn "Tồn Kho Compound", nơi chính thức sửa
    lô — vào từ Giá Vốn Theo Lô → "Cập nhật lô hàng") và `DataSetupScreen.tsx`

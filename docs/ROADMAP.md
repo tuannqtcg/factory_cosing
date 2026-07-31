@@ -15,18 +15,23 @@
   (màu chỉ cho biểu đồ + ghi chú). ⚠ **MỚI DEMO 1 màn (Độ Nhạy)** — cần roll-out ~13 màn còn lại.
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
-0. **⚠ ƯU TIÊN NHẤT — đề xuất tái thiết kế bố cục đang CHỜ USER DUYỆT** (Pha 1,
-   CHƯA code gì): user phản hồi UI hiện tại rối (quá nhiều mục menu, chữ nhỏ,
-   nút bấm dày đặc). Đã thảo luận 3 vòng qua artifact tương tác, bản mới nhất
-   lưu ở `prototype/layout-redesign-proposal.html` (mở thẳng bằng trình duyệt).
-   Hướng đi (CHƯA CHỐT): sidebar rút còn 5 mục + Trợ Giúp ghim; mọi màn "chỉ
-   xem" gộp thành danh sách, bấm 1 dòng mở panel bên phải LỒNG NHAU (nested,
-   kiểu Twenty CRM) thay vì điều hướng sang trang khác; "Giá Vốn Theo Lô" (chốt
-   lại giá) nằm ngay trong panel của nguyên liệu đó; Bảng Giá cũng đổi sang
-   cùng kiểu danh sách+panel. Đọc chi tiết ở `docs/sessions/SESSION_2026-07-31.md`
-   trước khi làm gì tiếp — **việc đầu tiên của phiên sau là trình lại mockup cho
-   user chốt layout, RỒI mới viết ADR + sang Pha 2/3.** Đừng tự suy diễn code
-   thật từ mô tả này — xem đúng file mockup.
+0. **⚠ Kiểm tra click-through thật trên trình duyệt cho ADR-059** (tái thiết kế
+   điều hướng — ĐÃ CODE XONG, chưa từng thấy chạy bằng mắt): sidebar 5 mục
+   (Tổng Quan/Nguyên Liệu/Bảng Giá/Kịch Bản & Hoạch Định/Thiết Lập) + Trợ Giúp
+   ghim, panel lồng nhau kiểu Twenty CRM (`MaterialsScreen`, `PriceList` panel,
+   `PlanningHub`, `HelpScreen`, `SlideOverPanel`). `typecheck`/`test`(404/404)/
+   `build` đều xanh, nhưng phiên này KHÔNG click-through được trên trình duyệt
+   vì Firebase Auth JS SDK báo `auth/internal-error` ngay tại màn đăng nhập
+   trong sandbox headless Chromium (xác nhận KHÔNG phải lỗi code — emulator +
+   user demo hoạt động đúng qua REST trực tiếp; xem chi tiết cách cô lập nguyên
+   nhân ở `docs/sessions/SESSION_2026-07-31.md` phần 2). Phiên sau chạy trên máy
+   thật (không sandbox) nên `npm run seed:emulator` + `npm run dev` rồi click
+   thử 1 lượt: mở Nguyên Liệu → panel → panel con sửa lô; Bảng Giá → panel;
+   Trợ Giúp; Kịch Bản & Hoạch Định 2 tab.
+   - Theo dõi thêm: layout Tổng Quan (3 thẻ tóm tắt + bảng "Nguyên liệu + Chi
+     phí SX = Giá thành đầy đủ") ở mục 3 của `prototype/layout-redesign-proposal.html`
+     CHƯA rebuild — Tổng Quan vẫn giữ layout cũ. Làm tiếp nếu user muốn khớp
+     100% mockup.
 1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 3
    công cụ if–then còn lại, Bảng Giá VF/NPP, Lot-costing, Pricing-analytics, Tham Số,
    Cấu Hình). Di trú lên `src/design/primitives.tsx` — thuần trình bày, KHÔNG đụng logic.
@@ -40,6 +45,18 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **(2026-07-31) ADR-059 — Tối giản điều hướng: 5 mục + panel lồng nhau (Twenty CRM)**:
+  sidebar 7 mục/3 nhóm → 5 mục phẳng + Trợ Giúp ghim (Tổng Quan/Nguyên Liệu/
+  Bảng Giá/Kịch Bản & Hoạch Định/Thiết Lập). Màn mới `MaterialsScreen` (danh
+  sách nguyên liệu + panel 2 cấp: xem baseline/giá mua mới/BQGQ + chốt lại giá,
+  panel con sửa lô) thay `LotCostingScreen`; `PriceList` bấm dòng mở panel thay
+  vì mở rộng tại chỗ; `PlanningHub` gộp Trợ Lý CEO + So Sánh Kịch Bản (2 tab);
+  bỏ tab `products` trùng lặp (đã có sẵn trong Thiết Lập mục ⑤); `HelpScreen`
+  mới (nội dung từ TermInfo + glossary, có tìm kiếm). Component dùng chung
+  `SlideOverPanel` (lồng tối đa 2 cấp). KHÔNG schema/công thức mới — mọi ghi
+  (chốt baseline, sửa lô) tái dùng nguyên pattern `safeParse`+`setDoc` đã có.
+  `typecheck`/404 test/`build` xanh. **Chưa click-through được trên trình
+  duyệt** (sandbox chặn Firebase Auth SDK ở màn login — xem mục 0 "Bàn giao").
 - [x] **(2026-07-31) Bảng Giá — cột Giá VF BQGQ + Chênh lệch trong danh sách chính**:
   trước chỉ hiện khi bấm mở dòng; giờ CEO quét cả bảng không cần bấm (PR #32).
 - [x] **(2026-07-31) Nhập lô nguyên liệu theo kg thay vì tấn** (UI-level, 3 màn:

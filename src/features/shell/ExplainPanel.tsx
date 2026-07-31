@@ -24,24 +24,24 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       'Mọi con số cập nhật tự động mỗi khi anh sửa tham số hay cấu hình.',
     ],
     action: [
-      'Số hoàn vốn hay lợi nhuận nhìn xấu đi → vào Độ Nhạy xem yếu tố nào đang bào mòn mạnh nhất.',
-      'Muốn thử "chạy thêm ca / đổi biên lời thì sao" → mở Trợ Lý CEO.',
+      'Số hoàn vốn hay lợi nhuận nhìn xấu đi → vào Kịch Bản & Hoạch Định xem yếu tố nào đang bào mòn mạnh nhất (tab So Sánh Kịch Bản).',
+      'Muốn thử "chạy thêm ca / đổi biên lời thì sao" → mở Kịch Bản & Hoạch Định (tab Trợ Lý CEO).',
     ],
     related: [
-      { tab: 'sensitivity', label: 'Độ Nhạy — điều gì bào lợi nhuận mạnh nhất' },
-      { tab: 'ceo-planner', label: 'Trợ Lý CEO — thử kịch bản ca/biên lời' },
+      { tab: 'planning:compare', label: 'So Sánh Kịch Bản — điều gì bào lợi nhuận mạnh nhất' },
+      { tab: 'planning:ceo', label: 'Trợ Lý CEO — thử kịch bản ca/biên lời' },
     ],
   },
-  'lot-costing': {
-    question: 'Các lô nguyên liệu trong kho giá khác nhau — đang lãi hay lỗ giữ kho, và có cần chốt lại giá bán không?',
+  materials: {
+    question: 'Nguyên liệu đang tồn giá khác nhau — đang lãi hay lỗ giữ kho, và có cần chốt lại giá bán không?',
     source: [
-      'Mỗi nguyên liệu một thẻ: các lô đang tồn với giá nhập từng lô → giá bình quân của kho, đặt cạnh giá mua mới hôm nay (giá thị trường).',
+      'Mỗi nguyên liệu 1 dòng, bấm mở panel: các lô đang tồn với giá nhập từng lô → giá bình quân gia quyền của kho, đặt cạnh giá mua mới hôm nay (giá thị trường) và baseline (mốc neo giá bán).',
       'Kho rẻ hơn thị trường = đang lãi giữ kho; kho đắt hơn = đang lỗ giữ kho, và kế toán buộc phải trích lập dự phòng giảm giá (chuẩn mực VAS-02) ngay cả khi chưa bán.',
-      'Giá bán chính thức luôn tính theo giá mua mới, giữ ổn định bằng cơ chế khóa: chỉ khi giá thị trường lệch quá ngưỡng cho phép mới đề nghị chốt lại.',
+      'Giá bán chính thức tính theo baseline, giữ ổn định bằng cơ chế khóa: chỉ khi giá thị trường lệch quá ngưỡng cho phép mới MỞ KHÓA, đề nghị chốt lại.',
     ],
     action: [
-      'Thấy cảnh báo vượt ngưỡng → bấm nút chuyển sang Bảng Giá để chốt lại giá bán.',
-      'Lô hàng mới về hoặc số liệu lô sai → bấm "Cập nhật lô hàng" ngay trên màn này.',
+      'Thấy MỞ KHÓA → mở panel nguyên liệu đó, bấm "Chốt baseline = giá hôm nay" ngay trong panel, rồi đối chiếu lại Bảng Giá.',
+      'Lô hàng mới về hoặc số liệu lô sai → bấm vào lô trong panel để sửa (panel con), rồi "Lưu thay đổi lô".',
     ],
     related: [
       { tab: 'pricing', label: 'Bảng Giá — chốt lại giá bán' },
@@ -58,59 +58,28 @@ export const SCREEN_EXPLAINS: Record<string, ScreenExplain> = {
       'Ở dạng danh sách, bấm vào bất kỳ dòng nào để xem đường đi của chính con số giá đó, từng bước một.',
     ],
     action: [
-      'Muốn tăng/giảm mặt bằng giá → sửa "phần lời của nhà máy" (markup VF) ở Tham Số, giá toàn bảng tự tính lại.',
-      'Thấy cảnh báo vật liệu lệch ngưỡng đầu trang → sang Giá Vốn Theo Lô xem nên chốt lại không.',
+      'Muốn tăng/giảm mặt bằng giá → sửa "phần lời của nhà máy" (markup VF) ở Thiết Lập, giá toàn bảng tự tính lại.',
+      'Thấy cảnh báo vật liệu lệch ngưỡng đầu trang → sang Nguyên Liệu xem nên chốt lại không.',
     ],
     related: [
-      { tab: 'data-setup', label: 'Thiết Lập Dữ Liệu — sửa markup VF (mục ⑦ Chính sách giá)' },
-      { tab: 'lot-costing', label: 'Giá Vốn Theo Lô — cân nhắc chốt lại giá' },
+      { tab: 'data-setup', label: 'Thiết Lập — sửa markup VF (mục ⑦ Chính sách giá)' },
+      { tab: 'materials', label: 'Nguyên Liệu — cân nhắc chốt lại giá' },
     ],
   },
-  'ceo-planner': {
-    question: 'Muốn đạt mức lời mong muốn với kịch bản ca chạy cụ thể — giá bán phải là bao nhiêu, lợi nhuận và thu hồi vốn ra sao?',
+  planning: {
+    question: 'Muốn đạt mức lời mong muốn với kịch bản ca chạy cụ thể — giá bán phải là bao nhiêu? Và nếu các yếu tố ngoài tầm kiểm soát lệch đi thì sao?',
     source: [
-      'Anh nhập: giá nguyên liệu dự kiến, phần lời mong muốn, số ca chạy. Máy tính chạy NGƯỢC từ mục tiêu về giá bán cần thiết — dùng đúng bộ máy tính giá thành của Tổng Quan, không phải công thức riêng.',
-      'Phần tư vấn chữ là gợi ý tham khảo, không thay quyết định của anh.',
+      'Tab Trợ Lý CEO: nhập giá nguyên liệu dự kiến, phần lời mong muốn, số ca chạy. Máy tính chạy NGƯỢC từ mục tiêu về giá bán cần thiết — dùng đúng bộ máy tính giá thành của Tổng Quan, không phải công thức riêng.',
+      'Tab So Sánh Kịch Bản: đặt 2 bộ giả định (tỷ giá, giá nguyên liệu, sản lượng…) cạnh nhau, gồm cả phân tích độ nhạy (tornado) — yếu tố nào bào lợi nhuận mạnh nhất nếu lệch ±5/10/20%.',
+      'Đây là vùng THỬ — không lưu tự động (trừ khi bấm "Áp dụng vào thật" ở Trợ Lý CEO).',
     ],
-    action: ['Kịch bản nào ưng ý → đối chiếu giá tính ra với Bảng Giá hiện hành trước khi quyết.'],
+    action: [
+      'Kịch bản nào ưng ý → đối chiếu giá tính ra với Bảng Giá hiện hành trước khi quyết.',
+      'Yếu tố đứng đầu tornado là thứ cần canh và phòng hộ trước tiên (khóa tỷ giá, hợp đồng mua dài hạn…).',
+    ],
     related: [
       { tab: 'pricing', label: 'Bảng Giá — giá đang niêm yết' },
-      { tab: 'scenario-compare', label: 'So Sánh Kịch Bản — đặt các phương án cạnh nhau' },
-    ],
-  },
-  sensitivity: {
-    question: 'Trong các yếu tố ngoài tầm kiểm soát (tỷ giá, giá hạt nhựa, lương, điện…), cái nào bào lợi nhuận mạnh nhất nếu lệch đi?',
-    source: [
-      'Giữ nguyên giá bán, cho từng yếu tố lệch ±5/10/20% rồi đo lợi nhuận đổi bao nhiêu. Thanh càng dài = rủi ro càng lớn.',
-      'Tỷ giá USD và giá hạt nhựa thường đứng đầu vì nguyên liệu định giá bằng USD.',
-    ],
-    action: [
-      'Yếu tố đứng đầu là thứ cần canh và phòng hộ trước tiên (khóa tỷ giá, hợp đồng mua dài hạn…).',
-      'Muốn thấy bức tranh đầy đủ khi nhiều yếu tố xấu cùng lúc → dựng kịch bản ở So Sánh Kịch Bản.',
-    ],
-    related: [{ tab: 'scenario-compare', label: 'So Sánh Kịch Bản — dựng kịch bản xấu/tốt' }],
-  },
-  'scenario-compare': {
-    question: 'Nếu mọi thứ xấu đi / tốt lên cùng lúc thì lợi nhuận năm ra sao — đặt các phương án cạnh nhau?',
-    source: ['Mỗi kịch bản là một bộ giả định (tỷ giá, giá nguyên liệu, sản lượng…). Cùng một máy tính giá thành chạy cho từng bộ, kết quả đặt cạnh nhau.'],
-    action: ['Kịch bản xấu vẫn sống được → yên tâm mở rộng; kịch bản xấu lỗ nặng → chuẩn bị phương án phòng hộ từ giờ.'],
-    related: [{ tab: 'sensitivity', label: 'Độ Nhạy — yếu tố nào đáng đưa vào kịch bản' }],
-  },
-  products: {
-    question: 'Danh mục sản phẩm gốc: tên, tiêu chuẩn, kích thước, đơn trọng, và khuôn nào sản xuất SKU nào.',
-    source: [
-      'Đây là dữ liệu gốc nuôi Bảng Giá: đơn trọng quyết định giá mỗi mét/cái; chu kỳ ép + số lòng khuôn quyết định chi phí giờ máy của phụ kiện.',
-      'Phụ kiện chỉ LÊN BẢNG GIÁ khi đã gán khuôn — SKU chưa có khuôn ở trạng thái "chờ khuôn" và tự ẩn. Nhiều SKU dùng chung một khuôn là bình thường (cùng khuôn, khác nguyên liệu compound).',
-      'Mỗi cặp (kích cỡ, nguyên liệu) chỉ khai một dòng — hệ thống tự chặn khai trùng.',
-      'Vai Định Giá tạo/sửa được danh mục; riêng GÁN KHUÔN là thao tác trên tài sản vốn (giá mua, khấu hao) nên chỉ vai Toàn Quyền làm — SKU mới sẽ "chờ khuôn" cho tới khi được gán.',
-    ],
-    action: [
-      'Sản phẩm mới: bấm "+ Thêm" → khai tiêu chuẩn, kích thước, đơn trọng, nguyên liệu → gán khuôn (dùng chung hoặc chờ khuôn mới) → Lưu. Bảng Giá tự tính và hiện SKU mới.',
-      'Mua khuôn mới: khai tài sản khuôn ở Cấu Hình Nhà Máy (khấu hao tự vào giá thành).',
-    ],
-    related: [
-      { tab: 'pricing', label: 'Bảng Giá — xem SKU mới sau khi lưu' },
-      { tab: 'data-setup', label: 'Thiết Lập Dữ Liệu — tài sản khuôn (mục ① Tài sản)' },
+      { tab: 'materials', label: 'Nguyên Liệu — giá vốn thật để đối chiếu' },
     ],
   },
   assumptions: {

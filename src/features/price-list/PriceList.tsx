@@ -19,6 +19,7 @@ import { useMemo, useState } from 'react';
 import { fmtVnd, fmtPct } from '../../lib/format.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TermInfo from '../shell/TermInfo.js';
+import SlideOverPanel from '../shell/SlideOverPanel.js';
 import { calculateScenario } from '../../engine/scenario.js';
 import { scenarioWithCostBasis } from '../../engine/price-cost-scenarios.js';
 
@@ -318,8 +319,8 @@ export default function PriceList({
               . Giá bán VF đang niêm yết có thể không còn phản ánh chi phí hiện tại — cân nhắc <b>chốt lại giá</b>.
             </div>
             {onNavigate && (
-              <button onClick={() => onNavigate('lot-costing')} style={{ flexShrink: 0, padding: '7px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                Xem Giá Vốn Theo Lô →
+              <button onClick={() => onNavigate('materials')} style={{ flexShrink: 0, padding: '7px 14px', background: '#b45309', color: '#fff', border: 'none', borderRadius: 5, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                Xem Nguyên Liệu →
               </button>
             )}
           </div>
@@ -552,16 +553,27 @@ export default function PriceList({
                   {diff !== null ? `${diff >= 0 ? '+' : ''}${fmtVnd(diff)}` : '—'}
                 </div>
               </div>
-              {expanded && (
-                <div style={{ padding: '14px 20px 16px', background: '#faf9f4', borderBottom: '1px solid #e5e0d0' }}>
-                  {renderOrigin(row)}
-                </div>
-              )}
             </div>
           );
         })}
         </div>
       </div>
+      {/* ADR-059 — chi tiết SKU mở qua panel bên phải thay vì mở rộng tại chỗ,
+          dùng chung SlideOverPanel với màn Nguyên Liệu. */}
+      <SlideOverPanel
+        open={expandedKey !== null}
+        onClose={() => setExpandedKey(null)}
+        title={(() => {
+          const r = filteredRows.find((x) => x.key === expandedKey);
+          return r ? `${r.name} ${r.size} (đ/${r.unit})` : '';
+        })()}
+        level={1}
+      >
+        {(() => {
+          const r = filteredRows.find((x) => x.key === expandedKey);
+          return r ? renderOrigin(r) : null;
+        })()}
+      </SlideOverPanel>
       <div style={{ fontSize: 10, color: '#999', marginTop: 6 }}>
         Giá VF BQGQ = giá bán xuất xưởng nếu tính theo giá nguyên liệu bình quân gia quyền đã thực nhập kho (sổ sách) thay vì giá mua mới hôm nay. Chênh lệch = giá đang niêm yết − giá VF BQGQ (dương = còn dư địa biên lợi nhuận so với giá vốn sổ sách).
       </div>

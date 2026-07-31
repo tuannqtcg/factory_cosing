@@ -1,9 +1,9 @@
-// ADR-020 + ADR-023 + ADR-026 — MỘT view CEO duy nhất, đăng nhập production thật.
-// Người dùng đăng nhập bằng email/mật khẩu (LoginScreen); cổng vào = admin/pricing
+// ADR-020 + ADR-023 + ADR-026 + ADR-059 — MỘT view CEO duy nhất, đăng nhập production
+// thật. Người dùng đăng nhập bằng email/mật khẩu (LoginScreen); cổng vào = admin/pricing
 // (ADR-006). App này CHỈ phục vụ QUYẾT ĐỊNH của CEO: nhìn nhiều góc độ → điều chỉnh
-// tham số → xem thay đổi → quyết định. ADR-026 đã bỏ các tab vận hành của vai khác
-// (Kế Hoạch SX của production; báo cáo dây chuyền Ống/PK; nhập Tồn Kho; Danh Mục SP)
-// cho đỡ rối. Điều hướng chia 2 nhóm: PHÂN TÍCH & QUYẾT ĐỊNH và ĐIỀU CHỈNH.
+// tham số → xem thay đổi → quyết định. ADR-059 tối giản điều hướng còn 5 mục + Trợ
+// Giúp ghim (danh sách + panel lồng nhau kiểu Twenty CRM thay cho thêm mục sidebar
+// cho mỗi loại dữ liệu) — xem prototype/layout-redesign-proposal.html đã duyệt.
 import { useState } from 'react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase.js';
@@ -13,71 +13,48 @@ import { useScenarioData } from '../dashboard/useScenarioData.js';
 import Dashboard from '../dashboard/Dashboard.js';
 import PricingHub, { type PricingSub } from '../price-list/PricingHub.js';
 import InventoryScreen from '../inventory/InventoryScreen.js';
-import ProductsScreen from '../products/ProductsScreen.js';
+import MaterialsScreen from '../materials/MaterialsScreen.js';
 import ExplainPanel from './ExplainPanel.js';
 import AssistantChat from './AssistantChat.js';
+import HelpScreen from './HelpScreen.js';
 import DataSetupScreen from '../data-setup/DataSetupScreen.js';
-import CeoPlannerScreen from '../ceo-planner/CeoPlannerScreen.js';
-import LotCostingScreen from '../lot-costing/LotCostingScreen.js';
-import ScenarioCompareScreen from '../scenario-compare/ScenarioCompareScreen.js';
+import PlanningHub, { type PlanningSub } from '../ceo-planner/PlanningHub.js';
 
 const SCENARIO_ID = 'baseline-v3.4';
 
-// ADR-034 — điều hướng theo TÌNH HUỐNG của CEO (hằng ngày / khi có việc /
-// hoạch định / thiết lập), không theo loại công cụ. Mỗi mục kèm chú thích
-// 1 dòng = câu hỏi màn đó trả lời, để không phải nhớ tên màn.
-// Mục 'pricing' gộp 3 tab cũ (pricelist / distributor-pricelist /
-// pricing-analytics) thành hub sub-tab (PricingHub) — id dạng 'pricing:vf'.
+// ADR-059 — sidebar rút còn 5 mục phẳng (không chia nhóm màu) + Trợ Giúp ghim
+// cuối, thay cho 7 mục chia 3 nhóm trước đây (ADR-034/041). "Giá Vốn Theo Lô"
+// không còn là mục riêng — vai trò của nó (xem giá vốn + chốt lại giá) chuyển
+// vào panel của mục "Nguyên Liệu". "Danh Mục Sản Phẩm" bỏ khỏi sidebar vì đã có
+// sẵn nguyên vẹn trong "Thiết Lập" (mục ⑤, ADR-049) — tab riêng chỉ là lối tắt
+// trùng lặp. Nhãn vai (XEM/THỬ/CHỈNH THẬT) GIỮ NGUYÊN cơ chế — vẫn là tín hiệu
+// an toàn cho từng màn, chỉ không còn hiển thị thành nhóm màu trên sidebar.
 type ScreenRole = 'view' | 'sim' | 'edit';
 interface NavTab {
   id: string;
   label: string;
   caption: string;
 }
-// ADR-041 — vai từng nhóm: màu + nhãn + giải thích LIÊN KẾT (cái nào nuôi cái nào).
-// Dùng chung ngôn ngữ màu với "bản đồ app" (xám=xem, xanh=giả định, đỏ=chỉnh thật).
 const ROLE_META: Record<ScreenRole, { dot: string; tag: string; note: string; bg: string; fg: string; border: string }> = {
-  view: { dot: '#6b6b6b', tag: 'CHỈ XEM', note: 'Số tự tính từ nhóm Dữ liệu gốc — muốn đổi thì vào Dữ liệu gốc, không sửa trực tiếp ở đây.', bg: '#f0efec', fg: '#4b4b4b', border: '#d8d5cd' },
+  view: { dot: '#6b6b6b', tag: 'CHỈ XEM', note: 'Số tự tính từ Thiết Lập — muốn đổi thì vào Thiết Lập, không sửa trực tiếp ở đây.', bg: '#f0efec', fg: '#4b4b4b', border: '#d8d5cd' },
   sim: { dot: '#1f5fd0', tag: 'GIẢ ĐỊNH — chưa lưu', note: 'Thử "nếu… thì…" trên dữ liệu hiện tại. Rời màn / F5 là mất, KHÔNG đụng dữ liệu thật.', bg: '#eaf1fc', fg: '#1f5fd0', border: '#bcd3f5' },
   edit: { dot: '#a8003b', tag: 'CHỈNH THẬT — lưu là tính lại', note: 'Đổi ở đây rồi bấm Lưu → ghi dữ liệu gốc → mọi màn Theo dõi & Thử tính lại theo.', bg: '#fbeef2', fg: '#a8003b', border: '#f0c4d3' },
 };
-// ADR-041 — điều hướng theo QUYỀN CHẠM DỮ LIỆU (theo dõi → thử → dữ liệu gốc):
-// mỗi nhóm 1 vai rõ ràng để người dùng luôn biết đang XEM / THỬ (không lưu) /
-// CHỈNH THẬT — hạn chế can thiệp chéo. Dữ liệu gốc (đỏ) đặt cuối như vùng cẩn thận.
-const NAV_GROUPS: Array<{ title: string; role: ScreenRole; caption: string; tabs: NavTab[] }> = [
-  {
-    title: 'Theo dõi',
-    role: 'view',
-    caption: 'nhà máy đang thế nào — chỉ xem',
-    tabs: [
-      { id: 'dashboard', label: 'Tổng Quan', caption: 'nhà máy đang thế nào?' },
-      { id: 'pricing', label: 'Bảng Giá', caption: 'giá VF · bảng NPP · phân tích' },
-    ],
-  },
-  {
-    title: 'Thử & Hoạch định',
-    role: 'sim',
-    caption: 'nếu… thì… — thử, không lưu',
-    tabs: [
-      { id: 'ceo-planner', label: 'Trợ Lý CEO', caption: 'kịch bản ca/biên → lợi nhuận' },
-      { id: 'lot-costing', label: 'Giá Vốn Theo Lô', caption: 'lô mới về — chốt lại giá?' },
-      { id: 'scenario-compare', label: 'So Sánh Kịch Bản', caption: 'kịch bản · độ nhạy (tornado)' },
-    ],
-  },
-  {
-    title: 'Dữ liệu gốc',
-    role: 'edit',
-    caption: 'đổi ở đây → mọi màn tính lại',
-    tabs: [
-      { id: 'data-setup', label: 'Thiết Lập Dữ Liệu', caption: 'tài sản · chi phí · nguyên liệu · SKU · giá' },
-      { id: 'products', label: 'Danh Mục Sản Phẩm', caption: 'SKU · đơn trọng · khuôn (lối tắt)' },
-    ],
-  },
+const NAV_TABS: NavTab[] = [
+  { id: 'dashboard', label: 'Tổng Quan', caption: 'nhà máy đang thế nào?' },
+  { id: 'materials', label: 'Nguyên Liệu', caption: 'giá vốn — chốt lại giá?' },
+  { id: 'pricing', label: 'Bảng Giá', caption: 'giá VF · bảng NPP · phân tích' },
+  { id: 'planning', label: 'Kịch Bản & Hoạch Định', caption: 'thử ca/biên, so sánh kịch bản' },
+  { id: 'data-setup', label: 'Thiết Lập', caption: 'tài sản · chi phí · nguyên liệu · SKU · giá' },
 ];
-// tabId → vai, để dán nhãn đúng vai ở đầu mỗi màn (nguồn DUY NHẤT: NAV_GROUPS).
-const ROLE_BY_TAB: Record<string, ScreenRole> = Object.fromEntries(
-  NAV_GROUPS.flatMap((g) => g.tabs.map((t) => [t.id, g.role] as const)),
-);
+const HELP_TAB: NavTab = { id: 'help', label: '❓ Trợ Giúp', caption: 'giải thích màn hình & thuật ngữ' };
+const ROLE_BY_TAB: Record<string, ScreenRole> = {
+  dashboard: 'view',
+  materials: 'edit', // panel có chốt baseline + sửa lô — CHỈNH THẬT (ADR-059)
+  pricing: 'view',
+  planning: 'sim',
+  'data-setup': 'edit',
+};
 
 
 export default function AppShell() {
@@ -93,7 +70,7 @@ export default function AppShell() {
   // 'pricing:vf' → màn 'pricing', sub 'vf'. Các màn khác không có sub.
   const [tabId, tabSub] = activeTab.split(':') as [string, string | undefined];
   // Điều hướng dùng chung cho sidebar + nút link chéo trong màn.
-  const go = (tab: string) => setActiveTab(tab === 'pricing' ? 'pricing:vf' : tab);
+  const go = (tab: string) => setActiveTab(tab === 'pricing' ? 'pricing:vf' : tab === 'planning' ? 'planning:ceo' : tab);
 
   const navItem = (t: NavTab) => {
     const active = t.id === tabId;
@@ -144,18 +121,9 @@ export default function AppShell() {
         </div>
 
         <nav style={{ flex: 1, overflowY: 'auto', paddingBottom: 8 }}>
-          {NAV_GROUPS.map((g, gi) => (
-            <div key={g.title}>
-              <div style={{ padding: '11px 16px 5px', marginTop: gi === 0 ? 4 : 8, borderTop: gi === 0 ? 'none' : '1px solid #f2f2f2' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: ROLE_META[g.role].dot, flexShrink: 0 }} />
-                  <span style={{ fontSize: 9, letterSpacing: '.12em', textTransform: 'uppercase', color: ROLE_META[g.role].fg, fontWeight: 700 }}>{g.title}</span>
-                </div>
-                <div style={{ fontSize: 8.5, color: '#b3b3b3', marginTop: 2, paddingLeft: 13 }}>{g.caption}</div>
-              </div>
-              {g.tabs.map(navItem)}
-            </div>
-          ))}
+          <div style={{ paddingTop: 6 }}>{NAV_TABS.map(navItem)}</div>
+          {/* ADR-059 — Trợ Giúp ghim cuối danh sách chính, tách biệt = luôn 1 click */}
+          <div style={{ marginTop: 10, borderTop: '1px solid #f2f2f2', paddingTop: 6 }}>{navItem(HELP_TAB)}</div>
         </nav>
 
         {/* ADR-047 — CÔNG TẮC toàn cục: cách tính giá thành Ống. Lưu vào scenario
@@ -206,11 +174,12 @@ export default function AppShell() {
         <div style={{ width: '100%', maxWidth: 1366, background: '#f6f6f6', minHeight: '100%' }}>
         {role && (
           <>
-            {/* ADR-041 — NHÃN VAI màn: người dùng luôn biết đang XEM / THỬ (không
-                lưu) / CHỈNH THẬT. lot-costing:edit mở màn Tồn Kho (ghi thật) nên
-                nhãn chuyển 'edit'. Một chỗ áp cho MỌI màn, đồng bộ màu sidebar. */}
-            {(() => {
-              const sr: ScreenRole = tabId === 'lot-costing' && tabSub === 'edit' ? 'edit' : ROLE_BY_TAB[tabId] ?? 'view';
+            {/* ADR-041/059 — NHÃN VAI màn: người dùng luôn biết đang XEM / THỬ (không
+                lưu) / CHỈNH THẬT. Một chỗ áp cho MỌI màn (bỏ nhóm màu sidebar, giữ
+                nguyên cơ chế nhãn — vẫn nguồn ROLE_BY_TAB duy nhất). Tab 'help' không
+                có banner (nội dung tĩnh, không rủi ro dữ liệu). */}
+            {tabId !== 'help' && (() => {
+              const sr: ScreenRole = ROLE_BY_TAB[tabId] ?? 'view';
               const meta = ROLE_META[sr];
               return (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '16px 36px 0', padding: '7px 13px', borderRadius: 6, background: meta.bg, border: `1px solid ${meta.border}`, flexWrap: 'wrap' }}>
@@ -236,28 +205,19 @@ export default function AppShell() {
                 onNavigate={go}
               />
             )}
-            {tabId === 'ceo-planner' && (
-              <CeoPlannerScreen
-                scenario={data.scenario}
-                role={role}
-                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
-              />
+            {tabId === 'materials' && tabSub !== 'advanced' && (
+              <MaterialsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} onNavigate={go} />
             )}
-            {tabId === 'sensitivity' && <ScenarioCompareScreen scenario={data.scenario} onNavigate={go} initialTab="tornado" />}
-            {tabId === 'scenario-compare' && <ScenarioCompareScreen scenario={data.scenario} onNavigate={go} />}
-            {tabId === 'lot-costing' && tabSub !== 'edit' && (
-              <LotCostingScreen scenario={data.scenario} internal={data.internal} onNavigate={go} />
-            )}
-            {tabId === 'lot-costing' && tabSub === 'edit' && (
+            {tabId === 'materials' && tabSub === 'advanced' && (
               <div>
-                {/* ADR-035 — đường nhập/sửa lô (màn Tồn Kho) gắn lại vào Giá Vốn Theo Lô;
-                    ADR-026 từng gỡ khỏi menu mà không chừa lối vào thay thế. */}
+                {/* ADR-059 — thao tác hiếm (thêm nguyên liệu mới, ren kim loại mua
+                    ngoài) vẫn ở màn cũ InventoryScreen, không nhân bản logic. */}
                 <div style={{ padding: '18px 36px 0' }}>
                   <button
-                    onClick={() => setActiveTab('lot-costing')}
+                    onClick={() => setActiveTab('materials')}
                     style={{ padding: '7px 14px', background: '#fff', color: '#0a0a0a', border: '1px solid #d8d8d8', borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
                   >
-                    ← Quay lại Giá Vốn Theo Lô
+                    ← Quay lại Nguyên Liệu
                   </button>
                 </div>
                 <InventoryScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} internal={data.internal} />
@@ -273,7 +233,16 @@ export default function AppShell() {
                 internal={data.internal}
               />
             )}
-            {tabId === 'products' && <ProductsScreen role={role} scenarioId={SCENARIO_ID} scenario={data.scenario} />}
+            {tabId === 'planning' && (
+              <PlanningHub
+                sub={(tabSub as PlanningSub | undefined) ?? 'ceo'}
+                onSubChange={(s) => setActiveTab(`planning:${s}`)}
+                onNavigate={go}
+                scenario={data.scenario}
+                role={role}
+                user={authState.user ? { uid: authState.user.uid, email: authState.user.email } : null}
+              />
+            )}
             {tabId === 'data-setup' && (
               <DataSetupScreen
                 key={activeTab}
@@ -285,6 +254,7 @@ export default function AppShell() {
                 initialSection={tabSub as Parameters<typeof DataSetupScreen>[0]['initialSection']}
               />
             )}
+            {tabId === 'help' && <HelpScreen />}
           </>
         )}
         </div>

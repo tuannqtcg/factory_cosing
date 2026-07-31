@@ -90,6 +90,9 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   // ADR-047 — cách phân bổ chi phí máy đùn cho giá thành ống: 'kg' (mặc định,
   // parity Excel) | 'meters' (theo giờ máy per-size). Xem nhánh ở vòng skuPriceChains.
   const pipeCostMethod = input.pipeCostMethod ?? 'kg';
+  // ADR-060 — cách phân bổ chi phí bao bì cho giá thành PHỤ KIỆN: 'flat_per_kg'
+  // (mặc định, parity Excel) | 'per_box' (theo carton, xem nhánh ở vòng skuPriceChains).
+  const fittingPackagingMethod = input.fittingPackagingMethod ?? 'flat_per_kg';
   // Material theo line, GIỮ THỨ TỰ materials[] (phần tử đầu = material tham chiếu — xem ghi chú đầu file)
   const pipeMaterialIds = materials.filter((m) => pipeProducts.some((p) => p.materialId === m.id)).map((m) => m.id);
   const fittingMaterialIds = materials
@@ -259,6 +262,15 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
     // TÁI DÙNG nguyên công thức (verify khớp tuyệt đối 80/91 SKU, xem
     // tests/parity/price-ladder.test.ts), KHÔNG viết công thức "vật liệu
     // thuần nhựa" riêng để tránh trùng lặp logic đã kiểm chứng.
+    // ADR-060 — 'per_box' CHỈ áp dụng khi SKU có piecesPerBox VÀ resource có
+    // packagingBoxCostVnd; thiếu 1 trong 2 → undefined → fallback flat_per_kg
+    // TRONG calculateFittingMaterialCostPerUnit() cho đúng SKU đó (parity-safe).
+    const packagingCostPerUnitOverride =
+      fittingPackagingMethod === 'per_box' &&
+      product.piecesPerBox !== undefined &&
+      fittingResource.packagingBoxCostVnd !== undefined
+        ? fittingResource.packagingBoxCostVnd / product.piecesPerBox
+        : undefined;
     let materialCostPerUnit: number;
     if (product.metalInsert) {
       const insertLock = metalInsertLockByKey.get(`${product.metalInsert.renType}|${product.metalInsert.ptSize}`);
@@ -275,6 +287,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         insertQtyPerUnit: product.metalInsert.insertQtyPerUnit,
         insertPricingPriceVnd: insertLock.pricingPrice,
         landedRates,
+        packagingCostPerUnitOverride,
       });
     } else {
       materialCostPerUnit = calculateFittingMaterialCostPerUnit({
@@ -285,6 +298,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         insertQtyPerUnit: 0,
         insertPricingPriceVnd: 0,
         landedRates,
+        packagingCostPerUnitOverride,
       });
     }
 

@@ -80,6 +80,10 @@ export const MachineHourResourceSchema = z.object({
   normalUtilizationFactor: z.number().min(0).max(1),
   yieldRate: YieldRate,
   packagingCostPerKg: z.number().int().nonnegative(),
+  // ADR-060 — giá 1 thùng carton đóng gói phụ kiện (chưa VAT). Optional: chỉ
+  // dùng khi ScenarioInput.fittingPackagingMethod = 'per_box' VÀ SKU có
+  // Product.piecesPerBox; thiếu 1 trong 2 → fallback packagingCostPerKg (flat).
+  packagingBoxCostVnd: z.number().int().nonnegative().optional(),
   // ADR-011: optional = GHI ĐÈ thủ công (đổi chính sách công suất, cần ADR nếu
   // đổi). undefined (mặc định) = tự tính bottom-up từ FittingProduct[] qua
   // computeMixAvgProductivityKgPerMachineHour() (src/engine/fitting.ts).

@@ -22,17 +22,25 @@ export interface FittingMaterialCostPerUnitInputs {
   insertPricingPriceVnd: number;
   /** ADR-012 — thuế NK/phí HQ theo NGUYÊN LIỆU của SKU (trước đây lấy từ CurrencyParams chung). */
   landedRates: LandedCostRates;
+  /**
+   * ADR-060 — chi phí bao bì/cái khi ScenarioInput.fittingPackagingMethod =
+   * 'per_box' (= resource.packagingBoxCostVnd ÷ product.piecesPerBox), THAY
+   * cho số hạng `unitWeightKg × packagingCostPerKg`. undefined (mặc định) =
+   * giữ nguyên công thức cũ theo kg — khớp Excel v3.4 (parity).
+   */
+  packagingCostPerUnitOverride?: number;
 }
 
 /**
  * materialCostPerUnit CHO MỌI SKU phụ kiện (§3.4, dùng chung cả 91 SKU — không
- * riêng họ ren dù tên hàm cũ gợi ý vậy) = phần nhựa + insertQtyPerUnit ×
- * insertPricingPriceVnd (ADR-008 mục 3, = 0 với SKU không ren) — THAY cho hằng
- * số tĩnh `brassInsertCost` cộng riêng ở `breakEvenPerUnit`.
+ * riêng họ ren dù tên hàm cũ gợi ý vậy) = phần nhựa + bao bì + insertQtyPerUnit
+ * × insertPricingPriceVnd (ADR-008 mục 3, = 0 với SKU không ren) — THAY cho
+ * hằng số tĩnh `brassInsertCost` cộng riêng ở `breakEvenPerUnit`.
  */
 export function calculateFittingMaterialCostPerUnit(inputs: FittingMaterialCostPerUnitInputs): number {
   const compoundLandedPerKg = landedCostPerKgVnd(inputs.compoundPricingPriceUsdPerKg, inputs.landedRates);
-  const plasticCostPerUnit = inputs.unitWeightKg * (compoundLandedPerKg / inputs.yieldRate + inputs.packagingCostPerKg);
+  const packagingCostPerUnit = inputs.packagingCostPerUnitOverride ?? inputs.unitWeightKg * inputs.packagingCostPerKg;
+  const plasticCostPerUnit = inputs.unitWeightKg * (compoundLandedPerKg / inputs.yieldRate) + packagingCostPerUnit;
   return plasticCostPerUnit + inputs.insertQtyPerUnit * inputs.insertPricingPriceVnd;
 }
 

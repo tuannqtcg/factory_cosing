@@ -37,6 +37,14 @@ export const ScenarioInputSchema = z
     // giá cao hơn. TỔNG chi phí máy giữ nguyên, chỉ đổi cách chia giữa các size.
     // Mặc định 'kg' → doc cũ không có field vẫn parse đúng, không vỡ parity.
     pipeCostMethod: z.enum(['kg', 'meters']).default('kg'),
+    // ADR-060 — cách tính chi phí bao bì phụ kiện (2 logic song song):
+    // 'flat_per_kg' (mặc định) = packagingCostPerKg × unitWeightKg → khớp Excel
+    // v3.4 (parity); 'per_box' = packagingBoxCostVnd ÷ piecesPerBox theo TỪNG SKU
+    // (đúng bản chất đóng thùng carton, không tỷ lệ theo trọng lượng). SKU thiếu
+    // piecesPerBox hoặc resource thiếu packagingBoxCostVnd → tự fallback
+    // 'flat_per_kg' cho đúng SKU đó. Mặc định 'flat_per_kg' → doc cũ không có
+    // field vẫn parse đúng, không vỡ parity.
+    fittingPackagingMethod: z.enum(['flat_per_kg', 'per_box']).default('flat_per_kg'),
     // ADR-055 — TỶ LỆ ĐÁY (production mix): % công suất DÒNG dành cho material
     // THAM CHIẾU (chính, vd BlazeMaster); phần còn lại cho material thứ 2 của
     // dòng (vd Corzan). Doanh thu/EBIT/biến phí VF = chính×giá_chính +

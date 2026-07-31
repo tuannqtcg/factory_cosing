@@ -42,6 +42,10 @@ export const FittingProductSchema = z.object({
   unitWeightKg: z.number().positive(),
   metalInsert: MetalInsertBomSchema.optional(),
   materialId: z.string(), // ADR-012
+  // ADR-060 — số cái/thùng carton (catalog đóng gói). Optional: chỉ dùng khi
+  // ScenarioInput.fittingPackagingMethod = 'per_box'; SKU thiếu field này vẫn
+  // tính được, fallback resource.packagingCostPerKg (flat, parity Excel v3.4).
+  piecesPerBox: z.number().int().positive().optional(),
 });
 export type FittingProduct = z.infer<typeof FittingProductSchema>;
 

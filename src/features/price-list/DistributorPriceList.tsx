@@ -80,7 +80,7 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
   const cols = '36px 1.4fr 70px 52px 1fr 1fr 1fr 1fr';
 
   return (
-    <div style={{ padding: '32px 36px' }}>
+    <div className="px-4 py-6 md:px-9 md:py-8">
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Nhà Phân Phối</div>
         <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>Từ giá VF → giá tới nhà phân phối</h1>
@@ -107,8 +107,8 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
         <div style={{ fontSize: 10, color: '#737373' }}>Hiển thị {filteredRows.length} sản phẩm</div>
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,.04)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8 }}>
+      <div style={{ background: '#fff', border: '1px solid #d8d8d8', borderRadius: 2, boxShadow: '0 2px 8px rgba(0,0,0,.04)', overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: '#f5f5f3', borderBottom: '1px solid #e5e5e5', gap: 8, minWidth: 760 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'ĐVT'].map((h) => (
             <div key={h} style={{ fontSize: 9, fontWeight: 700, color: '#737373', textTransform: 'uppercase' }}>{h}</div>
           ))}
@@ -117,7 +117,7 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
           ))}
         </div>
         {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center' }}>
+          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: '1px solid #f5f5f5', gap: 8, alignItems: 'center', minWidth: 760 }}>
             <div style={{ fontSize: 10, color: '#b3b3b3', fontVariantNumeric: 'tabular-nums' }}>{row.stt}</div>
             <div style={{ fontSize: 12, fontWeight: 500 }}>{row.name}</div>
             <div style={{ fontSize: 11, color: '#737373', fontVariantNumeric: 'tabular-nums' }}>{row.size}</div>

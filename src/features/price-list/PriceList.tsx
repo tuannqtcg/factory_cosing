@@ -254,7 +254,7 @@ export default function PriceList({
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: '#2563eb', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                 So sánh 2 kịch bản giá vốn nguyên liệu <TermInfo term="baseline-mechanism" />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 10 }}>
                 <div style={{ background: '#faf9f4', border: '1px solid #ece8dc', borderRadius: 6, padding: '10px 12px' }}>
                   <div style={{ fontSize: 9, color: '#737373', textTransform: 'uppercase' }}>Giá VF dự kiến</div>
                   <div style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(marketChain.vfPricePerUnit)} đ</div>
@@ -292,7 +292,7 @@ export default function PriceList({
   }
 
   return (
-    <div style={{ padding: '32px 36px' }}>
+    <div className="px-4 py-6 md:px-9 md:py-8">
       <div style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', color: '#737373', marginBottom: 5 }}>Bảng Giá Xuất Xưởng (VF)</div>
         <h1 style={{ margin: 0, fontSize: 21, fontWeight: 700, letterSpacing: '-.3px' }}>
@@ -425,7 +425,7 @@ export default function PriceList({
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 12, marginBottom: 16 }}>
                   <div style={{ background: '#0a0a0a', color: '#fff', borderRadius: 6, padding: '14px 16px' }}>
                     <div style={{ fontSize: 9, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '.05em' }}>Giá VF trước VAT</div>
                     <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(cardRow.priceBeforeVat)} <span style={{ fontSize: 11, color: '#999', fontWeight: 400 }}>đ/{cardRow.unit}</span></div>
@@ -435,7 +435,7 @@ export default function PriceList({
                     <div style={{ fontSize: 24, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{fmtVnd(cardRow.priceWithVat)} <span style={{ fontSize: 11, color: '#999', fontWeight: 400 }}>đ/{cardRow.unit}</span></div>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 18 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12, marginBottom: 18 }}>
                   {([['Giá TCG (khâu thương mại)', cardRow.chain.tcgPricePerUnit], ['Niêm yết NPP trước VAT', cardRow.chain.listPriceBeforeVat], ['Niêm yết NPP có VAT', cardRow.chain.listPriceWithVat]] as const).map(([l, val]) => (
                     <div key={l} style={{ border: '1px solid #ece8dc', borderRadius: 6, padding: '10px 12px', background: '#faf9f4' }}>
                       <div style={{ fontSize: 9, color: '#999', textTransform: 'uppercase', letterSpacing: '.04em' }}>{l}</div>

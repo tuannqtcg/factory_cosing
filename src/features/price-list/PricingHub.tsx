@@ -31,7 +31,7 @@ export default function PricingHub({
   const active = SUBS.find((s) => s.id === sub) ?? SUBS[0]!;
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '18px 36px 0' }}>
+      <div className="px-4 md:px-9" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 14, paddingTop: 18 }}>
         <div style={{ display: 'flex', border: '1px solid #b3b3b3', borderRadius: 2, overflow: 'hidden' }}>
           {SUBS.map((s) => (
             <div

@@ -28,6 +28,14 @@ flat rate hiện dùng (2.000đ/kg, `tests/fixtures/fitting.json`):
 kg/bó thay vì 1 số flat, xem mục "Còn treo"). Đúng bản chất: chi phí bao bì phụ kiện gắn với
 THÙNG (giá cố định/thùng), phân bổ theo SỐ CÁI/thùng — không liên quan trọng lượng.
 
+**Lưu ý phạm vi (user xác nhận phiên 2026-07-31)**: 2 outlier nêu trên (Gioăng EPDM, Thập)
+CHƯA có trong SKU đang sản xuất thực tế — Thập chưa làm sản phẩm, Gioăng chưa sản xuất. Với
+đúng tập SKU đang chạy hiện nay, độ lệch quan sát được đồng nhất một chiều: **667–1.500đ/kg,
+thấp hơn** flat rate 2.000đ/kg ở mọi nhóm đã đối chiếu — tức chuyển sang `'per_box'` nhìn
+chung sẽ HẠ chi phí bao bì phân bổ cho phụ kiện đang bán, không phải đẩy lên. 2 outlier vẫn
+giữ trong ADR làm căn cứ cho fallback parity-safe (mục Quyết định #5) — khi nào thêm SKU
+Thập/Gioăng vào sản xuất, cơ chế per-SKU đã sẵn sàng xử lý đúng mà không cần sửa lại thiết kế.
+
 `packagingCostPerKg` flat đang là 1 phần của `fullCostPerKgRef`/`materialCostPerUnit` đã khóa
 parity Excel v3.4 (404/404 test, luật bất biến #1 AGENTS.md). Không đổi công thức mặc định —
 theo đúng mẫu ADR-047, dùng công tắc song song.

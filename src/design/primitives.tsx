@@ -4,13 +4,20 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { color, space, radius, shadow, font, eyebrowStyle, tnum, toneColor, type SemanticTone } from './tokens.js';
 
+// Padding responsive (Tailwind, đã có sẵn trong stack — AGENTS.md): hẹp hơn trên
+// mobile để không nuốt hết bề ngang màn hình nhỏ. px-9/py-8 desktop = KHỚP đúng
+// space[8]/space[8]+4 cũ (32/36px) — không đổi hành vi desktop.
 export function Screen({ children, maxWidth = 1040 }: { children: ReactNode; maxWidth?: number }) {
-  return <div style={{ padding: `${space[8]}px ${space[8] + 4}px`, maxWidth, margin: '0 auto' }}>{children}</div>;
+  return (
+    <div className="px-4 py-6 md:px-9 md:py-8" style={{ maxWidth, margin: '0 auto' }}>
+      {children}
+    </div>
+  );
 }
 
 export function PageHeader({ eyebrow, title, subtitle, right }: { eyebrow?: string; title: ReactNode; subtitle?: ReactNode; right?: ReactNode }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: space[4], marginBottom: space[5] }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: space[4], marginBottom: space[5] }}>
       <div>
         {eyebrow && <div style={eyebrowStyle}>{eyebrow}</div>}
         <h1 style={{ margin: '5px 0 0', fontSize: font.size.xxl, fontWeight: font.weight.bold, letterSpacing: '-.02em', color: color.ink }}>{title}</h1>

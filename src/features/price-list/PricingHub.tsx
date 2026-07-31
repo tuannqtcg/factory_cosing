@@ -33,7 +33,7 @@ export default function PricingHub({
   const active = SUBS.find((s) => s.id === sub) ?? SUBS[0]!;
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, padding: '18px 36px 0' }}>
+      <div className="px-4 md:px-9" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: 14, paddingTop: 18 }}>
         <Segmented options={SUBS.map((s) => ({ id: s.id, label: s.label }))} value={active.id} onChange={onSubChange} />
         <span style={{ fontSize: ft.size.xs, color: tk.inkFaint }}>{active.hint}</span>
       </div>

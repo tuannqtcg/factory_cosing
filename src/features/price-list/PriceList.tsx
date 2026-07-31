@@ -376,7 +376,7 @@ export default function PriceList({
                     </div>
                   ))}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: 12, marginBottom: 16 }}>
                   <Card pad={0} inverse style={{ padding: '14px 16px' }}>
                     <div style={{ ...eyebrowStyle, color: tk.sidebarText }}>Giá VF trước VAT</div>
                     <div style={{ fontSize: ft.size.xxl, fontWeight: ft.weight.extrabold, ...tnum }}>{fmtVnd(cardRow.priceBeforeVat)} <span style={{ fontSize: ft.size.xs, color: tk.sidebarText, fontWeight: ft.weight.regular }}>đ/{cardRow.unit}</span></div>
@@ -386,7 +386,7 @@ export default function PriceList({
                     <div style={{ fontSize: ft.size.xxl, fontWeight: ft.weight.extrabold, ...tnum, color: tk.ink }}>{fmtVnd(cardRow.priceWithVat)} <span style={{ fontSize: ft.size.xs, color: tk.inkFaint, fontWeight: ft.weight.regular }}>đ/{cardRow.unit}</span></div>
                   </Card>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 18 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: 12, marginBottom: 18 }}>
                   {([['Giá TCG (khâu thương mại)', cardRow.chain.tcgPricePerUnit], ['Niêm yết NPP trước VAT', cardRow.chain.listPriceBeforeVat], ['Niêm yết NPP có VAT', cardRow.chain.listPriceWithVat]] as const).map(([l, val]) => (
                     <div key={l} style={{ border: `1px solid ${tk.border}`, borderRadius: rd.md, padding: '10px 12px', background: tk.surfaceMuted }}>
                       <div style={{ ...eyebrowStyle }}>{l}</div>
@@ -459,8 +459,8 @@ export default function PriceList({
 
       <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
 
-      <Card pad={0} style={{ overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8 }}>
+      <Card pad={0} style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8, minWidth: 760 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'Mã định danh', 'Phân lớp', 'ĐVT'].map((h) => (
             <div key={h} style={{ ...eyebrowStyle }}>{h}</div>
           ))}
@@ -472,7 +472,7 @@ export default function PriceList({
             <div key={row.key}>
               <div
                 onClick={() => setExpandedKey(expanded ? null : row.key)}
-                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? tk.surfaceMuted : tk.surface }}
+                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? tk.surfaceMuted : tk.surface, minWidth: 760 }}
               >
                 <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum }}>{row.stt}</div>
                 <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>

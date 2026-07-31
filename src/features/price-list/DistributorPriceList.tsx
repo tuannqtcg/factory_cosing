@@ -108,8 +108,8 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
         <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>Hiển thị {filteredRows.length} sản phẩm</div>
       </div>
 
-      <Card pad={0} style={{ overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8 }}>
+      <Card pad={0} style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: cols, padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8, minWidth: 760 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'ĐVT'].map((h) => (
             <div key={h} style={{ ...eyebrowStyle, color: tk.inkMuted }}>{h}</div>
           ))}
@@ -118,7 +118,7 @@ export default function DistributorPriceList({ priceList }: { priceList: PriceLi
           ))}
         </div>
         {filteredRows.map((row) => (
-          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center' }}>
+          <div key={row.key} style={{ display: 'grid', gridTemplateColumns: cols, padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center', minWidth: 760 }}>
             <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum }}>{row.stt}</div>
             <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>{row.name}</div>
             <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, ...tnum }}>{row.size}</div>

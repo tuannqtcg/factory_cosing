@@ -42,8 +42,21 @@ export interface PipeCapacityLevel {
 export interface InvestmentKpis {
   /** Thiết bị đùn + máy ép + 66 bộ khuôn + vốn đầu tư Lab/UL (nguyên giá, không khấu hao). */
   totalFixedCapitalInvested: number;
-  /** (Định phí CVP 2 dòng + chi phí vận hành + lãi vay) ÷ tỷ lệ số dư đảm phí tại giá VF. */
+  /** (Định phí CVP 2 dòng + chi phí vận hành + lãi vay) ÷ tỷ lệ số dư đảm phí tại giá VF — GỘP cả 2 dòng theo mix hiện tại. */
   enterpriseBreakEvenRevenuePerYear: number;
+  /**
+   * ADR-062 — hoà vốn doanh thu TÁCH RIÊNG từng dòng (khác `enterpriseBreakEvenRevenuePerYear`
+   * vốn gộp cả 2 dòng theo 1 tỷ lệ đảm phí bình quân, dễ hiểu lầm — user hỏi phiên
+   * 2026-07-31). Cùng nguyên tắc phân bổ `revenueShare` đã dùng ở bậc 4 thang giá
+   * (price-ladder.ts) — CHỈ khác: áp cho ngưỡng DOANH THU (CVP) thay vì cộng vào
+   * GIÁ/KG. Định phí ngoài SX (nonProductionPerYear) chia theo tỷ trọng doanh thu
+   * VF từng dòng; định phí SX riêng dòng lấy nguyên `pipeCvp/fittingCvp.fixedCostPerYear`.
+   */
+  pipeBreakEvenRevenuePerYear: number;
+  fittingBreakEvenRevenuePerYear: number;
+  /** Tỷ lệ số dư đảm phí RIÊNG từng dòng (khác tỷ lệ bình quân dùng cho enterpriseBreakEvenRevenuePerYear). */
+  pipeContributionMarginRatio: number;
+  fittingContributionMarginRatio: number;
   /** Doanh thu VF dự kiến (tại năng suất bình thường). */
   expectedRevenueVf: number;
   /** Doanh thu VF dòng Ống (ADR-055 — đã gộp phần chính + phụ theo tỷ lệ đáy). */
@@ -54,6 +67,14 @@ export interface InvestmentKpis {
   ebitAtNormalCapacityVfPrice: number;
   /** totalFixedCapitalInvested ÷ (EBIT + tổng khấu hao năm) — khấu hao khuôn theo asOfYear (ADR-007). */
   paybackYears: number;
+}
+
+/** ADR-062 — chi phí bao bì đang cấu hình, tách riêng theo cơ chế của từng dòng (Ống = luôn theo kg; Phụ kiện = theo kg HOẶC theo thùng carton tuỳ fittingPackagingMethod). */
+export interface PackagingCostSummary {
+  pipe: { packagingCostPerKgVnd: number };
+  fitting:
+    | { method: 'flat_per_kg'; packagingCostPerKgVnd: number }
+    | { method: 'per_box'; packagingBoxCostVnd: number };
 }
 
 export interface FittingCapacityLevel {
@@ -76,6 +97,8 @@ export interface DashboardKpis {
   pipeCostLayers: CostLayersPerKg;
   /** Thác chi phí đ/kg dòng Phụ kiện — cùng 4 tầng. */
   fittingCostLayers: CostLayersPerKg;
+  /** ADR-062 — chi phí bao bì đang cấu hình, tách riêng Ống (túi ni lông, theo kg) vs Phụ kiện (carton, theo kg hoặc theo thùng). */
+  packaging: PackagingCostSummary;
 }
 
 export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
@@ -231,6 +254,23 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   const enterpriseBreakEvenRevenuePerYear =
     (pipeCvp.fixedCostPerYear + fittingCvp.fixedCostPerYear + nonProductionPerYear) / contributionMarginRatio;
 
+  // ── ADR-062 — Hoà vốn TÁCH RIÊNG từng dòng (user hỏi phiên 2026-07-31: "25,52 tỷ
+  // hoà vốn" ở trên GỘP cả 2 dòng theo 1 tỷ lệ đảm phí bình quân, dễ hiểu lầm là
+  // hoà vốn CỦA RIÊNG Ống). Chia nonProductionPerYear theo tỷ trọng doanh thu VF
+  // từng dòng — ĐÚNG nguyên tắc revenueShare đã dùng ở bậc 4 thang giá
+  // (calculatePipe/FittingPriceLadder5Tier, price-ladder.ts) — không phát minh
+  // công thức mới, chỉ áp cùng cách phân bổ đó cho ngưỡng DOANH THU thay vì GIÁ/KG.
+  const pipeVariableCost = splitBy(pipeKg, pipePrimaryFrac, pipeLadder, pipeSecondaryLadder, (l) => l.variableCostFloor);
+  const fittingVariableCost = splitBy(fittingKg, fittingPrimaryFrac, fittingLadder, fittingSecondaryLadder, (l) => l.variableCostFloor);
+  const pipeContributionMarginRatio = 1 - pipeVariableCost / pipeRevenueVf;
+  const fittingContributionMarginRatio = 1 - fittingVariableCost / fittingRevenueVf;
+  const pipeRevenueShare = pipeRevenueVf / revenueVf;
+  const fittingRevenueShare = fittingRevenueVf / revenueVf;
+  const pipeBreakEvenRevenuePerYear =
+    (pipeCvp.fixedCostPerYear + nonProductionPerYear * pipeRevenueShare) / pipeContributionMarginRatio;
+  const fittingBreakEvenRevenuePerYear =
+    (fittingCvp.fixedCostPerYear + nonProductionPerYear * fittingRevenueShare) / fittingContributionMarginRatio;
+
   // Tổng khấu hao năm: đùn + máy ép + khuôn theo asOfYear (ADR-007) + Lab/UL + Nhà xưởng.
   const totalDepreciationPerYear =
     pipeCost.extruderDepreciationPerYear +
@@ -256,11 +296,22 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     investment: {
       totalFixedCapitalInvested,
       enterpriseBreakEvenRevenuePerYear,
+      pipeBreakEvenRevenuePerYear,
+      fittingBreakEvenRevenuePerYear,
+      pipeContributionMarginRatio,
+      fittingContributionMarginRatio,
       expectedRevenueVf: revenueVf,
       expectedRevenuePipeVf: pipeRevenueVf,
       expectedRevenueFittingVf: fittingRevenueVf,
       ebitAtNormalCapacityVfPrice,
       paybackYears,
+    },
+    packaging: {
+      pipe: { packagingCostPerKgVnd: pipeResource.packagingCostPerKg },
+      fitting:
+        (scenario.fittingPackagingMethod ?? 'flat_per_kg') === 'per_box' && fittingResource.packagingBoxCostVnd !== undefined
+          ? { method: 'per_box', packagingBoxCostVnd: fittingResource.packagingBoxCostVnd }
+          : { method: 'flat_per_kg', packagingCostPerKgVnd: fittingResource.packagingCostPerKg },
     },
     pipeCostLayers: pipeCostLayersPerKg(pipeCost, pipeResource, pipeCapacity.normalCapacityKgYear),
     fittingCostLayers: fittingCostLayersPerKg(fittingCost, fittingResource, fittingCapacity.estimatedProductionKgYear),

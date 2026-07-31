@@ -91,6 +91,68 @@ describe('Dashboard KPI — multi-material (ADR-012): thêm Corzan không đổi
   });
 });
 
+describe('ADR-062 — hoà vốn doanh thu TÁCH RIÊNG từng dòng (khác enterpriseBreakEvenRevenuePerYear vốn gộp)', () => {
+  const inv = kpis.investment;
+
+  it('cả 2 ngưỡng đều dương, hữu hạn', () => {
+    expect(inv.pipeBreakEvenRevenuePerYear).toBeGreaterThan(0);
+    expect(Number.isFinite(inv.pipeBreakEvenRevenuePerYear)).toBe(true);
+    expect(inv.fittingBreakEvenRevenuePerYear).toBeGreaterThan(0);
+    expect(Number.isFinite(inv.fittingBreakEvenRevenuePerYear)).toBe(true);
+  });
+
+  it('tỷ lệ số dư đảm phí riêng từng dòng nằm trong (0,1)', () => {
+    expect(inv.pipeContributionMarginRatio).toBeGreaterThan(0);
+    expect(inv.pipeContributionMarginRatio).toBeLessThan(1);
+    expect(inv.fittingContributionMarginRatio).toBeGreaterThan(0);
+    expect(inv.fittingContributionMarginRatio).toBeLessThan(1);
+  });
+
+  it('baseline có lãi ở CS bình thường ⇒ doanh thu THẬT mỗi dòng phải vượt hoà vốn RIÊNG của chính dòng đó', () => {
+    expect(inv.expectedRevenuePipeVf).toBeGreaterThan(inv.pipeBreakEvenRevenuePerYear);
+    expect(inv.expectedRevenueFittingVf).toBeGreaterThan(inv.fittingBreakEvenRevenuePerYear);
+  });
+
+  it('2 ngưỡng tách riêng KHÔNG bằng ngưỡng gộp chia đôi (tỷ lệ đảm phí 2 dòng khác nhau, không phải trung bình đơn giản)', () => {
+    expect(inv.pipeBreakEvenRevenuePerYear + inv.fittingBreakEvenRevenuePerYear).not.toBeCloseTo(
+      inv.enterpriseBreakEvenRevenuePerYear,
+      0,
+    );
+  });
+});
+
+describe('ADR-062 — chi phí bao bì hiện hành, tách riêng cơ chế Ống (luôn theo kg) vs Phụ kiện (theo kg hoặc theo thùng)', () => {
+  it('Ống: túi ni lông luôn đọc thẳng packagingCostPerKg của resource (1.500đ/kg trong fixture)', () => {
+    expect(kpis.packaging.pipe.packagingCostPerKgVnd).toBe(1500);
+  });
+
+  it("Phụ kiện: mặc định 'flat_per_kg' (doc cũ không có fittingPackagingMethod) — đọc packagingCostPerKg (2.000đ/kg trong fixture)", () => {
+    expect(kpis.packaging.fitting).toEqual({ method: 'flat_per_kg', packagingCostPerKgVnd: 2000 });
+  });
+
+  it("scenario bật 'per_box' + có packagingBoxCostVnd ⇒ packaging.fitting đổi sang {method:'per_box', packagingBoxCostVnd}", () => {
+    const withBox = ScenarioInputSchema.parse({
+      ...(buildBaselineScenarioInput() as object),
+      fittingPackagingMethod: 'per_box',
+      resources: {
+        ...(buildBaselineScenarioInput() as any).resources,
+        fitting: { ...(buildBaselineScenarioInput() as any).resources.fitting, packagingBoxCostVnd: 12000 },
+      },
+    });
+    const boxKpis = calculateDashboardKpis(withBox);
+    expect(boxKpis.packaging.fitting).toEqual({ method: 'per_box', packagingBoxCostVnd: 12000 });
+  });
+
+  it("'per_box' bật nhưng THIẾU packagingBoxCostVnd ⇒ fallback 'flat_per_kg' (parity-safe, giống ADR-060)", () => {
+    const boxNoData = ScenarioInputSchema.parse({
+      ...(buildBaselineScenarioInput() as object),
+      fittingPackagingMethod: 'per_box',
+    });
+    const kpisNoData = calculateDashboardKpis(boxNoData);
+    expect(kpisNoData.packaging.fitting).toEqual({ method: 'flat_per_kg', packagingCostPerKgVnd: 2000 });
+  });
+});
+
 describe('ADR-055 — tỷ lệ đáy chia doanh thu giữa 2 compound chung dòng', () => {
   const withPipeMix = (pipePct: number) =>
     calculateDashboardKpis(

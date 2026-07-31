@@ -694,9 +694,33 @@ export default function Dashboard({
                 <CardNote>Định phí chưa được hấp thụ (giờ máy rảnh rỗi)</CardNote>
               </Card>
               <Card>
-                <CardLabel tooltip="Doanh thu cần đạt để bù đắp định phí khối SX, ngoài SX và chi phí tài chính (tính theo tỷ suất LN dự kiến)">Doanh thu hòa vốn toàn DN</CardLabel>
+                <CardLabel tooltip="Doanh thu cần đạt để bù đắp định phí khối SX, ngoài SX và chi phí tài chính (tính theo tỷ suất LN dự kiến) — GỘP cả 2 dòng theo 1 tỷ lệ đảm phí bình quân.">Doanh thu hòa vốn toàn DN</CardLabel>
                 <CardValue>{fmtTyVnd(kpis.investment.enterpriseBreakEvenRevenuePerYear)}</CardValue>
-                <CardNote>Gồm SX + vận hành + lãi vay</CardNote>
+                <CardNote>Gồm SX + vận hành + lãi vay — cả Ống + Phụ kiện</CardNote>
+              </Card>
+              <Card>
+                <CardLabel tooltip="ADR-062 — hoà vốn doanh thu RIÊNG dòng Ống: định phí CVP của ống + phần chi phí ngoài SX/lãi vay chia theo tỷ trọng doanh thu ống, chia cho tỷ lệ đảm phí RIÊNG của ống (khác tỷ lệ bình quân dùng ở thẻ gộp).">Doanh thu hòa vốn — Ống</CardLabel>
+                <CardValue>{fmtTyVnd(kpis.investment.pipeBreakEvenRevenuePerYear)}</CardValue>
+                <CardNote>Đảm phí ống {fmtPct(kpis.investment.pipeContributionMarginRatio)} · thực tế {fmtTyVnd(kpis.investment.expectedRevenuePipeVf)}</CardNote>
+              </Card>
+              <Card>
+                <CardLabel tooltip="ADR-062 — hoà vốn doanh thu RIÊNG dòng Phụ kiện: định phí CVP của phụ kiện + phần chi phí ngoài SX/lãi vay chia theo tỷ trọng doanh thu phụ kiện, chia cho tỷ lệ đảm phí RIÊNG của phụ kiện.">Doanh thu hòa vốn — Phụ kiện</CardLabel>
+                <CardValue>{fmtTyVnd(kpis.investment.fittingBreakEvenRevenuePerYear)}</CardValue>
+                <CardNote>Đảm phí phụ kiện {fmtPct(kpis.investment.fittingContributionMarginRatio)} · thực tế {fmtTyVnd(kpis.investment.expectedRevenueFittingVf)}</CardNote>
+              </Card>
+              <Card>
+                <CardLabel tooltip="Chi phí túi ni lông bọc ống, cấu hình ở Thiết Lập Dữ Liệu — luôn tính theo kg thành phẩm.">Bao bì — Ống (túi ni lông)</CardLabel>
+                <CardValue>{fmtVnd(kpis.packaging.pipe.packagingCostPerKgVnd)} đ/kg</CardValue>
+                <CardNote>Cộng thẳng vào giá thành/kg</CardNote>
+              </Card>
+              <Card>
+                <CardLabel tooltip="Chi phí bao bì carton phụ kiện (ADR-060) — 'Theo kg' = flat rải đều mọi SKU; 'Theo thùng' = giá 1 thùng ÷ số cái/thùng từng SKU. Đổi ở công tắc sidebar 'Bao bì Phụ kiện'.">Bao bì — Phụ kiện (carton)</CardLabel>
+                <CardValue>
+                  {kpis.packaging.fitting.method === 'per_box'
+                    ? `${fmtVnd(kpis.packaging.fitting.packagingBoxCostVnd)} đ/thùng`
+                    : `${fmtVnd(kpis.packaging.fitting.packagingCostPerKgVnd)} đ/kg`}
+                </CardValue>
+                <CardNote>{kpis.packaging.fitting.method === 'per_box' ? 'Chia theo cái/thùng từng SKU (ADR-060)' : 'Rải đều theo kg (flat, chuẩn Excel)'}</CardNote>
               </Card>
               <Card>
                 <CardLabel tooltip="Tổng cộng CAPEX máy móc, khuôn, nhà xưởng, điện nước và vốn lưu động">Tổng vốn cố định</CardLabel>

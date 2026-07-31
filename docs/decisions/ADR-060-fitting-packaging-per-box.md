@@ -71,15 +71,34 @@ theo đúng mẫu ADR-047, dùng công tắc song song.
 - `'per_box'` có đủ dữ liệu (`piecesPerBox` + `packagingBoxCostVnd`) → đổi phân bổ đúng theo
   từng SKU, khớp bảng tính tay từ catalog.
 
+## Triển khai (2026-07-31, cùng phiên)
+
+- Schema + engine: `ScenarioInputSchema.fittingPackagingMethod`, `MachineHourResourceSchema.packagingBoxCostVnd`,
+  `FittingProductSchema.piecesPerBox`, nhánh override trong `calculateFittingMaterialCostPerUnit()`
+  (`src/engine/metal-insert.ts`) + wiring ở `src/engine/scenario.ts`. Test mới
+  `tests/parity/fitting-packaging-method.test.ts` (4 case: default, 2 kiểu fallback thiếu dữ
+  liệu, công thức per-box đúng). Suite 408/408 xanh (404 cũ + 4 mới).
+- UI: `ProductsScreen.tsx` — cột "Cái/thùng" sửa/xóa trực tiếp trên bảng Phụ Kiện (ô trống =
+  fallback flat, giống pattern `capacityMetersPerHour` ADR-046) + nút **"📦 Nạp bao bì carton
+  (Paratech)"** (idempotent, giống pattern `standardizeCorzan`): điền `piecesPerBox` cho
+  **63/91 SKU** khớp TUYỆT ĐỐI theo trọng lượng với catalog Paratech (`PARATECH_FITTING_PACKING`
+  trong file), đặt `packagingBoxCostVnd = 12.000` nếu resource chưa có. **28/91 SKU cố ý để
+  trống** — 4 nhóm ren kim loại (Nối ren trong/ngoài, Cút/Tê ren trong — 18 SKU, trọng lượng
+  catalog LỆCH ~2–2.5× so với `unitWeightKg` fixture vì catalog cân cả cụm đã lắp ren, không
+  tách riêng nhựa) + mọi SKU DN100 (10 SKU, catalog Paratech dừng ở DN80) — cần nhập tay qua
+  cột "Cái/thùng" nếu có số liệu riêng, engine tự fallback flat_per_kg cho tới lúc đó.
+  `DataSetupScreen.tsx` — GridCell "Giá 1 thùng carton" (mục ② Chi phí chế biến, dòng Phụ kiện).
+  `AppShell.tsx` — công tắc sidebar "Bao bì Phụ kiện" (Theo kg / Theo thùng), cùng cơ chế
+  `pipeCostMethod`, chỉ Toàn Quyền đổi được.
+- `npm run typecheck` + `npm run build` sạch.
+
 ## Còn treo
 
 - **Ống**: chưa làm ADR tương tự — thiếu số liệu thật "1kg túi nilon dài bao nhiêu mét / định
   lượng màng (g/m²)" để tính `packagingCostPerBundle` chính xác theo `cây/bó` từng DN. Khi có
   số → ADR riêng cùng mẫu này (`pipePackagingMethod`, song song `pipeCostMethod` ADR-047).
-- Cần nhập `piecesPerBox` thật cho toàn bộ SKU phụ kiện đang có trong hệ thống (không chỉ nhóm
-  CPVC socket đã đối chiếu ở catalog Paratech) trước khi bật `'per_box'` ở production.
+- 28/91 SKU phụ kiện (ren kim loại + DN100) chưa có `piecesPerBox` tin cậy — cần số liệu thật
+  (cân/đếm thực tế hoặc catalog khác) trước khi coi `'per_box'` là đầy đủ cho toàn bộ danh mục.
 - Chưa xác nhận `packagingBoxCostVnd` = 12.000đ áp dụng cho MỌI cỡ thùng hay chỉ 1 loại thùng
   chuẩn — catalog không phân biệt cỡ thùng theo SKU/nhóm, cần hỏi lại nếu có nhiều cỡ thùng giá
   khác nhau (vd thùng phụ kiện lớn như Mặt bích/Gioăng có thể khác thùng đóng Tê/Cút nhỏ).
-- Chưa quyết định UI nhập `piecesPerBox`/`packagingBoxCostVnd` ở màn nào (Thiết Lập Dữ Liệu hay
-  Cấu Hình) — để lúc triển khai code, không thuộc phạm vi ADR.

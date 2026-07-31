@@ -60,6 +60,10 @@ const ROLE_BY_TAB: Record<string, ScreenRole> = {
 export default function AppShell() {
   const authState = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
+  // Mobile — sidebar cố định 216px không vừa màn hình điện thoại → biến thành
+  // drawer trượt (ẩn mặc định, mở bằng nút ☰). Desktop (md+) giữ NGUYÊN layout
+  // cũ (sidebar tĩnh luôn hiện) qua class `md:` — không đổi hành vi trên máy tính.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const role = authState.role;
   // ADR-023: cổng vào view CEO = tầng chiến lược (admin/pricing, ADR-006).
@@ -77,7 +81,7 @@ export default function AppShell() {
     return (
       <div
         key={t.id}
-        onClick={() => go(t.id)}
+        onClick={() => { go(t.id); setMobileNavOpen(false); }}
         style={{ padding: '7px 16px', cursor: 'pointer', display: 'flex', alignItems: 'flex-start', gap: 8, background: active ? '#f2f2f2' : 'transparent', borderLeft: `3px solid ${active ? '#0a0a0a' : 'transparent'}` }}
       >
         <div style={{ width: 4, height: 4, borderRadius: '50%', background: active ? '#0a0a0a' : '#c9c9c9', flexShrink: 0, marginTop: 6 }} />
@@ -112,8 +116,15 @@ export default function AppShell() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Roboto,Helvetica Neue,sans-serif', color: '#0a0a0a', background: '#f6f6f6' }}>
-      {/* ═══ SIDEBAR ═══ */}
-      <aside style={{ width: 216, background: '#fff', borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', flexShrink: 0 }}>
+      {/* Mobile — nền mờ phía sau drawer, bấm để đóng. Không hiện ở desktop (md:hidden). */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={() => setMobileNavOpen(false)} />
+      )}
+      {/* ═══ SIDEBAR ═══ — mobile: drawer trượt (fixed, ẩn/hiện qua translate-x); desktop: y hệt cũ (static, luôn hiện) */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-[216px] transform transition-transform duration-200 ease-in-out md:static md:transform-none ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        style={{ background: '#fff', borderRight: '1px solid #e5e5e5', display: 'flex', flexDirection: 'column', height: '100vh', flexShrink: 0 }}
+      >
         <div style={{ padding: '18px 16px 14px', borderBottom: '1px solid #ececec' }}>
           <div style={{ color: '#999', fontSize: 9, letterSpacing: '.14em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>BlazeMaster CPVC</div>
           <div style={{ color: '#0a0a0a', fontSize: 14, fontWeight: 700, letterSpacing: '-.2px' }}>Costing Engine</div>
@@ -153,6 +164,33 @@ export default function AppShell() {
           </div>
         )}
 
+        {/* ADR-060 — CÔNG TẮC toàn cục: cách tính bao bì Phụ kiện. Cùng cơ chế
+            pipeCostMethod ở trên (lưu vào scenario, admin đổi → mọi màn tính lại). */}
+        {data.scenario && (
+          <div style={{ borderTop: '1px solid #ececec', padding: '10px 16px' }}>
+            <div style={{ fontSize: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: '#b3b3b3', fontWeight: 700, marginBottom: 5 }}>Bao bì Phụ kiện</div>
+            <div style={{ display: 'flex', border: '1px solid #d8d8d8', borderRadius: 4, overflow: 'hidden' }}>
+              {([['flat_per_kg', 'Theo kg'], ['per_box', 'Theo thùng']] as const).map(([v, label]) => {
+                const active = (data.scenario!.fittingPackagingMethod ?? 'flat_per_kg') === v;
+                const canSwitch = role === 'admin' && !active;
+                return (
+                  <div
+                    key={v}
+                    onClick={() => { if (canSwitch) void updateDoc(doc(db, `scenarios/${SCENARIO_ID}`), { fittingPackagingMethod: v }); }}
+                    title={role === 'admin' ? 'Đổi cách tính — mọi màn tính lại theo' : 'Chỉ Toàn Quyền đổi được'}
+                    style={{ flex: 1, textAlign: 'center', padding: '5px 4px', fontSize: 10, fontWeight: 600, cursor: canSwitch ? 'pointer' : 'default', background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : role === 'admin' ? '#555' : '#b3b3b3' }}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 8, color: '#b3b3b3', marginTop: 4 }}>
+              {(data.scenario.fittingPackagingMethod ?? 'flat_per_kg') === 'flat_per_kg' ? 'Rải đều theo kg (chuẩn Excel)' : 'boxCost ÷ cái/thùng, theo SKU'}
+            </div>
+          </div>
+        )}
+
         <div style={{ borderTop: '1px solid #ececec', padding: '12px 16px' }}>
           <div style={{ display: 'inline-block', background: '#0a0a0a', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
             {role === 'admin' ? 'CHỦ / TOÀN QUYỀN' : 'ĐỊNH GIÁ'}
@@ -172,6 +210,17 @@ export default function AppShell() {
       <AssistantChat scenarioId={SCENARIO_ID} screenId={tabId} />
       <main style={{ flex: 1, overflow: 'auto', background: '#f6f6f6', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
         <div style={{ width: '100%', maxWidth: 1366, background: '#f6f6f6', minHeight: '100%' }}>
+        {/* Mobile — thanh trên cùng: nút ☰ mở drawer + tên màn đang xem. Ẩn ở desktop (md:hidden). */}
+        <div className="md:hidden sticky top-0 z-20 flex items-center gap-3 border-b" style={{ background: '#fff', borderColor: '#e5e5e5', padding: '10px 14px' }}>
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            aria-label="Mở menu điều hướng"
+            style={{ fontSize: 20, lineHeight: 1, background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', color: '#0a0a0a' }}
+          >
+            ☰
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>{tabId === 'help' ? HELP_TAB.label : NAV_TABS.find((t) => t.id === tabId)?.label ?? ''}</span>
+        </div>
         {role && (
           <>
             {/* ADR-041/059 — NHÃN VAI màn: người dùng luôn biết đang XEM / THỬ (không

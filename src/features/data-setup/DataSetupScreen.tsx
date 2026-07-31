@@ -74,6 +74,23 @@ function InCell({ value, onChange, unit, disabled, width = 130 }: { value: numbe
     </div>
   );
 }
+// ADR-060 — field optional (packagingBoxCostVnd): để trống = xóa, dùng
+// fallback packagingCostPerKg (flat) khi công tắc "Bao bì Phụ kiện" = theo thùng.
+function OptRateCell({ value, onChange, placeholder, width = 130 }: { value: number | undefined; onChange: (v: number | undefined) => void; placeholder?: string; width?: number | string }) {
+  return (
+    <input
+      type="number"
+      className="ds-in"
+      value={value ?? ''}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
+      style={{
+        width, padding: '6px 9px', borderRadius: rd.md, fontSize: ft.size.sm, fontWeight: ft.weight.semibold, textAlign: 'right',
+        ...tnum, outline: 'none', border: `1px solid ${tk.borderStrong}`, background: tk.surface, color: tk.ink,
+      }}
+    />
+  );
+}
 // ── SỐ TỰ TÍNH (nền xám + nhãn fx, chỉ đọc) ──
 function FxCell({ value, unit }: { value: number; unit?: string }) {
   return (
@@ -134,6 +151,8 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
   const setPipe = (key: keyof ContinuousKgResource & string, v: number) =>
     setForm((f) => (f ? { ...f, resources: { ...f.resources, pipe: { ...(f.resources.pipe as ContinuousKgResource), [key]: v } } } : f));
   const setFitting = (key: keyof MachineHourResource & string, v: number) =>
+    setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), [key]: v } } } : f));
+  const setFittingOptional = (key: keyof MachineHourResource & string, v: number | undefined) =>
     setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), [key]: v } } } : f));
   const setMachineType = (i: number, key: 'priceVnd' | 'count', v: number) =>
     setForm((f) => {
@@ -530,7 +549,11 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   <GridCell label="Đơn giá nước"><InCell width="100%" value={fitting.waterPricePerM3} onChange={(v) => setFitting('waterPricePerM3', v)} unit="đ/m³" /></GridCell>
                   <GridCell derived label={<>Tiền nước / năm {fxTag}</>}><FxCell value={fitWater} unit="đ" /></GridCell>
                   <GridCell label="Bảo trì khuôn / năm"><InCell width="100%" value={fitting.annualMoldMaintenance} onChange={(v) => setFitting('annualMoldMaintenance', v)} unit="đ" /></GridCell>
-                  <GridCell label="Bao bì + vật tư"><InCell width="100%" value={fitting.packagingCostPerKg} onChange={(v) => setFitting('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                  <GridCell label="Bao bì + vật tư (flat)"><InCell width="100%" value={fitting.packagingCostPerKg} onChange={(v) => setFitting('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                  <GridCell label={<>Giá 1 thùng carton <span style={{ fontSize: 8.5, fontWeight: ft.weight.bold, color: tk.brand, border: `1px solid ${tk.borderStrong}`, borderRadius: 3, padding: '0 3px' }}>ADR-060</span></>}>
+                    <OptRateCell value={fitting.packagingBoxCostVnd} onChange={(v) => setFittingOptional('packagingBoxCostVnd', v)} placeholder="12000" width="100%" />
+                    <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>đ/thùng, chưa VAT — để trống = chưa dùng cách tính theo thùng</span>
+                  </GridCell>
                 </div>
                 {kpi('Tổng chế biến Phụ kiện', fitConvTotal, depFit)}
               </div>

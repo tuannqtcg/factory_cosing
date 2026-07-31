@@ -3,7 +3,7 @@
 > **Mục đích:** File này là điểm neo (Anchor) cho AI ở đầu mỗi phiên. AI đọc file này để hiểu tổng quan dự án đang ở giai đoạn nào, những gì đã hoàn tất, và những gì cần làm tiếp theo. Không cần đọc lại toàn bộ lịch sử chat.
 
 ## 🟢 Tóm tắt trạng thái hiện tại
-- **Pha 1 & 2:** Xong. **Pha 3 (Engine):** Xong — **suite 370/370 test** (parity Excel).
+- **Pha 1 & 2:** Xong. **Pha 3 (Engine):** Xong — **suite 404/404 test** (parity Excel).
 - **App = công cụ QUYẾT ĐỊNH của CEO** (ADR-020/026): MỘT view, đăng nhập production
   (admin/pricing), nav 2 nhóm (Phân Tích & Quyết Định + Điều Chỉnh Tham Số). Đã bỏ
   hết tab vận hành vai khác + guard vai chết.
@@ -15,6 +15,18 @@
   (màu chỉ cho biểu đồ + ghi chú). ⚠ **MỚI DEMO 1 màn (Độ Nhạy)** — cần roll-out ~13 màn còn lại.
 
 ## 🎯 BÀN GIAO PHIÊN MỚI — việc tiếp theo (ưu tiên từ trên xuống)
+0. **⚠ ƯU TIÊN NHẤT — đề xuất tái thiết kế bố cục đang CHỜ USER DUYỆT** (Pha 1,
+   CHƯA code gì): user phản hồi UI hiện tại rối (quá nhiều mục menu, chữ nhỏ,
+   nút bấm dày đặc). Đã thảo luận 3 vòng qua artifact tương tác, bản mới nhất
+   lưu ở `prototype/layout-redesign-proposal.html` (mở thẳng bằng trình duyệt).
+   Hướng đi (CHƯA CHỐT): sidebar rút còn 5 mục + Trợ Giúp ghim; mọi màn "chỉ
+   xem" gộp thành danh sách, bấm 1 dòng mở panel bên phải LỒNG NHAU (nested,
+   kiểu Twenty CRM) thay vì điều hướng sang trang khác; "Giá Vốn Theo Lô" (chốt
+   lại giá) nằm ngay trong panel của nguyên liệu đó; Bảng Giá cũng đổi sang
+   cùng kiểu danh sách+panel. Đọc chi tiết ở `docs/sessions/SESSION_2026-07-31.md`
+   trước khi làm gì tiếp — **việc đầu tiên của phiên sau là trình lại mockup cho
+   user chốt layout, RỒI mới viết ADR + sang Pha 2/3.** Đừng tự suy diễn code
+   thật từ mô tả này — xem đúng file mockup.
 1. **Roll-out design system đen–trắng** ra các màn còn lại (Dashboard, CEO Planner, 3
    công cụ if–then còn lại, Bảng Giá VF/NPP, Lot-costing, Pricing-analytics, Tham Số,
    Cấu Hình). Di trú lên `src/design/primitives.tsx` — thuần trình bày, KHÔNG đụng logic.
@@ -28,6 +40,12 @@
    trích lại fixture khi có Excel v3.7 chính thức.
 
 ## 🏆 Đã hoàn thành gần đây (Tháng 7/2026)
+- [x] **(2026-07-31) Bảng Giá — cột Giá VF BQGQ + Chênh lệch trong danh sách chính**:
+  trước chỉ hiện khi bấm mở dòng; giờ CEO quét cả bảng không cần bấm (PR #32).
+- [x] **(2026-07-31) Nhập lô nguyên liệu theo kg thay vì tấn** (UI-level, 3 màn:
+  Thiết Lập Dữ Liệu/Tồn Kho Compound/Giá Vốn Theo Lô) — lưu trữ vẫn ở field
+  `tons` (schema đóng băng), quy đổi ×1000/÷1000 tại ô nhập, không đụng schema/
+  công thức/dữ liệu Firestore cũ (PR #33).
 - [x] **ADR-058 — Thuế NK/phí logistics RIÊNG từng lô**: `InventoryLotSchema`
   thêm 2 field optional `importTaxRate`/`customsLogisticsFeeRate` (bỏ trống =
   kế thừa material, parity tuyệt đối với dữ liệu cũ). Hàm mới

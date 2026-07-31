@@ -1,0 +1,947 @@
+<title>Đề xuất tái thiết kế bố cục — Costing Engine</title>
+<style>
+  :root {
+    --bg: #f6f6f6;
+    --surface: #ffffff;
+    --surface-2: #fbfaf8;
+    --border: #e2e0da;
+    --border-soft: #ece9e2;
+    --text: #171512;
+    --text-soft: #4a4640;
+    --text-mute: #83796d;
+    --text-faint: #b6ac9c;
+    --accent: #a8003b;
+    --accent-ink: #7d002c;
+    --accent-soft: #fbeef2;
+    --accent-soft-border: #f0c4d3;
+    --blue: #1f5fd0;
+    --blue-soft: #eaf1fc;
+    --blue-soft-border: #bcd3f5;
+    --green: #16A34A;
+    --green-soft: #f0fdf4;
+    --green-soft-border: #bfe8cf;
+    --red: #DC2626;
+    --red-soft: #fef2f2;
+    --red-soft-border: #f3c6c6;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --amber-soft-border: #eddca6;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 2px 10px rgba(30, 24, 14, 0.05);
+    --shadow-lg: 0 16px 40px rgba(30, 24, 14, 0.12);
+  }
+  :root[data-theme="dark"] {
+    --bg: #17161a;
+    --surface: #201f24;
+    --surface-2: #26242b;
+    --border: #38363e;
+    --border-soft: #2d2b32;
+    --text: #f1efe9;
+    --text-soft: #cbc7bd;
+    --text-mute: #948d80;
+    --text-faint: #665f56;
+    --accent: #e8558a;
+    --accent-ink: #f7a8c3;
+    --accent-soft: #34212a;
+    --accent-soft-border: #5a2c3c;
+    --blue: #6d9bf2;
+    --blue-soft: #1c2636;
+    --blue-soft-border: #2d4468;
+    --green: #34d399;
+    --green-soft: #16281f;
+    --green-soft-border: #235539;
+    --red: #f87171;
+    --red-soft: #2c1c1c;
+    --red-soft-border: #5a2c2c;
+    --amber: #f2b84b;
+    --amber-soft: #2b2314;
+    --amber-soft-border: #5c4a20;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17161a;
+      --surface: #201f24;
+      --surface-2: #26242b;
+      --border: #38363e;
+      --border-soft: #2d2b32;
+      --text: #f1efe9;
+      --text-soft: #cbc7bd;
+      --text-mute: #948d80;
+      --text-faint: #665f56;
+      --accent: #e8558a;
+      --accent-ink: #f7a8c3;
+      --accent-soft: #34212a;
+      --accent-soft-border: #5a2c3c;
+      --blue: #6d9bf2;
+      --blue-soft: #1c2636;
+      --blue-soft-border: #2d4468;
+      --green: #34d399;
+      --green-soft: #16281f;
+      --green-soft-border: #235539;
+      --red: #f87171;
+      --red-soft: #2c1c1c;
+      --red-soft-border: #5a2c2c;
+      --amber: #f2b84b;
+      --amber-soft: #2b2314;
+      --amber-soft-border: #5c4a20;
+      --shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: var(--text-faint); border-radius: 4px; }
+  a { color: var(--accent); }
+  h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  /* ── Shell ── */
+  .shell { max-width: 1180px; margin: 0 auto; padding: 0 28px 90px; }
+  .top-banner {
+    background: var(--accent-soft); border-bottom: 1px solid var(--accent-soft-border);
+    color: var(--accent-ink); font-size: 13px; font-weight: 600; text-align: center;
+    padding: 9px 20px;
+  }
+  header.hero { padding: 52px 0 30px; border-bottom: 1px solid var(--border-soft); }
+  .eyebrow {
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase; font-weight: 700;
+    color: var(--accent); margin-bottom: 10px;
+  }
+  h1.title { font-size: 32px; font-weight: 800; letter-spacing: -.4px; max-width: 22ch; }
+  .lede { font-size: 16px; color: var(--text-soft); max-width: 62ch; margin-top: 14px; }
+
+  /* sticky section nav */
+  nav.sectionnav {
+    position: sticky; top: 0; z-index: 40; background: var(--bg);
+    border-bottom: 1px solid var(--border-soft);
+    display: flex; gap: 4px; overflow-x: auto; padding: 10px 28px;
+    margin: 0 -28px 0;
+  }
+  nav.sectionnav a {
+    flex-shrink: 0; text-decoration: none; color: var(--text-mute); font-size: 12.5px; font-weight: 600;
+    padding: 7px 13px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap;
+  }
+  nav.sectionnav a:hover { color: var(--text); background: var(--surface-2); }
+  nav.sectionnav a.current { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-soft-border); }
+
+  section.block { padding: 56px 0; border-bottom: 1px solid var(--border-soft); scroll-margin-top: 60px; }
+  section.block:last-of-type { border-bottom: none; }
+  .block-head { max-width: 74ch; margin-bottom: 30px; }
+  .block-num { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+  h2.block-title { font-size: 24px; font-weight: 700; letter-spacing: -.2px; }
+  .block-sub { font-size: 14.5px; color: var(--text-mute); margin-top: 8px; }
+
+  /* pain point cards */
+  .pain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .pain-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .pain-card .quote {
+    font-size: 13px; color: var(--text-mute); font-style: italic; margin-bottom: 10px; line-height: 1.5;
+  }
+  .pain-card h4 { font-size: 14.5px; font-weight: 700; margin-bottom: 6px; }
+  .pain-card p { font-size: 13.5px; color: var(--text-soft); margin: 0; }
+  .pain-card .where {
+    display: inline-block; margin-top: 10px; font-size: 11px; font-weight: 700; color: var(--text-mute);
+    background: var(--surface-2); border: 1px solid var(--border-soft); padding: 3px 9px; border-radius: 999px;
+  }
+
+  /* IA tree */
+  .ia-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  @media (max-width: 820px) { .ia-compare { grid-template-columns: 1fr; } }
+  .ia-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow); }
+  .ia-col.now { opacity: .82; }
+  .ia-col.next { border-color: var(--accent-soft-border); }
+  .ia-col h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-mute); margin-bottom: 16px; font-weight: 700; }
+  .ia-col.next h3 { color: var(--accent); }
+  .ia-group { margin-bottom: 14px; }
+  .ia-group-label { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: var(--text-mute); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 7px; }
+  .ia-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .ia-item { display: flex; align-items: baseline; gap: 8px; padding: 6px 0 6px 16px; font-size: 13.5px; }
+  .ia-item .cap { color: var(--text-mute); font-size: 11.5px; }
+  .ia-item.new { color: var(--accent); font-weight: 700; }
+  .ia-item.new::before { content: "NEW"; font-size: 8.5px; font-weight: 800; background: var(--accent); color: #fff; padding: 1px 5px; border-radius: 3px; margin-right: 2px; letter-spacing: .04em; }
+  .ia-item.merge { text-decoration: line-through; color: var(--text-faint); }
+  .arrow-note { font-size: 12px; color: var(--text-mute); margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--border); }
+
+  /* unified switcher demo */
+  .demo-frame {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px 24px; box-shadow: var(--shadow); margin-top: 24px;
+  }
+  .demo-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--text-mute); margin-bottom: 12px; }
+  .switcher {
+    display: inline-flex; border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; background: var(--surface-2);
+  }
+  .switcher button {
+    border: none; background: none; padding: 7px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+    color: var(--text-mute); cursor: pointer; transition: background .15s, color .15s;
+  }
+  .switcher button.active { background: var(--accent); color: #fff; }
+  .switcher button:hover:not(.active) { color: var(--text); }
+  .demo-out { margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .demo-stat { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 13px 15px; }
+  .demo-stat .l { font-size: 10.5px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+  .demo-stat .v { font-size: 19px; font-weight: 700; }
+  .demo-stat .u { font-size: 11px; color: var(--text-faint); margin-left: 3px; font-weight: 400; }
+
+  .lot-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  .lot-table th { text-align: left; font-size: 10.5px; font-weight: 700; color: var(--text-mute); text-transform: uppercase; letter-spacing: .04em; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  .lot-table th.r, .lot-table td.r { text-align: right; }
+  .lot-table td { padding: 9px 10px; border-bottom: 1px solid var(--border-soft); color: var(--text-soft); }
+  .lot-table tbody tr:last-child td { border-bottom: none; }
+  .lot-table .empty-row td { color: var(--text-faint); font-style: italic; text-align: center; padding: 16px 10px; }
+
+  /* ── Twenty-CRM-style: list + nested slide-over panel ── */
+  .crm-demo { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-top: 22px; }
+  .crm-demo-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 11px 18px; border-bottom: 1px solid var(--border-soft); background: var(--surface-2); }
+  .crm-demo-toolbar .t { font-size: 11px; font-weight: 700; color: var(--text-mute); text-transform: uppercase; letter-spacing: .07em; }
+  .crm-body { position: relative; display: flex; min-height: 460px; overflow: hidden; border-radius: 0 0 var(--radius) var(--radius); }
+  .crm-nav-mini { width: 164px; border-right: 1px solid var(--border-soft); padding: 10px 0; flex-shrink: 0; background: var(--surface-2); display: flex; flex-direction: column; }
+  .crm-nav-mini .item { padding: 9px 16px; font-size: 12.5px; color: var(--text-mute); cursor: default; display: flex; align-items: center; gap: 8px; border-right: 2px solid transparent; }
+  .crm-nav-mini .item.active { color: var(--accent); font-weight: 700; background: var(--accent-soft); border-right-color: var(--accent); }
+  .crm-nav-mini .pin { margin-top: auto; border-top: 1px solid var(--border-soft); padding-top: 8px; }
+  .crm-list-area { flex: 1; padding: 18px 22px; overflow-y: auto; }
+  .crm-list-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .crm-list-head h5 { font-size: 15px; font-weight: 700; }
+  .crm-list-head .n { font-size: 11.5px; color: var(--text-mute); }
+  .crm-list-tabs { display: flex; gap: 4px; margin: 10px 0 14px; }
+  .crm-list-tabs span { font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; color: var(--text-mute); background: var(--surface-2); border: 1px solid var(--border-soft); }
+  .crm-list-tabs span.active { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-soft-border); }
+  .crm-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 110px; gap: 10px; align-items: center; padding: 12px 12px; border-radius: 8px; cursor: pointer; border: 1px solid transparent; }
+  .crm-row:hover { background: var(--surface-2); border-color: var(--border-soft); }
+  .crm-row:focus-visible { border-color: var(--blue); }
+  .crm-row .name { font-size: 13.5px; font-weight: 600; }
+  .crm-row .sub { font-size: 11px; color: var(--text-mute); margin-top: 1px; }
+  .crm-row .val { font-size: 13px; text-align: right; }
+  .crm-row .colhead { font-size: 9.5px; color: var(--text-faint); text-transform: uppercase; letter-spacing: .05em; text-align: right; }
+  .crm-row .colhead:first-child { text-align: left; }
+
+  .panel-backdrop { position: absolute; inset: 0; background: rgba(23, 18, 10, .32); opacity: 0; pointer-events: none; transition: opacity .2s ease; z-index: 20; }
+  .panel-backdrop.show { opacity: 1; pointer-events: auto; }
+  :root[data-theme="dark"] .panel-backdrop { background: rgba(0, 0, 0, .55); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .panel-backdrop { background: rgba(0, 0, 0, .55); } }
+
+  .side-panel { position: absolute; top: 0; right: 0; height: 100%; width: 380px; max-width: 88%; background: var(--surface); border-left: 1px solid var(--border); box-shadow: -14px 0 32px rgba(20, 16, 10, .16); transform: translateX(105%); transition: transform .25s cubic-bezier(.4, 0, .2, 1); z-index: 21; display: flex; flex-direction: column; }
+  .side-panel.open { transform: translateX(0); }
+  .side-panel.level-2 { width: 320px; box-shadow: -14px 0 32px rgba(20, 16, 10, .22); z-index: 22; }
+  .panel-head { padding: 14px 18px 12px; border-bottom: 1px solid var(--border-soft); }
+  .panel-back { font-size: 11.5px; color: var(--accent); cursor: pointer; font-weight: 700; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 4px; background: none; border: none; padding: 0; }
+  .panel-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .panel-title-row h4 { font-size: 15.5px; font-weight: 700; }
+  .panel-close { background: none; border: none; font-size: 17px; color: var(--text-mute); cursor: pointer; line-height: 1; padding: 2px 4px; flex-shrink: 0; }
+  .panel-close:hover { color: var(--text); }
+  .panel-body { padding: 16px 18px; overflow-y: auto; flex: 1; }
+  .panel-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .panel-stat { background: var(--surface-2); border: 1px solid var(--border-soft); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .panel-stat .l { font-size: 10px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .panel-stat .v { font-size: 16px; font-weight: 700; }
+  .panel-lot-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--border-soft); cursor: pointer; border-radius: 6px; }
+  .panel-lot-row:hover { background: var(--surface-2); margin: 0 -8px; padding-left: 8px; padding-right: 8px; }
+  .panel-lot-row .name { font-size: 13px; font-weight: 600; }
+  .panel-lot-row .meta { font-size: 11px; color: var(--text-mute); }
+  .panel-lot-row .go { color: var(--text-faint); font-size: 13px; }
+  .panel-field { margin-bottom: 12px; }
+  .panel-field .l { font-size: 10.5px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+  .panel-field input { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); color: var(--text); font-size: 13px; }
+
+  /* priority hub cards (mockup Tổng Quan) */
+  .hub-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 980px) { .hub-grid { grid-template-columns: 1fr; } }
+  .hub-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 22px 22px 20px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 14px;
+  }
+  .hub-card .icon-row { display: flex; align-items: center; justify-content: space-between; }
+  .hub-card .num { font-size: 11px; font-weight: 800; color: #fff; background: var(--accent); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .hub-card h4 { font-size: 16.5px; font-weight: 700; }
+  .hub-card .q { font-size: 12.5px; color: var(--text-mute); margin-top: -8px; }
+  .hub-line { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-top: 1px solid var(--border-soft); }
+  .hub-line .l { font-size: 12.5px; color: var(--text-soft); }
+  .hub-line .v { font-size: 14.5px; font-weight: 700; }
+  .hub-line .v.pos { color: var(--green); }
+  .hub-line .v.neg { color: var(--red); }
+  .hub-flag {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 5px 10px;
+    border-radius: 999px; width: fit-content;
+  }
+  .hub-flag.locked { background: var(--green-soft); color: var(--green); border: 1px solid var(--green-soft-border); }
+  .hub-flag.unlocked { background: var(--red-soft); color: var(--red); border: 1px solid var(--red-soft-border); }
+  .hub-cta {
+    margin-top: auto; text-align: center; padding: 9px; border-radius: var(--radius-sm); background: var(--surface-2);
+    border: 1px solid var(--border-soft); font-size: 12.5px; font-weight: 700; color: var(--text); cursor: pointer;
+  }
+  .hub-cta:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent-soft-border); }
+
+  /* Help page mockup */
+  .help-shell { display: grid; grid-template-columns: 240px 1fr; gap: 26px; margin-top: 24px; }
+  @media (max-width: 820px) { .help-shell { grid-template-columns: 1fr; } }
+  .help-search {
+    width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font-size: 13.5px; margin-bottom: 14px;
+  }
+  .help-toc { position: sticky; top: 60px; align-self: start; }
+  .help-toc a {
+    display: block; text-decoration: none; color: var(--text-mute); font-size: 12.5px; padding: 6px 10px;
+    border-radius: var(--radius-sm); border-left: 2px solid transparent;
+  }
+  .help-toc a:hover { background: var(--surface-2); color: var(--text); }
+  .help-toc a.h-current { color: var(--accent); border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+  .help-entry {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 16px; box-shadow: var(--shadow); scroll-margin-top: 70px;
+  }
+  .help-entry.hidden { display: none; }
+  .help-entry h4 { font-size: 15.5px; font-weight: 700; }
+  .help-entry .screen-q { font-size: 12.5px; color: var(--accent); font-weight: 600; margin-top: 3px; }
+  .help-entry p { font-size: 13.5px; color: var(--text-soft); margin: 10px 0 0; }
+  .term-row { display: grid; grid-template-columns: minmax(140px, 200px) 1fr; gap: 12px; padding: 9px 0; border-top: 1px solid var(--border-soft); font-size: 13px; }
+  .term-row dt { font-weight: 700; color: var(--text); }
+  .term-row dd { margin: 0; color: var(--text-soft); }
+
+  .cta-footer {
+    margin-top: 20px; padding: 20px 24px; border-radius: var(--radius); background: var(--accent-soft);
+    border: 1px solid var(--accent-soft-border); color: var(--accent-ink);
+  }
+  .cta-footer h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; color: var(--accent-ink); }
+  .cta-footer p { font-size: 13px; margin: 0; color: var(--accent-ink); opacity: .92; }
+  .fake-note { font-size: 11.5px; color: var(--text-faint); margin-top: 10px; }
+</style>
+
+<div class="top-banner">📋 Bản mockup để THẢO LUẬN — số liệu lấy từ fixture thật (tests/fixtures/), chưa nối engine/Firebase, chưa phải giao diện chính thức</div>
+
+<div class="shell">
+  <header class="hero">
+    <div class="eyebrow">Đề xuất Pha 1 — bố cục &amp; điều hướng</div>
+    <h1 class="title">Costing Engine đang đủ chức năng, giờ cần dễ dùng lại</h1>
+    <p class="lede">Sau nhiều đợt thêm tính năng, ứng dụng đã trả lời đúng và đủ câu hỏi của CEO — nhưng thông tin bị rải mỏng qua quá nhiều màn, chữ nhỏ, nút bấm dày đặc. Tài liệu này gom lại vấn đề cụ thể, đề xuất một điều hướng mới xoay quanh 3 mối quan tâm bạn nêu, và một trang Trợ Giúp độc lập giải nghĩa toàn bộ thuật ngữ.</p>
+  </header>
+
+  <nav class="sectionnav" id="sectionnav">
+    <a href="#van-de" data-target="van-de">1. Vấn đề hiện tại</a>
+    <a href="#dieu-huong" data-target="dieu-huong">2. Điều hướng đề xuất</a>
+    <a href="#tong-quan-moi" data-target="tong-quan-moi">3. Mockup Tổng Quan</a>
+    <a href="#trang-giup" data-target="trang-giup">4. Trang Trợ Giúp</a>
+    <a href="#buoc-tiep" data-target="buoc-tiep">5. Bước tiếp theo</a>
+  </nav>
+
+  <!-- ════════ 1. VẤN ĐỀ HIỆN TẠI ════════ -->
+  <section class="block" id="van-de">
+    <div class="block-head">
+      <div class="block-num">01 · Hiện trạng</div>
+      <h2 class="block-title">6 điểm nghẽn cụ thể, không phải cảm tính chung chung</h2>
+      <p class="block-sub">Đối chiếu đúng với phản hồi của bạn và với code hiện có — mỗi điểm chỉ thẳng ra màn nào, thành phần nào đang gây rối.</p>
+    </div>
+    <div class="pain-grid">
+      <div class="pain-card">
+        <div class="quote">"thêm dữ liệu Corzan rồi chọn trên tổng quan có vẻ khó hiểu"</div>
+        <h4>3 kiểu chọn nguyên liệu khác nhau cho cùng 1 việc</h4>
+        <p>Tổng Quan có 2 bộ chip chọn riêng (Dòng Ống / Dòng Phụ kiện), Bảng Giá lại có hàng chip lọc khác, Tồn Kho lại là dropdown khác — cùng là "đang xem BlazeMaster hay Corzan" nhưng 3 cách bấm khác nhau, đặt ở 3 vị trí khác nhau.</p>
+        <span class="where">Dashboard.tsx · MaterialPicker ×2</span>
+      </div>
+      <div class="pain-card">
+        <div class="quote">"giá vốn nguyên liệu" — mối quan tâm #1 của bạn</div>
+        <h4>Rải qua 5 màn, không có điểm chốt duy nhất</h4>
+        <p>Baseline + giá mua mới hôm nay nằm ở thanh khóa giá trên Tổng Quan; lô nhập + bình quân gia quyền nằm ở Tồn Kho Compound VÀ lặp lại y hệt ở Thiết Lập Dữ Liệu; so sánh 2 kịch bản giá lại nằm ở Bảng Giá. Muốn trả lời "giá vốn nguyên liệu hôm nay là bao nhiêu" phải mở ít nhất 3 màn.</p>
+        <span class="where">Dashboard · InventoryScreen · DataSetupScreen · PriceList</span>
+      </div>
+      <div class="pain-card">
+        <div class="quote">"chi phí sản xuất cố định theo ca" — mối quan tâm #2 của bạn</div>
+        <h4>3 nơi, 3 cách trình bày khác nhau</h4>
+        <p>Tab "Sản Xuất" trên Tổng Quan cho xem 3 mức ca nhưng không sửa được; số gốc (khấu hao, lương, MHR) nằm ở Thiết Lập Dữ Liệu; mô phỏng đổi số ca lại nằm ở Trợ Lý CEO. Không có 1 màn "1 ca tốn bao nhiêu tiền cố định, đổi số ca thì sao".</p>
+        <span class="where">Dashboard tab Sản Xuất · DataSetupScreen · CeoPlannerScreen</span>
+      </div>
+      <div class="pain-card">
+        <div class="quote">"luồng xem hơi rối rắm, đặc biệt các bảng bên phải"</div>
+        <h4>Panel nổi bên phải đè lên luồng đọc chính</h4>
+        <p>ExplainPanel (giải thích màn) và AssistantChat cùng là panel nổi bên phải, xuất hiện tự động — người xem đang đọc bảng chính giữa thì bị 1-2 hộp thoại che góc phải, không rõ bấm đâu để đóng, không rõ nó có liên quan gì tới bảng đang xem.</p>
+        <span class="where">ExplainPanel.tsx · AssistantChat.tsx</span>
+      </div>
+      <div class="pain-card">
+        <div class="quote">"chữ nhỏ, quá nhiều nút bấm trên 1 trang"</div>
+        <h4>Cỡ chữ 9–11px cho phần lớn nhãn và số liệu</h4>
+        <p>CardLabel, header bảng, chip lọc… phần lớn đặt fontSize 9–11px — dưới ngưỡng đọc thoải mái trên màn hình văn phòng thông thường. Riêng Tổng Quan có 4 tab con + 2 bộ chọn nguyên liệu + hơn 10 nút "xem chi tiết/chỉnh ở…" cùng hiển thị.</p>
+        <span class="where">Dashboard · PriceList · toàn bộ design token font-size</span>
+      </div>
+      <div class="pain-card">
+        <div class="quote">"nhiều trang rất dài"</div>
+        <h4>Một trang gánh quá nhiều câu hỏi khác nhau</h4>
+        <p>Thiết Lập Dữ Liệu gộp 7 mục (tài sản, chi phí, nguyên liệu, SKU, giá…) cuộn dọc rất dài; Tổng Quan có 4 tab nhưng tab Tổng Quan lại tự chứa luôn P&amp;L + so sánh giá vốn kép — nhiều tầng thông tin xếp chồng trong 1 lần cuộn.</p>
+        <span class="where">DataSetupScreen · Dashboard (tab overview)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 2. ĐIỀU HƯỚNG ĐỀ XUẤT ════════ -->
+  <section class="block" id="dieu-huong">
+    <div class="block-head">
+      <div class="block-num">02 · Đề xuất — vòng 3</div>
+      <h2 class="block-title">Tối giản menu — danh sách + panel lồng nhau kiểu Twenty CRM</h2>
+      <p class="block-sub">Đổi hướng theo đúng góp ý mới nhất: 5-9 mục trên sidebar vẫn là QUÁ NHIỀU. Gộp mọi thứ "chỉ xem" vào 1 màn DANH SÁCH; bấm vào 1 dòng thì mở <b>panel bên phải</b> đè nhẹ lên nền (nền mờ đi, không mất ngữ cảnh) — panel có thể mở lồng thêm panel con khi cần đi sâu hơn, giống đúng cách Twenty CRM tổ chức Companies/People. Menu chỉ còn giữ lại các KHU VỰC lớn, không giữ từng loại dữ liệu làm 1 mục riêng nữa.</p>
+    </div>
+
+    <div class="ia-compare">
+      <div class="ia-col now">
+        <h3>Hiện tại — 7 mục</h3>
+        <div class="ia-group">
+          <div class="ia-group-label"><span class="ia-dot" style="background:#8a8a8a"></span> Theo dõi</div>
+          <div class="ia-item">Tổng Quan</div>
+          <div class="ia-item">Bảng Giá</div>
+        </div>
+        <div class="ia-group">
+          <div class="ia-group-label"><span class="ia-dot" style="background:#1f5fd0"></span> Thử &amp; Hoạch định</div>
+          <div class="ia-item">Trợ Lý CEO</div>
+          <div class="ia-item">Giá Vốn Theo Lô</div>
+          <div class="ia-item">So Sánh Kịch Bản</div>
+        </div>
+        <div class="ia-group">
+          <div class="ia-group-label"><span class="ia-dot" style="background:#a8003b"></span> Dữ liệu gốc</div>
+          <div class="ia-item">Thiết Lập Dữ Liệu</div>
+          <div class="ia-item">Danh Mục Sản Phẩm</div>
+        </div>
+      </div>
+
+      <div class="ia-col next">
+        <h3>Đề xuất vòng 3 — 5 mục + Trợ Giúp ghim</h3>
+        <div class="ia-group">
+          <div class="ia-item">Tổng Quan <span class="cap">— không đổi</span></div>
+          <div class="ia-item new">Nguyên Liệu <span class="cap">— danh sách compound, bấm dòng → panel giá vốn + lô + chốt giá</span></div>
+          <div class="ia-item new">Bảng Giá <span class="cap">— ĐÃ CHỐT: đổi sang cùng kiểu danh sách + panel, bỏ kiểu bấm-mở-dòng-tại-chỗ hiện tại</span></div>
+          <div class="ia-item merge">Trợ Lý CEO <span class="cap">→ gộp làm tab trong "Kịch Bản"</span></div>
+          <div class="ia-item merge">So Sánh Kịch Bản <span class="cap">→ gộp làm tab trong "Kịch Bản"</span></div>
+          <div class="ia-item new">Kịch Bản &amp; Hoạch Định <span class="cap">— 2 tab trong 1 mục</span></div>
+          <div class="ia-item merge">Danh Mục Sản Phẩm <span class="cap">→ gộp làm tab trong "Thiết Lập"</span></div>
+          <div class="ia-item new">Thiết Lập <span class="cap">— nơi NHẬP LIỆU duy nhất, gồm cả Danh Mục SP</span></div>
+        </div>
+        <div class="ia-group">
+          <div class="ia-group-label"><span class="ia-dot" style="background:#16A34A"></span> Luôn hiện</div>
+          <div class="ia-item new">❓ Trợ Giúp <span class="cap">— ghim cuối sidebar</span></div>
+        </div>
+        <div class="arrow-note">"Giá Vốn Theo Lô" không còn là mục riêng — nó là hành động "Chốt lại giá" NẰM TRONG panel của đúng nguyên liệu đó (mục Nguyên Liệu), vì bản chất là xem giá nguyên liệu rồi quyết định luôn, không cần nhảy sang màn khác. Demo bấm thử ngay bên dưới.</div>
+      </div>
+    </div>
+
+    <div class="crm-demo">
+      <div class="crm-demo-toolbar">
+        <span class="t">Demo bấm thử — Nguyên Liệu VÀ Bảng Giá dùng CHUNG kiểu danh sách + panel</span>
+        <span class="fake-note" style="margin:0">dữ liệu: fixture thật (xem ghi chú trong panel)</span>
+      </div>
+      <div class="crm-body">
+        <div class="crm-nav-mini">
+          <div class="item">Tổng Quan</div>
+          <div class="item active" data-list="materials">Nguyên Liệu</div>
+          <div class="item" data-list="skus">Bảng Giá</div>
+          <div class="item">Kịch Bản &amp; Hoạch Định</div>
+          <div class="item">Thiết Lập</div>
+          <div class="pin">
+            <div class="item">❓ Trợ Giúp</div>
+          </div>
+        </div>
+        <div class="crm-list-area">
+          <div class="crm-list-head">
+            <h5 id="crmListTitle">Nguyên Liệu</h5>
+            <span class="n" id="crmListCount">4 dòng</span>
+          </div>
+          <div id="crmListBody"></div>
+          <div class="fake-note" style="margin-top:12px" id="crmListNote"></div>
+        </div>
+
+        <div class="panel-backdrop" id="crmBackdrop"></div>
+
+        <div class="side-panel" id="crmPanel1">
+          <div class="panel-head">
+            <div class="panel-title-row">
+              <h4 id="p1Title"></h4>
+              <button class="panel-close" id="p1Close">✕</button>
+            </div>
+          </div>
+          <div class="panel-body" id="p1Body"></div>
+        </div>
+
+        <div class="side-panel level-2" id="crmPanel2">
+          <div class="panel-head">
+            <button class="panel-back" id="p2Back">← Quay lại nguyên liệu</button>
+            <div class="panel-title-row">
+              <h4 id="p2Title"></h4>
+              <button class="panel-close" id="p2Close">✕</button>
+            </div>
+          </div>
+          <div class="panel-body" id="p2Body"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 3. MOCKUP TỔNG QUAN ════════ -->
+  <section class="block" id="tong-quan-moi">
+    <div class="block-head">
+      <div class="block-num">03 · Mockup</div>
+      <h2 class="block-title">Tổng Quan — vẫn 3 khối nội dung, không phải 3 mục menu</h2>
+      <p class="block-sub">Đọc mục 2 trước: từ vòng 3, "Giá Vốn Nguyên Liệu" và "Chi Phí Sản Xuất" KHÔNG còn là mục sidebar riêng — 2 khối bên dưới chỉ là TEASER trên Tổng Quan, bấm vào mở panel (như demo mục 2), không điều hướng sang trang khác.</p>
+    </div>
+    <div class="pain-card" style="margin-bottom:22px; border-color: var(--blue-soft-border); background: var(--blue-soft);">
+      <h4 style="color:var(--blue)">Đã sửa qua 3 vòng góp ý của bạn</h4>
+      <p style="color:var(--text)">
+        <b>Vòng 1</b> — hiện đúng bảng lô thay vì số gộp; tách "chi phí gia công" khỏi "giá vốn nguyên liệu", chỉ cộng 1 lần ở bảng Tổng Hợp.<br>
+        <b>Vòng 2</b> — làm rõ 2 khối này CHỈ XEM, nhập liệu vẫn ở Thiết Lập Dữ Liệu; Bảng Giá đổi từ 1 SKU sang số đếm cả danh mục (40/91).<br>
+        <b>Vòng 3</b> — bỏ hẳn ý biến "Giá Vốn Nguyên Liệu"/"Chi Phí Sản Xuất" thành MỤC MENU riêng (quá nhiều mục). Gộp thành 1 mục "Nguyên Liệu" (danh sách + panel lồng nhau, xem mục 2), Tổng Quan chỉ còn 3 khối tóm tắt bấm ra panel — không có mục sidebar mới nào cả, sidebar chỉ còn 5 mục + Trợ Giúp.
+      </p>
+    </div>
+    <div class="hub-grid">
+      <div class="hub-card">
+        <div class="icon-row"><span class="num">1</span><span class="hub-flag unlocked">⚠ MỞ KHÓA</span></div>
+        <h4>Giá Vốn Nguyên Liệu</h4>
+        <div class="q">Nguyên liệu đang mua có còn đúng giá đã chốt không?</div>
+        <div class="hub-line"><span class="l">Baseline (đã chốt)</span><span class="v tabular">3,03 USD/kg</span></div>
+        <div class="hub-line"><span class="l">Giá mua mới hôm nay</span><span class="v tabular neg">3,50 USD/kg</span></div>
+        <div class="hub-line"><span class="l">Lệch so với chốt</span><span class="v tabular neg">+15,5%</span></div>
+        <div class="hub-line"><span class="l">Bình quân gia quyền (2 lô, sổ sách)</span><span class="v tabular">3,19 USD/kg</span></div>
+        <div class="hub-cta">Mở panel trong Nguyên Liệu →</div>
+      </div>
+      <div class="hub-card">
+        <div class="icon-row"><span class="num">2</span></div>
+        <h4>Chi Phí Sản Xuất <span style="font-weight:400;font-size:12px;color:var(--text-mute)">(không gồm nguyên liệu)</span></h4>
+        <div class="q">Chạy thêm 1 ca thì chi phí gia công/kg đổi thế nào?</div>
+        <div class="hub-line"><span class="l">1 ca — chi phí gia công/kg</span><span class="v tabular">23.412 đ</span></div>
+        <div class="hub-line"><span class="l">2 ca — chi phí gia công/kg</span><span class="v tabular">14.666 đ</span></div>
+        <div class="hub-line"><span class="l">3 ca — chi phí gia công/kg</span><span class="v tabular">11.750 đ</span></div>
+        <div class="hub-line"><span class="l">trong đó khấu hao (3 ca)</span><span class="v tabular">3.752 đ</span></div>
+        <div class="hub-cta">Mở panel chi tiết (ngay tại Tổng Quan) →</div>
+      </div>
+      <div class="hub-card">
+        <div class="icon-row"><span class="num">3</span><span class="hub-flag unlocked">⚠ 40/91 SKU dưới giá vốn BQGQ</span></div>
+        <h4>Bảng Giá</h4>
+        <div class="q">Trong 91 SKU đang bán, bao nhiêu cái đang bán DƯỚI giá vốn thực tế?</div>
+        <div class="hub-line"><span class="l">SKU thấp hơn giá vốn BQGQ</span><span class="v tabular neg">40 / 91</span></div>
+        <div class="hub-line"><span class="l">VD — Ống DN20: Baseline / BQGQ</span><span class="v tabular">39.408 / 41.197 đ/m</span></div>
+        <div class="hub-line"><span class="l">Chênh lệch EBIT cả năm</span><span class="v tabular neg">−3,06 tỷ đ</span></div>
+        <div class="hub-cta">Mở Bảng Giá — 91 SKU →</div>
+      </div>
+    </div>
+    <div class="fake-note" style="margin-top:10px">Thẻ này chỉ là 1 TEASER tóm tắt trên Tổng Quan — số 40/91 đếm thật bằng cách chạy <code>calculateScenario</code> 2 lần (baseline vs weighted-avg) trên TOÀN BỘ danh mục, không phải áng chừng 1 dòng. Bấm "Xem đủ 91 SKU" mở đúng trang Bảng Giá — đã lên production (PR #32), liệt kê hết SKU, mỗi dòng có sẵn cột Giá VF BQGQ + Chênh lệch. Ví dụ 6 dòng thật của bảng đó (không phải mockup rút gọn 1 dòng):</div>
+    <div class="demo-frame" style="margin-top:12px">
+      <div style="overflow-x:auto">
+        <table class="lot-table">
+          <thead><tr><th>Sản phẩm</th><th class="r">Kích cỡ</th><th class="r">Giá VF (Baseline)</th><th class="r">Giá VF BQGQ</th><th class="r">Chênh lệch</th></tr></thead>
+          <tbody>
+            <tr><td>Ống CPVC BlazeMaster</td><td class="r tabular">DN20</td><td class="r tabular">39.408 đ</td><td class="r tabular">41.197 đ</td><td class="r tabular" style="color:var(--red)">−1.789 đ</td></tr>
+            <tr><td>Ống CPVC BlazeMaster</td><td class="r tabular">DN25</td><td class="r tabular">55.715 đ</td><td class="r tabular">58.244 đ</td><td class="r tabular" style="color:var(--red)">−2.530 đ</td></tr>
+            <tr><td>Ống CPVC BlazeMaster</td><td class="r tabular">DN32</td><td class="r tabular">84.252 đ</td><td class="r tabular">88.077 đ</td><td class="r tabular" style="color:var(--red)">−3.825 đ</td></tr>
+            <tr><td>Ống CPVC BlazeMaster</td><td class="r tabular">DN40</td><td class="r tabular">111.430 đ</td><td class="r tabular">116.489 đ</td><td class="r tabular" style="color:var(--red)">−5.059 đ</td></tr>
+            <tr><td>Tê đều</td><td class="r tabular">20</td><td class="r tabular">14.440 đ</td><td class="r tabular">14.440 đ</td><td class="r tabular" style="color:var(--text-mute)">0 đ</td></tr>
+            <tr><td>Tê đều</td><td class="r tabular">25</td><td class="r tabular">21.188 đ</td><td class="r tabular">21.188 đ</td><td class="r tabular" style="color:var(--text-mute)">0 đ</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="fake-note">4 dòng Ống lệch âm vì cùng nguyên liệu BlazeMaster Orange đang có lô mới giá cao hơn (kịch bản giả lập ở mục 2); 2 dòng Tê đều lệch 0đ vì Phụ kiện dùng nguyên liệu khác (bm-fitting), không bị ảnh hưởng bởi lô giả lập này — 91 SKU thật sẽ có đủ mọi tổ hợp, đây chỉ trích 6 dòng minh hoạ.</div>
+    </div>
+
+    <div class="demo-frame" style="margin-top:22px">
+      <div class="demo-label">Bảng Tổng Hợp — Ống, đúng thứ tự bạn yêu cầu: cột Nguyên liệu, cột Chi phí sản xuất, RỒI mới cộng ra Giá thành đầy đủ</div>
+      <div style="overflow-x:auto">
+        <table class="lot-table">
+          <thead>
+            <tr><th>Mức ca</th><th class="r">Nguyên liệu (đ/kg)</th><th class="r">+ Chi phí sản xuất (đ/kg)</th><th class="r">= Giá thành đầy đủ (đ/kg)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>1 ca</td><td class="r tabular">96.962</td><td class="r tabular">23.412</td><td class="r tabular" style="font-weight:700">120.374</td></tr>
+            <tr><td>2 ca</td><td class="r tabular">96.962</td><td class="r tabular">14.666</td><td class="r tabular" style="font-weight:700">111.627</td></tr>
+            <tr><td>3 ca</td><td class="r tabular">96.962</td><td class="r tabular">11.750</td><td class="r tabular" style="font-weight:700">108.712</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="fake-note">Cột "Giá thành đầy đủ" tại 3 ca (108.712 đ/kg) khớp đúng bậc ③ thang giá 5 bậc — cộng dồn thật từ engine (<code>calculateDashboardKpis</code>), không tự gõ tay.</div>
+    </div>
+    <div class="fake-note" style="margin-top:16px">Toàn bộ số ở mục 3 (giá vốn, chi phí sản xuất theo ca, giá DN20 theo 2 cơ sở, chênh lệch EBIT) chạy thật từ engine trên fixture — chỉ riêng phần lô nguyên liệu 3,03/3,50 là kịch bản giả lập "nếu có 2 lô giá khác nhau" để có số chênh lệch minh hoạ (fixture gốc hiện chỉ có 1 lô, baseline trùng giá mua mới hôm nay nên chưa có gì để so sánh).</div>
+  </section>
+
+  <!-- ════════ 4. TRANG TRỢ GIÚP ════════ -->
+  <section class="block" id="trang-giup">
+    <div class="block-head">
+      <div class="block-num">04 · Mockup</div>
+      <h2 class="block-title">Trang Trợ Giúp — 1 trang, giải thích mọi màn bằng 1 ngôn ngữ</h2>
+      <p class="block-sub">Ghim ở cuối sidebar, mở ra không rời khỏi ngữ cảnh đang làm việc. Nội dung dưới đây lấy nguyên văn từ phần giải thích đã viết sẵn trong app (TermInfo, ExplainPanel, GLOSSARY.md) — gom về 1 chỗ thay vì rải rác từng nút ⓘ.</p>
+    </div>
+
+    <input class="help-search" id="helpSearch" type="text" placeholder="Tìm thuật ngữ hoặc tên màn — ví dụ: baseline, sàn biến phí, giá thành đầy đủ…">
+
+    <div class="help-shell">
+      <div class="help-toc" id="helpToc">
+        <a href="#h-tong-quan" data-h="h-tong-quan" class="h-current">Tổng Quan</a>
+        <a href="#h-giavon" data-h="h-giavon">Giá Vốn Nguyên Liệu</a>
+        <a href="#h-chiphi" data-h="h-chiphi">Chi Phí Sản Xuất</a>
+        <a href="#h-banggia" data-h="h-banggia">Bảng Giá</a>
+        <a href="#h-thang" data-h="h-thang">Thang giá 5 bậc</a>
+        <a href="#h-baseline" data-h="h-baseline">Baseline &amp; khóa giá</a>
+        <a href="#h-glossary" data-h="h-glossary">Toàn bộ thuật ngữ</a>
+      </div>
+
+      <div id="helpList">
+        <div class="help-entry" id="h-tong-quan" data-keywords="tổng quan dashboard ebit p&l lợi nhuận">
+          <h4>Tổng Quan</h4>
+          <div class="screen-q">Trả lời: "Nhà máy đang thế nào, hôm nay có gì cần quyết định?"</div>
+          <p>Chỉ xem, không sửa được gì ở đây. 3 khối tóm tắt bấm ra PANEL (không chuyển trang) cho Nguyên Liệu / Chi Phí Sản Xuất / Bảng Giá + bảng Kết Quả Kinh Doanh (P&amp;L) cả năm theo dữ liệu đã lưu. Muốn đổi số gốc thì qua Thiết Lập Dữ Liệu — Tổng Quan sẽ tự tính lại theo.</p>
+        </div>
+
+        <div class="help-entry" id="h-giavon" data-keywords="giá vốn nguyên liệu lô tồn kho bình quân gia quyền landed cost thuế nguyên liệu">
+          <h4>Nguyên Liệu</h4>
+          <div class="screen-q">Trả lời: "Nguyên liệu đang tốn bao nhiêu tiền, có cần chốt lại giá bán không?"</div>
+          <p>Danh sách các compound (BlazeMaster Ống/Phụ kiện, Corzan Ống/Phụ kiện…) — bấm 1 dòng mở panel: 3 con số cần phân biệt là <b>Baseline</b> (mốc neo giá bán, admin/pricing tự đặt) · <b>Giá mua mới hôm nay</b> (thị trường hiện hành, dùng để so lệch với Baseline) · <b>Bình quân gia quyền</b> (giá vốn sổ sách thật, tính từ các lô đã nhập — landed cost gồm thuế nhập khẩu + phí hải quan/logistics, có thể khác nhau TỪNG lô nếu xuất xứ khác nhau). Bấm vào 1 lô trong panel để mở panel con xem/sửa đúng lô đó (kg + giá USD/kg); nút "Chốt baseline = giá hôm nay" cũng nằm ngay trong panel này khi nguyên liệu đang MỞ KHÓA.</p>
+        </div>
+
+        <div class="help-entry" id="h-chiphi" data-keywords="chi phí sản xuất cố định ca khấu hao mhr giờ máy công suất">
+          <h4>Chi Phí Sản Xuất <span style="font-weight:400;color:var(--text-mute)">(panel trong Tổng Quan)</span></h4>
+          <div class="screen-q">Trả lời: "Chạy 1/2/3 ca thì chi phí cố định phân bổ trên mỗi kg đổi bao nhiêu?"</div>
+          <p>Phí gia công tách 3 tầng: <b>trực tiếp</b> (nhân công, điện chạy máy — tăng theo sản lượng), <b>chung</b> (quản lý, chi phí chung phân bổ), <b>khấu hao</b> (máy móc/khuôn — CỐ ĐỊNH bất kể chạy mấy ca, nên chạy càng nhiều ca thì khấu hao/kg càng rẻ). MHR (đơn giá giờ máy) là chi phí cố định của Phụ kiện quy đổi theo giờ máy thay vì theo kg. Muốn đổi số gốc (tài sản, khấu hao, lương) thì qua Thiết Lập.</p>
+        </div>
+
+        <div class="help-entry" id="h-banggia" data-keywords="bảng giá vf tcg npp phân phối vat">
+          <h4>Bảng Giá</h4>
+          <div class="screen-q">Trả lời: "Đang niêm yết giá bao nhiêu, và nếu tính theo giá vốn thật thì lãi khác bao nhiêu?"</div>
+          <p><b>Giá VF</b> = giá xuất xưởng, tầng giá duy nhất nhà máy tự quyết. <b>Giá TCG</b> và <b>giá niêm yết NPP</b> là suy tiếp tự động theo chính sách phân phối, không chốt tay. 2 cột "Giá VF BQGQ" và "Chênh lệch" so sánh giá đang bán với giá vốn tính theo bình quân gia quyền thực nhập kho — dương nghĩa là còn dư địa biên lợi nhuận.</p>
+        </div>
+
+        <div class="help-entry" id="h-thang" data-keywords="thang giá 5 bậc sàn biến phí hòa vốn tiền mặt giá thành đầy đủ hòa vốn toàn dn giá mục tiêu">
+          <h4>Thang giá 5 bậc</h4>
+          <div class="screen-q">Trả lời: "Bán ở mức giá nào thì vẫn an toàn, mức nào là có lãi thật?"</div>
+          <dl style="margin:12px 0 0">
+            <div class="term-row"><dt>① Sàn biến phí</dt><dd>Ranh đỏ tuyệt đối — bán dưới mức này là mất tiền mặt ngay. Ống: 100.663 đ/kg · Phụ kiện: 127.940 đ/kg.</dd></div>
+            <div class="term-row"><dt>② Hòa vốn tiền mặt</dt><dd>Chưa gồm khấu hao — phòng thủ khi thị trường xấu. Ống: 104.240 đ/kg · Phụ kiện: 136.431 đ/kg.</dd></div>
+            <div class="term-row"><dt>③ Giá thành đầy đủ</dt><dd>Bù hết mọi chi phí kể cả khấu hao — hòa vốn thật. Ống: 108.712 đ/kg · Phụ kiện: 180.604 đ/kg.</dd></div>
+            <div class="term-row"><dt>④ Hòa vốn toàn DN</dt><dd>Gồm cả chi phí ngoài sản xuất + lãi vay. Ống: 113.477 đ/kg · Phụ kiện: 189.470 đ/kg.</dd></div>
+            <div class="term-row"><dt>⑤ Giá mục tiêu (VF)</dt><dd>Giá chào chuẩn, đã cộng phần lời nhà máy. Ống: 135.890 đ/kg · Phụ kiện: 252.846 đ/kg.</dd></div>
+          </dl>
+        </div>
+
+        <div class="help-entry" id="h-baseline" data-keywords="baseline khóa giá ngưỡng mở khóa staleness cảnh báo">
+          <h4>Baseline &amp; cơ chế khóa giá</h4>
+          <div class="screen-q">Trả lời: "Vì sao giá bán không nhảy theo từng biến động giá nguyên liệu?"</div>
+          <p>Baseline là mốc neo giá nguyên liệu (USD/kg) dùng để tính Giá VF — lệch trong ngưỡng cho phép (vd ±3%) so với giá mua mới hôm nay thì giữ nguyên giá bán (KHÓA); lệch vượt ngưỡng thì hệ thống tự chuyển sang tính theo giá thị trường (MỞ KHÓA) — đây là tín hiệu cần chốt lại giá. Baseline KHÔNG phải giá vốn thực đã trả — giá vốn thực là bình quân gia quyền.</p>
+        </div>
+
+        <div class="help-entry" id="h-glossary" data-keywords="thuật ngữ glossary tất cả">
+          <h4>Toàn bộ thuật ngữ</h4>
+          <div class="screen-q">Tra nhanh — mỗi dòng là 1 khái niệm dùng xuyên suốt app.</div>
+          <dl style="margin:12px 0 0">
+            <div class="term-row"><dt>Giá mua mới hôm nay</dt><dd>Giá thị trường nếu mua ngay bây giờ (trước gọi "giá tái tạo"). Cập nhật tay khi có báo giá mới.</dd></div>
+            <div class="term-row"><dt>Bình quân gia quyền</dt><dd>Giá vốn sổ sách = trung bình có trọng số các lô đã nhập, theo kg và giá từng lô.</dd></div>
+            <div class="term-row"><dt>Landed cost</dt><dd>Giá vốn đã gồm thuế nhập khẩu + phí hải quan/logistics — có thể khác nhau từng lô nếu xuất xứ khác.</dd></div>
+            <div class="term-row"><dt>Lãi/lỗ giữ kho</dt><dd>Chênh lệch giữa giá mua mới hôm nay và bình quân gia quyền, nhân với tồn kho hiện có.</dd></div>
+            <div class="term-row"><dt>Đơn giá giờ máy (MHR)</dt><dd>Chi phí cố định phân bổ theo giờ máy chạy, dùng cho dòng Phụ kiện (ép phun).</dd></div>
+            <div class="term-row"><dt>Công suất bình thường</dt><dd>Mức sản lượng chuẩn theo TT200 dùng làm mẫu số phân bổ định phí.</dd></div>
+            <div class="term-row"><dt>Trạng thái khóa (KHÓA/MỞ KHÓA)</dt><dd>KHÓA = giá bán giữ nguyên theo Baseline. MỞ KHÓA = giá nguyên liệu lệch quá ngưỡng, giá bán đã chuyển sang tính theo giá mua mới hôm nay.</dd></div>
+            <div class="term-row"><dt>Top-down / giải ngược</dt><dd>Nhập lợi nhuận hoặc giá bán MONG MUỐN, app tính ngược ra nguồn lực cần (giá nguyên liệu tối đa, sản lượng cần…).</dd></div>
+            <div class="term-row"><dt>Khuôn (tài sản)</dt><dd>1 bộ khuôn ép, khấu hao riêng theo năm mua — 1 SKU chưa có khuôn thì tạm ẩn khỏi Bảng Giá.</dd></div>
+            <div class="term-row"><dt>Ren kim loại mua ngoài</dt><dd>Vật tư đồng thau lắp ép vào phụ kiện ren — quản lý tồn kho riêng theo (loại ren, cỡ PT), khác cấp SKU nhựa.</dd></div>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ 5. BƯỚC TIẾP THEO ════════ -->
+  <section class="block" id="buoc-tiep" style="padding-bottom: 10px;">
+    <div class="block-head">
+      <div class="block-num">05 · Cần bạn chốt</div>
+      <h2 class="block-title">Đây là bản để bàn — chưa động gì vào code thật</h2>
+      <p class="block-sub">Theo đúng quy trình của dự án (Pha 1 phải duyệt layout trước khi viết code Pha 2+), tôi cần bạn xác nhận vài điểm trước khi bắt tay dựng thật:</p>
+    </div>
+    <div class="cta-footer">
+      <h4>3 câu cần bạn trả lời</h4>
+      <p>
+        1) Đồng ý sidebar còn 5 mục (Tổng Quan / Nguyên Liệu / Bảng Giá / Kịch Bản &amp; Hoạch Định / Thiết Lập) + Trợ Giúp ghim, và "chốt lại giá" (Giá Vốn Theo Lô cũ) nằm NGAY TRONG panel của nguyên liệu đó, không phải màn riêng?<br>
+        2) Panel lồng nhau bên phải (như demo mục 2, kiểu Twenty CRM) — đủ chưa hay cần thêm mức lồng sâu hơn, hay muốn panel toàn màn hình thay vì bên phải?<br>
+        3) <s>Bảng Giá đổi sang cùng kiểu danh sách + panel</s> — ĐÃ CHỐT: đồng ý. Demo mục 2 giờ bấm được cả 2 danh sách (Nguyên Liệu / Bảng Giá) qua cùng 1 cơ chế panel.<br>
+        4) Trang Trợ Giúp: nội dung ở mục 4 đã đủ hay cần thêm phần nào (vd hướng dẫn theo tình huống "khi nào cần chốt lại giá")?
+      </p>
+    </div>
+    <div class="fake-note">Sau khi chốt, bước kế tiếp: dựng lại prototype tương tác đầy đủ (đúng luật skill Pha 1 — dữ liệu giả từ fixture, chưa nối engine) để bạn duyệt trước khi viết code production.</div>
+  </section>
+</div>
+
+<script>
+  // Sticky nav: highlight current section on scroll
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('#sectionnav a'));
+    var sections = links.map(function (a) { return document.getElementById(a.dataset.target); });
+    function onScroll() {
+      var pos = window.scrollY + 100;
+      var current = sections[0];
+      sections.forEach(function (s) { if (s && s.offsetTop <= pos) current = s; });
+      links.forEach(function (a) { a.classList.toggle('current', current && a.dataset.target === current.id); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+
+  // Help TOC highlight
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('#helpToc a'));
+    var entries = links.map(function (a) { return document.getElementById(a.dataset.h); });
+    function onScroll() {
+      var pos = window.scrollY + 120;
+      var current = entries[0];
+      entries.forEach(function (s) { if (s && s.offsetTop <= pos) current = s; });
+      links.forEach(function (a) { a.classList.toggle('h-current', current && a.dataset.h === current.id); });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+  })();
+
+  // Help search filter
+  (function () {
+    var input = document.getElementById('helpSearch');
+    var entries = Array.prototype.slice.call(document.querySelectorAll('.help-entry'));
+    input.addEventListener('input', function () {
+      var q = input.value.trim().toLowerCase();
+      entries.forEach(function (e) {
+        var hay = (e.dataset.keywords || '') + ' ' + e.textContent.toLowerCase();
+        e.classList.toggle('hidden', q.length > 0 && hay.toLowerCase().indexOf(q) === -1);
+      });
+    });
+  })();
+
+  // Danh sách Nguyên Liệu + panel lồng nhau (kiểu Twenty CRM). Số liệu:
+  // BlazeMaster Orange = kịch bản giả lập 2 lô (100t@3,03 + 50t@3,50 → bình
+  // quân gia quyền 3,1867, khớp tests/unit/dual-costing.test.ts). Corzan/BlazeMaster
+  // Phụ kiện = số thật tests/fixtures/corzan.json + scenario-fixture.ts (baseline
+  // hiện KHÓA vì chưa lệch giá).
+  (function () {
+    var materials = {
+      'blaze-pipe': {
+        name: 'BlazeMaster Orange (Ống)',
+        stats: [
+          ['Baseline (đã chốt)', '3,03 USD/kg', ''],
+          ['Giá mua mới hôm nay', '3,50 USD/kg', 'neg'],
+          ['Lệch so với chốt', '+15,5%', 'neg'],
+          ['Bình quân gia quyền', '3,19 USD/kg', ''],
+        ],
+        flag: { cls: 'unlocked', text: '⚠ MỞ KHÓA — nên xem lại giá bán' },
+        cta: 'Chốt baseline = giá hôm nay (3,50 USD/kg)',
+        lots: [
+          { id: 0, label: 'Lô gần nhất', kg: '50.000 kg', price: '3,50 USD/kg', tax: '— (theo NL)', fee: '— (theo NL)', value: '175.000 USD' },
+          { id: 1, label: 'Lô #2', kg: '100.000 kg', price: '3,03 USD/kg', tax: '— (theo NL)', fee: '— (theo NL)', value: '303.000 USD' },
+        ],
+        note: 'Kịch bản giả lập 2 lô để có số lệch minh hoạ — khớp phép tính weightedAvgUsdPerKg trong test thật.'
+      },
+      'blaze-fitting': {
+        name: 'BlazeMaster compound (Phụ kiện)',
+        stats: [
+          ['Baseline (đã chốt)', '3,85 USD/kg', ''],
+          ['Giá mua mới hôm nay', '3,85 USD/kg', ''],
+          ['Lệch so với chốt', '0,0%', ''],
+          ['Bình quân gia quyền', '3,85 USD/kg', ''],
+        ],
+        flag: { cls: 'locked', text: '✓ KHÓA — giá bán đang ổn định' },
+        cta: null,
+        lots: [
+          { id: 0, label: 'Lô gần nhất', kg: '100.000 kg', price: '3,85 USD/kg', tax: '— (theo NL)', fee: '— (theo NL)', value: '385.000 USD' },
+        ],
+        note: 'Số thật từ tests/helpers/scenario-fixture.ts (bm-fitting) — baseline = giá mua mới hôm nay, chưa có biến động.'
+      },
+      'corzan-pipe': {
+        name: 'Corzan (Ống)',
+        stats: [
+          ['Baseline (đã chốt)', '3,47 USD/kg', ''],
+          ['Giá mua mới hôm nay', '3,47 USD/kg', ''],
+          ['Lệch so với chốt', '0,0%', ''],
+          ['Bình quân gia quyền', '— (chưa có lô)', ''],
+        ],
+        flag: { cls: 'locked', text: '✓ KHÓA' },
+        cta: null,
+        lots: [],
+        note: 'Trạng thái RỖNG thật từ tests/fixtures/corzan.json (corzan-pipe) — chưa nhập lô nào; giá vốn sổ sách tạm lấy theo giá mua mới hôm nay.'
+      },
+      'corzan-fitting': {
+        name: 'Corzan (Phụ kiện)',
+        stats: [
+          ['Baseline (đã chốt)', '3,97 USD/kg', ''],
+          ['Giá mua mới hôm nay', '3,97 USD/kg', ''],
+          ['Lệch so với chốt', '0,0%', ''],
+          ['Bình quân gia quyền', '— (chưa có lô)', ''],
+        ],
+        flag: { cls: 'locked', text: '✓ KHÓA' },
+        cta: null,
+        lots: [],
+        note: 'Trạng thái RỖNG thật từ tests/fixtures/corzan.json (corzan-fitting).'
+      }
+    };
+
+    // Bảng Giá — số thật tính bằng calculateScenario 2 lần (Baseline vs weighted-avg)
+    // trên kịch bản giả lập 2 lô ở trên (cùng câu chuyện với BlazeMaster Orange).
+    var skus = {
+      dn20: { name: 'Ống CPVC BlazeMaster', size: 'DN20', unit: 'mét', base: '39.408 đ', bqgq: '41.197 đ', diff: '−1.789 đ', neg: true },
+      dn25: { name: 'Ống CPVC BlazeMaster', size: 'DN25', unit: 'mét', base: '55.715 đ', bqgq: '58.244 đ', diff: '−2.530 đ', neg: true },
+      dn32: { name: 'Ống CPVC BlazeMaster', size: 'DN32', unit: 'mét', base: '84.252 đ', bqgq: '88.077 đ', diff: '−3.825 đ', neg: true },
+      dn40: { name: 'Ống CPVC BlazeMaster', size: 'DN40', unit: 'mét', base: '111.430 đ', bqgq: '116.489 đ', diff: '−5.059 đ', neg: true },
+      te20: { name: 'Tê đều', size: '20', unit: 'cái', base: '14.440 đ', bqgq: '14.440 đ', diff: '0 đ', neg: false },
+      te25: { name: 'Tê đều', size: '25', unit: 'cái', base: '21.188 đ', bqgq: '21.188 đ', diff: '0 đ', neg: false }
+    };
+
+    var LISTS = {
+      materials: {
+        title: 'Nguyên Liệu', count: '4 dòng',
+        cols: ['Tên', 'Baseline', 'Giá mua mới hôm nay', 'Trạng thái'],
+        note: 'Bấm 1 dòng để mở panel; trong panel bấm vào 1 lô để mở panel con lồng bên trên (nested). Bấm ra ngoài hoặc phím Esc để đóng.',
+        rows: Object.keys(materials).map(function (key) {
+          var d = materials[key];
+          return { key: key, cells: [
+            '<div><div class="name">' + d.name + '</div><div class="sub">' + (d.lots.length ? d.lots.length + ' lô đã nhập' : 'chưa nhập lô nào') + '</div></div>',
+            '<div class="val tabular">' + d.stats[0][1] + '</div>',
+            '<div class="val tabular"' + (d.stats[1][2] === 'neg' ? ' style="color:var(--red)"' : '') + '>' + d.stats[1][1] + '</div>',
+            '<div class="val"><span class="hub-flag ' + d.flag.cls + '" style="font-size:10px">' + (d.flag.cls === 'unlocked' ? '⚠ MỞ KHÓA' : '✓ KHÓA') + '</span></div>',
+          ] };
+        })
+      },
+      skus: {
+        title: 'Bảng Giá', count: '91 SKU (trích 6 dòng)',
+        cols: ['Sản phẩm', 'Giá VF (Baseline)', 'Giá VF (BQGQ)', 'Chênh lệch'],
+        note: 'Cùng kiểu với Nguyên Liệu: bấm 1 dòng SKU mở panel chuỗi giá — không còn kiểu "bấm mở rộng ngay tại dòng" như bản hiện tại.',
+        rows: Object.keys(skus).map(function (key) {
+          var d = skus[key];
+          return { key: key, cells: [
+            '<div><div class="name">' + d.name + '</div><div class="sub">' + d.size + ' · ' + d.unit + '</div></div>',
+            '<div class="val tabular">' + d.base + '</div>',
+            '<div class="val tabular">' + d.bqgq + '</div>',
+            '<div class="val tabular" style="color:' + (d.neg ? 'var(--red)' : 'var(--text-mute)') + '">' + d.diff + '</div>',
+          ] };
+        })
+      }
+    };
+
+    var backdrop = document.getElementById('crmBackdrop');
+    var panel1 = document.getElementById('crmPanel1');
+    var panel2 = document.getElementById('crmPanel2');
+    var p1Title = document.getElementById('p1Title');
+    var p1Body = document.getElementById('p1Body');
+    var p2Title = document.getElementById('p2Title');
+    var p2Body = document.getElementById('p2Body');
+    var listTitle = document.getElementById('crmListTitle');
+    var listCount = document.getElementById('crmListCount');
+    var listBody = document.getElementById('crmListBody');
+    var listNote = document.getElementById('crmListNote');
+
+    function statHtml(s) {
+      var style = s[2] === 'neg' ? ' style="color:var(--red)"' : '';
+      return '<div class="panel-stat"><div class="l">' + s[0] + '</div><div class="v tabular"' + style + '>' + s[1] + '</div></div>';
+    }
+
+    function renderList(listKey) {
+      var L = LISTS[listKey];
+      listTitle.textContent = L.title;
+      listCount.textContent = L.count;
+      listNote.textContent = L.note;
+      var html = '<div class="crm-row" style="cursor:default">' + L.cols.map(function (c) { return '<span class="colhead">' + c + '</span>'; }).join('') + '</div>';
+      html += L.rows.map(function (r) {
+        return '<div class="crm-row" tabindex="0" data-key="' + r.key + '">' + r.cells.join('') + '</div>';
+      }).join('');
+      listBody.innerHTML = html;
+      L.rows.forEach(function (r) {
+        var row = listBody.querySelector('[data-key="' + r.key + '"]');
+        row.addEventListener('click', function () { listKey === 'materials' ? openMaterial(r.key) : openSku(r.key); });
+        row.addEventListener('keydown', function (e) { if (e.key === 'Enter') row.click(); });
+      });
+    }
+
+    function openMaterial(key) {
+      var d = materials[key];
+      if (!d) return;
+      p1Title.textContent = d.name;
+      var html = '<div class="panel-stat-grid">' + d.stats.map(statHtml).join('') + '</div>';
+      html += '<div class="hub-flag ' + d.flag.cls + '" style="margin-bottom:16px">' + d.flag.text + '</div>';
+      html += '<div style="font-size:11px;font-weight:700;color:var(--text-mute);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Lô đã nhập (' + d.lots.length + ')</div>';
+      if (d.lots.length) {
+        d.lots.forEach(function (l) {
+          html += '<div class="panel-lot-row" data-lot="' + l.id + '"><div><div class="name">' + l.label + '</div><div class="meta">' + l.kg + ' · ' + l.price + '</div></div><span class="go">›</span></div>';
+        });
+      } else {
+        html += '<div style="padding:14px 0;color:var(--text-faint);font-size:12.5px;font-style:italic">Chưa nhập lô nào</div>';
+      }
+      if (d.cta) {
+        html += '<button style="margin-top:16px;width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:700;cursor:pointer">' + d.cta + '</button>';
+      }
+      html += '<div class="fake-note" style="margin-top:14px">' + d.note + '</div>';
+      p1Body.innerHTML = html;
+
+      d.lots.forEach(function (l) {
+        var row = p1Body.querySelector('[data-lot="' + l.id + '"]');
+        if (row) row.addEventListener('click', function () { openLot(key, l.id); });
+      });
+
+      backdrop.classList.add('show');
+      panel1.classList.add('open');
+      panel2.classList.remove('open');
+    }
+
+    function openLot(matKey, lotId) {
+      var d = materials[matKey];
+      var lot = d.lots.filter(function (l) { return l.id === lotId; })[0];
+      if (!lot) return;
+      p2Title.textContent = lot.label + ' — ' + d.name;
+      p2Body.innerHTML =
+        '<div class="panel-field"><div class="l">Số lượng</div><input value="' + lot.kg + '" readonly></div>' +
+        '<div class="panel-field"><div class="l">Giá mua</div><input value="' + lot.price + '" readonly></div>' +
+        '<div class="panel-field"><div class="l">Thuế NK riêng</div><input value="' + lot.tax + '" readonly></div>' +
+        '<div class="panel-field"><div class="l">Phí HQ + logistics riêng</div><input value="' + lot.fee + '" readonly></div>' +
+        '<div class="panel-field"><div class="l">Giá trị lô</div><input value="' + lot.value + '" readonly></div>' +
+        '<div class="fake-note">Panel con (nested) — sửa số ở đây rồi bấm ← để quay lại panel nguyên liệu, không mất trạng thái danh sách phía sau. Ô để readonly vì đây là mockup.</div>';
+      panel2.classList.add('open');
+    }
+
+    function openSku(key) {
+      var d = skus[key];
+      if (!d) return;
+      p1Title.textContent = d.name + ' — ' + d.size;
+      var html = '<div class="panel-stat-grid">';
+      html += '<div class="panel-stat"><div class="l">Giá VF theo Baseline</div><div class="v tabular">' + d.base + '</div></div>';
+      html += '<div class="panel-stat"><div class="l">Giá VF theo BQGQ</div><div class="v tabular"' + (d.neg ? ' style="color:var(--red)"' : '') + '>' + d.bqgq + '</div></div>';
+      html += '</div>';
+      html += '<div class="panel-stat" style="margin-bottom:16px"><div class="l">Chênh lệch (Baseline − BQGQ)</div><div class="v tabular"' + (d.neg ? ' style="color:var(--red)"' : '') + '>' + d.diff + '</div></div>';
+      html += '<div class="fake-note">' + (d.neg
+        ? 'Baseline đang thấp hơn giá vốn thực tế (bình quân gia quyền) — biên lợi nhuận thực đang bị bào mòn, cân nhắc chốt lại giá.'
+        : 'Nguyên liệu của dòng này (bm-fitting) không nằm trong kịch bản lô giả lập nên chưa lệch — Baseline = BQGQ.') + '</div>';
+      p1Body.innerHTML = html;
+      backdrop.classList.add('show');
+      panel1.classList.add('open');
+      panel2.classList.remove('open');
+    }
+
+    function closeLot() { panel2.classList.remove('open'); }
+    function closeMaterial() { panel1.classList.remove('open'); panel2.classList.remove('open'); backdrop.classList.remove('show'); }
+
+    Array.prototype.slice.call(document.querySelectorAll('.crm-nav-mini .item[data-list]')).forEach(function (item) {
+      item.addEventListener('click', function () {
+        document.querySelectorAll('.crm-nav-mini .item[data-list]').forEach(function (x) { x.classList.remove('active'); });
+        item.classList.add('active');
+        closeMaterial();
+        renderList(item.dataset.list);
+      });
+    });
+    backdrop.addEventListener('click', closeMaterial);
+    document.getElementById('p1Close').addEventListener('click', closeMaterial);
+    document.getElementById('p2Close').addEventListener('click', closeLot);
+    document.getElementById('p2Back').addEventListener('click', closeLot);
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      if (panel2.classList.contains('open')) closeLot();
+      else if (panel1.classList.contains('open')) closeMaterial();
+    });
+
+    renderList('materials');
+  })();
+</script>

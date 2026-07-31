@@ -145,6 +145,10 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
     setForm((f) => (f ? { ...f, resources: { ...f.resources, pipe: { ...(f.resources.pipe as ContinuousKgResource), [key]: v } } } : f));
   const setFitting = (key: keyof MachineHourResource & string, v: number) =>
     setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), [key]: v } } } : f));
+  // ADR-060 — field optional (packagingBoxCostVnd): để trống = xóa, dùng
+  // fallback packagingCostPerKg (flat) khi công tắc "Bao bì Phụ kiện" = theo thùng.
+  const setFittingOptional = (key: keyof MachineHourResource & string, v: number | undefined) =>
+    setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), [key]: v } } } : f));
   const setMachineType = (i: number, key: 'priceVnd' | 'count', v: number) =>
     setForm((f) => {
       if (!f) return f;
@@ -549,7 +553,11 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   <GridCell label="Đơn giá nước"><InCell width="100%" value={fitting.waterPricePerM3} onChange={(v) => setFitting('waterPricePerM3', v)} unit="đ/m³" /></GridCell>
                   <GridCell derived label={<>Tiền nước / năm {fxTag}</>}><FxCell value={fitWater} unit="đ" /></GridCell>
                   <GridCell label="Bảo trì khuôn / năm"><InCell width="100%" value={fitting.annualMoldMaintenance} onChange={(v) => setFitting('annualMoldMaintenance', v)} unit="đ" /></GridCell>
-                  <GridCell label="Bao bì + vật tư"><InCell width="100%" value={fitting.packagingCostPerKg} onChange={(v) => setFitting('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                  <GridCell label="Bao bì + vật tư (flat)"><InCell width="100%" value={fitting.packagingCostPerKg} onChange={(v) => setFitting('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                  <GridCell label={<>Giá 1 thùng carton <span style={{ fontSize: 8.5, fontWeight: 700, color: '#16A34A', border: '1px solid #86efac', borderRadius: 3, padding: '0 3px' }}>ADR-060</span></>}>
+                    <OptRateCell value={fitting.packagingBoxCostVnd} onChange={(v) => setFittingOptional('packagingBoxCostVnd', v)} placeholder="12000" />
+                    <span style={{ fontSize: 9, color: '#b3b3b3' }}>đ/thùng, chưa VAT — để trống = chưa dùng cách tính theo thùng</span>
+                  </GridCell>
                 </div>
                 {kpi('Tổng chế biến Phụ kiện', fitConvTotal, '#7a3fc0', depFit)}
               </div>

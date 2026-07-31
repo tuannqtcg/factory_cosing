@@ -13,7 +13,7 @@
 //   cho ren, chỉ khác policy/threshold, xem tests/parity/metal-insert.test.ts).
 import { landedCostPerKgVnd, type LandedCostRates } from './cost-pool.js';
 
-export interface MaterialCostPerUnitWithInsertInputs {
+export interface FittingMaterialCostPerUnitInputs {
   unitWeightKg: number;
   compoundPricingPriceUsdPerKg: number;
   yieldRate: number;
@@ -25,11 +25,12 @@ export interface MaterialCostPerUnitWithInsertInputs {
 }
 
 /**
- * materialCostPerUnit (họ ren) = phần nhựa (CÙNG công thức mọi SKU phụ kiện,
- * §3.4) + insertQtyPerUnit × insertPricingPriceVnd (ADR-008 mục 3) — THAY cho
- * hằng số tĩnh `brassInsertCost` cộng riêng ở `breakEvenPerUnit`.
+ * materialCostPerUnit CHO MỌI SKU phụ kiện (§3.4, dùng chung cả 91 SKU — không
+ * riêng họ ren dù tên hàm cũ gợi ý vậy) = phần nhựa + insertQtyPerUnit ×
+ * insertPricingPriceVnd (ADR-008 mục 3, = 0 với SKU không ren) — THAY cho hằng
+ * số tĩnh `brassInsertCost` cộng riêng ở `breakEvenPerUnit`.
  */
-export function materialCostPerUnitWithInsert(inputs: MaterialCostPerUnitWithInsertInputs): number {
+export function calculateFittingMaterialCostPerUnit(inputs: FittingMaterialCostPerUnitInputs): number {
   const compoundLandedPerKg = landedCostPerKgVnd(inputs.compoundPricingPriceUsdPerKg, inputs.landedRates);
   const plasticCostPerUnit = inputs.unitWeightKg * (compoundLandedPerKg / inputs.yieldRate + inputs.packagingCostPerKg);
   return plasticCostPerUnit + inputs.insertQtyPerUnit * inputs.insertPricingPriceVnd;

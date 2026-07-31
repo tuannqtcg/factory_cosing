@@ -5,13 +5,13 @@
 // "brassInsertCost = 0 cho toàn bộ 91 SKU", chỉ đúng cho 80 SKU KHÔNG thuộc họ
 // ren). Dùng chính 2 field có sẵn này làm "số vàng tự-đối-chiếu": materialCostPerUnit
 // (fixture) + brassInsertCost (fixture) PHẢI khớp tuyệt đối
-// materialCostPerUnitWithInsert() ở trạng thái mặc định (baseline=replacement).
+// calculateFittingMaterialCostPerUnit() ở trạng thái mặc định (baseline=replacement).
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  materialCostPerUnitWithInsert,
+  calculateFittingMaterialCostPerUnit,
   metalInsertHoldingGainLossVnd,
   weightedAvgInsertPriceVnd,
 } from '../../src/engine/metal-insert.js';
@@ -33,7 +33,7 @@ const landedRates = {
   usdVndRate: assumptions.usdVndRate,
 };
 
-describe('materialCostPerUnitWithInsert — 11 SKU họ ren (khớp fitting.json.skus tự-đối-chiếu)', () => {
+describe('calculateFittingMaterialCostPerUnit — 11 SKU họ ren (khớp fitting.json.skus tự-đối-chiếu)', () => {
   for (const insertSku of metalInsert.metalInsertSkus) {
     it(`${insertSku.productName} ${insertSku.sizeLabel}`, () => {
       const goldenSku = fittingFixture.skus.find(
@@ -65,7 +65,7 @@ describe('materialCostPerUnitWithInsert — 11 SKU họ ren (khớp fitting.json
         replacement: assumptions.priceLock.fitting.replacementUsd,
       });
 
-      const materialCost = materialCostPerUnitWithInsert({
+      const materialCost = calculateFittingMaterialCostPerUnit({
         unitWeightKg: insertSku.unitWeightKg,
         compoundPricingPriceUsdPerKg: compoundLock.pricingPrice,
         yieldRate: fittingFixture.params.yieldRate,

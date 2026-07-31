@@ -16,7 +16,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from '../../src/engine/pipe.js';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from '../../src/engine/fitting.js';
-import { materialCostPerUnitWithInsert } from '../../src/engine/metal-insert.js';
+import { calculateFittingMaterialCostPerUnit } from '../../src/engine/metal-insert.js';
 import {
   calculatePipeSkuPriceChain,
   calculateFittingSkuPriceChain,
@@ -196,7 +196,7 @@ describe('price-list.json — 91 dòng Phụ kiện (stt 9-99), khớp tuyệt �
       );
       let materialCostPerUnit = sku.materialCostPerUnit;
       if (insertSku) {
-        materialCostPerUnit = materialCostPerUnitWithInsert({
+        materialCostPerUnit = calculateFittingMaterialCostPerUnit({
           unitWeightKg: sku.unitWeightKg,
           compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
           yieldRate: fittingResource.yieldRate,

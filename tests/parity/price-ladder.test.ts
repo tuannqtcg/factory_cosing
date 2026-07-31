@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { calculatePipeCapacity, calculatePipeCostAtNormalCapacity } from '../../src/engine/pipe.js';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from '../../src/engine/fitting.js';
 import { calculatePipeCvp, calculateFittingCvp } from '../../src/engine/cvp.js';
-import { materialCostPerUnitWithInsert } from '../../src/engine/metal-insert.js';
+import { calculateFittingMaterialCostPerUnit } from '../../src/engine/metal-insert.js';
 import {
   calculatePipePriceLadder5Tier,
   calculateFittingPriceLadder5Tier,
@@ -209,7 +209,7 @@ describe('Bảng giá Phụ kiện theo SKU — khớp tuyệt đối 91/91 dòn
       );
       let materialCostPerUnit = sku.materialCostPerUnit;
       if (insertSku) {
-        materialCostPerUnit = materialCostPerUnitWithInsert({
+        materialCostPerUnit = calculateFittingMaterialCostPerUnit({
           unitWeightKg: sku.unitWeightKg,
           compoundPricingPriceUsdPerKg: fittingFixture.params.compoundReplacementPriceUsdPerKg,
           yieldRate: fittingResource.yieldRate,

@@ -7,7 +7,9 @@
 ## Bối cảnh
 
 `packagingCostPerKg` hiện là 1 số flat cấp Resource (`MachineHourResourceSchema`), áp cho MỌI
-SKU phụ kiện qua `materialCostPerUnitWithInsert()` (`src/engine/metal-insert.ts:34`):
+SKU phụ kiện qua `calculateFittingMaterialCostPerUnit()` (`src/engine/metal-insert.ts:34`, đổi tên
+2026-07-31 — tên cũ `materialCostPerUnitWithInsert` gây hiểu lầm là chỉ dùng cho SKU họ ren,
+thực tế dùng cho cả 91 SKU):
 `unitWeightKg × (compoundLandedPerKg/yieldRate + packagingCostPerKg)`. Tức chi phí bao bì được
 quy theo TRỌNG LƯỢNG từng cái.
 

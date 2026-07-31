@@ -158,7 +158,7 @@ export function calculateMachineHoursPerUnit(cycleTimeSec: number, cavity: numbe
 
 /**
  * Phụ kiện (§3.4) — `materialCostPerUnit` truyền vào PHẢI đã gồm chi phí ren
- * kim loại nếu SKU thuộc họ ren (gọi `materialCostPerUnitWithInsert()` ở
+ * kim loại nếu SKU thuộc họ ren (gọi `calculateFittingMaterialCostPerUnit()` ở
  * `metal-insert.ts`, M6, TRƯỚC khi gọi hàm này) — hàm này KHÔNG còn cộng thêm
  * hằng số `brassInsertCost` riêng (thiết kế cũ), theo đúng ADR-008.
  */

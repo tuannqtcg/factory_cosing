@@ -40,7 +40,7 @@ import {
 } from './price-ladder.js';
 import { evaluatePriceLock } from './price-lock.js';
 import { weightedAvgLandedCostPerKgVnd, totalInventoryKg, holdingGainLossVnd, provisionWarning } from './dual-costing.js';
-import { materialCostPerUnitWithInsert, weightedAvgInsertPriceVnd, metalInsertHoldingGainLossVnd } from './metal-insert.js';
+import { calculateFittingMaterialCostPerUnit, weightedAvgInsertPriceVnd, metalInsertHoldingGainLossVnd } from './metal-insert.js';
 import { landedCostPerKgVnd, type MaterialPricingInput } from './cost-pool.js';
 import { managementStatusOf } from '../schemas/product.js';
 
@@ -255,7 +255,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
       usdVndRate: costPool.currency.usdVndRate,
     };
 
-    // 80/91 SKU không ren: gọi materialCostPerUnitWithInsert() với insert=0 —
+    // 80/91 SKU không ren: gọi calculateFittingMaterialCostPerUnit() với insert=0 —
     // TÁI DÙNG nguyên công thức (verify khớp tuyệt đối 80/91 SKU, xem
     // tests/parity/price-ladder.test.ts), KHÔNG viết công thức "vật liệu
     // thuần nhựa" riêng để tránh trùng lặp logic đã kiểm chứng.
@@ -267,7 +267,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
           `Thiếu MetalInsertCatalogEntry cho (${product.metalInsert.renType}, ${product.metalInsert.ptSize}) — SKU ${product.productName} ${product.sizeLabel}`,
         );
       }
-      materialCostPerUnit = materialCostPerUnitWithInsert({
+      materialCostPerUnit = calculateFittingMaterialCostPerUnit({
         unitWeightKg: product.unitWeightKg,
         compoundPricingPriceUsdPerKg: lock.pricingPrice,
         yieldRate: fittingResource.yieldRate,
@@ -277,7 +277,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         landedRates,
       });
     } else {
-      materialCostPerUnit = materialCostPerUnitWithInsert({
+      materialCostPerUnit = calculateFittingMaterialCostPerUnit({
         unitWeightKg: product.unitWeightKg,
         compoundPricingPriceUsdPerKg: lock.pricingPrice,
         yieldRate: fittingResource.yieldRate,

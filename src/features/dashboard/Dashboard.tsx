@@ -61,12 +61,16 @@ function MaterialPicker({
 }) {
   if (materials.length <= 1) return null;
   return (
-    <div style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 8 }}>
-      <span style={{ ...eyebrowStyle }}>{label}</span>
+    <div
+      style={{ display: 'flex', gap: 5, alignItems: 'center', marginBottom: 8 }}
+      title={`${label} đang chạy ≥2 nguyên liệu (VD: BlazeMaster + Corzan). Bấm để đổi TOÀN BỘ số liệu trang này (thang giá, hoà vốn, EBIT...) sang tính theo đúng nguyên liệu đó — không phải chọn "xem thêm", mà là "xem RIÊNG nguyên liệu này".`}
+    >
+      <span style={{ ...eyebrowStyle }}>Xem số liệu {label.replace(/^Dòng /, 'dòng ')} theo nguyên liệu:</span>
       {materials.map((m) => (
         <button
           key={m.id}
           onClick={() => onSelect(m.id)}
+          title={`Xem toàn bộ số liệu trang này theo ${m.name}`}
           style={{
             padding: '3px 10px',
             cursor: 'pointer',

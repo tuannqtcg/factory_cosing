@@ -5,7 +5,7 @@
 //  3. 'meters' CÓ m/giờ đo → phân bổ lại theo giờ máy per-size (giá SKU đổi).
 import { describe, expect, it } from 'vitest';
 import { ScenarioInputSchema } from '../../src/schemas/scenario.js';
-import { buildBaselineScenarioInput } from '../helpers/scenario-fixture.js';
+import { buildBaselineScenarioInput, buildCorzanScenarioInput } from '../helpers/scenario-fixture.js';
 import { calculateScenario } from '../../src/engine/scenario.js';
 
 const base = ScenarioInputSchema.parse(buildBaselineScenarioInput());
@@ -71,5 +71,51 @@ describe('ADR-047 — pipeCostMethod: kg vs meters', () => {
     // Size lớn (60 m/h) nhiều hơn size nhỏ nhanh ⇒ tổng công suất GIẢM rõ rệt.
     expect(meters.capacity.pipe.normalCapacityKgYear).toBeLessThan(kg.capacity.pipe.normalCapacityKgYear * 0.95);
     expect(meters.capacity.pipe.normalCapacityKgYear).toBeGreaterThan(0);
+  });
+});
+
+// ADR-063 — end-to-end: cùng máy đùn chạy CHUNG ≥2 material (BlazeMaster +
+// Corzan, đơn trọng khác nhau — user nêu 2026-07-31) ⇒ tốc độ hiệu dụng phải
+// LÀ BÌNH QUÂN CÓ TRỌNG SỐ theo tỷ lệ đáy (ADR-055 productionMixPipePrimaryPct),
+// không phải bình quân đơn giản mọi SKU của cả 2 material cộng lại. Test này đi
+// qua NGUYÊN VẸN calculateScenario() (không gọi thẳng effectivePipeCapacity như
+// tests/unit/pipe-material-mix.test.ts) để chứng minh việc wiring vào orchestrator
+// có tác dụng thật, không chỉ đúng ở hàm pipe.ts cô lập.
+describe('ADR-063 — calculateScenario(): công suất Ống có trọng số theo tỷ lệ đáy khi ≥2 material chung máy', () => {
+  // Dữ liệu mock (chưa có số đo thật — user sẽ nhập tay sau qua cột "CS đùn
+  // (m/giờ)"): cùng 400 m/giờ cho mọi size cả 2 material ⇒ khác biệt kg/giờ
+  // hiệu dụng THUẦN TUÝ do đơn trọng Corzan nặng hơn 10% (corzan.json._meta).
+  const corzanBase = ScenarioInputSchema.parse(buildCorzanScenarioInput());
+  const withMeterRates = {
+    ...corzanBase,
+    pipeCostMethod: 'meters' as const,
+    products: corzanBase.products.map((p) => (p.kind === 'pipe' ? { ...p, capacityMetersPerHour: 400 } : p)),
+  };
+  const scenarioAt = (pipePrimaryPct: number) => calculateScenario({ ...withMeterRates, productionMixPipePrimaryPct: pipePrimaryPct });
+
+  it('chạy 100% BlazeMaster (material chính) ⇒ công suất Ống thấp hơn chạy 100% Corzan (nặng hơn/mét)', () => {
+    const mostlyBm = scenarioAt(100);
+    const mostlyCorzan = scenarioAt(0);
+    expect(mostlyCorzan.capacity.pipe.normalCapacityKgYear).toBeGreaterThan(mostlyBm.capacity.pipe.normalCapacityKgYear);
+  });
+
+  it('tỷ lệ đáy 50/50 nằm GIỮA 2 thái cực 100%/0% (đơn điệu theo tỷ lệ, không nhảy bậc)', () => {
+    const mostlyBm = scenarioAt(100);
+    const mostlyCorzan = scenarioAt(0);
+    const half = scenarioAt(50);
+    expect(half.capacity.pipe.normalCapacityKgYear).toBeGreaterThan(mostlyBm.capacity.pipe.normalCapacityKgYear);
+    expect(half.capacity.pipe.normalCapacityKgYear).toBeLessThan(mostlyCorzan.capacity.pipe.normalCapacityKgYear);
+  });
+
+  it("KHÔNG truyền productionMixPipePrimaryPct (mặc định 100 — parity ADR-055) ⇒ khớp truyền tường minh 100", () => {
+    const implicit = calculateScenario(withMeterRates);
+    const explicit100 = scenarioAt(100);
+    expect(implicit.capacity.pipe.normalCapacityKgYear).toBeCloseTo(explicit100.capacity.pipe.normalCapacityKgYear, 6);
+  });
+
+  it("pipeCostMethod='kg' ⇒ tỷ lệ đáy KHÔNG ảnh hưởng công suất Ống (nhánh mix chỉ áp dụng ở 'meters')", () => {
+    const kgAt100 = calculateScenario({ ...corzanBase, pipeCostMethod: 'kg', productionMixPipePrimaryPct: 100 });
+    const kgAt0 = calculateScenario({ ...corzanBase, pipeCostMethod: 'kg', productionMixPipePrimaryPct: 0 });
+    expect(kgAt0.capacity.pipe.normalCapacityKgYear).toBeCloseTo(kgAt100.capacity.pipe.normalCapacityKgYear, 6);
   });
 });

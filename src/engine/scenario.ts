@@ -133,7 +133,11 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   // (m/giờ × đơn trọng) thay 1 tốc độ pha trộn cố định → size chạy chậm KÉO tổng
   // sản lượng xuống (máy nghẽn). Logic gói trong `effectivePipeCapacity` (pipe.ts)
   // để MỌI tầng (dashboard/ceo/plan/UI) dùng chung → không lệch số giữa các màn.
-  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod);
+  // ADR-063 — có ≥2 material dòng Ống chạy chung máy (VD BlazeMaster+Corzan) ⇒
+  // truyền tỷ lệ đáy (ADR-055) vào để tốc độ hiệu dụng là bình quân CÓ TRỌNG SỐ
+  // theo đúng % đang chạy mỗi material, không phải bình quân đơn giản mọi SKU.
+  const pipeMix = { primaryMaterialId: pipeMaterialIds[0]!, primaryFrac: (input.productionMixPipePrimaryPct ?? 100) / 100 };
+  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod, pipeMix);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 
   // ── 3. Chi phí SX tại CS bình thường — 1 lần cho MỖI (line, material) ──────

@@ -91,7 +91,9 @@ export function calculatePlanForScenario(scenario: ScenarioInput, planInput: Pla
     markupVf: pipeRefMaterial.markupVf,
   };
 
-  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], scenario.pipeCostMethod ?? 'kg');
+  // ADR-063 — tỷ lệ đáy (ADR-055) áp vào tốc độ hiệu dụng khi ≥2 material dòng Ống chạy chung máy.
+  const pipeMix = { primaryMaterialId: pipeRefMaterial.id, primaryFrac: (scenario.productionMixPipePrimaryPct ?? 100) / 100 };
+  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], scenario.pipeCostMethod ?? 'kg', pipeMix);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
   const pipeCost = calculatePipeCostAtNormalCapacity({
     resource: pipeResource,

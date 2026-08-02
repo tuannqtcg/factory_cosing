@@ -41,7 +41,16 @@ function readLine(baseline: ScenarioInput, out: ScenarioOutput, line: 'pipe' | '
     variableCostPerKg: cvp.variableCostPerKg,
     fixedCostPerYear: cvp.fixedCostPerYear,
     volumeKg: line === 'pipe' ? out.capacity.pipe.normalCapacityKgYear : out.capacity.fitting.estimatedProductionKgYear,
-    machineHours: line === 'pipe' ? effectivePipeCapacity(pipeR, baseline.products.filter((p): p is PipeProduct => p.kind === 'pipe'), baseline.pipeCostMethod ?? 'kg').normalOperatingHours : out.capacity.fitting.normalMachineHoursUtilized,
+    // ADR-063 — tốc độ hiệu dụng có trọng số theo tỷ lệ đáy khi ≥2 material dòng Ống chạy chung máy.
+    machineHours:
+      line === 'pipe'
+        ? effectivePipeCapacity(
+            pipeR,
+            baseline.products.filter((p): p is PipeProduct => p.kind === 'pipe'),
+            baseline.pipeCostMethod ?? 'kg',
+            { primaryMaterialId: mat.id, primaryFrac: (baseline.productionMixPipePrimaryPct ?? 100) / 100 },
+          ).normalOperatingHours
+        : out.capacity.fitting.normalMachineHoursUtilized,
     fixedCapitalVnd: line === 'pipe' ? pipeFixedCapital(pipeR) : fittingFixedCapital(fitR),
   };
 }

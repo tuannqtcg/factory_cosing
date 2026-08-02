@@ -86,12 +86,21 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
   const pipeMat = s.materials.find((m) => m.id === request.pipe.materialId)!;
   const fitMat = s.materials.find((m) => m.id === request.fitting.materialId)!;
 
+  // ADR-042/055 — CHIA công suất DÒNG cho 2 thương hiệu (dùng chung máy). Vắng
+  // *Second ⇒ thương hiệu chính giữ 100% (chạy 1 loại) ⇒ parity giữ nguyên.
+  // Thiếu allocation trong request ⇒ dùng TỶ LỆ ĐÁY đã thiết lập ở baseline
+  // (Thiết Lập ⑦); request chỉ GHI ĐÈ tạm khi what-if. Tính SỚM hơn (trước đây
+  // ở dưới) để dùng luôn cho ADR-063 (tốc độ hiệu dụng theo mix).
+  const allocPipe = request.pipeSecond ? (request.allocationPipePrimaryPct ?? baseline.productionMixPipePrimaryPct ?? 100) / 100 : 1;
+
   // Sản lượng / giờ máy cả năm (tái dùng output orchestrator).
+  // ADR-063 — tốc độ hiệu dụng có trọng số theo mix khi đang chạy 2 material chung máy đùn.
   const pipeCapKg = out.capacity.pipe.normalCapacityKgYear;
   const pipeHours = effectivePipeCapacity(
     pipeResource,
     s.products.filter((p): p is PipeProduct => p.kind === 'pipe'),
     s.pipeCostMethod ?? 'kg',
+    { primaryMaterialId: pipeMat.id, primaryFrac: allocPipe },
   ).normalOperatingHours;
   const fitProdKg = out.capacity.fitting.estimatedProductionKgYear;
   const fitHours = out.capacity.fitting.normalMachineHoursUtilized;
@@ -151,12 +160,9 @@ export function calculateCeoPlanner(request: CeoPlannerRequest, baseline: Scenar
     };
   };
 
-  // ADR-042 — CHIA công suất DÒNG cho 2 thương hiệu (dùng chung máy). Vắng
-  // *Second ⇒ thương hiệu chính giữ 100% (chạy 1 loại) ⇒ parity giữ nguyên.
-  // Tổng phần chia = 100% công suất dòng (KHÔNG cộng dồn vượt trần vật lý).
-  // ADR-055 — thiếu allocation trong request ⇒ dùng TỶ LỆ ĐÁY đã thiết lập ở
-  // baseline (Thiết Lập ⑦); request chỉ GHI ĐÈ tạm khi what-if.
-  const allocPipe = request.pipeSecond ? (request.allocationPipePrimaryPct ?? baseline.productionMixPipePrimaryPct ?? 100) / 100 : 1;
+  // ADR-042 — CHIA công suất DÒNG cho 2 thương hiệu (dùng chung máy). Tổng phần
+  // chia = 100% công suất dòng (KHÔNG cộng dồn vượt trần vật lý). `allocPipe`
+  // tính ở trên (dùng chung cho tốc độ hiệu dụng ADR-063); `allocFit` tính ở đây.
   const allocFit = request.fittingSecond ? (request.allocationFittingPrimaryPct ?? baseline.productionMixFittingPrimaryPct ?? 100) / 100 : 1;
 
   const pipe = buildLine('pipe', pipeMat, pipeLadder, pipeCvp, request.pipe.desiredMargin, pipeMaterialPerKg, pipeResource.packagingCostPerKg, pipeCapKg * allocPipe, pipeHours * allocPipe, pipeResource.yieldRate);

@@ -53,26 +53,53 @@ export function calculatePipeCapacity(
 }
 
 /**
+ * ADR-063 — chia sản lượng máy đùn giữa 2 nguyên liệu chạy CHUNG 1 dây chuyền
+ * (VD BlazeMaster + Corzan, ADR-055 "tỷ lệ đáy"/slider Trợ Lý CEO): SCH/đơn
+ * trọng khác nhau ⇒ tốc độ THÀNH PHẨM kg/giờ khác nhau thật ⇒ đổi tỷ lệ chạy
+ * phải đổi CẢ tổng công suất kg/năm, không chỉ đổi cách CHIA doanh thu trên 1
+ * tổng kg cố định (khoảng trống trước ADR này — xem mục "Còn treo").
+ */
+export interface PipeMaterialMix {
+  primaryMaterialId: string;
+  /** 0..1 — tỷ lệ thời gian máy dành cho material chính; phần còn lại (1-frac) cho các material khác gộp chung. */
+  primaryFrac: number;
+}
+
+/**
  * ADR-054 — tốc độ THÀNH PHẨM kg/giờ hiệu dụng theo phương pháp phân bổ (ADR-047).
  * Gói chung logic override m/giờ (ADR-048) để MỌI tầng dùng lại, không mỗi nơi
  * tự nhớ truyền tay:
  * - method 'kg' ⇒ `undefined` (dùng tốc độ danh nghĩa → parity Excel tuyệt đối).
  * - method 'meters' ⇒ trung bình (m/giờ × đơn trọng) các size đã nhập m/giờ; size
  *   chưa nhập dùng tốc độ danh nghĩa. KHÔNG size nào nhập ⇒ `undefined` (trùng khít kg).
+ * - `mix` (ADR-063, optional): thay trung bình ĐƠN GIẢN mọi SKU bằng trung bình
+ *   CÓ TRỌNG SỐ giữa material chính (đơn trọng/tốc độ riêng) và material còn
+ *   lại, theo đúng % đang chọn ở slider "Chia thời gian máy" (Trợ Lý CEO) hoặc
+ *   ô "Tỷ lệ đáy" (Thiết Lập Dữ Liệu). Vắng `mix`, hoặc chỉ 1 material trong
+ *   `pipeProducts` ⇒ giống hệt hành vi cũ (parity-safe).
  */
 export function effectivePipeFinishedKgPerHour(
   resource: ContinuousKgResource,
   pipeProducts: readonly PipeProduct[],
   method: 'kg' | 'meters',
+  mix?: PipeMaterialMix,
 ): number | undefined {
   if (method !== 'meters') return undefined;
   const hasRate = pipeProducts.some((p) => p.capacityMetersPerHour !== undefined);
   if (!hasRate) return undefined;
   const fallback = resource.actualCapacityKgPerHour * resource.yieldRate;
-  const rates = pipeProducts.map((p) =>
-    p.capacityMetersPerHour !== undefined ? p.capacityMetersPerHour * p.unitWeightKgPerM : fallback,
-  );
-  return rates.reduce((sum, r) => sum + r, 0) / rates.length;
+  const rateOf = (p: PipeProduct) => (p.capacityMetersPerHour !== undefined ? p.capacityMetersPerHour * p.unitWeightKgPerM : fallback);
+  const avgOf = (list: readonly PipeProduct[]) =>
+    list.length > 0 ? list.reduce((sum, p) => sum + rateOf(p), 0) / list.length : fallback;
+
+  if (!mix) return avgOf(pipeProducts);
+
+  const primaryProducts = pipeProducts.filter((p) => p.materialId === mix.primaryMaterialId);
+  const secondaryProducts = pipeProducts.filter((p) => p.materialId !== mix.primaryMaterialId);
+  if (secondaryProducts.length === 0) return avgOf(pipeProducts); // chỉ 1 material ⇒ mix vô nghĩa, giữ nguyên hành vi cũ
+  const primaryRate = avgOf(primaryProducts);
+  const secondaryRate = avgOf(secondaryProducts);
+  return mix.primaryFrac * primaryRate + (1 - mix.primaryFrac) * secondaryRate;
 }
 
 /**
@@ -84,8 +111,9 @@ export function effectivePipeCapacity(
   resource: ContinuousKgResource,
   pipeProducts: readonly PipeProduct[],
   method: 'kg' | 'meters',
+  mix?: PipeMaterialMix,
 ): PipeCapacity {
-  const eff = effectivePipeFinishedKgPerHour(resource, pipeProducts, method);
+  const eff = effectivePipeFinishedKgPerHour(resource, pipeProducts, method, mix);
   return calculatePipeCapacity(resource, eff !== undefined ? { effectiveFinishedKgPerHour: eff } : undefined);
 }
 

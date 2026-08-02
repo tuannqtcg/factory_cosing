@@ -131,7 +131,10 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   // 2 object cost nội bộ (sharedCostAllocated, khấu hao) gọi lại hàm pure
   // (đánh đổi "gọi 2 lần" đã chấp nhận ở ADR-010).
   const output = calculateScenario(scenario);
-  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod);
+  // ADR-063 — tỷ lệ đáy (ADR-055) áp vào tốc độ hiệu dụng khi ≥2 material dòng
+  // Ống chạy chung máy (BlazeMaster+Corzan) — cùng cách scenario.ts đã làm.
+  const pipeMix = { primaryMaterialId: pipeRefMaterial.id, primaryFrac: (scenario.productionMixPipePrimaryPct ?? 100) / 100 };
+  const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod, pipeMix);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
   const pipeCost = calculatePipeCostAtNormalCapacity({
     resource: pipeResource,
@@ -174,7 +177,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   // trả lời "nếu chỉ chạy X ca thì giá thành thật là bao nhiêu").
   const capacityLevels: PipeCapacityLevel[] = ([1, 2, 3] as const).map((shifts) => {
     const resourceAtShifts = { ...pipeResource, normalShifts: shifts };
-    const capacityAtShifts = effectivePipeCapacity(resourceAtShifts, pipeProducts as PipeProduct[], pipeCostMethod);
+    const capacityAtShifts = effectivePipeCapacity(resourceAtShifts, pipeProducts as PipeProduct[], pipeCostMethod, pipeMix);
     const costAtShifts = calculatePipeCostAtNormalCapacity({
       resource: resourceAtShifts,
       capacity: capacityAtShifts,

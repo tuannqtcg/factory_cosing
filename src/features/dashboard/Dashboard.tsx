@@ -314,10 +314,17 @@ export default function Dashboard({
             <span>Nguyên liệu PK: <b>{fittingRefMaterial?.name || '—'}</b> ({fmtUsd(fittingRefMaterial?.inventory.replacementPriceUsdPerKg || 0)}/kg)</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <MaterialPicker label="Dòng Ống" materials={pipeMaterials} selectedId={activePipeMatId ?? ''} onSelect={setPipeMaterialId} />
-          <MaterialPicker label="Dòng Phụ kiện" materials={fittingMaterials} selectedId={activeFittingMatId ?? ''} onSelect={setFittingMaterialId} />
-        </div>
+        {activeTab !== 'overview' && (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <MaterialPicker label="Dòng Ống" materials={pipeMaterials} selectedId={activePipeMatId ?? ''} onSelect={setPipeMaterialId} />
+              <MaterialPicker label="Dòng Phụ kiện" materials={fittingMaterials} selectedId={activeFittingMatId ?? ''} onSelect={setFittingMaterialId} />
+            </div>
+            <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>
+              Chỉ đổi số liệu THEO MATERIAL ở tab này (thang giá, hoà vốn kg) — Tổng Quan luôn hiện số GỘP cả 2 nguyên liệu theo tỷ lệ đáy.
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tabs Navigation — cuộn ngang trên mobile thay vì bể dòng (4 tab chữ dài) */}

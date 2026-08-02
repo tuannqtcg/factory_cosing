@@ -6,45 +6,9 @@ import type { AppRole } from '../../lib/firebase.js';
 import { ScenarioInputSchema, type ScenarioInput } from '../../schemas/scenario.js';
 import { managementStatusOf, type PipeProduct, type FittingProduct, type Product } from '../../schemas/product.js';
 import type { MoldAsset } from '../../schemas/resource.js';
-import type { Material } from '../../schemas/material.js';
 import { calculateScenario } from '../../engine/scenario.js';
 import { Screen, tk, ft, rd } from '../../design/primitives.js';
 import { eyebrowStyle } from '../../design/tokens.js';
-
-// ADR-044 — bộ nguyên liệu Corzan CHUẨN (đúng 1 bộ). "Chuẩn hóa Corzan" = XÓA mọi
-// Corzan cũ (kể cả trùng/gõ tay lệch) rồi tạo lại đúng bộ này + mirror SKU từ
-// BlazeMaster. Khớp tests/fixtures/corzan.json. Idempotent: chạy lại ra y hệt.
-const CANON_CORZAN: Material[] = [
-  { id: 'corzan-pipe', name: 'Corzan 3710 (ống)', code: 'CZ-3710-P', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.25, inventory: { lots: [], priceLock: { baseline: 3.47, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.47 } },
-  { id: 'corzan-fitting', name: 'Corzan 3710 (phụ kiện)', code: 'CZ-3710-F', originLabel: 'Ấn Độ (AIFTA)', importTaxRate: 0, customsLogisticsFeeRate: 0.01, markupVf: 0.4, inventory: { lots: [], priceLock: { baseline: 3.97, thresholdPct: 0.03 }, replacementPriceUsdPerKg: 3.97 } },
-];
-const CORZAN_PIPE_WEIGHT_FACTOR = 1.1; // ống Corzan nặng hơn 10%/size (ADR-012)
-// Nhận diện MỌI nguyên liệu "Corzan" (id chuẩn hoặc tên có chữ corzan) để dọn sạch.
-const isCorzanMat = (m: { id: string; name: string }) => m.id.toLowerCase().includes('corzan') || m.name.toLowerCase().includes('corzan');
-
-// ADR-060 — quy cách đóng gói carton phụ kiện, trích catalog Paratech BlazeMaster
-// CPVC (đối chiếu KHỚP TUYỆT ĐỐI theo `Wt.(g/cái)` với `unitWeightKg` fixture —
-// xem docs/decisions/ADR-060). Giá thùng 12.000đ (chưa VAT) là hằng số chung,
-// KHÔNG lệ thuộc key này. Chỉ đưa vào đây các nhóm/size ĐỐI CHIẾU TRỌNG LƯỢNG
-// khớp — 2 nhóm KHÔNG có ở đây vì trọng lượng catalog LỆCH hẳn (đóng gói theo
-// cụm đã lắp ren kim loại, khác đơn trọng nhựa thuần của fixture): "Nối ren
-// trong", "Nối ren ngoài", "Cút ren trong", "Tê ren trong" — và mọi size DN100
-// (catalog Paratech dừng ở DN80). Các SKU đó để trống, nhập tay qua cột "Cái/thùng".
-const PARATECH_FITTING_PACKING: Record<string, number> = {
-  'Tê đều|20': 200, 'Tê đều|25': 120, 'Tê đều|32': 80, 'Tê đều|40': 40, 'Tê đều|50': 20, 'Tê đều|65': 12, 'Tê đều|80': 12,
-  'Tê giảm|25x20': 120, 'Tê giảm|32x20': 80, 'Tê giảm|32x25': 80, 'Tê giảm|40x20': 50, 'Tê giảm|40x25': 50, 'Tê giảm|40x32': 40,
-  'Tê giảm|50x20': 30, 'Tê giảm|50x25': 30, 'Tê giảm|50x32': 30, 'Tê giảm|50x40': 25, 'Tê giảm|65x25': 20, 'Tê giảm|65x32': 20,
-  'Tê giảm|65x40': 20, 'Tê giảm|65x50': 15, 'Tê giảm|80x50': 12, 'Tê giảm|80x65': 12,
-  'Cút 90º|20': 300, 'Cút 90º|25': 200, 'Cút 90º|32': 120, 'Cút 90º|40': 60, 'Cút 90º|50': 30, 'Cút 90º|65': 20, 'Cút 90º|80': 14,
-  'Cút 45º|65': 20, 'Cút 45º|80': 14,
-  'Nối thẳng|20': 400, 'Nối thẳng|25': 200, 'Nối thẳng|32': 120, 'Nối thẳng|40': 100, 'Nối thẳng|50': 60, 'Nối thẳng|65': 30, 'Nối thẳng|80': 20,
-  'Nối giảm|25x20': 300, 'Nối giảm|32x25': 150, 'Nối giảm|40x25': 120, 'Nối giảm|40x32': 100, 'Nối giảm|50x25': 60,
-  'Nối giảm|50x32': 60, 'Nối giảm|50x40': 60, 'Nối giảm|65x50': 30, 'Nối giảm|80x50': 30, 'Nối giảm|80x65': 20,
-  'Lơ thu|25x20': 300, 'Lơ thu|32x25': 200, 'Lơ thu|40x25': 200, 'Lơ thu|40x32': 200, 'Lơ thu|50x25': 100, 'Lơ thu|50x32': 100, 'Lơ thu|50x40': 100,
-  'Nắp bịt|20': 500, 'Nắp bịt|25': 400, 'Nắp bịt|32': 200, 'Nắp bịt|40': 150, 'Nắp bịt|50': 100,
-  'Mặt bích|65': 12, 'Mặt bích|80': 12,
-};
-const PARATECH_BOX_COST_VND = 12000; // chưa VAT — user xác nhận phiên ADR-060
 
 const InputNode = ({ value, onChange, type = 'text', width = 60, placeholder = '' }: any) => (
   <input
@@ -254,53 +218,6 @@ export default function ProductsScreen({
       setSaveState('error');
       setSaveError(err instanceof Error ? err.message : String(err));
     }
-  };
-
-  // ADR-060 — nạp quy cách đóng gói carton Paratech: điền `piecesPerBox` cho MỌI
-  // SKU phụ kiện khớp bảng PARATECH_FITTING_PACKING (theo tên+size) + đặt giá
-  // thùng 12.000đ nếu resource.fitting chưa có. Idempotent — bấm lại luôn ra
-  // cùng kết quả. SKU không khớp (ren kim loại, DN100) giữ nguyên, tự nhập tay.
-  const loadFittingPacking = () => {
-    setForm((f) => {
-      if (!f) return f;
-      const products = f.products.map((p) => {
-        if (p.kind !== 'fitting') return p;
-        const pieces = PARATECH_FITTING_PACKING[`${p.productName}|${p.sizeLabel}`];
-        return pieces !== undefined ? { ...p, piecesPerBox: pieces } : p;
-      });
-      const fitting = f.resources.fitting;
-      const resources =
-        fitting.driverType === 'machine_hour' && fitting.packagingBoxCostVnd === undefined
-          ? { ...f.resources, fitting: { ...fitting, packagingBoxCostVnd: PARATECH_BOX_COST_VND } }
-          : f.resources;
-      return { ...f, products, resources };
-    });
-  };
-
-  // ADR-044 — CHUẨN HÓA Corzan (idempotent, KHÁC nút append cũ đã gỡ): XÓA sạch
-  // mọi nguyên liệu + SKU Corzan hiện có (kể cả bản trùng / gõ tay lệch) rồi tạo
-  // lại ĐÚNG 1 bộ compound chuẩn + mirror toàn bộ SKU từ BlazeMaster (ống ×1,1
-  // đơn trọng; phụ kiện giống hệt → dùng chung khuôn, tự active). Bấm bao nhiêu
-  // lần cũng ra một kết quả duy nhất. Sau khi bấm nhớ "Lưu".
-  const standardizeCorzan = () => {
-    if (!window.confirm('Chuẩn hóa dòng Corzan?\n\nThao tác này sẽ XÓA toàn bộ nguyên liệu & SKU Corzan hiện có (kể cả bản trùng) rồi tạo lại đúng MỘT bộ mirror BlazeMaster. BlazeMaster giữ nguyên.\n\nBấm OK, sau đó nhớ bấm "Lưu".')) return;
-    setForm((f) => {
-      if (!f) return f;
-      // 1. Bỏ MỌI nguyên liệu Corzan + SKU dùng chúng.
-      const corzanIds = new Set(f.materials.filter(isCorzanMat).map((m) => m.id));
-      const materials = [...f.materials.filter((m) => !isCorzanMat(m)), ...CANON_CORZAN];
-      const products = f.products.filter((p) => !corzanIds.has(p.materialId));
-      // 2. Nguồn BlazeMaster để mirror (ưu tiên id chuẩn, fallback SKU đầu tiên).
-      const bmPipeId = materials.find((m) => m.id === 'bm-orange-pipe')?.id ?? products.find((p) => p.kind === 'pipe')?.materialId;
-      const bmFitId = materials.find((m) => m.id === 'bm-fitting')?.id ?? products.find((p) => p.kind === 'fitting')?.materialId;
-      // 3. Mirror SKU BM → Corzan (chỉ từ đúng dòng BM, tránh nhân chéo compound khác).
-      const clones: Product[] = [];
-      for (const p of products) {
-        if (p.kind === 'pipe' && p.materialId === bmPipeId) clones.push({ ...p, materialId: 'corzan-pipe', unitWeightKgPerM: p.unitWeightKgPerM * CORZAN_PIPE_WEIGHT_FACTOR });
-        else if (p.kind === 'fitting' && p.materialId === bmFitId) clones.push({ ...p, materialId: 'corzan-fitting' });
-      }
-      return { ...f, materials, products: [...products, ...clones] };
-    });
   };
 
   // ADR-044 — KIỂM TRA vì sao bảng giá thiếu: chạy engine NGAY trên dữ liệu đang
@@ -645,24 +562,6 @@ export default function ProductsScreen({
         >
           + Thêm {activeTab === 'pipe' ? 'Ống CPVC' : 'Phụ Kiện'} mới
         </button>
-        {canEditMolds && (
-          <button
-            onClick={standardizeCorzan}
-            title="Xóa sạch Corzan trùng/loạn rồi tạo lại đúng 1 bộ mirror BlazeMaster (dùng chung khuôn). Idempotent. Bấm xong nhớ Lưu."
-            style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.borderStrong}`, background: tk.surfaceMuted, color: tk.ink, fontSize: ft.size.xs, fontWeight: ft.weight.bold, cursor: 'pointer' }}
-          >
-            ♻ Chuẩn hóa Corzan (xóa trùng → mirror BlazeMaster)
-          </button>
-        )}
-        {activeTab === 'fitting' && canEdit && (
-          <button
-            onClick={loadFittingPacking}
-            title="ADR-060 — điền cột &quot;Cái/thùng&quot; cho các SKU khớp catalog Paratech (63/91 — không gồm nhóm ren kim loại + DN100, thiếu dữ liệu tin cậy) + đặt giá thùng 12.000đ nếu chưa có. Idempotent. Bấm xong nhớ Lưu."
-            style={{ padding: '6px 14px', borderRadius: rd.pill, border: `1px dashed ${tk.borderStrong}`, background: tk.surfaceMuted, color: tk.ink, fontSize: ft.size.xs, fontWeight: ft.weight.bold, cursor: 'pointer' }}
-          >
-            📦 Nạp bao bì carton (Paratech)
-          </button>
-        )}
         <button
           onClick={checkPriceListData}
           title="Chạy engine ngay trên dữ liệu đang sửa để biết vì sao bảng giá thiếu (dữ liệu lỗi / thiếu khuôn / máy chủ chưa tính)."

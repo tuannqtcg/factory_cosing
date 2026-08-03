@@ -515,6 +515,9 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 <div style={{ ...eyebrowStyle, marginBottom: 2 }}>Dòng Ống CPVC</div>
                 <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, color: tk.ink, marginBottom: 12 }}>Chi phí chế biến / năm</div>
                 <div style={gridStyle}>
+                  <GridCell label={<>Số ngày chạy liên tục / đợt <span style={{ fontSize: 8.5, fontWeight: ft.weight.bold, color: tk.brand, border: `1px solid ${tk.borderStrong}`, borderRadius: 3, padding: '0 3px' }}>ADR-074</span></>}><InCell width="100%" value={pipe.continuousRunDaysPerBatch} onChange={(v) => setPipe('continuousRunDaysPerBatch', v)} unit="ngày/đợt" /></GridCell>
+                  <GridCell label="Số ngày bảo trì / đợt"><InCell width="100%" value={pipe.maintenanceDaysPerBatch} onChange={(v) => setPipe('maintenanceDaysPerBatch', v)} unit="ngày/đợt" /></GridCell>
+                  <GridCell label="Tổng ngày hoạt động / năm"><InCell width="100%" value={pipe.operatingDaysPerYear} onChange={(v) => setPipe('operatingDaysPerYear', v)} unit="ngày/năm" /></GridCell>
                   <GridCell label="Số ca / ngày"><InCell width="100%" value={pipe.normalShifts} onChange={(v) => setPipe('normalShifts', v)} unit="ca (1-3)" /></GridCell>
                   <GridCell label="Số giờ / ca"><InCell width="100%" value={pipe.hoursPerShift} onChange={(v) => setPipe('hoursPerShift', v)} unit="giờ/ca" /></GridCell>
                   <GridCell derived label={<>Giờ vận hành / năm {fxTag}</>}><FxCell value={pipeHours} unit="giờ" /></GridCell>
@@ -554,6 +557,10 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                 <div style={{ ...eyebrowStyle, marginBottom: 2 }}>Dòng Phụ kiện</div>
                 <div style={{ fontSize: ft.size.lg, fontWeight: ft.weight.bold, color: tk.ink, marginBottom: 12 }}>Chi phí chế biến / năm</div>
                 <div style={gridStyle}>
+                  <GridCell label={<>Số ngày chạy liên tục / đợt <span style={{ fontSize: 8.5, fontWeight: ft.weight.bold, color: tk.brand, border: `1px solid ${tk.borderStrong}`, borderRadius: 3, padding: '0 3px' }}>ADR-074</span></>}><InCell width="100%" value={fitting.continuousRunDaysPerBatch} onChange={(v) => setFitting('continuousRunDaysPerBatch', v)} unit="ngày/đợt" /></GridCell>
+                  <GridCell label="Số ngày bảo trì / đợt"><InCell width="100%" value={fitting.maintenanceDaysPerBatch} onChange={(v) => setFitting('maintenanceDaysPerBatch', v)} unit="ngày/đợt" /></GridCell>
+                  <GridCell label="Tổng ngày hoạt động / năm"><InCell width="100%" value={fitting.operatingDaysPerYear} onChange={(v) => setFitting('operatingDaysPerYear', v)} unit="ngày/năm" /></GridCell>
+                  <GridCell derived label={<>Số đợt / năm {fxTag}</>}><FxCell value={fitCap.batchesPerYear} unit="đợt" /></GridCell>
                   <GridCell label="Số ca / ngày"><InCell width="100%" value={fitting.normalShifts} onChange={(v) => setFitting('normalShifts', v)} unit="ca (1-3)" /></GridCell>
                   <GridCell label="Số giờ / ca"><InCell width="100%" value={fitting.hoursPerShift} onChange={(v) => setFitting('hoursPerShift', v)} unit="giờ/ca" /></GridCell>
                   <GridCell label="Hệ số huy động giờ máy"><InCell width="100%" value={fitting.normalUtilizationFactor} onChange={(v) => setFitting('normalUtilizationFactor', v)} unit="tỷ lệ (0,6=60%)" /></GridCell>

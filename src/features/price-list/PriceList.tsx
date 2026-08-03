@@ -18,11 +18,14 @@
 // ADR-033 roll-out: trình bày qua design tokens (đen–trắng tối giản) — accent
 // burgundy/be cũ thay bằng đen (tk.brand) + xám trung tính; màu chỉ giữ cho
 // tín hiệu khóa giá (thành công/cảnh báo) và chip thương hiệu.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fmtVnd, fmtPct, fmtUsd } from '../../lib/format.js';
 import { weightedAvgUsdPerKg } from '../../engine/dual-costing.js';
+import { scenarioWithCostBasis } from '../../engine/price-cost-scenarios.js';
+import { calculateScenario } from '../../engine/scenario.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TermInfo from '../shell/TermInfo.js';
+import SlideOverPanel from '../shell/SlideOverPanel.js';
 import { Screen, PageHeader, Card, Banner, tk, sp, ft, rd, tnum } from '../../design/primitives.js';
 import { eyebrowStyle } from '../../design/tokens.js';
 
@@ -40,6 +43,8 @@ const matChipLabel = (matId: string): string => {
   return brand;
 };
 const CAT_LIST = ['all', ...MAIN_CATEGORIES, 'khác'] as const;
+// ADR-068 — 10 cột: 7 cột định danh + giá niêm yết + giá theo BQ gia quyền + chênh lệch.
+const GRID_COLS = '36px 1.5fr 70px 72px 100px 70px 52px 130px 130px 90px';
 
 interface Row {
   stt: number;
@@ -52,6 +57,9 @@ interface Row {
   classificationCode: string;
   priceBeforeVat: number;
   priceWithVat: number;
+  /** ADR-068 — giá VF nếu NVL tính theo bình quân gia quyền thay vì baseline (scenarioWithCostBasis), null nếu chưa tính được. */
+  wAvgPriceBeforeVat: number | null;
+  wAvgPriceWithVat: number | null;
   materialId: string;
   matName: string;
   brand: string;
@@ -130,16 +138,41 @@ export default function PriceList({
     return first ? first.chain.listPriceWithVat / first.chain.listPriceBeforeVat - 1 : 0.08;
   }, [priceList]);
 
+  // ADR-068 — user 2026-08-03: "bảng giá bên dưới cần có cột giá tạo từ giá bình
+  // quân gia quyền + cột chênh lệch". Tái tính TOÀN BỘ giá VF với NVL = bình quân
+  // gia quyền bằng scenarioWithCostBasis (ADR-061, đã có sẵn + có test) + ĐÚNG
+  // engine calculateScenario — KHÔNG viết công thức tay, giữ nguyên % lời nhà máy.
+  const wAvgInternal = useMemo(() => {
+    if (!scenario) return null;
+    try {
+      return calculateScenario(scenarioWithCostBasis(scenario, 'weighted-avg'));
+    } catch {
+      return null;
+    }
+  }, [scenario]);
+
+  const wAvgVfPerUnitByKey = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!wAvgInternal) return m;
+    for (const sku of wAvgInternal.skuPriceChains) {
+      const key = `${sku.productKey.materialId}|${sku.productKey.dn ?? `${sku.productKey.productName}|${sku.productKey.sizeLabel}`}`;
+      m.set(key, sku.chain.vfPricePerUnit);
+    }
+    return m;
+  }, [wAvgInternal]);
+
   const rows = useMemo<Row[]>(() => {
     if (!priceList) return [];
     return priceList.skuPriceChains
       .filter((sku) => sku.managementStatus === 'active')
       .map((sku, i) => {
         const isPipe = sku.productKey.dn !== undefined;
+        // ADR-012: (tên, size) có thể trùng giữa BlazeMaster/Corzan — key phải gồm materialId.
+        const key = `${sku.productKey.materialId}|${sku.productKey.dn ?? `${sku.productKey.productName}|${sku.productKey.sizeLabel}`}`;
+        const wAvgPriceBeforeVat = wAvgVfPerUnitByKey.get(key) ?? null;
         return {
           stt: i + 1,
-          // ADR-012: (tên, size) có thể trùng giữa BlazeMaster/Corzan — key phải gồm materialId.
-          key: `${sku.productKey.materialId}|${sku.productKey.dn ?? `${sku.productKey.productName}|${sku.productKey.sizeLabel}`}`,
+          key,
           name: isPipe ? PIPE_LABEL : sku.productKey.productName!,
           size: isPipe ? sku.productKey.dn! : sku.productKey.sizeLabel!,
           spec: sku.spec,
@@ -149,13 +182,15 @@ export default function PriceList({
           // ADR-025 — niêm yết GIÁ VF (xuất xưởng), không phải giá list nhà phân phối.
           priceBeforeVat: sku.chain.vfPricePerUnit,
           priceWithVat: Math.round(sku.chain.vfPricePerUnit * (1 + vatRate)),
+          wAvgPriceBeforeVat,
+          wAvgPriceWithVat: wAvgPriceBeforeVat !== null ? Math.round(wAvgPriceBeforeVat * (1 + vatRate)) : null,
           materialId: sku.productKey.materialId,
           matName: scenario?.materials.find((m) => m.id === sku.productKey.materialId)?.name ?? sku.productKey.materialId,
           brand: brandOf(sku.productKey.materialId),
           chain: sku.chain,
         };
       });
-  }, [priceList, vatRate, scenario]);
+  }, [priceList, vatRate, scenario, wAvgVfPerUnitByKey]);
 
   const filteredRows = rows.filter((row) => {
     const q = searchQuery.toLowerCase();
@@ -168,6 +203,16 @@ export default function PriceList({
   });
   const allMaterials = [...new Map(rows.map((r) => [r.materialId, r.matName])).entries()];
   const multiBrand = new Set(allMaterials.map(([id]) => brandOf(id as string))).size > 1;
+  const expandedRow = rows.find((r) => r.key === expandedKey) ?? null;
+
+  // ADR-068 — đổi khối mở rộng tại chỗ sang SlideOverPanel (nhất quán màn Nguyên Liệu).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setExpandedKey(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   // Thuế suất VAT suy từ chính dữ liệu (sales không đọc được costPool) — chỉ để hiển thị nhãn.
   const vatPctLabel = Math.round(vatRate * 100);
@@ -512,79 +557,88 @@ export default function PriceList({
         </div>
       </div>
 
-      {allMaterials.length > 1 && (
-        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: ft.size.xs, color: tk.inkFaint, marginRight: 4 }}>Nguyên liệu:</span>
-          {[['all', 'Tất cả'] as [string, string], ...allMaterials].map(([id, name]) => {
-            const active = materialFilter === id;
-            return (
-              <div
-                key={id}
-                onClick={() => setMaterialFilter(id)}
-                style={{ padding: '4px 12px', cursor: 'pointer', border: `1px solid ${active ? tk.brand : tk.borderStrong}`, background: active ? tk.brand : tk.surface, color: active ? tk.inkInverse : tk.ink, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.semibold }}
-              >
-                {id === 'all' ? name : matChipLabel(id as string)}
-              </div>
-            );
-          })}
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 11 }}>
-        {CAT_LIST.map((c) => {
-          const active = productFilter === c;
-          return (
-            <div
-              key={c}
-              onClick={() => setProductFilter(c)}
-              style={{ padding: '4px 10px', cursor: 'pointer', border: `1px solid ${active ? tk.brand : tk.borderStrong}`, background: active ? tk.brand : tk.surface, color: active ? tk.inkInverse : tk.ink, borderRadius: rd.sm, fontSize: ft.size.xs, fontWeight: ft.weight.medium, whiteSpace: 'nowrap' }}
-            >
-              {c === 'all' ? 'Tất cả' : c === 'khác' ? 'Khác' : c}
-            </div>
-          );
-        })}
+      {/* ADR-068 — gộp 2 hàng chip lọc thành 2 dropdown gọn, đỡ rối khi thao tác. */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 11 }}>
+        {allMaterials.length > 1 && (
+          <select
+            value={materialFilter}
+            onChange={(e) => setMaterialFilter(e.target.value)}
+            style={{ padding: '7px 12px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.sm, background: tk.surface, color: tk.ink, cursor: 'pointer' }}
+          >
+            <option value="all">Nguyên liệu: Tất cả</option>
+            {allMaterials.map(([id, name]) => (
+              <option key={id} value={id}>{matChipLabel(id as string)}</option>
+            ))}
+          </select>
+        )}
+        <select
+          value={productFilter}
+          onChange={(e) => setProductFilter(e.target.value)}
+          style={{ padding: '7px 12px', border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, fontSize: ft.size.sm, background: tk.surface, color: tk.ink, cursor: 'pointer' }}
+        >
+          {CAT_LIST.map((c) => (
+            <option key={c} value={c}>{c === 'all' ? 'Loại sản phẩm: Tất cả' : c === 'khác' ? 'Khác' : c}</option>
+          ))}
+        </select>
       </div>
 
       <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 9 }}>Hiển thị {filteredRows.length} sản phẩm</div>
 
       <Card pad={0} style={{ overflowX: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8, minWidth: 760 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: GRID_COLS, padding: '9px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}`, gap: 8, minWidth: 920 }}>
           {['STT', 'Sản phẩm', 'Kích cỡ', 'Quy cách', 'Mã định danh', 'Phân lớp', 'ĐVT'].map((h) => (
             <div key={h} style={{ ...eyebrowStyle }}>{h}</div>
           ))}
           <div style={{ ...eyebrowStyle, textAlign: 'right' }}>{colHeader}</div>
+          <div style={{ ...eyebrowStyle, textAlign: 'right' }}>Giá theo BQ gia quyền</div>
+          <div style={{ ...eyebrowStyle, textAlign: 'right' }}>Chênh lệch</div>
         </div>
         {filteredRows.map((row) => {
-          const expanded = expandedKey === row.key;
+          const wAvgShown = priceType === 'vat' ? row.wAvgPriceWithVat : row.wAvgPriceBeforeVat;
+          const baselineShown = priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat;
+          const deltaPct = wAvgShown !== null && baselineShown > 0 ? (wAvgShown - baselineShown) / baselineShown : null;
           return (
-            <div key={row.key}>
-              <div
-                onClick={() => setExpandedKey(expanded ? null : row.key)}
-                style={{ display: 'grid', gridTemplateColumns: '36px 1.5fr 70px 72px 100px 70px 52px 130px', padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center', cursor: 'pointer', background: expanded ? tk.surfaceMuted : tk.surface, minWidth: 760 }}
-              >
-                <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum }}>{row.stt}</div>
-                <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>
-                  {expanded ? '▾ ' : '▸ '}{row.name}
-                  {multiBrand && <span style={{ marginLeft: 5, fontSize: ft.size.eyebrow, fontWeight: ft.weight.bold, color: tk.ink, background: tk.surfaceMuted, border: `1px solid ${tk.border}`, padding: '1px 5px', borderRadius: 3, verticalAlign: 'middle' }}>{row.brand}</span>}
-                </div>
-                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, ...tnum }}>{row.size}</div>
-                <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.spec}</div>
-                <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.designationCode}</div>
-                <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.classificationCode}</div>
-                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{row.unit}</div>
-                <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: tk.ink }}>
-                  {fmtVnd(priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat)}
-                </div>
+            <div
+              key={row.key}
+              onClick={() => setExpandedKey(row.key)}
+              style={{ display: 'grid', gridTemplateColumns: GRID_COLS, padding: '8px 16px', borderBottom: `1px solid ${tk.surfaceMuted}`, gap: 8, alignItems: 'center', cursor: 'pointer', background: expandedKey === row.key ? tk.surfaceMuted : tk.surface, minWidth: 920 }}
+            >
+              <div style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum }}>{row.stt}</div>
+              <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.medium, color: tk.ink }}>
+                {row.name}
+                {multiBrand && <span style={{ marginLeft: 5, fontSize: ft.size.eyebrow, fontWeight: ft.weight.bold, color: tk.ink, background: tk.surfaceMuted, border: `1px solid ${tk.border}`, padding: '1px 5px', borderRadius: 3, verticalAlign: 'middle' }}>{row.brand}</span>}
               </div>
-              {expanded && (
-                <div style={{ padding: '14px 20px 16px', background: tk.surfaceMuted, borderBottom: `1px solid ${tk.border}` }}>
-                  {renderOrigin(row)}
-                </div>
-              )}
+              <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, ...tnum }}>{row.size}</div>
+              <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.spec}</div>
+              <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.designationCode}</div>
+              <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.classificationCode}</div>
+              <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{row.unit}</div>
+              <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: tk.ink }}>
+                {fmtVnd(baselineShown)}
+              </div>
+              <div style={{ fontSize: ft.size.sm, textAlign: 'right', ...tnum, color: tk.inkMuted }}>
+                {wAvgShown !== null ? fmtVnd(wAvgShown) : <span style={{ color: tk.inkFaint }}>— chưa nhập lô</span>}
+              </div>
+              <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: deltaPct === null ? tk.inkFaint : deltaPct > 0 ? tk.dangerInk : tk.successInk }}>
+                {deltaPct === null ? '—' : `${deltaPct >= 0 ? '+' : ''}${fmtPct(deltaPct)}`}
+              </div>
             </div>
           );
         })}
       </Card>
+      <div style={{ marginTop: 8, fontSize: ft.size.xs, color: tk.inkFaint }}>
+        Giá theo BQ gia quyền = giá VF nếu tính lại NVL theo giá vốn bình quân gia quyền thực mua (thay vì baseline đã chốt), giữ nguyên % lời nhà máy. Chênh lệch dương (đỏ) = giá đang niêm yết đã THẤP hơn chi phí thực — cân nhắc điều chỉnh.
+      </div>
       </>)}
+
+      <SlideOverPanel
+        open={expandedRow !== null}
+        onClose={() => setExpandedKey(null)}
+        title={expandedRow ? <>{expandedRow.name} {expandedRow.size}{multiBrand ? ` — ${expandedRow.brand}` : ''}</> : ''}
+        level={1}
+      >
+        {expandedRow && renderOrigin(expandedRow)}
+      </SlideOverPanel>
     </Screen>
   );
 }

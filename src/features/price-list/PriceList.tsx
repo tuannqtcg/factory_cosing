@@ -131,6 +131,18 @@ export default function PriceList({
   // ADR-072 — tra nhanh giá nguyên liệu theo materialId để hiện hover trên cột
   // "Giá VF trước/có VAT" (baseline) và "Giá theo BQ gia quyền" (wAvg).
   const materialCostById = useMemo(() => new Map(materialCostSummary.map((m) => [m.id, m])), [materialCostSummary]);
+  // ADR-072 — user 2026-08-03 phát hiện: cột "Giá VF trước VAT" KHÔNG LUÔN dùng
+  // giá baseline, dù baseline hiển thị trùng số với BQ gia quyền. Lý do (ADR-004,
+  // evaluatePriceLock): pricingPrice = baseline CHỈ KHI material đang isLocked
+  // (lệch replacement vs baseline ≤ ngưỡng) — nếu ĐANG MỞ KHÓA thì pricingPrice
+  // = replacement (giá tái tạo), khác hẳn baseline dù baseline không đổi. Cột
+  // BQ gia quyền (scenarioWithCostBasis) LUÔN ép baseline=replacement=wAvg nên
+  // luôn khóa — 2 cột có thể lệch dù baseline hiển thị bằng wAvg. Tra thẳng
+  // internal.priceLock.byMaterial (đã tính sẵn, ADMIN/PRICING mới có `internal`).
+  const priceLockEvalById = useMemo(
+    () => new Map((internal?.priceLock.byMaterial ?? []).map((e) => [e.materialId, e.evaluation])),
+    [internal],
+  );
 
   // Dòng hiển thị: chỉ SKU active (pending_mold ẩn theo ADR-007/008), STT đánh
   // trên danh sách active ĐẦY ĐỦ (giữ nguyên khi search/filter — giống prototype).
@@ -619,8 +631,15 @@ export default function PriceList({
           const baselineShown = priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat;
           const deltaPct = wAvgShown !== null && baselineShown > 0 ? (wAvgShown - baselineShown) / baselineShown : null;
           const matCost = materialCostById.get(row.materialId);
-          const baselineTitle = `Nguyên liệu ${row.matName}: giá baseline đã chốt ${matCost ? `${fmtUsd(matCost.baseline)}/kg` : '—'} — dùng tính giá VF niêm yết này.`;
-          const wAvgTitle = `Nguyên liệu ${row.matName}: giá bình quân gia quyền ${matCost?.wAvg !== null && matCost?.wAvg !== undefined ? `${fmtUsd(matCost.wAvg)}/kg` : 'chưa nhập lô'} — giá vốn thực mua theo lô, dùng tính cột này.`;
+          const lockEval = priceLockEvalById.get(row.materialId);
+          const baselineTitle = !matCost
+            ? `Nguyên liệu ${row.matName}: không rõ giá.`
+            : !lockEval
+              ? `Nguyên liệu ${row.matName}: giá baseline đã chốt ${fmtUsd(matCost.baseline)}/kg — dùng tính giá VF niêm yết này (cần vai Toàn Quyền/Định Giá để xem đang khóa hay mở khóa).`
+              : lockEval.isLocked
+                ? `Nguyên liệu ${row.matName}: ĐANG KHÓA GIÁ ở baseline ${fmtUsd(matCost.baseline)}/kg — dùng tính giá VF niêm yết này.`
+                : `Nguyên liệu ${row.matName}: ĐANG MỞ KHÓA (lệch ${fmtPct(lockEval.deviationPct)} so với baseline ${fmtUsd(matCost.baseline)}/kg, vượt ngưỡng) — giá VF niêm yết này ĐANG DÙNG GIÁ TÁI TẠO ${fmtUsd(lockEval.replacement)}/kg, KHÔNG PHẢI baseline.`;
+          const wAvgTitle = `Nguyên liệu ${row.matName}: giá bình quân gia quyền ${matCost?.wAvg !== null && matCost?.wAvg !== undefined ? `${fmtUsd(matCost.wAvg)}/kg` : 'chưa nhập lô'} — giá vốn thực mua theo lô, LUÔN dùng đúng giá này tính cột (bỏ qua khóa/mở khóa thật của baseline).`;
           return (
             <div
               key={row.key}
@@ -651,7 +670,7 @@ export default function PriceList({
         })}
       </Card>
       <div style={{ marginTop: 8, fontSize: ft.size.xs, color: tk.inkFaint }}>
-        Giá theo BQ gia quyền = giá VF nếu tính lại NVL theo giá vốn bình quân gia quyền thực mua (thay vì baseline đã chốt), giữ nguyên % lời nhà máy. Chênh lệch dương (đỏ) = giá đang niêm yết đã THẤP hơn chi phí thực — cân nhắc điều chỉnh.
+        Giá theo BQ gia quyền = giá VF nếu tính lại NVL theo giá vốn bình quân gia quyền thực mua (thay vì baseline đã chốt), giữ nguyên % lời nhà máy. Chênh lệch dương (đỏ) = giá đang niêm yết đã THẤP hơn chi phí thực — cân nhắc điều chỉnh. Lưu ý: nếu nguyên liệu đang MỞ KHÓA (lệch giá tái tạo vượt ngưỡng), cột "Giá VF trước/có VAT" niêm yết đang dùng giá TÁI TẠO chứ không phải baseline — hover vào ô giá để xem chính xác giá nào đang áp dụng.
       </div>
       </>)}
 

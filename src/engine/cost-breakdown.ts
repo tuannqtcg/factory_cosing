@@ -30,6 +30,14 @@ export interface CostLayersPerKg {
   material: number;
   /** = engine fullCostPerKg (tổng 5 tầng trên). */
   total: number;
+  /**
+   * ADR-076 — tách RIÊNG khấu hao máy ép vs khấu hao khuôn trong tầng
+   * `depreciation` (Phụ kiện — user 2026-08-03: "khấu hao quá lớn, xem ngay
+   * tại màn này"). Chỉ Phụ kiện có 2 loại tài sản khấu hao khác nhau (máy ép +
+   * khuôn riêng biệt, ADR-007); Ống chỉ có 1 cụm máy đùn nên không tách —
+   * undefined ở `pipeCostLayersPerKg`. machine + mold = depreciation (bảo toàn).
+   */
+  depreciationBreakdown?: { machine: number; mold: number };
 }
 
 /** Ống (driver kg) — chia mọi cấu phần/năm cho sản lượng bình thường (kg/năm). Ống luôn phẳng theo kg (chưa có chế độ per_box như Phụ kiện — ADR-062). */
@@ -63,5 +71,13 @@ export function fittingCostLayersPerKg(
   const sharedOverhead = cost.sharedCostAllocated / kg;
   const depreciation = (cost.machineDepreciationPerYear + cost.moldDepreciationPerYear) / kg;
   const material = cost.materialPerKgFinishedRef;
-  return { cashDirect, packaging: packagingCostPerKg, sharedOverhead, depreciation, material, total: cost.fullCostPerKgRef };
+  return {
+    cashDirect,
+    packaging: packagingCostPerKg,
+    sharedOverhead,
+    depreciation,
+    material,
+    total: cost.fullCostPerKgRef,
+    depreciationBreakdown: { machine: cost.machineDepreciationPerYear / kg, mold: cost.moldDepreciationPerYear / kg },
+  };
 }

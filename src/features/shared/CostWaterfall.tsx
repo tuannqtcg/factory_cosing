@@ -69,6 +69,13 @@ export default function CostWaterfall({
                 <span style={{ fontFamily: font.mono, fontSize: font.size.sm, fontWeight: font.weight.bold, whiteSpace: 'nowrap', color: color.ink, ...tnum }}>{fmtVnd(layers[m.key])} <span style={{ color: color.inkFaint, fontWeight: font.weight.medium }}>đ/kg · {pct(layers[m.key]).toFixed(0)}%</span></span>
               </div>
               <div style={{ fontSize: font.size.xs, color: color.inkFaint, marginTop: 1 }}>{m.note}{m.key === 'cashDirect' && cashHint ? ` · ${cashHint}` : ''}</div>
+              {/* ADR-076 — user: "khấu hao quá lớn, xem ngay tại màn này". Bung máy vs khuôn NGAY dưới dòng tổng, không cần rời màn. */}
+              {m.key === 'depreciation' && layers.depreciationBreakdown && (
+                <div style={{ display: 'flex', gap: 14, marginTop: 3, fontSize: font.size.xs, color: color.inkMuted }}>
+                  <span>— máy ép: <b style={{ color: color.ink, ...tnum }}>{fmtVnd(layers.depreciationBreakdown.machine)}</b> đ/kg</span>
+                  <span>— khuôn: <b style={{ color: color.ink, ...tnum }}>{fmtVnd(layers.depreciationBreakdown.mold)}</b> đ/kg</span>
+                </div>
+              )}
             </div>
           </div>
         ))}

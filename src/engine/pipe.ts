@@ -125,6 +125,14 @@ export interface PipeCostAtNormalCapacityInputs {
   otherLineEstimatedProductionKgYear: number;
   /** ADR-012 — giá/thuế/markup THEO NGUYÊN LIỆU (thay compoundPricingPriceUsdPerKg + tax/markup toàn cục cũ). Gọi hàm này 1 lần cho MỖI material dùng bởi SP dòng Ống — phần chi phí gia công (unitProcessingCostPerKg...) không phụ thuộc material nên trùng nhau giữa các lần gọi. */
   material: MaterialPricingInput;
+  /**
+   * ADR-069 — đ/kg bao bì THAY cho resource.packagingCostPerKg phẳng, khi
+   * pipePackagingMethod='per_bag' (averagePipePackagingCostPerKg bên dưới).
+   * undefined (mặc định) = giữ nguyên hành vi cũ (parity). PHẢI truyền CÙNG
+   * giá trị đã đưa vào calculatePipeCvp() cho cùng scenario — nếu không,
+   * fullCostPerKg (ở đây) và variableCostPerKg (CVP) sẽ LỆCH nhau.
+   */
+  packagingCostPerKgOverride?: number;
 }
 
 export interface PipeCostAtNormalCapacity {
@@ -146,7 +154,7 @@ export interface PipeCostAtNormalCapacity {
 export function calculatePipeCostAtNormalCapacity(
   inputs: PipeCostAtNormalCapacityInputs,
 ): PipeCostAtNormalCapacity {
-  const { resource, capacity, costPool, otherLineEstimatedProductionKgYear, material } = inputs;
+  const { resource, capacity, costPool, otherLineEstimatedProductionKgYear, material, packagingCostPerKgOverride } = inputs;
   const { currency } = costPool;
 
   const compoundLandedPerKg = landedCostPerKgVnd(material.pricingPriceUsdPerKg, {
@@ -177,7 +185,7 @@ export function calculatePipeCostAtNormalCapacity(
     extruderDepreciationPerYear + maintenancePerYear + laborPerYear + electricityPerYear + waterPerYear + sharedCostAllocated;
   const unitProcessingCostPerKg = totalProcessingCostPerYear / capacity.normalCapacityKgYear;
 
-  const fullCostPerKg = materialPerKgFinished + resource.packagingCostPerKg + unitProcessingCostPerKg;
+  const fullCostPerKg = materialPerKgFinished + (packagingCostPerKgOverride ?? resource.packagingCostPerKg) + unitProcessingCostPerKg;
   const vfPricePerKg = fullCostPerKg * (1 + material.markupVf); // ADR-012 — markup VF theo material
 
   return {
@@ -195,4 +203,45 @@ export function calculatePipeCostAtNormalCapacity(
     fullCostPerKg,
     vfPricePerKg,
   };
+}
+
+/**
+ * ADR-069 — giá tiền vật liệu TIÊU HAO cho 1 túi ni lông (đ), suy từ cuộn: giá
+ * vật liệu (đ/kg) × khối lượng cuộn (kg) ÷ chiều dài cuộn (m) = giá vật liệu
+ * đ/m, nhân chiều dài 1 túi (m). undefined nếu thiếu bất kỳ field nào trong 4
+ * field cuộn (resource.ts, cả 4 đều optional).
+ */
+export function pipePackagingBagCostVnd(resource: ContinuousKgResource): number | undefined {
+  const priceKg = resource.packagingBagMaterialPricePerKgVnd;
+  const rollKg = resource.packagingRollWeightKg;
+  const rollM = resource.packagingRollLengthM;
+  const bagM = resource.packagingBagLengthM;
+  if (priceKg === undefined || rollKg === undefined || rollM === undefined || bagM === undefined) return undefined;
+  return ((priceKg * rollKg) / rollM) * bagM;
+}
+
+/**
+ * ADR-069 — đối xứng averageFittingPackagingCostPerKg (fitting.ts): quy đ/kg
+ * CHO CVP/hoà vốn khi pipePackagingMethod='per_bag'. Mỗi DN có `piecesPerBag`:
+ * đ/kg = (giá 1 túi ÷ số cây/túi) ÷ (đơn trọng × chiều dài túi) — 1 túi bọc
+ * `piecesPerBag` cây ống, mỗi cây dài `packagingBagLengthM`. DN thiếu
+ * `piecesPerBag` (chưa nhập tay) fallback phẳng cho riêng DN đó. Chưa có dữ
+ * liệu SẢN LƯỢNG từng DN nên lấy TRUNG BÌNH KHÔNG TRỌNG SỐ qua mọi DN — cùng
+ * giả định đã dùng ở averageFittingPackagingCostPerKg. method='flat_per_kg'
+ * (mặc định) hoặc thiếu dữ liệu cuộn/không có SP nào ⇒ trả nguyên
+ * `resource.packagingCostPerKg` — parity tuyệt đối với trước ADR-069.
+ */
+export function averagePipePackagingCostPerKg(
+  products: readonly PipeProduct[],
+  resource: ContinuousKgResource,
+  method: 'flat_per_kg' | 'per_bag',
+): number {
+  const bagCostVnd = pipePackagingBagCostVnd(resource);
+  if (method !== 'per_bag' || bagCostVnd === undefined || products.length === 0) {
+    return resource.packagingCostPerKg;
+  }
+  const bagLengthM = resource.packagingBagLengthM!;
+  const perKgOf = (p: PipeProduct) =>
+    p.piecesPerBag !== undefined ? bagCostVnd / p.piecesPerBag / (p.unitWeightKgPerM * bagLengthM) : resource.packagingCostPerKg;
+  return products.reduce((sum, p) => sum + perKgOf(p), 0) / products.length;
 }

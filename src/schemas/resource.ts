@@ -44,6 +44,14 @@ export const ContinuousKgResourceSchema = z.object({
   normalShifts: z.number().int().min(1).max(3),
   yieldRate: YieldRate,
   packagingCostPerKg: z.number().int().nonnegative(),
+  // ADR-069 — dữ liệu cuộn túi ni lông, dùng khi ScenarioInput.pipePackagingMethod
+  // = 'per_bag': quy đ/kg bao bì THEO TỪNG DN (Product.piecesPerBag khác nhau
+  // theo đường kính) thay vì 1 số đ/kg phẳng. Optional, thiếu 1 trong 4 field
+  // ⇒ fallback packagingCostPerKg (flat, parity với trước ADR-069).
+  packagingBagMaterialPricePerKgVnd: z.number().int().nonnegative().optional(),
+  packagingRollWeightKg: z.number().positive().optional(),
+  packagingRollLengthM: z.number().positive().optional(),
+  packagingBagLengthM: z.number().positive().optional(),
   extruderPriceEach: z.number().int().nonnegative(),
   extruderCount: z.number().int().positive(),
   moldPullerCutterCost: z.number().int().nonnegative(),

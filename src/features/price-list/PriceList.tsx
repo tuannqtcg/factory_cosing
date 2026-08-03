@@ -245,8 +245,24 @@ export default function PriceList({
     const packagingPerUnit = (() => {
       if (!product || !scenario) return null;
       if (product.kind === 'pipe') {
-        const pipeResource = scenario.resources.pipe as { packagingCostPerKg: number };
-        return pipeResource.packagingCostPerKg * product.unitWeightKgPerM;
+        const pipeResource = scenario.resources.pipe as {
+          packagingCostPerKg: number;
+          packagingBagMaterialPricePerKgVnd?: number;
+          packagingRollWeightKg?: number;
+          packagingRollLengthM?: number;
+          packagingBagLengthM?: number;
+        };
+        const method = scenario.pipePackagingMethod ?? 'flat_per_kg';
+        const bagCostVnd =
+          pipeResource.packagingBagMaterialPricePerKgVnd !== undefined &&
+          pipeResource.packagingRollWeightKg !== undefined &&
+          pipeResource.packagingRollLengthM !== undefined &&
+          pipeResource.packagingBagLengthM !== undefined
+            ? (pipeResource.packagingBagMaterialPricePerKgVnd * pipeResource.packagingRollWeightKg / pipeResource.packagingRollLengthM) * pipeResource.packagingBagLengthM
+            : undefined;
+        return method === 'per_bag' && product.piecesPerBag !== undefined && bagCostVnd !== undefined
+          ? (bagCostVnd / product.piecesPerBag / (product.unitWeightKgPerM * pipeResource.packagingBagLengthM!)) * product.unitWeightKgPerM
+          : pipeResource.packagingCostPerKg * product.unitWeightKgPerM;
       }
       const fittingResource = scenario.resources.fitting as { packagingCostPerKg: number; packagingBoxCostVnd?: number };
       const method = scenario.fittingPackagingMethod ?? 'flat_per_kg';
@@ -257,7 +273,9 @@ export default function PriceList({
     const packagingNote =
       product?.kind === 'fitting' && (scenario?.fittingPackagingMethod ?? 'flat_per_kg') === 'per_box' && product.piecesPerBox !== undefined
         ? 'theo thùng carton'
-        : 'theo kg (túi ni lông/bao bì phẳng)';
+        : product?.kind === 'pipe' && (scenario?.pipePackagingMethod ?? 'flat_per_kg') === 'per_bag' && product.piecesPerBag !== undefined
+          ? 'theo túi ni lông (cây/túi)'
+          : 'theo kg (túi ni lông/bao bì phẳng)';
     const markupImplied = full && full.breakEvenPerUnit > 0 ? full.vfPricePerUnit / full.breakEvenPerUnit - 1 : null;
     const priceStep = (label: string, value: string, note?: string, strong?: boolean) => (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: '6px 0', borderBottom: `1px dashed ${tk.border}` }}>

@@ -150,6 +150,8 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
 
   const setPipe = (key: keyof ContinuousKgResource & string, v: number) =>
     setForm((f) => (f ? { ...f, resources: { ...f.resources, pipe: { ...(f.resources.pipe as ContinuousKgResource), [key]: v } } } : f));
+  const setPipeOptional = (key: keyof ContinuousKgResource & string, v: number | undefined) =>
+    setForm((f) => (f ? { ...f, resources: { ...f.resources, pipe: { ...(f.resources.pipe as ContinuousKgResource), [key]: v } } } : f));
   const setFitting = (key: keyof MachineHourResource & string, v: number) =>
     setForm((f) => (f ? { ...f, resources: { ...f.resources, fitting: { ...(f.resources.fitting as MachineHourResource), [key]: v } } } : f));
   const setFittingOptional = (key: keyof MachineHourResource & string, v: number | undefined) =>
@@ -527,7 +529,23 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                   <GridCell label="Đơn giá nước"><InCell width="100%" value={pipe.waterPricePerM3} onChange={(v) => setPipe('waterPricePerM3', v)} unit="đ/m³" /></GridCell>
                   <GridCell derived label={<>Tiền nước / năm {fxTag}</>}><FxCell value={pipeWater} unit="đ" /></GridCell>
                   <GridCell label="Bảo trì phần ống / năm"><InCell width="100%" value={pipe.annualMaintenance} onChange={(v) => setPipe('annualMaintenance', v)} unit="đ" /></GridCell>
-                  <GridCell label="Bao bì + vật tư"><InCell width="100%" value={pipe.packagingCostPerKg} onChange={(v) => setPipe('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                  <GridCell label="Bao bì + vật tư (flat)"><InCell width="100%" value={pipe.packagingCostPerKg} onChange={(v) => setPipe('packagingCostPerKg', v)} unit="đ/kg TP" /></GridCell>
+                  <GridCell label={<>Giá vật liệu túi ni lông <span style={{ fontSize: 8.5, fontWeight: ft.weight.bold, color: tk.brand, border: `1px solid ${tk.borderStrong}`, borderRadius: 3, padding: '0 3px' }}>ADR-069</span></>}>
+                    <OptRateCell value={pipe.packagingBagMaterialPricePerKgVnd} onChange={(v) => setPipeOptional('packagingBagMaterialPricePerKgVnd', v)} placeholder="74000" width="100%" />
+                    <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>đ/kg vật liệu túi</span>
+                  </GridCell>
+                  <GridCell label="Khối lượng 1 cuộn">
+                    <OptRateCell value={pipe.packagingRollWeightKg} onChange={(v) => setPipeOptional('packagingRollWeightKg', v)} placeholder="35" width="100%" />
+                    <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>kg/cuộn</span>
+                  </GridCell>
+                  <GridCell label="Chiều dài 1 cuộn">
+                    <OptRateCell value={pipe.packagingRollLengthM} onChange={(v) => setPipeOptional('packagingRollLengthM', v)} placeholder="630" width="100%" />
+                    <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>m/cuộn</span>
+                  </GridCell>
+                  <GridCell label="Chiều dài 1 túi">
+                    <OptRateCell value={pipe.packagingBagLengthM} onChange={(v) => setPipeOptional('packagingBagLengthM', v)} placeholder="4.2" width="100%" />
+                    <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>m/túi (= chiều dài cây ống) — để trống bất kỳ 1 trong 4 ô trên = chưa dùng cách tính theo túi</span>
+                  </GridCell>
                 </div>
                 {kpi('Tổng chế biến Ống', pipeConvTotal, depPipe)}
               </div>

@@ -15,7 +15,7 @@ export interface PipeCvp {
   fixedCostPerYear: number;
   breakEvenKgYear: number;
   pctOfNormalCapacity: number;
-  /** ADR-065 — bao bì túi ni lông/kg (Ống LUÔN tính theo kg, không có chế độ theo thùng — đối xứng FittingCvp.packagingCostPerKg cho UI hiển thị). */
+  /** ADR-065/069 — bao bì túi ni lông/kg THẬT SỰ dùng trong variableCostPerKg (flat hoặc bình quân theo túi — đối xứng FittingCvp.packagingCostPerKg). */
   packagingCostPerKg: number;
 }
 
@@ -23,10 +23,15 @@ export function calculatePipeCvp(
   resource: ContinuousKgResource,
   capacity: PipeCapacity,
   cost: PipeCostAtNormalCapacity,
+  // ADR-069 — đ/kg bao bì THAY cho resource.packagingCostPerKg phẳng, khi
+  // pipePackagingMethod='per_bag' (xem averagePipePackagingCostPerKg, pipe.ts).
+  // undefined (mặc định) = giữ nguyên hành vi cũ (parity).
+  packagingCostPerKgOverride?: number,
 ): PipeCvp {
+  const packagingCostPerKg = packagingCostPerKgOverride ?? resource.packagingCostPerKg;
   const variableCostPerKg =
     cost.materialPerKgFinished +
-    resource.packagingCostPerKg +
+    packagingCostPerKg +
     (resource.electricityKw * resource.electricityPricePerKwh + resource.waterM3PerHour * resource.waterPricePerM3) /
       (resource.actualCapacityKgPerHour * resource.yieldRate);
   const contributionMarginPerKg = cost.vfPricePerKg - variableCostPerKg;
@@ -35,7 +40,7 @@ export function calculatePipeCvp(
   const breakEvenKgYear = fixedCostPerYear / contributionMarginPerKg;
   const pctOfNormalCapacity = breakEvenKgYear / capacity.normalCapacityKgYear;
 
-  return { variableCostPerKg, contributionMarginPerKg, fixedCostPerYear, breakEvenKgYear, pctOfNormalCapacity, packagingCostPerKg: resource.packagingCostPerKg };
+  return { variableCostPerKg, contributionMarginPerKg, fixedCostPerYear, breakEvenKgYear, pctOfNormalCapacity, packagingCostPerKg };
 }
 
 export interface FittingCvp {

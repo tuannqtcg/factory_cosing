@@ -720,9 +720,13 @@ export default function Dashboard({
                 <CardNote>Đảm phí phụ kiện {fmtPct(kpis.investment.fittingContributionMarginRatio)} · thực tế {fmtTyVnd(kpis.investment.expectedRevenueFittingVf)}</CardNote>
               </Card>
               <Card>
-                <CardLabel tooltip="Chi phí túi ni lông bọc ống, cấu hình ở Thiết Lập Dữ Liệu — luôn tính theo kg thành phẩm.">Bao bì — Ống (túi ni lông)</CardLabel>
-                <CardValue>{fmtVnd(kpis.packaging.pipe.packagingCostPerKgVnd)} đ/kg</CardValue>
-                <CardNote>Cộng thẳng vào giá thành/kg</CardNote>
+                <CardLabel tooltip="Chi phí túi ni lông bọc ống (ADR-069) — 'Theo kg' = flat rải đều mọi DN; 'Theo túi' = giá 1 túi (suy từ cuộn) ÷ số cây/túi từng DN. Đổi ở công tắc sidebar 'Bao bì Ống'.">Bao bì — Ống (túi ni lông)</CardLabel>
+                <CardValue>
+                  {kpis.packaging.pipe.method === 'per_bag'
+                    ? `${fmtVnd(kpis.packaging.pipe.packagingBagCostVnd)} đ/túi`
+                    : `${fmtVnd(kpis.packaging.pipe.packagingCostPerKgVnd)} đ/kg`}
+                </CardValue>
+                <CardNote>{kpis.packaging.pipe.method === 'per_bag' ? 'Chia theo cây/túi từng DN (ADR-069)' : 'Rải đều theo kg (flat, chuẩn Excel)'}</CardNote>
               </Card>
               <Card>
                 <CardLabel tooltip="Chi phí bao bì carton phụ kiện (ADR-060) — 'Theo kg' = flat rải đều mọi SKU; 'Theo thùng' = giá 1 thùng ÷ số cái/thùng từng SKU. Đổi ở công tắc sidebar 'Bao bì Phụ kiện'.">Bao bì — Phụ kiện (carton)</CardLabel>

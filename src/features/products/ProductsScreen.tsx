@@ -351,6 +351,7 @@ export default function ProductsScreen({
                 <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>OD (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Dày min (mm)</th>
                 <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }}>Đơn trọng (kg/m)</th>
+                <th style={{ padding: '8px 12px', borderBottom: `1px solid ${tk.borderStrong}` }} title="ADR-069 — số cây ống đóng trong 1 túi ni lông, dùng khi công tắc &quot;Bao bì Ống&quot; = theo túi. Để trống = DN này vẫn tính theo kg (flat) dù công tắc bật.">Cây/túi</th>
                 <th
                   style={{
                     padding: '8px 12px',
@@ -388,6 +389,17 @@ export default function ProductsScreen({
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     <InputNode type="number" value={p.unitWeightKgPerM} onChange={(v: number) => updateProduct(i, 'pipe', { ...p, unitWeightKgPerM: v })} width={70} />
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <InputNode
+                      type="number"
+                      value={p.piecesPerBag ?? ''}
+                      placeholder="—"
+                      onChange={(v: number | string) =>
+                        updateProduct(i, 'pipe', { ...p, piecesPerBag: v === '' || Number.isNaN(Number(v)) ? undefined : Number(v) })
+                      }
+                      width={60}
+                    />
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     {(() => {

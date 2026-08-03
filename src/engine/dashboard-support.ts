@@ -18,7 +18,7 @@ import type { ScenarioInput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
 import type { PipeProduct } from '../schemas/product.js';
 import { calculateScenario, referenceMaterialOf, lastLotPriceOf } from './scenario.js';
-import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
+import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity, averagePipePackagingCostPerKg, pipePackagingBagCostVnd } from './pipe.js';
 import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity, averageFittingPackagingCostPerKg } from './fitting.js';
 import { evaluatePriceLock } from './price-lock.js';
 import type { MaterialPricingInput } from './cost-pool.js';
@@ -69,9 +69,11 @@ export interface InvestmentKpis {
   paybackYears: number;
 }
 
-/** ADR-062 — chi phí bao bì đang cấu hình, tách riêng theo cơ chế của từng dòng (Ống = luôn theo kg; Phụ kiện = theo kg HOẶC theo thùng carton tuỳ fittingPackagingMethod). */
+/** ADR-062/069 — chi phí bao bì đang cấu hình, tách riêng theo cơ chế của từng dòng (Ống = theo kg HOẶC theo túi ni lông tuỳ pipePackagingMethod; Phụ kiện = theo kg HOẶC theo thùng carton tuỳ fittingPackagingMethod). */
 export interface PackagingCostSummary {
-  pipe: { packagingCostPerKgVnd: number };
+  pipe:
+    | { method: 'flat_per_kg'; packagingCostPerKgVnd: number }
+    | { method: 'per_bag'; packagingBagCostVnd: number };
   fitting:
     | { method: 'flat_per_kg'; packagingCostPerKgVnd: number }
     | { method: 'per_box'; packagingBoxCostVnd: number };
@@ -136,12 +138,16 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
   const pipeMix = { primaryMaterialId: pipeRefMaterial.id, primaryFrac: (scenario.productionMixPipePrimaryPct ?? 100) / 100 };
   const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod, pipeMix);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
+  // ADR-069 — bao bì Ống ĐÚNG theo cách đang cấu hình (per_bag hay flat), dùng
+  // CHUNG cho fullCostPerKg ở đây VÀ thác chi phí bên dưới — đối xứng fitting.
+  const pipePackagingCostPerKg = averagePipePackagingCostPerKg(pipeProducts as PipeProduct[], pipeResource, scenario.pipePackagingMethod ?? 'flat_per_kg');
   const pipeCost = calculatePipeCostAtNormalCapacity({
     resource: pipeResource,
     capacity: pipeCapacity,
     costPool,
     otherLineEstimatedProductionKgYear: fittingCapacity.estimatedProductionKgYear,
     material: pricingInputOf(pipeRefMaterial),
+    packagingCostPerKgOverride: pipePackagingCostPerKg,
   });
   // ADR-065/066 — bao bì Phụ kiện ĐÚNG theo cách đang cấu hình (per_box hay
   // flat), dùng CHUNG cho fullCostPerKgRef ở đây VÀ thác chi phí bên dưới —
@@ -315,13 +321,18 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
       paybackYears,
     },
     packaging: {
-      pipe: { packagingCostPerKgVnd: pipeResource.packagingCostPerKg },
+      pipe: (() => {
+        const bagCostVnd = pipePackagingBagCostVnd(pipeResource);
+        return (scenario.pipePackagingMethod ?? 'flat_per_kg') === 'per_bag' && bagCostVnd !== undefined
+          ? { method: 'per_bag' as const, packagingBagCostVnd: bagCostVnd }
+          : { method: 'flat_per_kg' as const, packagingCostPerKgVnd: pipeResource.packagingCostPerKg };
+      })(),
       fitting:
         (scenario.fittingPackagingMethod ?? 'flat_per_kg') === 'per_box' && fittingResource.packagingBoxCostVnd !== undefined
           ? { method: 'per_box', packagingBoxCostVnd: fittingResource.packagingBoxCostVnd }
           : { method: 'flat_per_kg', packagingCostPerKgVnd: fittingResource.packagingCostPerKg },
     },
-    pipeCostLayers: pipeCostLayersPerKg(pipeCost, pipeResource.packagingCostPerKg, pipeCapacity.normalCapacityKgYear),
+    pipeCostLayers: pipeCostLayersPerKg(pipeCost, pipePackagingCostPerKg, pipeCapacity.normalCapacityKgYear),
     fittingCostLayers: fittingCostLayersPerKg(fittingCost, fittingCost.packagingCostPerKg, fittingCapacity.estimatedProductionKgYear),
   };
 }

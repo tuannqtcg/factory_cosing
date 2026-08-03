@@ -45,6 +45,13 @@ export const ScenarioInputSchema = z
     // 'flat_per_kg' cho đúng SKU đó. Mặc định 'flat_per_kg' → doc cũ không có
     // field vẫn parse đúng, không vỡ parity.
     fittingPackagingMethod: z.enum(['flat_per_kg', 'per_box']).default('flat_per_kg'),
+    // ADR-069 — cách tính chi phí bao bì Ống, ĐỐI XỨNG fittingPackagingMethod
+    // ở trên: 'flat_per_kg' (mặc định) = resource.packagingCostPerKg phẳng →
+    // khớp parity trước ADR-069; 'per_bag' = quy đ/kg từ dữ liệu cuộn túi ni
+    // lông (resource.packagingBagMaterialPricePerKgVnd/RollWeightKg/RollLengthM/
+    // BagLengthM) ÷ Product.piecesPerBag THEO TỪNG DN. DN/resource thiếu dữ
+    // liệu → tự fallback 'flat_per_kg' cho đúng DN đó.
+    pipePackagingMethod: z.enum(['flat_per_kg', 'per_bag']).default('flat_per_kg'),
     // ADR-055 — TỶ LỆ ĐÁY (production mix): % công suất DÒNG dành cho material
     // THAM CHIẾU (chính, vd BlazeMaster); phần còn lại cho material thứ 2 của
     // dòng (vd Corzan). Doanh thu/EBIT/biến phí VF = chính×giá_chính +

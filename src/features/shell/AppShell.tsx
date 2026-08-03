@@ -191,6 +191,33 @@ export default function AppShell() {
           </div>
         )}
 
+        {/* ADR-069 — CÔNG TẮC toàn cục: cách tính bao bì Ống. Đối xứng khối Bao
+            bì Phụ kiện ở trên. */}
+        {data.scenario && (
+          <div style={{ borderTop: '1px solid #ececec', padding: '10px 16px' }}>
+            <div style={{ fontSize: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: '#b3b3b3', fontWeight: 700, marginBottom: 5 }}>Bao bì Ống</div>
+            <div style={{ display: 'flex', border: '1px solid #d8d8d8', borderRadius: 4, overflow: 'hidden' }}>
+              {([['flat_per_kg', 'Theo kg'], ['per_bag', 'Theo túi']] as const).map(([v, label]) => {
+                const active = (data.scenario!.pipePackagingMethod ?? 'flat_per_kg') === v;
+                const canSwitch = role === 'admin' && !active;
+                return (
+                  <div
+                    key={v}
+                    onClick={() => { if (canSwitch) void updateDoc(doc(db, `scenarios/${SCENARIO_ID}`), { pipePackagingMethod: v }); }}
+                    title={role === 'admin' ? 'Đổi cách tính — mọi màn tính lại theo' : 'Chỉ Toàn Quyền đổi được'}
+                    style={{ flex: 1, textAlign: 'center', padding: '5px 4px', fontSize: 10, fontWeight: 600, cursor: canSwitch ? 'pointer' : 'default', background: active ? '#0a0a0a' : '#fff', color: active ? '#fff' : role === 'admin' ? '#555' : '#b3b3b3' }}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 8, color: '#b3b3b3', marginTop: 4 }}>
+              {(data.scenario.pipePackagingMethod ?? 'flat_per_kg') === 'flat_per_kg' ? 'Rải đều theo kg (chuẩn Excel)' : 'giá túi ÷ cây/túi, theo DN'}
+            </div>
+          </div>
+        )}
+
         <div style={{ borderTop: '1px solid #ececec', padding: '12px 16px' }}>
           <div style={{ display: 'inline-block', background: '#0a0a0a', color: '#fff', fontSize: 8, fontWeight: 700, padding: '2px 6px', borderRadius: 2, letterSpacing: '.06em', marginBottom: 4 }}>
             {role === 'admin' ? 'CHỦ / TOÀN QUYỀN' : 'ĐỊNH GIÁ'}

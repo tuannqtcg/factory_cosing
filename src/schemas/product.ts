@@ -19,6 +19,11 @@ export const PipeProductSchema = z.object({
   // nhập + kiểm tra công suất (cảnh báo khi m/giờ × đơn trọng > kg/giờ max của
   // máy) — CHƯA dùng tính giá thành (giữ parity). Sẽ dùng ở bước nâng mô hình.
   capacityMetersPerHour: z.number().positive().optional(),
+  // ADR-069 — số cây ống đóng trong 1 túi ni lông (khác nhau theo DN — DN nhỏ
+  // nhét được nhiều cây/túi hơn DN lớn). Optional: chỉ dùng khi
+  // ScenarioInput.pipePackagingMethod = 'per_bag'; DN thiếu field này vẫn tính
+  // được, fallback resource.packagingCostPerKg (flat, parity trước ADR-069).
+  piecesPerBag: z.number().int().positive().optional(),
 });
 export type PipeProduct = z.infer<typeof PipeProductSchema>;
 

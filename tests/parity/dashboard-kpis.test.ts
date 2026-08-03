@@ -121,9 +121,9 @@ describe('ADR-062 — hoà vốn doanh thu TÁCH RIÊNG từng dòng (khác ente
   });
 });
 
-describe('ADR-062 — chi phí bao bì hiện hành, tách riêng cơ chế Ống (luôn theo kg) vs Phụ kiện (theo kg hoặc theo thùng)', () => {
-  it('Ống: túi ni lông luôn đọc thẳng packagingCostPerKg của resource (1.500đ/kg trong fixture)', () => {
-    expect(kpis.packaging.pipe.packagingCostPerKgVnd).toBe(1500);
+describe('ADR-062/069 — chi phí bao bì hiện hành, tách riêng cơ chế Ống (theo kg hoặc theo túi) vs Phụ kiện (theo kg hoặc theo thùng)', () => {
+  it("Ống: mặc định 'flat_per_kg' (doc cũ không có pipePackagingMethod) — đọc thẳng packagingCostPerKg của resource (1.500đ/kg trong fixture)", () => {
+    expect(kpis.packaging.pipe).toEqual({ method: 'flat_per_kg', packagingCostPerKgVnd: 1500 });
   });
 
   it("Phụ kiện: mặc định 'flat_per_kg' (doc cũ không có fittingPackagingMethod) — đọc packagingCostPerKg (2.000đ/kg trong fixture)", () => {

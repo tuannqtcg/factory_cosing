@@ -24,7 +24,13 @@ import type { ScenarioInput, ScenarioOutput } from '../schemas/scenario.js';
 import type { ContinuousKgResource, MachineHourResource } from '../schemas/resource.js';
 import type { Material } from '../schemas/material.js';
 import type { Product, PipeProduct } from '../schemas/product.js';
-import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity, type PipeCostAtNormalCapacity } from './pipe.js';
+import {
+  effectivePipeCapacity,
+  calculatePipeCostAtNormalCapacity,
+  averagePipePackagingCostPerKg,
+  pipePackagingBagCostVnd,
+  type PipeCostAtNormalCapacity,
+} from './pipe.js';
 import {
   calculateFittingCapacity,
   calculateFittingCostAtNormalCapacity,
@@ -106,6 +112,9 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   // ADR-060 — cách phân bổ chi phí bao bì cho giá thành PHỤ KIỆN: 'flat_per_kg'
   // (mặc định, parity Excel) | 'per_box' (theo carton, xem nhánh ở vòng skuPriceChains).
   const fittingPackagingMethod = input.fittingPackagingMethod ?? 'flat_per_kg';
+  // ADR-069 — cách phân bổ chi phí bao bì cho giá thành ỐNG: 'flat_per_kg'
+  // (mặc định, parity Excel) | 'per_bag' (theo túi ni lông, xem nhánh ở vòng skuPriceChains).
+  const pipePackagingMethod = input.pipePackagingMethod ?? 'flat_per_kg';
   // Material theo line, GIỮ THỨ TỰ materials[] (phần tử đầu = material tham chiếu — xem ghi chú đầu file)
   const pipeMaterialIds = materials.filter((m) => pipeProducts.some((p) => p.materialId === m.id)).map((m) => m.id);
   const fittingMaterialIds = materials
@@ -159,6 +168,12 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   // thức đó được thiết kế cộng khớp nhau (tổng 5 tầng cost-breakdown.ts =
   // fullCostPerKgRef), lệch giá trị bao bì giữa 2 nơi sẽ phá vỡ tính nhất quán.
   const fittingPackagingCostPerKg = averageFittingPackagingCostPerKg(fittingProducts, fittingResource, fittingPackagingMethod);
+  // ADR-069 — đối xứng dòng trên, cho Ống. `pipeBagCostVnd` (giá 1 túi, resource-level,
+  // KHÔNG đổi theo DN) tính 1 lần, dùng lại ở vòng skuPriceChains bên dưới để
+  // ra đ/kg RIÊNG từng DN (piecesPerBag khác nhau) — khác fittingPackagingCostPerKg
+  // (1 số bình quân dùng chung), vì Ống có đơn trọng/kg khác biệt lớn giữa các DN.
+  const pipeBagCostVnd = pipePackagingBagCostVnd(pipeResource);
+  const pipePackagingCostPerKg = averagePipePackagingCostPerKg(pipeProducts as PipeProduct[], pipeResource, pipePackagingMethod);
 
   // ── 3. Chi phí SX tại CS bình thường — 1 lần cho MỖI (line, material) ──────
   // Cross-ref công suất dòng kia là số kg (material-independent) nên tính 1 lần.
@@ -172,6 +187,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         costPool,
         otherLineEstimatedProductionKgYear: fittingCapacity.estimatedProductionKgYear,
         material: pricingInputOf(id),
+        packagingCostPerKgOverride: pipePackagingCostPerKg,
       }),
     );
   }
@@ -195,7 +211,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
 
   // ── 4. CVP — theo (line, material) ─────────────────────────────────────────
   const pipeCvpByMaterial = new Map(
-    pipeMaterialIds.map((id) => [id, calculatePipeCvp(pipeResource, pipeCapacity, pipeCostByMaterial.get(id)!)]),
+    pipeMaterialIds.map((id) => [id, calculatePipeCvp(pipeResource, pipeCapacity, pipeCostByMaterial.get(id)!, pipePackagingCostPerKg)]),
   );
   const fittingCvpByMaterial = new Map(
     fittingMaterialIds.map((id) => [
@@ -254,7 +270,16 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
 
     if (product.kind === 'pipe') {
       const cost = pipeCostByMaterial.get(product.materialId)!;
-      let fullCostPerKg = cost.fullCostPerKg;
+      // ADR-069 — bao bì RIÊNG từng DN (piecesPerBag khác nhau theo đường kính),
+      // thay vì dùng chung số bình quân cả dòng (pipePackagingCostPerKg chỉ
+      // dùng cho CVP/hoà vốn gộp — xem ghi chú đầu file). DN thiếu piecesPerBag
+      // hoặc method='flat_per_kg' ⇒ fallback packagingCostPerKg phẳng, parity
+      // tuyệt đối với trước ADR-069.
+      const pipePackagingPerKgForSku =
+        pipePackagingMethod === 'per_bag' && product.piecesPerBag !== undefined && pipeBagCostVnd !== undefined
+          ? pipeBagCostVnd / product.piecesPerBag / (product.unitWeightKgPerM * pipeResource.packagingBagLengthM!)
+          : pipeResource.packagingCostPerKg;
+      let fullCostPerKg = cost.materialPerKgFinished + pipePackagingPerKgForSku + cost.unitProcessingCostPerKg;
       if (pipeCostMethod === 'meters') {
         // ADR-047 — phân bổ chi phí máy theo GIỜ MÁY per-size (thay vì rải đều/kg).
         // Chi phí giờ máy: tổng chi phí gia công/năm ÷ giờ máy vận hành/năm.
@@ -265,8 +290,8 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         const mPerHour = product.capacityMetersPerHour ?? finishedKgPerHour / product.unitWeightKgPerM;
         const processingPerMeter = mPerHour > 0 ? mhrPipe / mPerHour : 0;
         // Quy về đ/kg để tái dùng nguyên chuỗi giá ống: giá vốn/kg = NL/kg + bao bì/kg
-        // + gia công/mét ÷ đơn trọng. (Bao bì giữ theo kg như mô hình gốc.)
-        fullCostPerKg = cost.materialPerKgFinished + pipeResource.packagingCostPerKg + processingPerMeter / product.unitWeightKgPerM;
+        // + gia công/mét ÷ đơn trọng.
+        fullCostPerKg = cost.materialPerKgFinished + pipePackagingPerKgForSku + processingPerMeter / product.unitWeightKgPerM;
       }
       const chain = calculatePipeSkuPriceChain(fullCostPerKg, product.unitWeightKgPerM, material.markupVf, costPool);
       return {

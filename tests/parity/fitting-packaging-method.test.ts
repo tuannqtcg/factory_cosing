@@ -15,8 +15,8 @@ const fittingChains = (out: ReturnType<typeof calculateScenario>) =>
   out.skuPriceChains.filter((s) => s.productKey.dn === undefined);
 
 describe('ADR-060 — fittingPackagingMethod: flat_per_kg vs per_box', () => {
-  it("mặc định = 'flat_per_kg' (doc không có field vẫn parse thành 'flat_per_kg')", () => {
-    expect(base.fittingPackagingMethod).toBe('flat_per_kg');
+  it("mặc định = 'per_box' (ADR-070 — user đã nhập đủ dữ liệu thùng carton, chốt method cố định, doc không có field parse thành 'per_box')", () => {
+    expect(base.fittingPackagingMethod).toBe('per_box');
   });
 
   it("'per_box' KHÔNG có piecesPerBox/packagingBoxCostVnd = 'flat_per_kg' (fallback tuyệt đối)", () => {

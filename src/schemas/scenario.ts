@@ -37,21 +37,18 @@ export const ScenarioInputSchema = z
     // giá cao hơn. TỔNG chi phí máy giữ nguyên, chỉ đổi cách chia giữa các size.
     // Mặc định 'kg' → doc cũ không có field vẫn parse đúng, không vỡ parity.
     pipeCostMethod: z.enum(['kg', 'meters']).default('kg'),
-    // ADR-060 — cách tính chi phí bao bì phụ kiện (2 logic song song):
-    // 'flat_per_kg' (mặc định) = packagingCostPerKg × unitWeightKg → khớp Excel
-    // v3.4 (parity); 'per_box' = packagingBoxCostVnd ÷ piecesPerBox theo TỪNG SKU
-    // (đúng bản chất đóng thùng carton, không tỷ lệ theo trọng lượng). SKU thiếu
-    // piecesPerBox hoặc resource thiếu packagingBoxCostVnd → tự fallback
-    // 'flat_per_kg' cho đúng SKU đó. Mặc định 'flat_per_kg' → doc cũ không có
-    // field vẫn parse đúng, không vỡ parity.
-    fittingPackagingMethod: z.enum(['flat_per_kg', 'per_box']).default('flat_per_kg'),
-    // ADR-069 — cách tính chi phí bao bì Ống, ĐỐI XỨNG fittingPackagingMethod
-    // ở trên: 'flat_per_kg' (mặc định) = resource.packagingCostPerKg phẳng →
-    // khớp parity trước ADR-069; 'per_bag' = quy đ/kg từ dữ liệu cuộn túi ni
-    // lông (resource.packagingBagMaterialPricePerKgVnd/RollWeightKg/RollLengthM/
-    // BagLengthM) ÷ Product.piecesPerBag THEO TỪNG DN. DN/resource thiếu dữ
-    // liệu → tự fallback 'flat_per_kg' cho đúng DN đó.
-    pipePackagingMethod: z.enum(['flat_per_kg', 'per_bag']).default('flat_per_kg'),
+    // ADR-070 — user 2026-08-03 đã nhập đủ dữ liệu đóng gói thật (giá 1 thùng +
+    // cái/thùng mọi SKU) và chốt: "mặc định phụ kiện tính theo thùng carton" —
+    // bỏ công tắc sidebar, 'per_box' giờ là MẶC ĐỊNH (trước ADR-070 là
+    // 'flat_per_kg'). 'per_box' = packagingBoxCostVnd ÷ piecesPerBox theo TỪNG
+    // SKU; SKU thiếu piecesPerBox hoặc resource thiếu packagingBoxCostVnd → tự
+    // fallback 'flat_per_kg' cho đúng SKU đó (vẫn an toàn nếu 1 SKU thiếu dữ liệu).
+    fittingPackagingMethod: z.enum(['flat_per_kg', 'per_box']).default('per_box'),
+    // ADR-070 — đối xứng dòng trên cho Ống: user chốt "mặc định bao bì Ống là
+    // túi ni lông" sau khi nhập đủ dữ liệu cuộn + cây/túi mọi DN — 'per_bag'
+    // giờ là MẶC ĐỊNH (trước ADR-070 là 'flat_per_kg'), bỏ công tắc sidebar. DN
+    // thiếu piecesPerBag hoặc resource thiếu dữ liệu cuộn → tự fallback 'flat_per_kg' cho đúng DN đó.
+    pipePackagingMethod: z.enum(['flat_per_kg', 'per_bag']).default('per_bag'),
     // ADR-055 — TỶ LỆ ĐÁY (production mix): % công suất DÒNG dành cho material
     // THAM CHIẾU (chính, vd BlazeMaster); phần còn lại cho material thứ 2 của
     // dòng (vd Corzan). Doanh thu/EBIT/biến phí VF = chính×giá_chính +

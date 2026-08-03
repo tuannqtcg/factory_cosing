@@ -24,8 +24,8 @@ const rollData = {
 const bagCostVnd = (rollData.packagingBagMaterialPricePerKgVnd * rollData.packagingRollWeightKg / rollData.packagingRollLengthM) * rollData.packagingBagLengthM;
 
 describe('ADR-069 — pipePackagingMethod: flat_per_kg vs per_bag', () => {
-  it("mặc định = 'flat_per_kg' (doc không có field vẫn parse thành 'flat_per_kg')", () => {
-    expect(base.pipePackagingMethod).toBe('flat_per_kg');
+  it("mặc định = 'per_bag' (ADR-070 — user đã nhập đủ dữ liệu cuộn/cây-túi, chốt method cố định, doc không có field parse thành 'per_bag')", () => {
+    expect(base.pipePackagingMethod).toBe('per_bag');
   });
 
   it("'per_bag' KHÔNG có dữ liệu cuộn/piecesPerBag = 'flat_per_kg' (fallback tuyệt đối)", () => {

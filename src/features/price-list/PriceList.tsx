@@ -166,12 +166,15 @@ export default function PriceList({
     }
   }, [scenario]);
 
-  const wAvgVfPerUnitByKey = useMemo(() => {
-    const m = new Map<string, number>();
+  // ADR-073 — giữ NGUYÊN chain (không chỉ vfPricePerUnit) để bung so sánh từng
+  // bậc giá (nguyên liệu/sản xuất/hoà vốn) khi user bấm vào ô giá, không riêng gì
+  // con số cuối.
+  const wAvgChainByKey = useMemo(() => {
+    const m = new Map<string, ScenarioOutput['skuPriceChains'][number]['chain']>();
     if (!wAvgInternal) return m;
     for (const sku of wAvgInternal.skuPriceChains) {
       const key = `${sku.productKey.materialId}|${sku.productKey.dn ?? `${sku.productKey.productName}|${sku.productKey.sizeLabel}`}`;
-      m.set(key, sku.chain.vfPricePerUnit);
+      m.set(key, sku.chain);
     }
     return m;
   }, [wAvgInternal]);
@@ -184,7 +187,7 @@ export default function PriceList({
         const isPipe = sku.productKey.dn !== undefined;
         // ADR-012: (tên, size) có thể trùng giữa BlazeMaster/Corzan — key phải gồm materialId.
         const key = `${sku.productKey.materialId}|${sku.productKey.dn ?? `${sku.productKey.productName}|${sku.productKey.sizeLabel}`}`;
-        const wAvgPriceBeforeVat = wAvgVfPerUnitByKey.get(key) ?? null;
+        const wAvgPriceBeforeVat = wAvgChainByKey.get(key)?.vfPricePerUnit ?? null;
         return {
           stt: i + 1,
           key,
@@ -205,7 +208,7 @@ export default function PriceList({
           chain: sku.chain,
         };
       });
-  }, [priceList, vatRate, scenario, wAvgVfPerUnitByKey]);
+  }, [priceList, vatRate, scenario, wAvgChainByKey]);
 
   const filteredRows = rows.filter((row) => {
     const q = searchQuery.toLowerCase();
@@ -246,6 +249,12 @@ export default function PriceList({
           ? s.productKey.dn === row.size
           : s.productKey.productName === row.name && s.productKey.sizeLabel === row.size),
     )?.chain;
+    // ADR-073 — user 2026-08-03 phát hiện: hover NVL cùng 3.69 USD/kg ở cả 2 cột
+    // nhưng giá VF khác nhau, cần bung breakdown TỪNG BẬC để đối chiếu chỗ nào
+    // lệch (không chỉ con số cuối). `row.key` đã đúng định dạng khoá dùng ở
+    // wAvgChainByKey (materialId|dn hoặc materialId|productName|sizeLabel).
+    const wAvgFull = wAvgChainByKey.get(row.key);
+    const matCostCmp = materialCostById.get(row.materialId);
     // ADR-065 — bóc tách chi phí bao bì (túi ni lông Ống / carton Phụ kiện)
     // NGAY TRONG khối "Giá này từ đâu ra?", user 2026-08-02: "chưa bóc tách
     // hiển thị trên bảng giá". Tính LẠI client-side từ scenario (đã có sẵn,
@@ -358,6 +367,46 @@ export default function PriceList({
               : `⚠ ${mat.name} ngoài thị trường đã lệch ${fmtPct(Math.abs(lock.evaluation.deviationPct))} — vượt ngưỡng ±${fmtPct(mat.inventory.priceLock.thresholdPct)}, giá trên đây đã tính theo giá mới; cân nhắc công bố lại bảng giá.`}
           </div>
         )}
+        {wAvgFull && full && (() => {
+          const cmpRow = (label: string, baseVal: number, wAvgVal: number, isMoney = true) => {
+            const diff = wAvgVal - baseVal;
+            const diffPct = baseVal !== 0 ? diff / baseVal : null;
+            const changed = Math.abs(diff) >= 1; // bỏ qua lệch làm tròn <1đ
+            const fmt = (v: number) => (isMoney ? fmtVnd(Math.round(v)) : v.toFixed(4));
+            return (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 90px', gap: 8, padding: '5px 0', borderBottom: `1px dashed ${tk.border}`, alignItems: 'baseline' }}>
+                <span style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{label}</span>
+                <span style={{ fontSize: ft.size.xs, ...tnum, textAlign: 'right', color: tk.ink }}>{fmt(baseVal)}</span>
+                <span style={{ fontSize: ft.size.xs, ...tnum, textAlign: 'right', color: tk.ink }}>{fmt(wAvgVal)}</span>
+                <span style={{ fontSize: ft.size.xs, ...tnum, textAlign: 'right', fontWeight: changed ? ft.weight.bold : ft.weight.regular, color: !changed ? tk.inkFaint : diff > 0 ? tk.dangerInk : tk.successInk }}>
+                  {changed ? `${diff > 0 ? '+' : ''}${diffPct !== null ? fmtPct(diffPct) : '—'}` : '='}
+                </span>
+              </div>
+            );
+          };
+          return (
+            <div style={{ marginTop: 12, padding: '10px 12px', border: `1px solid ${tk.border}`, borderRadius: rd.md, background: tk.surfaceMuted }}>
+              <div style={{ ...eyebrowStyle, marginBottom: 6 }}>Đối chiếu Baseline ↔ BQ gia quyền — bậc nào lệch?</div>
+              {matCostCmp && (
+                <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 6, lineHeight: 1.5 }}>
+                  Giá NVL: baseline {fmtUsd(matCostCmp.baseline)}/kg ({lock?.evaluation.isLocked ? 'đang khóa' : `MỞ KHÓA — thực dùng ${fmtUsd(lock?.evaluation.replacement ?? matCostCmp.baseline)}/kg`}) vs BQ gia quyền {matCostCmp.wAvg !== null ? `${fmtUsd(matCostCmp.wAvg)}/kg` : 'chưa nhập lô'}.
+                  {lock && !lock.evaluation.isLocked && ' → 2 cột lệch nhau dù USD/kg baseline hiển thị giống BQ gia quyền, vì baseline ĐANG DÙNG giá tái tạo, không phải baseline.'}
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 90px', gap: 8, padding: '2px 0 5px', borderBottom: `1px solid ${tk.borderStrong}` }}>
+                <span />
+                <span style={{ ...eyebrowStyle, textAlign: 'right' }}>Baseline</span>
+                <span style={{ ...eyebrowStyle, textAlign: 'right' }}>BQ gia quyền</span>
+                <span style={{ ...eyebrowStyle, textAlign: 'right' }}>Chênh</span>
+              </div>
+              {cmpRow('Tiền nguyên liệu/cái', full.materialCostPerUnit, wAvgFull.materialCostPerUnit)}
+              {cmpRow('Tiền sản xuất/cái', full.processingCostPerUnit, wAvgFull.processingCostPerUnit)}
+              {cmpRow('Giá hoà vốn/cái', full.breakEvenPerUnit, wAvgFull.breakEvenPerUnit)}
+              {cmpRow('Giá VF/cái', full.vfPricePerUnit, wAvgFull.vfPricePerUnit)}
+              {cmpRow('Giá niêm yết NPP (trước VAT)', full.listPriceBeforeVat, wAvgFull.listPriceBeforeVat)}
+            </div>
+          );
+        })()}
         <div style={{ marginTop: 8, fontSize: ft.size.xs, color: tk.inkMuted, lineHeight: 1.5 }}>
           Vì sao chốt ở giá VF? Đây là tầng giá duy nhất nhà máy kiểm soát được — các tầng sau (TCG, nhà phân phối, VAT)
           chỉ là phép nhân theo chính sách phân phối, tự tính, không chốt tay từng tầng.

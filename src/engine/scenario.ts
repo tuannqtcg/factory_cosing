@@ -45,18 +45,30 @@ import { landedCostPerKgVnd, type MaterialPricingInput } from './cost-pool.js';
 import { managementStatusOf } from '../schemas/product.js';
 
 /**
- * "Lô gần nhất" cho cảnh báo staleness (ADR-004) — giả định thiết kế CHƯA có
- * Excel xác nhận thứ tự lưu trữ (comment ở CompoundInventorySchema): `lots[0]`
- * là đợt nhập MỚI NHẤT (UI nhập lô mới sẽ chèn lên đầu mảng). Đổi giả định
- * này chỉ ảnh hưởng cảnh báo staleness, KHÔNG ảnh hưởng giá thành/lãi giữ kho
- * (2 số đó dùng tổng/bình quân toàn bộ lots, không phân biệt thứ tự).
+ * "Lô gần nhất" cho cảnh báo staleness (ADR-004) — ADR-064: phần tử CUỐI mảng
+ * (`lots[length-1]`) là đợt nhập MỚI NHẤT (UI thêm lô mới APPEND vào cuối, số
+ * thứ tự hiển thị tăng theo thời gian — Lô 1 = cũ nhất, Lô N = gần nhất, khớp
+ * trực giác "số cao hơn = gần đây hơn" mà user chỉ ra). TRƯỚC ADR-064: dùng
+ * `lots[0]`, giả định UI chèn lô mới lên ĐẦU mảng — gây đọc nhầm lô khi
+ * thêm/sửa không đúng thứ tự bấm nút.
+ * Bỏ qua lô CHƯA ĐIỀN (tons/qtyOnHand = 0 — placeholder mới thêm chưa nhập số,
+ * hoặc dữ liệu fixture cũ đệm rỗng) khi tìm lô gần nhất: quét NGƯỢC từ cuối,
+ * lấy lô đầu tiên có số lượng > 0. Đổi giả định này chỉ ảnh hưởng cảnh báo
+ * staleness, KHÔNG ảnh hưởng giá thành/lãi giữ kho (2 số đó dùng tổng/bình
+ * quân toàn bộ lots, không phân biệt thứ tự).
  * Export để plan-support.ts (M12.4b) dùng CÙNG quy ước khi evaluate khóa giá.
  */
-export function lastLotPriceOf(lots: Array<{ priceUsdPerKg: number }>): number | null {
-  return lots[0]?.priceUsdPerKg ?? null;
+export function lastLotPriceOf(lots: Array<{ tons: number; priceUsdPerKg: number }>): number | null {
+  for (let i = lots.length - 1; i >= 0; i--) {
+    if (lots[i]!.tons > 0) return lots[i]!.priceUsdPerKg;
+  }
+  return null;
 }
-function lastInsertLotPriceOf(lots: Array<{ unitPriceVnd: number }>): number | null {
-  return lots[0]?.unitPriceVnd ?? null;
+function lastInsertLotPriceOf(lots: Array<{ qtyOnHand: number; unitPriceVnd: number }>): number | null {
+  for (let i = lots.length - 1; i >= 0; i--) {
+    if (lots[i]!.qtyOnHand > 0) return lots[i]!.unitPriceVnd;
+  }
+  return null;
 }
 
 /**

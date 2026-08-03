@@ -176,10 +176,12 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
   // ── Lô nhập compound (ADR-002 — bình quân gia quyền). Cùng ngữ nghĩa InventoryScreen. ──
   const updLot = (id: string, i: number, key: 'tons' | 'priceUsdPerKg', v: number) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, ix) => (ix === i ? { ...l, [key]: v } : l)) } })));
+  // ADR-064 — APPEND vào cuối (không chèn lên đầu): Lô 1 = nhập đầu tiên/cũ
+  // nhất, Lô N = nhập sau cùng/gần nhất — khớp trực giác "số cao hơn = gần đây hơn".
   const addLot = (id: string) =>
     setMaterials((ms) => ms.map((m) => {
       if (m.id !== id || m.inventory.lots.length >= 5) return m; // schema max 5 lô
-      return { ...m, inventory: { ...m.inventory, lots: [{ tons: 0, priceUsdPerKg: m.inventory.replacementPriceUsdPerKg }, ...m.inventory.lots] } };
+      return { ...m, inventory: { ...m.inventory, lots: [...m.inventory.lots, { tons: 0, priceUsdPerKg: m.inventory.replacementPriceUsdPerKg }] } };
     }));
   const removeLot = (id: string, i: number) =>
     setMaterials((ms) => ms.map((m) => (m.id !== id ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.filter((_, ix) => ix !== i) } })));
@@ -702,7 +704,7 @@ export default function DataSetupScreen({ role, user, scenarioId, scenario, inte
                               )}
                               {m.inventory.lots.map((lot, i) => (
                                 <tr key={i}>
-                                  <td style={{ ...td, padding: '8px 13px', color: tk.inkMuted, fontSize: ft.size.sm }}>{i === 0 ? 'Lô gần nhất' : `Lô #${i + 1}`}</td>
+                                  <td style={{ ...td, padding: '8px 13px', color: tk.inkMuted, fontSize: ft.size.sm }}>Lô #{i + 1}{i === m.inventory.lots.length - 1 ? ' (gần nhất)' : ''}</td>
                                   <td style={{ ...td, ...rNum, padding: '8px 13px' }}><InCell value={lot.tons} onChange={(v) => updLot(m.id, i, 'tons', v)} unit="tấn" width={90} /></td>
                                   <td style={{ ...td, ...rNum, padding: '8px 13px' }}><InCell value={lot.priceUsdPerKg} onChange={(v) => updLot(m.id, i, 'priceUsdPerKg', v)} unit="USD/kg" width={90} /></td>
                                   <td style={{ ...td, ...rNum, padding: '8px 13px', fontFamily: ft.mono, color: tk.inkMuted }}>{fmtUsd(lot.tons * 1000 * lot.priceUsdPerKg)}</td>

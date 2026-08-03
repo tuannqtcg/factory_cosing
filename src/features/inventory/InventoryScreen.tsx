@@ -97,12 +97,14 @@ export default function InventoryScreen({
     setMaterials((mats) =>
       mats.map((m) => (m.id !== matId ? m : { ...m, inventory: { ...m.inventory, lots: m.inventory.lots.map((l, i) => (i === idx ? { ...l, [key]: value } : l)) } })),
     );
+  // ADR-064 — APPEND vào cuối (không chèn lên đầu): Đợt 1 = nhập đầu tiên/cũ
+  // nhất, Đợt N = nhập sau cùng/gần nhất — khớp trực giác "số cao hơn = gần đây hơn".
   const addLot = (matId: string) =>
     setMaterials((mats) =>
       mats.map((m) => {
         if (m.id !== matId) return m;
         if (m.inventory.lots.length >= 5) return m;
-        return { ...m, inventory: { ...m.inventory, lots: [{ tons: 0, priceUsdPerKg: m.inventory.replacementPriceUsdPerKg }, ...m.inventory.lots] } };
+        return { ...m, inventory: { ...m.inventory, lots: [...m.inventory.lots, { tons: 0, priceUsdPerKg: m.inventory.replacementPriceUsdPerKg }] } };
       }),
     );
   const removeLot = (matId: string, idx: number) =>
@@ -121,12 +123,13 @@ export default function InventoryScreen({
         `${e.renType}|${e.ptSize}` !== key ? e : { ...e, lots: e.lots.map((l, i) => (i === idx ? { ...l, [field]: value } : l)) },
       ),
     );
+  // ADR-064 — APPEND vào cuối, đối xứng addLot() compound ở trên.
   const addInsertLot = (key: string) =>
     setInsert((entries) =>
       entries.map((e) => {
         if (`${e.renType}|${e.ptSize}` !== key) return e;
         if (e.lots.length >= 5) return e;
-        return { ...e, lots: [{ qtyOnHand: 0, unitPriceVnd: e.replacementPriceVnd }, ...e.lots] };
+        return { ...e, lots: [...e.lots, { qtyOnHand: 0, unitPriceVnd: e.replacementPriceVnd }] };
       }),
     );
   const removeInsertLot = (key: string, idx: number) =>
@@ -380,7 +383,7 @@ export default function InventoryScreen({
               <tbody>
                 {material.inventory.lots.map((lot, i) => (
                   <tr key={i}>
-                    <td style={{ padding: '6px 8px', fontSize: ft.size.xs, color: tk.inkMuted, borderBottom: `1px solid ${tk.surfaceMuted}` }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
+                    <td style={{ padding: '6px 8px', fontSize: ft.size.xs, color: tk.inkMuted, borderBottom: `1px solid ${tk.surfaceMuted}` }}>Đợt {i + 1}{i === material.inventory.lots.length - 1 ? ' (gần nhất)' : ''}</td>
                     <td style={{ padding: '6px 8px', textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}` }}>
                       <input type="number" step="0.5" value={lot.tons} onChange={(e) => updateLot(material.id, i, 'tons', parseFloat(e.target.value) || 0)} style={{ width: 90, padding: '5px 8px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.sm, textAlign: 'right', outline: 'none', background: tk.surfaceMuted, color: tk.ink, ...tnum }} />
                     </td>
@@ -476,7 +479,7 @@ export default function InventoryScreen({
                           <tbody>
                             {entry.lots.map((lot, i) => (
                               <tr key={i}>
-                                <td style={{ fontSize: ft.size.xs, color: tk.inkMuted, padding: '4px 8px' }}>Đợt {i + 1}{i === 0 ? ' (gần nhất)' : ''}</td>
+                                <td style={{ fontSize: ft.size.xs, color: tk.inkMuted, padding: '4px 8px' }}>Đợt {i + 1}{i === entry.lots.length - 1 ? ' (gần nhất)' : ''}</td>
                                 <td style={{ padding: '4px 8px', textAlign: 'right' }}>
                                   <input type="number" value={lot.qtyOnHand} onChange={(e) => updateInsertLot(key, i, 'qtyOnHand', parseInt(e.target.value, 10) || 0)} style={{ width: 80, padding: '4px 6px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.xs, textAlign: 'right', outline: 'none', background: tk.surface, color: tk.ink, ...tnum }} />
                                 </td>

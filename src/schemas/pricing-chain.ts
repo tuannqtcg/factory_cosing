@@ -58,7 +58,15 @@ export type InventoryLot = z.infer<typeof InventoryLotSchema>;
 // có lots (lịch sử) + priceLock policy (baseline/threshold), thiếu đúng chỗ
 // nhập giá thị trường hiện hành).
 export const CompoundInventorySchema = z.object({
-  lots: z.array(InventoryLotSchema).max(5), // [0] = lô GẦN NHẤT (giả định thiết kế, dùng cho staleness warning)
+  // ADR-064 — [length-1] (PHẦN TỬ CUỐI) = lô GẦN NHẤT: UI thêm lô mới APPEND
+  // vào cuối, số thứ tự hiển thị tăng dần theo thời gian nhập (Lô 1 = nhập
+  // đầu tiên/cũ nhất, Lô N = nhập sau cùng/gần nhất) — khớp trực giác người
+  // dùng (số cao hơn = gần đây hơn). TRƯỚC ADR-064: [0] = gần nhất (UI PREPEND
+  // lô mới lên đầu) — đổi vì gây lẫn lộn thứ tự khi sửa/thêm lô không theo
+  // đúng trình tự bấm "+Thêm lô rồi điền ngay". Lô có `tons` = 0 (placeholder
+  // chưa điền / dữ liệu fixture cũ) bị BỎ QUA khi tìm "lô gần nhất" — xem
+  // `lastLotPriceOf` (scenario.ts).
+  lots: z.array(InventoryLotSchema).max(5),
   priceLock: CompoundPriceLockPolicySchema,
   replacementPriceUsdPerKg: z.number().nonnegative(),
 });
@@ -73,7 +81,7 @@ export type MetalInsertLot = z.infer<typeof MetalInsertLotSchema>;
 export const MetalInsertCatalogEntrySchema = z.object({
   renType: z.enum(['trong', 'ngoài']),
   ptSize: z.string(),
-  lots: z.array(MetalInsertLotSchema).max(5), // [0] = lô GẦN NHẤT, đối xứng CompoundInventorySchema
+  lots: z.array(MetalInsertLotSchema).max(5), // [length-1] = lô GẦN NHẤT (ADR-064), đối xứng CompoundInventorySchema
   priceLock: MetalInsertPriceLockPolicySchema,
   replacementPriceVnd: z.number().int().nonnegative(), // đối xứng replacementPriceUsdPerKg — xem comment CompoundInventorySchema
 });

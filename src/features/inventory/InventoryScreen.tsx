@@ -139,6 +139,21 @@ export default function InventoryScreen({
         return { ...e, lots: e.lots.filter((_, i) => i !== idx) };
       }),
     );
+  // ADR-075 — user phát hiện: "Giá tái tạo" ren kim loại CHỈ hiện đọc, không có
+  // ô nào sửa được `replacementPriceVnd`/`priceLock.baseline` — 2 field THẬT SỰ
+  // chảy vào công thức giá SKU ren (calculateFittingMaterialCostPerUnit qua
+  // evaluatePriceLock), khác hẳn "đợt nhập" (chỉ dùng cho sổ sách bình quân gia
+  // quyền/lãi-lỗ giữ kho, KHÔNG ăn vào giá bán). Đối xứng compound
+  // (updReplacement/chotBaseline ở DataSetupScreen mục 04), thêm ở đây vì mọi
+  // thao tác ren đã gom sẵn 1 chỗ (InventoryScreen tab "metal").
+  const setInsertReplacement = (key: string, v: number) =>
+    setInsert((entries) => entries.map((e) => (`${e.renType}|${e.ptSize}` !== key ? e : { ...e, replacementPriceVnd: v })));
+  const chotInsertBaseline = (key: string) =>
+    setInsert((entries) =>
+      entries.map((e) =>
+        `${e.renType}|${e.ptSize}` !== key ? e : { ...e, priceLock: { ...e.priceLock, baseline: e.replacementPriceVnd } },
+      ),
+    );
 
   const addMaterial = () => {
     if (!newMat.id.trim() || !newMat.name.trim()) return;
@@ -454,13 +469,22 @@ export default function InventoryScreen({
               const qty = entry.lots.reduce((s, l) => s + l.qtyOnHand, 0);
               const iAvg = weightedAvgInsertPriceVnd(entry.lots);
               const dEntry = internal.dualCosting.metalInsert.find((e) => `${e.renType}|${e.ptSize}` === key);
+              const lockEntry = internal.priceLock.metalInsertByCatalogEntry.find((e) => `${e.renType}|${e.ptSize}` === key);
+              const isLocked = lockEntry?.evaluation.isLocked ?? null;
               const isOpen = expandedInsert === key;
               return (
                 <Fragment key={key}>
                   <tr onClick={() => setExpandedInsert(isOpen ? null : key)} style={{ cursor: 'pointer' }}>
                     <td style={{ padding: '7px 8px', fontSize: ft.size.sm, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>Ren {entry.renType}</td>
                     <td style={{ padding: '7px 8px', fontSize: ft.size.sm, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>PT {entry.ptSize}</td>
-                    <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>{fmtVnd(entry.replacementPriceVnd)} đ</td>
+                    <td style={{ padding: '7px 8px', textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}` }} onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="number"
+                        value={entry.replacementPriceVnd}
+                        onChange={(e) => setInsertReplacement(key, parseInt(e.target.value, 10) || 0)}
+                        style={{ width: 90, padding: '5px 8px', border: `1px solid ${tk.ink}`, borderRadius: rd.sm, fontSize: ft.size.sm, textAlign: 'right', outline: 'none', background: tk.surfaceMuted, color: tk.ink, ...tnum }}
+                      />
+                    </td>
                     <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>{fmtVnd(qty)} cái</td>
                     <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: tk.ink }}>{iAvg !== null ? `${fmtVnd(iAvg)} đ` : '—'}</td>
                     <td style={{ padding: '7px 8px', fontSize: ft.size.sm, textAlign: 'right', borderBottom: `1px solid ${tk.surfaceMuted}`, ...tnum, color: dEntry && dEntry.holdingGainLossVnd >= 0 ? tk.successInk : tk.dangerInk }}>
@@ -471,7 +495,23 @@ export default function InventoryScreen({
                   {isOpen && (
                     <tr>
                       <td colSpan={7} style={{ background: tk.surfaceMuted, padding: '10px 14px' }}>
-                        <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 8 }}>Đợt nhập ren {entry.renType} PT{entry.ptSize} — sổ sách bình quân gia quyền (ADR-002/008)</div>
+                        {/* ADR-075 — giá THẬT dùng tính giá SKU (khác "đợt nhập" bên dưới, chỉ để sổ sách). */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 10, padding: '8px 10px', background: tk.surface, border: `1px solid ${tk.border}`, borderRadius: rd.sm }}>
+                          <span style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>
+                            Giá đang DÙNG ĐỂ TÍNH giá SKU: <b style={{ color: tk.ink }}>{lockEntry ? fmtVnd(lockEntry.evaluation.pricingPrice) : fmtVnd(entry.priceLock.baseline)} đ/cái</b>
+                            {' '}({isLocked === false ? 'giá tái tạo, vì đang MỞ KHÓA' : 'baseline đã chốt'})
+                          </span>
+                          <span style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>Baseline đã chốt: {fmtVnd(entry.priceLock.baseline)} đ</span>
+                          {isLocked !== null && (
+                            <span style={{ fontSize: ft.size.eyebrow, fontWeight: ft.weight.bold, color: isLocked ? tk.successInk : tk.dangerInk }}>{isLocked ? '🔒 KHÓA' : '🔓 MỞ KHÓA'}</span>
+                          )}
+                          {isLocked === false && (
+                            <button onClick={() => chotInsertBaseline(key)} style={{ fontSize: 9.5, padding: '3px 7px', borderRadius: rd.sm, border: `1px solid ${tk.ink}`, background: tk.surface, color: tk.ink, cursor: 'pointer', fontWeight: ft.weight.bold }}>
+                              Chốt baseline = giá tái tạo
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ fontSize: ft.size.xs, color: tk.inkMuted, marginBottom: 8 }}>Đợt nhập ren {entry.renType} PT{entry.ptSize} — sổ sách bình quân gia quyền (ADR-002/008), KHÔNG ăn vào giá SKU</div>
                         <table style={{ maxWidth: 440, borderCollapse: 'collapse', marginBottom: 8 }}>
                           <thead>
                             <tr>{['Đợt', 'Số lượng', 'đ/cái', ''].map((h) => <th key={h} style={{ fontSize: ft.size.eyebrow, color: tk.inkMuted, textAlign: 'right', padding: '4px 8px' }}>{h}</th>)}</tr>

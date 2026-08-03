@@ -55,6 +55,36 @@ export function computeMixAvgProductivityKgPerMachineHour(products: FittingProdu
   return kgPerMachineHourBySize.reduce((sum, v) => sum + v, 0) / kgPerMachineHourBySize.length;
 }
 
+/**
+ * ADR-065 — quy đ/kg CHO CVP/hoà vốn khi `fittingPackagingMethod` = 'per_box'
+ * (ADR-060): trước ADR-065, CVP/hoà vốn LUÔN dùng `resource.packagingCostPerKg`
+ * phẳng dù đã cấu hình theo thùng carton (chỉ giá bán từng SKU đổi qua
+ * `packagingCostPerUnitOverride`, KHÔNG lan sang hoà vốn — user phát hiện
+ * 2026-08-02). Mỗi SKU có `piecesPerBox`: đ/kg = (packagingBoxCostVnd ÷
+ * piecesPerBox) ÷ unitWeightKg (đúng công thức per-unit ở
+ * `calculateFittingMaterialCostPerUnit`, quy đổi sang /kg); SKU thiếu
+ * `piecesPerBox` (chưa nhập tay — ADR-060) fallback phẳng cho riêng SKU đó.
+ * Chưa có dữ liệu SẢN LƯỢNG từng SKU (capacity model tính GỘP theo giờ máy,
+ * không tách theo SKU) nên lấy TRUNG BÌNH KHÔNG TRỌNG SỐ qua mọi SKU — cùng
+ * giả định "chưa có mix thật" đã dùng ở `computeMixAvgProductivityKgPerMachineHour`
+ * phía trên, KHÔNG phát minh công thức trọng số mới. method='flat_per_kg'
+ * (mặc định) hoặc thiếu `packagingBoxCostVnd`/không có SKU nào ⇒ trả nguyên
+ * `resource.packagingCostPerKg` — parity tuyệt đối với trước ADR-065.
+ */
+export function averageFittingPackagingCostPerKg(
+  products: readonly FittingProduct[],
+  resource: MachineHourResource,
+  method: 'flat_per_kg' | 'per_box',
+): number {
+  if (method !== 'per_box' || resource.packagingBoxCostVnd === undefined || products.length === 0) {
+    return resource.packagingCostPerKg;
+  }
+  const boxCost = resource.packagingBoxCostVnd;
+  const perKgOf = (p: FittingProduct) =>
+    p.piecesPerBox !== undefined ? boxCost / p.piecesPerBox / p.unitWeightKg : resource.packagingCostPerKg;
+  return products.reduce((sum, p) => sum + perKgOf(p), 0) / products.length;
+}
+
 export function calculateFittingCapacity(
   resource: MachineHourResource,
   fittingProducts: FittingProduct[],

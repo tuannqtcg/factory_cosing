@@ -15,6 +15,8 @@ export interface PipeCvp {
   fixedCostPerYear: number;
   breakEvenKgYear: number;
   pctOfNormalCapacity: number;
+  /** ADR-065 — bao bì túi ni lông/kg (Ống LUÔN tính theo kg, không có chế độ theo thùng — đối xứng FittingCvp.packagingCostPerKg cho UI hiển thị). */
+  packagingCostPerKg: number;
 }
 
 export function calculatePipeCvp(
@@ -33,7 +35,7 @@ export function calculatePipeCvp(
   const breakEvenKgYear = fixedCostPerYear / contributionMarginPerKg;
   const pctOfNormalCapacity = breakEvenKgYear / capacity.normalCapacityKgYear;
 
-  return { variableCostPerKg, contributionMarginPerKg, fixedCostPerYear, breakEvenKgYear, pctOfNormalCapacity };
+  return { variableCostPerKg, contributionMarginPerKg, fixedCostPerYear, breakEvenKgYear, pctOfNormalCapacity, packagingCostPerKg: resource.packagingCostPerKg };
 }
 
 export interface FittingCvp {
@@ -43,21 +45,28 @@ export interface FittingCvp {
   breakEvenKgYear: number;
   breakEvenMachineHours: number;
   pctOfUtilizedHours: number;
+  /** ADR-065 — giá trị bao bì/kg THẬT SỰ dùng trong variableCostPerKg (flat hoặc bình quân theo thùng). */
+  packagingCostPerKg: number;
 }
 
 export function calculateFittingCvp(
   resource: MachineHourResource,
   capacity: FittingCapacity,
   cost: FittingCostAtNormalCapacity,
+  // ADR-065 — đ/kg bao bì THAY cho resource.packagingCostPerKg phẳng, khi
+  // fittingPackagingMethod='per_box' (xem averageFittingPackagingCostPerKg,
+  // fitting.ts). undefined (mặc định) = giữ nguyên hành vi cũ (parity).
+  packagingCostPerKgOverride?: number,
 ): FittingCvp {
   // ADR-011: avgProductivityKgPerMachineHour có thể là GHI ĐÈ (resource) hoặc
   // tự tính bottom-up (fitting.ts) — đọc lại từ capacity đã tính thay vì tự
   // giải quyết override 1 lần nữa ở đây (capacity.estimatedProductionKgYear =
   // normalMachineHoursUtilized × avgProductivityKgPerMachineHour đã dùng).
   const avgProductivityKgPerMachineHour = capacity.estimatedProductionKgYear / capacity.normalMachineHoursUtilized;
+  const packagingCostPerKg = packagingCostPerKgOverride ?? resource.packagingCostPerKg;
   const variableCostPerKg =
     cost.compoundLandedPerKg / resource.yieldRate +
-    resource.packagingCostPerKg +
+    packagingCostPerKg +
     (resource.electricityKwPerMachineHour * resource.electricityPricePerKwh +
       resource.waterM3PerMachineHour * resource.waterPricePerM3) /
       avgProductivityKgPerMachineHour;
@@ -76,5 +85,6 @@ export function calculateFittingCvp(
     breakEvenKgYear,
     breakEvenMachineHours,
     pctOfUtilizedHours,
+    packagingCostPerKg,
   };
 }

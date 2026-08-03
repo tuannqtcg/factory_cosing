@@ -28,6 +28,7 @@ import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity, type PipeCost
 import {
   calculateFittingCapacity,
   calculateFittingCostAtNormalCapacity,
+  averageFittingPackagingCostPerKg,
   type FittingCostAtNormalCapacity,
 } from './fitting.js';
 import { calculatePipeCvp, calculateFittingCvp } from './cvp.js';
@@ -188,10 +189,13 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   const pipeCvpByMaterial = new Map(
     pipeMaterialIds.map((id) => [id, calculatePipeCvp(pipeResource, pipeCapacity, pipeCostByMaterial.get(id)!)]),
   );
+  // ADR-065 — hoà vốn Phụ kiện dùng ĐÚNG bao bì đang cấu hình (per_box hay
+  // flat), thay vì luôn phẳng — xem averageFittingPackagingCostPerKg (fitting.ts).
+  const fittingPackagingCostPerKg = averageFittingPackagingCostPerKg(fittingProducts, fittingResource, fittingPackagingMethod);
   const fittingCvpByMaterial = new Map(
     fittingMaterialIds.map((id) => [
       id,
-      calculateFittingCvp(fittingResource, fittingCapacity, fittingCostByMaterial.get(id)!),
+      calculateFittingCvp(fittingResource, fittingCapacity, fittingCostByMaterial.get(id)!, fittingPackagingCostPerKg),
     ]),
   );
 
@@ -416,6 +420,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
             fixedCostPerYear: cvp.fixedCostPerYear,
             breakEvenKgYear: cvp.breakEvenKgYear,
             pctOfNormalCapacity: cvp.pctOfNormalCapacity,
+            packagingCostPerKg: cvp.packagingCostPerKg,
           };
         }),
         ...fittingMaterialIds.map((id) => {
@@ -429,6 +434,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
             breakEvenKgYear: cvp.breakEvenKgYear,
             breakEvenMachineHours: cvp.breakEvenMachineHours,
             pctOfUtilizedHours: cvp.pctOfUtilizedHours,
+            packagingCostPerKg: cvp.packagingCostPerKg,
           };
         }),
       ],

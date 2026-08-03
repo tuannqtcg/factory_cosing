@@ -84,6 +84,7 @@ const PipeCvpOutputSchema = z.object({
   fixedCostPerYear: z.number(),
   breakEvenKgYear: z.number(),
   pctOfNormalCapacity: z.number(),
+  packagingCostPerKg: z.number(), // ADR-065 — bao bì túi ni lông/kg thực tế dùng trong variableCostPerKg
 });
 const FittingCvpOutputSchema = z.object({
   line: z.literal('fitting'),
@@ -94,6 +95,7 @@ const FittingCvpOutputSchema = z.object({
   breakEvenKgYear: z.number(),
   breakEvenMachineHours: z.number(),
   pctOfUtilizedHours: z.number(),
+  packagingCostPerKg: z.number(), // ADR-065 — bao bì (flat hoặc bình quân theo thùng) thực tế dùng trong variableCostPerKg
 });
 
 export const ScenarioOutputSchema = z.object({

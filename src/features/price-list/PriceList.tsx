@@ -167,6 +167,33 @@ export default function PriceList({
           ? s.productKey.dn === row.size
           : s.productKey.productName === row.name && s.productKey.sizeLabel === row.size),
     )?.chain;
+    // ADR-065 — bóc tách chi phí bao bì (túi ni lông Ống / carton Phụ kiện)
+    // NGAY TRONG khối "Giá này từ đâu ra?", user 2026-08-02: "chưa bóc tách
+    // hiển thị trên bảng giá". Tính LẠI client-side từ scenario (đã có sẵn,
+    // sales-safe: chỉ non-null cho vai admin/pricing) bằng ĐÚNG công thức
+    // engine đang dùng (scenario.ts packagingCostPerUnitOverride cho Phụ kiện;
+    // packagingCostPerKg × unitWeightKgPerM cho Ống — luôn phẳng, ADR-062) —
+    // KHÔNG phát minh công thức mới, không cần thêm field vào SkuPriceChainSchema.
+    const product = scenario?.products.find((p) =>
+      p.materialId === row.materialId &&
+      (p.kind === 'pipe' ? p.dn === row.size : p.productName === row.name && p.sizeLabel === row.size),
+    );
+    const packagingPerUnit = (() => {
+      if (!product || !scenario) return null;
+      if (product.kind === 'pipe') {
+        const pipeResource = scenario.resources.pipe as { packagingCostPerKg: number };
+        return pipeResource.packagingCostPerKg * product.unitWeightKgPerM;
+      }
+      const fittingResource = scenario.resources.fitting as { packagingCostPerKg: number; packagingBoxCostVnd?: number };
+      const method = scenario.fittingPackagingMethod ?? 'flat_per_kg';
+      return method === 'per_box' && product.piecesPerBox !== undefined && fittingResource.packagingBoxCostVnd !== undefined
+        ? fittingResource.packagingBoxCostVnd / product.piecesPerBox
+        : product.unitWeightKg * fittingResource.packagingCostPerKg;
+    })();
+    const packagingNote =
+      product?.kind === 'fitting' && (scenario?.fittingPackagingMethod ?? 'flat_per_kg') === 'per_box' && product.piecesPerBox !== undefined
+        ? 'theo thùng carton'
+        : 'theo kg (túi ni lông/bao bì phẳng)';
     const markupImplied = full && full.breakEvenPerUnit > 0 ? full.vfPricePerUnit / full.breakEvenPerUnit - 1 : null;
     const priceStep = (label: string, value: string, note?: string, strong?: boolean) => (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, padding: '6px 0', borderBottom: `1px dashed ${tk.border}` }}>
@@ -194,12 +221,19 @@ export default function PriceList({
             const ladder = isPipe
               ? internal?.priceLadder.byLineMaterial.find((e) => e.line === 'pipe' && e.materialId === row.materialId)?.ladder
               : null;
+            const packagingSubStep = packagingPerUnit !== null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '3px 0 3px 14px' }}>
+                <span style={{ fontSize: ft.size.xs, color: tk.inkFaint }}>— trong đó bao bì ({packagingNote})</span>
+                <span style={{ fontSize: ft.size.xs, color: tk.inkFaint, ...tnum, whiteSpace: 'nowrap' }}>{fmtVnd(Math.round(packagingPerUnit))}</span>
+              </div>
+            );
             if (isPipe && ladder && ladder.breakEvenFullCost > 0) {
               const w = full.breakEvenPerUnit / ladder.breakEvenFullCost; // kg/đơn vị
               const varPerUnit = ladder.variableCostFloor * w;
               return (
                 <>
                   {priceStep('① Chi phí biến đổi', fmtVnd(Math.round(varPerUnit)), `${mat?.name ?? 'nguyên liệu'} theo giá mua mới + điện, nước, bao bì`)}
+                  {packagingSubStep}
                   {priceStep('② Chi phí cố định phân bổ', fmtVnd(Math.round(full.breakEvenPerUnit - varPerUnit)), 'khấu hao máy/khuôn, lương, chi phí chung')}
                   {priceStep('③ = Giá thành đầy đủ (điểm hoà vốn)', fmtVnd(Math.round(full.breakEvenPerUnit)), 'bán đúng mức này thì không lãi không lỗ')}
                   {priceStep(`④ + Phần lời của nhà máy${markupImplied !== null ? ` (${fmtPct(markupImplied)})` : ''}`, fmtVnd(Math.round(full.vfPricePerUnit - full.breakEvenPerUnit)), 'chỉnh ở màn Tham Số (markup VF)')}
@@ -209,6 +243,7 @@ export default function PriceList({
             return (
               <>
                 {priceStep('① Tiền nguyên liệu', fmtVnd(Math.round(full.materialCostPerUnit)), `${mat?.name ?? ''} theo giá mua mới hôm nay${full.processingCostPerUnit > 0 ? ' (+ ren kim loại nếu có)' : ''}`)}
+                {packagingSubStep}
                 {priceStep('② Tiền sản xuất (giờ máy ép)', fmtVnd(Math.round(full.processingCostPerUnit)), 'lương, điện, khấu hao máy/khuôn, quản lý — theo giờ máy')}
                 {priceStep('③ = Giá thành đầy đủ (điểm hoà vốn)', fmtVnd(Math.round(full.breakEvenPerUnit)), 'bán đúng mức này thì không lãi không lỗ')}
                 {priceStep(`④ + Phần lời của nhà máy${markupImplied !== null ? ` (${fmtPct(markupImplied)})` : ''}`, fmtVnd(Math.round(full.vfPricePerUnit - full.breakEvenPerUnit)), 'chỉnh ở màn Tham Số (markup VF)')}

@@ -640,6 +640,11 @@ export default function PriceList({
                 ? `Nguyên liệu ${row.matName}: ĐANG KHÓA GIÁ ở baseline ${fmtUsd(matCost.baseline)}/kg — dùng tính giá VF niêm yết này.`
                 : `Nguyên liệu ${row.matName}: ĐANG MỞ KHÓA (lệch ${fmtPct(lockEval.deviationPct)} so với baseline ${fmtUsd(matCost.baseline)}/kg, vượt ngưỡng) — giá VF niêm yết này ĐANG DÙNG GIÁ TÁI TẠO ${fmtUsd(lockEval.replacement)}/kg, KHÔNG PHẢI baseline.`;
           const wAvgTitle = `Nguyên liệu ${row.matName}: giá bình quân gia quyền ${matCost?.wAvg !== null && matCost?.wAvg !== undefined ? `${fmtUsd(matCost.wAvg)}/kg` : 'chưa nhập lô'} — giá vốn thực mua theo lô, LUÔN dùng đúng giá này tính cột (bỏ qua khóa/mở khóa thật của baseline).`;
+          // ADR-072c — user: "phải xác định giá nguyên liệu đang áp dụng ở đó là bao
+          // nhiêu" — không chỉ nói qua tooltip, hiện THẲNG con số áp dụng dưới mỗi giá.
+          // Cột baseline: dùng replacement khi ĐANG MỞ KHÓA (không phải baseline).
+          const appliedBaselinePrice = !matCost ? null : !lockEval ? matCost.baseline : lockEval.isLocked ? matCost.baseline : lockEval.replacement;
+          const baselineLocked = lockEval?.isLocked ?? null; // null = không rõ (vai Sales, không có `internal`)
           return (
             <div
               key={row.key}
@@ -656,11 +661,21 @@ export default function PriceList({
               <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.designationCode}</div>
               <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.classificationCode}</div>
               <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{row.unit}</div>
-              <div title={baselineTitle} style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: tk.ink, cursor: 'help' }}>
-                {fmtVnd(baselineShown)}
+              <div title={baselineTitle} style={{ textAlign: 'right', cursor: 'help' }}>
+                <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, ...tnum, color: tk.ink }}>{fmtVnd(baselineShown)}</div>
+                {appliedBaselinePrice !== null && (
+                  <div style={{ fontSize: ft.size.eyebrow, ...tnum, color: baselineLocked === false ? tk.warningInk : tk.inkFaint, marginTop: 2 }}>
+                    NVL {baselineLocked === false ? '🔓 ' : baselineLocked === true ? '🔒 ' : ''}{fmtUsd(appliedBaselinePrice)}/kg
+                  </div>
+                )}
               </div>
-              <div title={wAvgTitle} style={{ fontSize: ft.size.sm, textAlign: 'right', ...tnum, color: tk.inkMuted, cursor: 'help' }}>
-                {wAvgShown !== null ? fmtVnd(wAvgShown) : <span style={{ color: tk.inkFaint }}>— chưa nhập lô</span>}
+              <div title={wAvgTitle} style={{ textAlign: 'right', cursor: 'help' }}>
+                <div style={{ fontSize: ft.size.sm, ...tnum, color: tk.inkMuted }}>
+                  {wAvgShown !== null ? fmtVnd(wAvgShown) : <span style={{ color: tk.inkFaint }}>— chưa nhập lô</span>}
+                </div>
+                {matCost?.wAvg !== null && matCost?.wAvg !== undefined && (
+                  <div style={{ fontSize: ft.size.eyebrow, ...tnum, color: tk.inkFaint, marginTop: 2 }}>NVL {fmtUsd(matCost.wAvg)}/kg</div>
+                )}
               </div>
               <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: deltaPct === null ? tk.inkFaint : deltaPct > 0 ? tk.dangerInk : tk.successInk }}>
                 {deltaPct === null ? '—' : `${deltaPct >= 0 ? '+' : ''}${fmtPct(deltaPct)}`}

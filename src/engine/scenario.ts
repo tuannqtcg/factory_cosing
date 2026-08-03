@@ -153,6 +153,13 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   const pipeCapacity = effectivePipeCapacity(pipeResource, pipeProducts as PipeProduct[], pipeCostMethod, pipeMix);
   const fittingCapacity = calculateFittingCapacity(fittingResource, fittingProducts);
 
+  // ADR-065/066 — bao bì Phụ kiện ĐÚNG theo cách đang cấu hình (per_box hay
+  // flat) — xem averageFittingPackagingCostPerKg (fitting.ts). Tính 1 LẦN,
+  // dùng CHUNG cho cả fullCostPerKgRef (mục 3 dưới) VÀ CVP (mục 4) — 2 công
+  // thức đó được thiết kế cộng khớp nhau (tổng 5 tầng cost-breakdown.ts =
+  // fullCostPerKgRef), lệch giá trị bao bì giữa 2 nơi sẽ phá vỡ tính nhất quán.
+  const fittingPackagingCostPerKg = averageFittingPackagingCostPerKg(fittingProducts, fittingResource, fittingPackagingMethod);
+
   // ── 3. Chi phí SX tại CS bình thường — 1 lần cho MỖI (line, material) ──────
   // Cross-ref công suất dòng kia là số kg (material-independent) nên tính 1 lần.
   const pipeCostByMaterial = new Map<string, PipeCostAtNormalCapacity>();
@@ -179,6 +186,7 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
         otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
         material: pricingInputOf(id),
         asOfYear,
+        packagingCostPerKgOverride: fittingPackagingCostPerKg,
       }),
     );
   }
@@ -189,9 +197,6 @@ export function calculateScenario(input: ScenarioInput): ScenarioOutput {
   const pipeCvpByMaterial = new Map(
     pipeMaterialIds.map((id) => [id, calculatePipeCvp(pipeResource, pipeCapacity, pipeCostByMaterial.get(id)!)]),
   );
-  // ADR-065 — hoà vốn Phụ kiện dùng ĐÚNG bao bì đang cấu hình (per_box hay
-  // flat), thay vì luôn phẳng — xem averageFittingPackagingCostPerKg (fitting.ts).
-  const fittingPackagingCostPerKg = averageFittingPackagingCostPerKg(fittingProducts, fittingResource, fittingPackagingMethod);
   const fittingCvpByMaterial = new Map(
     fittingMaterialIds.map((id) => [
       id,

@@ -124,6 +124,16 @@ export interface FittingCostAtNormalCapacityInputs {
   material: MaterialPricingInput;
   /** ADR-007 — mốc thời gian đánh giá khấu hao khuôn động (src/engine/mold-depreciation.ts). */
   asOfYear: number;
+  /**
+   * ADR-065 — đ/kg bao bì THAY cho resource.packagingCostPerKg phẳng, khi
+   * fittingPackagingMethod='per_box' (averageFittingPackagingCostPerKg phía
+   * trên). undefined (mặc định) = giữ nguyên hành vi cũ (parity). PHẢI truyền
+   * CÙNG giá trị đã đưa vào calculateFittingCvp() cho cùng scenario — nếu
+   * không, fullCostPerKgRef (ở đây) và variableCostPerKg+fixedCostPerYear/kg
+   * (CVP) sẽ LỆCH nhau (2 công thức vốn được thiết kế cộng khớp — xem
+   * cost-breakdown.ts, tổng 5 tầng = fullCostPerKgRef).
+   */
+  packagingCostPerKgOverride?: number;
 }
 
 export interface FittingCostAtNormalCapacity {
@@ -142,6 +152,8 @@ export interface FittingCostAtNormalCapacity {
   processingCostPerKgRef: number;
   fullCostPerKgRef: number;
   vfPricePerKgRef: number;
+  /** ADR-065 — giá trị bao bì/kg THẬT SỰ dùng trong fullCostPerKgRef (flat hoặc bình quân theo thùng). */
+  packagingCostPerKg: number;
 }
 
 export function calculateFittingCostAtNormalCapacity(
@@ -188,7 +200,8 @@ export function calculateFittingCostAtNormalCapacity(
   const mhrPerMachineHour = totalProcessingCostPerYear / capacity.normalMachineHoursUtilized;
 
   const processingCostPerKgRef = totalProcessingCostPerYear / capacity.estimatedProductionKgYear;
-  const fullCostPerKgRef = materialPerKgFinishedRef + resource.packagingCostPerKg + processingCostPerKgRef;
+  const packagingCostPerKg = inputs.packagingCostPerKgOverride ?? resource.packagingCostPerKg;
+  const fullCostPerKgRef = materialPerKgFinishedRef + packagingCostPerKg + processingCostPerKgRef;
   const vfPricePerKgRef = fullCostPerKgRef * (1 + material.markupVf); // ADR-012 — markup VF theo material
 
   return {
@@ -207,5 +220,6 @@ export function calculateFittingCostAtNormalCapacity(
     processingCostPerKgRef,
     fullCostPerKgRef,
     vfPricePerKgRef,
+    packagingCostPerKg,
   };
 }

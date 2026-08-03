@@ -19,7 +19,7 @@ import type { ContinuousKgResource, MachineHourResource } from '../schemas/resou
 import type { PipeProduct } from '../schemas/product.js';
 import { calculateScenario, referenceMaterialOf, lastLotPriceOf } from './scenario.js';
 import { effectivePipeCapacity, calculatePipeCostAtNormalCapacity } from './pipe.js';
-import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity } from './fitting.js';
+import { calculateFittingCapacity, calculateFittingCostAtNormalCapacity, averageFittingPackagingCostPerKg } from './fitting.js';
 import { evaluatePriceLock } from './price-lock.js';
 import type { MaterialPricingInput } from './cost-pool.js';
 import { pipeCostLayersPerKg, fittingCostLayersPerKg, type CostLayersPerKg } from './cost-breakdown.js';
@@ -143,6 +143,10 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     otherLineEstimatedProductionKgYear: fittingCapacity.estimatedProductionKgYear,
     material: pricingInputOf(pipeRefMaterial),
   });
+  // ADR-065/066 — bao bì Phụ kiện ĐÚNG theo cách đang cấu hình (per_box hay
+  // flat), dùng CHUNG cho fullCostPerKgRef ở đây VÀ thác chi phí bên dưới —
+  // xem ghi chú tương tự ở scenario.ts.
+  const fittingPackagingCostPerKg = averageFittingPackagingCostPerKg(fittingProducts, fittingResource, scenario.fittingPackagingMethod ?? 'flat_per_kg');
   const fittingCost = calculateFittingCostAtNormalCapacity({
     resource: fittingResource,
     capacity: fittingCapacity,
@@ -150,6 +154,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
     otherLineNormalCapacityKgYear: pipeCapacity.normalCapacityKgYear,
     material: pricingInputOf(fittingRefMaterial),
     asOfYear,
+    packagingCostPerKgOverride: fittingPackagingCostPerKg,
   });
 
   const ladderOf = (line: 'pipe' | 'fitting', materialId: string) => {
@@ -316,7 +321,7 @@ export function calculateDashboardKpis(scenario: ScenarioInput): DashboardKpis {
           ? { method: 'per_box', packagingBoxCostVnd: fittingResource.packagingBoxCostVnd }
           : { method: 'flat_per_kg', packagingCostPerKgVnd: fittingResource.packagingCostPerKg },
     },
-    pipeCostLayers: pipeCostLayersPerKg(pipeCost, pipeResource, pipeCapacity.normalCapacityKgYear),
-    fittingCostLayers: fittingCostLayersPerKg(fittingCost, fittingResource, fittingCapacity.estimatedProductionKgYear),
+    pipeCostLayers: pipeCostLayersPerKg(pipeCost, pipeResource.packagingCostPerKg, pipeCapacity.normalCapacityKgYear),
+    fittingCostLayers: fittingCostLayersPerKg(fittingCost, fittingCost.packagingCostPerKg, fittingCapacity.estimatedProductionKgYear),
   };
 }

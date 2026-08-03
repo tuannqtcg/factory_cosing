@@ -131,3 +131,27 @@ describe('ADR-065 — CVP/hoà vốn Phụ kiện đọc ĐÚNG bao bì đang c�
     expect(pipeCvpOf(perBox).breakEvenKgYear).toBeCloseTo(pipeCvpOf(flat).breakEvenKgYear, 6);
   });
 });
+
+// ADR-066 — CVP (bậc 1 thang giá, variableCostFloor) và fullCostPerKgRef
+// (bậc 2, breakEvenFullCost) được THIẾT KẾ cộng khớp nhau: breakEvenFullCost
+// = variableCostPerKg + fixedCostPerYear/kg (2 công thức độc lập ở cvp.ts và
+// fitting.ts nhưng dùng CHUNG packagingCostPerKg). Nếu chỉ sửa 1 trong 2 nơi
+// theo per_box mà quên nơi kia, 2 bậc sẽ LỆCH nhau — test này khoá bất biến
+// đó lại, không chỉ verify từng số riêng lẻ đổi.
+describe('ADR-066 — CVP và fullCostPerKgRef (thang giá bậc 1↔2) vẫn CỘNG KHỚP dưới per_box', () => {
+  it("breakEvenFullCost (bậc 2) = variableCostPerKg + fixedCostPerYear/kg (bậc 1 + định phí/kg) — đúng cả 'per_box'", () => {
+    const boxCostVnd = 12000;
+    const withBoxData = {
+      ...base,
+      fittingPackagingMethod: 'per_box' as const,
+      resources: { ...base.resources, fitting: { ...base.resources.fitting, packagingBoxCostVnd: boxCostVnd } },
+      products: base.products.map((p) => (p.kind === 'fitting' ? { ...p, piecesPerBox: 100 } : p)),
+    };
+    const out = calculateScenario(withBoxData);
+    const fittingCvp = out.cvp.byLineMaterial.find((e) => e.line === 'fitting')!;
+    const fittingLadder = out.priceLadder.byLineMaterial.find((e) => e.line === 'fitting')!.ladder;
+    const kg = out.capacity.fitting.estimatedProductionKgYear;
+    const impliedFullCost = fittingCvp.variableCostPerKg + fittingCvp.fixedCostPerYear / kg;
+    expect(fittingLadder.breakEvenFullCost).toBeCloseTo(impliedFullCost, 4);
+  });
+});

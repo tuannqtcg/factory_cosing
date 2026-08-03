@@ -1,15 +1,22 @@
-// Thác chi phí đ/kg — trình bày 4 tầng (tiền mặt → +chung → +khấu hao → +nguyên
-// liệu) để giải thích "tiền đi đâu" giữa cảm nhận vận hành và giá thành đầy đủ.
+// Thác chi phí đ/kg — trình bày 5 tầng (tiền mặt → +bao bì → +chung → +khấu
+// hao → +nguyên liệu) để giải thích "tiền đi đâu" giữa cảm nhận vận hành và
+// giá thành đầy đủ.
 // THUẦN TRÌNH BÀY: đọc CostLayersPerKg (engine cost-breakdown.ts), không tính lại.
-// ADR-033 roll-out: khung/chữ dùng design tokens; 4 màu tầng là MÀU BIỂU ĐỒ hợp
+// ADR-033 roll-out: khung/chữ dùng design tokens; 5 màu tầng là MÀU BIỂU ĐỒ hợp
 // lệ (dữ liệu, không phải trang trí UI) nên giữ hue riêng cho từng tầng.
+// ADR-066 — bao bì TÁCH RIÊNG khỏi "Gia công trực tiếp" (user 2026-08-02:
+// "toàn bị gộp vào thế này") — trước đây gộp chung, không thấy được số bao bì
+// cụ thể. Dùng inkMuted (xám trung tính) thay vì success/warning/danger cho
+// tầng này — 3 màu đó đang mang nghĩa tín hiệu (tốt/cảnh báo) ở nơi khác
+// trong app, bao bì không phải tín hiệu cảnh báo nên không dùng chung hue.
 import type { CostLayersPerKg } from '../../engine/cost-breakdown.js';
 import { fmtVnd } from '../../lib/format.js';
 import { color, font, radius, tnum } from '../../design/tokens.js';
 
-type LayerKey = 'cashDirect' | 'sharedOverhead' | 'depreciation' | 'material';
+type LayerKey = 'cashDirect' | 'packaging' | 'sharedOverhead' | 'depreciation' | 'material';
 const LAYER_META: Array<{ key: LayerKey; label: string; color: string; note: string }> = [
-  { key: 'cashDirect', label: 'Gia công trực tiếp', color: color.success, note: 'nhân công · điện · nước · bảo trì · bao bì — chi phí gia công trực tiếp, khớp cảm nhận quản đốc (KHÔNG gánh chung/khấu hao)' },
+  { key: 'cashDirect', label: 'Gia công trực tiếp', color: color.success, note: 'nhân công · điện · nước · bảo trì — chi phí gia công trực tiếp, khớp cảm nhận quản đốc (KHÔNG gánh chung/khấu hao/bao bì)' },
+  { key: 'packaging', label: 'Bao bì', color: color.inkMuted, note: 'túi ni lông (Ống, luôn theo kg) hoặc carton/thùng hoặc phẳng theo kg (Phụ kiện, tuỳ cấu hình ở Thiết Lập)' },
   { key: 'sharedOverhead', label: 'Chi phí chung phân bổ', color: color.warningInk, note: 'kiểm định · thuê đất · khấu hao tài sản chung' },
   { key: 'depreciation', label: 'Khấu hao máy + khuôn', color: color.warning, note: 'không chi bằng tiền mặt → dễ bỏ quên; GIẢM mạnh khi tăng ca / lấp công suất' },
   { key: 'material', label: 'Nguyên liệu (nhập USD)', color: color.inkFaint, note: 'sàn giá cứng — bán dưới mức này là lỗ ngay từ hạt nhựa' },

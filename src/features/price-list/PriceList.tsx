@@ -128,6 +128,9 @@ export default function PriceList({
       return { id: m.id, name: m.name, baseline, wAvg, deviationPct };
     });
   }, [scenario]);
+  // ADR-072 — tra nhanh giá nguyên liệu theo materialId để hiện hover trên cột
+  // "Giá VF trước/có VAT" (baseline) và "Giá theo BQ gia quyền" (wAvg).
+  const materialCostById = useMemo(() => new Map(materialCostSummary.map((m) => [m.id, m])), [materialCostSummary]);
 
   // Dòng hiển thị: chỉ SKU active (pending_mold ẩn theo ADR-007/008), STT đánh
   // trên danh sách active ĐẦY ĐỦ (giữ nguyên khi search/filter — giống prototype).
@@ -615,6 +618,9 @@ export default function PriceList({
           const wAvgShown = priceType === 'vat' ? row.wAvgPriceWithVat : row.wAvgPriceBeforeVat;
           const baselineShown = priceType === 'vat' ? row.priceWithVat : row.priceBeforeVat;
           const deltaPct = wAvgShown !== null && baselineShown > 0 ? (wAvgShown - baselineShown) / baselineShown : null;
+          const matCost = materialCostById.get(row.materialId);
+          const baselineTitle = `Nguyên liệu ${row.matName}: giá baseline đã chốt ${matCost ? `${fmtUsd(matCost.baseline)}/kg` : '—'} — dùng tính giá VF niêm yết này.`;
+          const wAvgTitle = `Nguyên liệu ${row.matName}: giá bình quân gia quyền ${matCost?.wAvg !== null && matCost?.wAvg !== undefined ? `${fmtUsd(matCost.wAvg)}/kg` : 'chưa nhập lô'} — giá vốn thực mua theo lô, dùng tính cột này.`;
           return (
             <div
               key={row.key}
@@ -631,10 +637,10 @@ export default function PriceList({
               <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.designationCode}</div>
               <div style={{ fontSize: ft.size.eyebrow, color: tk.inkFaint }}>{row.classificationCode}</div>
               <div style={{ fontSize: ft.size.xs, color: tk.inkMuted }}>{row.unit}</div>
-              <div style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: tk.ink }}>
+              <div title={baselineTitle} style={{ fontSize: ft.size.md, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: tk.ink, cursor: 'help' }}>
                 {fmtVnd(baselineShown)}
               </div>
-              <div style={{ fontSize: ft.size.sm, textAlign: 'right', ...tnum, color: tk.inkMuted }}>
+              <div title={wAvgTitle} style={{ fontSize: ft.size.sm, textAlign: 'right', ...tnum, color: tk.inkMuted, cursor: 'help' }}>
                 {wAvgShown !== null ? fmtVnd(wAvgShown) : <span style={{ color: tk.inkFaint }}>— chưa nhập lô</span>}
               </div>
               <div style={{ fontSize: ft.size.sm, fontWeight: ft.weight.bold, textAlign: 'right', ...tnum, color: deltaPct === null ? tk.inkFaint : deltaPct > 0 ? tk.dangerInk : tk.successInk }}>

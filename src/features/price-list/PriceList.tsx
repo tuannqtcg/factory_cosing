@@ -19,7 +19,8 @@
 // burgundy/be cũ thay bằng đen (tk.brand) + xám trung tính; màu chỉ giữ cho
 // tín hiệu khóa giá (thành công/cảnh báo) và chip thương hiệu.
 import { useMemo, useState } from 'react';
-import { fmtVnd, fmtPct } from '../../lib/format.js';
+import { fmtVnd, fmtPct, fmtUsd } from '../../lib/format.js';
+import { weightedAvgUsdPerKg } from '../../engine/dual-costing.js';
 import type { PriceListDoc, ScenarioInput, ScenarioOutput } from '../../schemas/scenario.js';
 import TermInfo from '../shell/TermInfo.js';
 import { Screen, PageHeader, Card, Banner, tk, sp, ft, rd, tnum } from '../../design/primitives.js';
@@ -101,6 +102,24 @@ export default function PriceList({
         };
       });
   }, [internal, scenario]);
+
+  // ADR-067 — user 2026-08-02: "phải có cột giá baseline, giá bình quân gia
+  // quyền, chênh lệch để còn biết". Baseline = giá đã CHỐT dùng cho thang giá
+  // (mat.inventory.priceLock.baseline). Bình quân gia quyền = giá VỐN THẬT
+  // đang mua theo lô (weightedAvgUsdPerKg, dual-costing.ts — tính client-side
+  // từ scenario.materials[].inventory.lots đã có sẵn, không thêm field mới).
+  // Chênh lệch = (bình quân − baseline)/baseline — KHÁC "lệch" ở banner cảnh
+  // báo phía trên (đó là replacement THỊ TRƯỜNG vs baseline; đây là giá MUA
+  // THỰC TẾ đã trả vs baseline — 2 câu hỏi khác nhau, không trộn).
+  const materialCostSummary = useMemo(() => {
+    if (!scenario) return [];
+    return scenario.materials.map((m) => {
+      const baseline = m.inventory.priceLock.baseline;
+      const wAvg = weightedAvgUsdPerKg(m.inventory.lots);
+      const deviationPct = wAvg !== null && baseline > 0 ? (wAvg - baseline) / baseline : null;
+      return { id: m.id, name: m.name, baseline, wAvg, deviationPct };
+    });
+  }, [scenario]);
 
   // Dòng hiển thị: chỉ SKU active (pending_mold ẩn theo ADR-007/008), STT đánh
   // trên danh sách active ĐẦY ĐỦ (giữ nguyên khi search/filter — giống prototype).
@@ -315,6 +334,39 @@ export default function PriceList({
             <Banner tone="success">✅ Giá VF đang phản ánh đúng chi phí thị trường — mọi nguyên liệu còn trong ngưỡng, chưa cần điều chỉnh giá.</Banner>
           </div>
         )
+      )}
+
+      {/* ADR-067 — Baseline / Bình quân gia quyền / Chênh lệch, gộp 1 bảng gọn cho MỌI nguyên liệu. */}
+      {scenario && materialCostSummary.length > 0 && (
+        <div style={{ marginBottom: sp[4], border: `1px solid ${tk.border}`, borderRadius: rd.md, overflow: 'hidden' }}>
+          <div style={{ padding: '8px 14px', background: tk.surfaceMuted, ...eyebrowStyle }}>Giá nguyên liệu — Baseline vs Bình quân gia quyền thực mua</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                {['Nguyên liệu', 'Baseline (USD/kg)', 'Bình quân gia quyền (USD/kg)', 'Chênh lệch'].map((h, i) => (
+                  <th key={h} style={{ textAlign: i === 0 ? 'left' : 'right', padding: '7px 14px', fontSize: ft.size.eyebrow, color: tk.inkMuted, borderBottom: `1px solid ${tk.border}` }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {materialCostSummary.map((m) => (
+                <tr key={m.id}>
+                  <td style={{ padding: '7px 14px', fontSize: ft.size.sm, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>{m.name}</td>
+                  <td style={{ padding: '7px 14px', textAlign: 'right', fontSize: ft.size.sm, ...tnum, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>{fmtUsd(m.baseline)}</td>
+                  <td style={{ padding: '7px 14px', textAlign: 'right', fontSize: ft.size.sm, ...tnum, color: tk.ink, borderBottom: `1px solid ${tk.surfaceMuted}` }}>
+                    {m.wAvg !== null ? fmtUsd(m.wAvg) : <span style={{ color: tk.inkFaint }}>— chưa nhập lô</span>}
+                  </td>
+                  <td style={{ padding: '7px 14px', textAlign: 'right', fontSize: ft.size.sm, fontWeight: ft.weight.bold, ...tnum, borderBottom: `1px solid ${tk.surfaceMuted}`, color: m.deviationPct === null ? tk.inkFaint : m.deviationPct > 0 ? tk.dangerInk : tk.successInk }}>
+                    {m.deviationPct === null ? '—' : `${m.deviationPct >= 0 ? '+' : ''}${fmtPct(m.deviationPct)}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div style={{ padding: '7px 14px', fontSize: ft.size.eyebrow, color: tk.inkFaint }}>
+            Baseline = giá đã chốt dùng để tính giá bán. Bình quân gia quyền = giá vốn THẬT đang mua theo các lô đã nhập (Thiết Lập ④/Tồn Kho). Chênh lệch dương (đỏ) = đang mua ĐẮT hơn giá đã chốt.
+          </div>
+        </div>
       )}
 
       {/* ADR-036 — 2 dạng xem: danh sách liệt kê gọn | phiếu giá từng sản phẩm */}

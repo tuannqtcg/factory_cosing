@@ -341,6 +341,64 @@ export default function ProductsScreen({
         </div>
       )}
 
+      {activeTab === 'fitting' && (() => {
+        // ADR-071 — tổng hợp tiến độ nhập "Cái/thùng" (carton) theo từng loại phụ
+        // kiện (productName), để user tự soát đã nhập được bao nhiêu SKU mà không
+        // cần dò từng dòng hay truy Firestore trực tiếp.
+        const byName = new Map<string, { filled: number; total: number }>();
+        for (const p of fittingProducts) {
+          const e = byName.get(p.productName) ?? { filled: 0, total: 0 };
+          e.total++;
+          if (p.piecesPerBox !== undefined) e.filled++;
+          byName.set(p.productName, e);
+        }
+        const totalFilled = fittingProducts.filter((p) => p.piecesPerBox !== undefined).length;
+        const totalAll = fittingProducts.length;
+        const allDone = totalAll > 0 && totalFilled === totalAll;
+        return (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '9px 13px',
+              borderRadius: rd.md,
+              border: `1px solid ${allDone ? tk.success : tk.warning}`,
+              background: allDone ? tk.successTint : tk.warningTint,
+              fontSize: ft.size.sm,
+              lineHeight: 1.5,
+              color: tk.ink,
+            }}
+          >
+            <div style={{ marginBottom: byName.size > 0 ? 7 : 0 }}>
+              <span style={{ fontWeight: ft.weight.bold }}>{allDone ? '✓' : '⚠'}</span>{' '}
+              Tiến độ nhập <b>Cái/thùng</b> (carton) — <b>{totalFilled}/{totalAll}</b> SKU phụ kiện đã có định mức.
+              {!allDone && ` SKU còn thiếu vẫn tính giá theo kg (flat), không vỡ số — chỉ chưa tách đúng chi phí bao bì.`}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {[...byName.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([name, { filled, total }]) => {
+                const done = filled === total;
+                return (
+                  <span
+                    key={name}
+                    style={{
+                      fontSize: ft.size.eyebrow,
+                      fontWeight: ft.weight.semibold,
+                      padding: '3px 8px',
+                      borderRadius: rd.pill,
+                      border: `1px solid ${done ? tk.success : tk.borderStrong}`,
+                      background: done ? tk.successTint : tk.surface,
+                      color: done ? tk.successInk : tk.inkMuted,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {name}: {filled}/{total}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{ background: tk.surface, border: `1px solid ${tk.borderStrong}`, borderRadius: rd.sm, overflowX: 'auto' }}>
         {activeTab === 'pipe' ? (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: 800 }}>
